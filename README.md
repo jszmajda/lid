@@ -22,6 +22,26 @@ This is the "arrow of intent." It means you don't ask the agent to "fix the bug"
 
 For more background, see [The Arrow of Intent](https://loki.ws/code/2026/01/25/the-arrow-of-intent.html).
 
+## How LID Differs from Other SDD Systems
+
+Several spec-driven development (SDD) systems exist for agentic coding — [BMAD](https://docs.bmad-method.org/), [spec-kit](https://github.com/github/spec-kit), and others. They all share the insight that you should specify before you code. Where they differ is in what happens *after*.
+
+Most SDD systems are optimized for **the next change**: generate specs, plan tasks, implement, ship. The artifacts are scaffolding for delivery. Some have extensions for detecting drift or updating specs post-implementation, but the core workflow is a pipeline that ends at "done."
+
+LID is optimized for **the project over time**. The design documents aren't scaffolding — they're the system's source of truth. Done well, you should be able to delete all tests and code and regenerate them from the HLD, LLDs, and EARS specs alone. That's the bar. If you can't, there's an intent gap somewhere, and closing it is the work.
+
+| | Typical SDD | LID |
+|---|---|---|
+| **Primary goal** | Clear intent for the next change | Continuous truth for the whole project |
+| **Design docs after implementation** | Reference material, may drift | The living source of truth — always current |
+| **When specs and code disagree** | Sync them up (which direction?) | Specs win. Fix the code, or fix the spec and cascade. |
+| **Tests and code** | The artifact you maintain | Output. Regenerable from intent. |
+| **Scope** | Per-feature or per-change | Per-project, tracked across all components |
+
+This comes from building products at AWS, where systems live for years and the biggest cost isn't building the wrong thing once — it's *maintaining* a system where nobody can explain why it does what it does. LID treats Claude Code as an English compiler: your design documents are the source, and everything downstream is compiled output.
+
+The tradeoff is that LID requires more upfront discipline. You review HLDs and LLDs carefully. You close intent gaps through progressive application of arrow-maintenance. You don't skip the design phases because you "already know what to build." But when used consistently, it produces systems that are more coherent, more maintainable, and self-documenting — because the documentation *is* the system, and the code just happens to implement it.
+
 ## What's in here
 
 **Two core plugins** for linked-intent development:
