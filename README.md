@@ -129,13 +129,14 @@ When requirements change (they always do), the linked-intent-dev skill cascades 
 
 You have an existing codebase and want to bring structure to it. This works bottom-up — understanding what exists before documenting it.
 
-### 1. Install both plugins
+### 1. Install and set up
 
-You'll need linked-intent-dev (for the LLD/EARS workflow) and arrow-maintenance (for the mapping and tracking):
+You'll need both plugins. Install them, then run setup:
 
 ```
 /plugin install linked-intent-dev@jszmajda-lid
 /plugin install arrow-maintenance@jszmajda-lid
+/linked-intent-dev:lid-setup
 ```
 
 ### 2. Map the codebase
