@@ -21,7 +21,6 @@ Create LLDs in `/docs/llds/` with descriptive names:
 
 **Created**: YYYY-MM-DD
 **Status**: Design Phase | Implementation | Complete
-**Supersedes**: (if replacing an older doc)
 
 ## Context and Design Philosophy
 
