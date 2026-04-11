@@ -148,7 +148,9 @@ For each cluster, create a Low-Level Design document that accurately describes t
 
 ### How to Execute
 
-Follow the LLD template structure from the linked-intent-dev skill, adapted for existing code:
+**Before writing the first LLD**, read the LLD template reference from the linked-intent-dev skill. Either invoke `/linked-intent-dev:linked-intent-dev` to load the skill into context, or directly read `references/lld-templates.md` from the linked-intent-dev plugin. This ensures you follow the established template structure.
+
+Follow the LLD template structure, adapted for existing code:
 
 ```markdown
 # [Cluster Name]
@@ -248,7 +250,7 @@ Create the formal traceability chain: specs → code → tests → arrow docs �
 
 **Step 5a: Write EARS specs per cluster.**
 
-For each cluster, create a spec file in `docs/specs/` following the EARS syntax from the linked-intent-dev skill.
+For each cluster, create a spec file in `docs/specs/`. **Before writing the first spec file**, read the EARS syntax reference from the linked-intent-dev skill (`references/ears-syntax.md` in the linked-intent-dev plugin).
 
 Brownfield-specific guidance:
 - Most specs will be `[x]` (implemented) — the code already exists

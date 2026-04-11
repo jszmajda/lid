@@ -59,7 +59,7 @@ Then within the chosen grouping, offer 2-3 slicing variations — different leve
 
 ### Phase 3: Per-Cluster LLDs (Bottom-Up)
 
-For each cluster in the chosen slicing, write a Low-Level Design document following the LLD template from the linked-intent-dev skill. Key adaptation for brownfield:
+For each cluster in the chosen slicing, write a Low-Level Design document. **Before writing the first LLD, read the LLD template reference from the linked-intent-dev skill** (`plugins/linked-intent-dev/skills/linked-intent-dev/references/lld-templates.md` or invoke `/linked-intent-dev:linked-intent-dev` to load it into context). Key adaptation for brownfield:
 
 - Describe what the code **actually does today**, not what it should do
 - "Context and Design Philosophy" becomes "Context and Current State"
@@ -81,6 +81,7 @@ Place at `docs/high-level-design.md`.
 
 ### Phase 5: EARS Linkages & Arrow Docs
 
+- **Read the EARS syntax reference** from linked-intent-dev (`plugins/linked-intent-dev/skills/linked-intent-dev/references/ears-syntax.md`) before writing specs
 - Write EARS specs for current behavior (what IS, not what SHOULD BE)
 - Brownfield specs start as `[x]` (code exists and works) — most things are already implemented
 - Mark broken/incomplete behavior as `[ ]`, intentionally absent as `[D]`
