@@ -2,6 +2,16 @@
 
 A plugin marketplace for [Claude Code](https://claude.ai/code) that brings structured, design-driven development to your projects. Stop building the wrong thing — get alignment on *what* before writing *how*.
 
+## Quickstart
+
+```
+/plugin marketplace add jszmajda/lid
+/plugin install linked-intent-dev@jszmajda-lid
+/linked-intent-dev:lid-setup
+```
+
+Then just tell Claude what you want to build. It handles the rest. For existing codebases, see [Getting Started: Brownfield Project](#getting-started-brownfield-project).
+
 ## The Problem
 
 Modern AI coding agents don't really write bugs anymore. What they write are *intent gaps* — places where the agent assumed you meant something different than you did. The biggest challenge in agentic development isn't getting code to work; it's making sure the agent builds the right thing.
@@ -38,9 +48,11 @@ LID is optimized for **the project over time**. The design documents aren't scaf
 | **Tests and code** | The artifact you maintain | Output. Regenerable from intent. |
 | **Scope** | Per-feature or per-change | Per-project, tracked across all components |
 
+LID is also intentionally much simpler than other SDD systems. BMAD has specialized agents, adversarial reviews, and multi-phase orchestration. Spec-kit has extensions, CI guards, and reconciliation workflows. LID has two skills and a handful of markdown templates. The complexity lives in Claude, not in the tooling — we rely on the model's judgment as much as possible and focus the system on creating durable context that survives across sessions, compactions, and even model changes.
+
 This comes from building products at AWS, where systems live for years and the biggest cost isn't building the wrong thing once — it's *maintaining* a system where nobody can explain why it does what it does. LID treats Claude Code as an English compiler: your design documents are the source, and everything downstream is compiled output.
 
-The tradeoff is that LID requires more upfront discipline. You review HLDs and LLDs carefully. You close intent gaps through progressive application of arrow-maintenance. You don't skip the design phases because you "already know what to build." But when used consistently, it produces systems that are more coherent, more maintainable, and self-documenting — because the documentation *is* the system, and the code just happens to implement it.
+The tradeoff is that LID requires discipline. You review HLDs and LLDs carefully. You close intent gaps through progressive application of arrow-maintenance. You don't skip the design phases because you "already know what to build." But when used consistently, it produces systems that are more coherent, more maintainable, and self-documenting — because the documentation *is* the system, and the code just happens to implement it.
 
 ## What's in here
 
