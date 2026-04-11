@@ -1,0 +1,10 @@
+{
+  "name": "linked-intent-dev",
+  "description": "Structured design-before-code workflow: HLD → LLD → EARS specs → Implementation plan",
+  "version": "1.0.0",
+  "author": {
+    "name": "Jess Szmajda"
+  },
+  "repository": "https://github.com/jszmajda/lid",
+  "license": "MIT"
+}

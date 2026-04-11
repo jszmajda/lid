@@ -1,0 +1,27 @@
+{
+  "name": "jszmajda-lid",
+  "metadata": {
+    "description": "Linked-intent development workflow and arrow-of-intent tracking for Claude Code"
+  },
+  "owner": {
+    "name": "Jess Szmajda"
+  },
+  "plugins": [
+    {
+      "name": "linked-intent-dev",
+      "description": "Structured design-before-code workflow: HLD → LLD → EARS specs → Implementation plan. Includes setup skill for bootstrapping new projects.",
+      "source": "./plugins/linked-intent-dev",
+      "version": "1.0.0",
+      "category": "development",
+      "license": "MIT"
+    },
+    {
+      "name": "arrow-maintenance",
+      "description": "Scaling layer for linked-intent-dev. Tracks spec-to-code coherence across large projects via docs/arrows/ index. Includes brownfield bootstrap for mapping existing codebases.",
+      "source": "./plugins/arrow-maintenance",
+      "version": "1.0.0",
+      "category": "development",
+      "license": "MIT"
+    }
+  ]
+}
