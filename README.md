@@ -2,6 +2,26 @@
 
 A plugin marketplace for [Claude Code](https://claude.ai/code) that brings structured, design-driven development to your projects. Stop building the wrong thing — get alignment on *what* before writing *how*.
 
+## The Problem
+
+Modern AI coding agents don't really write bugs anymore. What they write are *intent gaps* — places where the agent assumed you meant something different than you did. The biggest challenge in agentic development isn't getting code to work; it's making sure the agent builds the right thing.
+
+This gets worse as systems grow. Every new session starts a capable but amnesiac programmer from scratch. Context windows help, but there's always a gap between what's in your head and what's in the agent's context. That gap is where intent drifts, and intent drift is where projects go sideways.
+
+## The Arrow of Intent
+
+The solution is to make intent explicit and traceable. There's a chain of documents that translates what you want into working software:
+
+```
+HLD → LLDs → EARS → Tests → Code
+```
+
+Each level translates the previous into more specific terms. They aren't independent documents — they're a single expression of intent at different levels of specificity. When you change your mind about something, the change flows *downstream* through the chain: update the design, then the specs, then the tests, then the code. Never the reverse.
+
+This is the "arrow of intent." It means you don't ask the agent to "fix the bug" — you ask it to "update the arrow so this behavior is clearly specified, tested, and implemented." The documentation becomes the source of truth, not the code. Code is output. Intent is the artifact you maintain.
+
+For more background, see [The Arrow of Intent](https://loki.ws/code/2026/01/25/the-arrow-of-intent.html).
+
 ## What's in here
 
 **Two core plugins** for linked-intent development:
@@ -33,22 +53,6 @@ After installing, run the setup skill to configure your project:
 ```
 
 This creates your `docs/` directory structure and adds the required directives to your project's CLAUDE.md.
-
-## The Core Idea
-
-There's a chain of documents that translates intent from vision to working code:
-
-```
-HLD → LLDs → EARS → Tests → Code
-```
-
-- **HLD** (High-Level Design) says *what* and *why*
-- **LLDs** (Low-Level Designs) say *how* at a component level
-- **EARS** (Easy Approach to Requirements Syntax) says *exactly what must be true* in testable terms
-- **Tests** verify those truths
-- **Code** makes them real
-
-These aren't independent documents — they're a single expression of intent at different levels of specificity. When one level changes, downstream levels must be reviewed and updated to match. This is the "arrow of intent," and keeping it coherent is the whole game.
 
 ## Getting Started: Greenfield Project
 
