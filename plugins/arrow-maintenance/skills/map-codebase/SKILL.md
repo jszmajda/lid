@@ -24,15 +24,30 @@ Output: a structured inventory of the entire codebase.
 
 ### Phase 2: Creative Clustering
 
-Present **3-5 fundamentally different ways** to group the codebase into components. These are not variations on one theme — they are entirely different mental models:
+**What makes a good component?** A component is an **independent system that achieves an independent purpose**. Think: a tax-calculating module, a database ORM, an authentication system, a checkout flow, a notification pipeline. Each component should be something you could describe to a non-technical person as "the part that does X."
 
-- By data flow (what data moves where)
-- By user journey (what users touch in sequence)
-- By deployment boundary (what ships together)
-- By team ownership (what one team could own end-to-end)
-- By change frequency (what changes together)
-- By domain concept (business-domain-driven boundaries)
+Components are NOT defined by:
+- Physical artifacts (what ships together, what gets deployed)
+- File proximity (what lives in the same directory)
+- Hardware boundaries (what runs on which device)
+- Build targets (what compiles into one output)
+
+Components ARE defined by:
+- Functional independence (it does one coherent thing)
+- Clear purpose (you can explain what it's for in one sentence)
+- Behavioral boundaries (it has inputs, outputs, and rules about how it transforms one into the other)
+
+A small project might have 3-5 components. A large one might have 15-20. The right number is however many independent systems actually exist — don't force granularity or collapse distinct systems just to hit a target count.
+
+Present **3-5 fundamentally different ways** to group the codebase into components. These are not variations on one theme — they are entirely different mental models. Only propose groupings where each cluster represents an independent functional system:
+
+- By data flow (what data pipelines exist as independent systems)
+- By user-facing capability (what distinct things can users do)
+- By domain concept (what business/domain problems does each part solve)
+- By behavioral boundary (what independent sets of rules govern the system)
 - Other creative groupings that fit this specific codebase
+
+Avoid groupings based purely on physical, organizational, or deployment structure — these produce clusters that track artifacts rather than intent, and don't work well as arrows.
 
 Each grouping should be named and presented with its components, pros, and cons.
 

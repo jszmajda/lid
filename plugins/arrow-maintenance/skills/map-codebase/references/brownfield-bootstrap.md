@@ -65,22 +65,56 @@ Compile findings into a structured inventory, organized by directory. This becom
 ## Phase 2: Creative Clustering
 
 ### Goal
-Help the user see their codebase through multiple lenses, then choose the mental model that best fits how they want to think about it.
+Help the user see their codebase as a collection of independent functional systems, then choose the decomposition that best captures how the system actually works.
+
+### What Makes a Good Component
+
+An arrow tracks the intent chain (HLD → LLD → EARS → Tests → Code) for one component. For that to be meaningful, each component must be an **independent system that achieves an independent purpose**.
+
+**Good components** look like:
+- An authentication system
+- A payment processing pipeline
+- A notification engine
+- A search and indexing service
+- A reporting/analytics module
+- A user profile management system
+- A data transformation pipeline
+
+**Bad components** look like:
+- "The frontend" (too broad — what independent systems exist within it?)
+- "Things that deploy together" (that's a build artifact, not a functional system)
+- "Files the backend team owns" (that's organizational structure)
+- "Stuff that changes often" (that's a change pattern, not a purpose)
+- "The utils directory" (that's a file location, not a system)
+- "Settings reset utility" (too thin — a single script isn't a system)
+
+The test: **can you explain what this component does to a non-technical person in one sentence?** "It's the part that handles user authentication" works. "It's the stuff that gets flashed to the left half" doesn't — that describes a deployment target, not a purpose.
+
+It's not about how much code is in a component. A component with 3 files that implements an independent system (e.g., a scoring algorithm) is a better arrow than a component with 50 files that's just "everything in the /lib directory."
 
 ### How to Execute
 
 **Step 2a: Present 3-5 fundamentally different groupings.**
 
-These are NOT variations on one theme. Each grouping represents a different mental model for decomposing the system. Examples:
+These are NOT variations on one theme. Each grouping represents a different mental model for decomposing the system. Only propose groupings where each cluster represents an independent functional system.
+
+Good lenses for clustering:
 
 | Grouping | Lens | Example clusters |
 |----------|------|-----------------|
-| **Data flow** | What data moves where | "Ingestion pipeline", "Processing engine", "Storage layer", "API surface" |
-| **User journey** | What users touch in sequence | "Onboarding", "Core workflow", "Settings & admin", "Billing" |
-| **Deployment boundary** | What ships together | "Frontend SPA", "API service", "Background workers", "Infrastructure" |
-| **Team ownership** | What one team could own E2E | "Platform team", "Product team", "Growth team", "Infra team" |
-| **Change frequency** | What changes together | "Hot path (changes weekly)", "Stable core (changes monthly)", "Config & infra (changes rarely)" |
-| **Domain concept** | Business-domain boundaries | "Users & auth", "Orders & payments", "Inventory", "Notifications" |
+| **Data flow** | What independent data pipelines exist | "Ingestion pipeline", "Processing engine", "Storage layer", "API surface" |
+| **User-facing capability** | What distinct things can users do | "Account management", "Search & discovery", "Checkout & payment", "Notifications" |
+| **Domain concept** | What business problems does each part solve | "Users & auth", "Orders & payments", "Inventory", "Reporting" |
+| **Behavioral boundary** | What independent sets of rules govern behavior | "Pricing engine", "Access control", "Workflow state machine", "Data validation layer" |
+
+Avoid these lenses — they produce clusters that track artifacts rather than intent:
+
+| Avoid | Why |
+|-------|-----|
+| Deployment boundary (what ships together) | Groups by build output, not function. A single system may span multiple deployments. |
+| Hardware boundary (what runs on which device) | Groups by physical target, not purpose. The same functional system may run on multiple devices. |
+| Team ownership (who maintains it) | Groups by org chart, not architecture. Teams change; functional boundaries shouldn't. |
+| File proximity (what's in the same directory) | Groups by filesystem layout, not design. Directory structure often reflects history, not intent. |
 
 For each grouping, present:
 - **Name and lens**: What mental model does this use?
@@ -89,7 +123,7 @@ For each grouping, present:
 - **Cons**: What does it obscure? What awkward splits does it create?
 - **Best for**: What kind of team or workflow does this suit?
 
-**Be creative.** A team that thinks in terms of "customer-facing vs internal" is different from one that thinks in "real-time vs batch." Both could be valid for the same codebase. The goal is to surface options the user might not have considered.
+**Be creative.** Think about the *functional systems* in this codebase, not its file structure. A codebase might have a "rules engine" that's scattered across 5 directories, or a "notification system" that's only 2 files but functionally independent. The goal is to surface the real architecture, which may not match the directory tree.
 
 **STOP. Present all groupings. User picks one.**
 
