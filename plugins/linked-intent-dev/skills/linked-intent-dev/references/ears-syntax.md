@@ -41,13 +41,20 @@ Specs live in `/docs/specs/` files with status markers. Each requirement is one 
 
 ## Semantic ID Format
 
-`{FEATURE}-{TYPE}-{NNN}`
+The default shape is `{FEATURE}-{TYPE}-{NNN}` — e.g., `AUTH-UI-001`, `CART-API-003`.
 
-- **FEATURE**: 2-4 letter prefix for the feature area (e.g., `AUTH`, `CART`, `DASH`)
-- **TYPE**: Component type (`UI`, `API`, `DATA`, `NAV`, `BE`, `PROC`)
-- **NNN**: Sequential number, zero-padded
+- **FEATURE**: prefix for the feature or segment (commonly 2–4 letters, e.g., `AUTH`, `CART`, `DASH`).
+- **TYPE**: Component type (`UI`, `API`, `DATA`, `NAV`, `BE`, `PROC`).
+- **NNN**: Sequential number, zero-padded.
 
-Keep IDs stable - don't renumber when inserting requirements.
+**Extensible namespacing.** The format is flexible: longer IDs with additional segments are permitted when namespacing matters. `AUTH-LOGIN-UI-001` distinguishes login-UI specs from login-API specs. `BILLING-INVOICE-RENDERING-004` disambiguates nested features. Constraints:
+
+- **Global uniqueness across the project.** Two specs cannot share an ID, even across different LLDs.
+- **Grep-friendliness.** IDs use uppercase letters, digits, and hyphens only. No other characters. `grep "FEATURE-TYPE-003"` should find every annotation, test, and spec file citation of a given ID.
+- **ID stability.** Once assigned, an ID does not move. Revisions mutate text, not IDs. Deletion is permanent; the number is not recycled.
+- **Namespacing on conflict.** When drafting a new spec whose natural prefix already exists for an unrelated feature, surface the collision and ask the user for a disambiguating namespace segment rather than silently picking.
+
+Keep IDs stable — don't renumber when inserting requirements.
 
 ---
 

@@ -1,0 +1,61 @@
+{
+  "skill_name": "map-codebase",
+  "evals": [
+    {
+      "id": 0,
+      "eval_name": "brownfield-small-codebase",
+      "prompt": "/map-codebase",
+      "files": [
+        { "path": "src/auth/login.ts", "content": "// Login handler\nexport function handleLogin(email: string, password: string) {\n  return { token: 'fake' };\n}\n" },
+        { "path": "src/auth/logout.ts", "content": "export function handleLogout(token: string) { /* revoke */ }\n" },
+        { "path": "src/billing/charge.ts", "content": "export async function charge(userId: string, amount: number) { /* stripe */ }\n" },
+        { "path": "src/billing/invoice.ts", "content": "export function generateInvoice(orderId: string) { /* pdf */ }\n" },
+        { "path": "src/index.ts", "content": "import { handleLogin } from './auth/login';\nimport { charge } from './billing/charge';\n" }
+      ],
+      "assertions": [
+        { "text": "At invocation, the agent warns the user that /map-codebase is token-intensive by design", "spec_ids": ["MAP-CODE-024"] },
+        { "text": "The agent asks the user for the starting scope before beginning the sweep", "spec_ids": ["MAP-CODE-001"] },
+        { "text": "The agent offers subagent-parallel mapping as an option", "spec_ids": ["MAP-CODE-002"] },
+        { "text": "At Phase 2, the agent presents 3+ fundamentally different candidate clusterings, each with a distinct named lens (not variations on one theme)", "spec_ids": ["MAP-CODE-008"] },
+        { "text": "At Phase 3, after lens selection, the agent presents 2-3 slicing granularity options (coarse / medium / fine)", "spec_ids": ["MAP-CODE-023"] },
+        { "text": "Eventually generates docs/arrows/ directory with index.yaml and per-segment arrow docs", "spec_ids": ["MAP-CODE-013", "MAP-CODE-016"] },
+        { "text": "Generates skeleton LLD files in docs/llds/ for each approved segment", "spec_ids": ["MAP-CODE-014"] },
+        { "text": "Generates EARS spec files in docs/specs/ with reserved segment-name prefixes", "spec_ids": ["MAP-CODE-015"] },
+        { "text": "Terminal response directs the user to continue with the linked-intent-dev workflow segment-by-segment", "spec_ids": ["MAP-CODE-021", "MAP-CODE-022"] },
+        { "text": "Ensures CLAUDE.md is configured (contains LID directives and a ## LID Mode: heading) before completing", "spec_ids": ["MAP-CODE-031"] }
+      ]
+    },
+    {
+      "id": 1,
+      "eval_name": "partial-lid-dispatch",
+      "prompt": "/map-codebase",
+      "files": [
+        { "path": "CLAUDE.md", "content": "## LID Mode: Full\n\nUse linked-intent-dev for all code changes.\n" },
+        { "path": "docs/high-level-design.md", "content": "# HLD\n\nSome project.\n" },
+        { "path": "docs/llds/auth.md", "content": "# LLD: auth\n" },
+        { "path": "src/auth/login.ts", "content": "export function login() {}\n" },
+        { "path": "src/new-feature/unrelated.ts", "content": "export function something() {}\n" }
+      ],
+      "assertions": [
+        { "text": "The agent detects that partial LID docs exist and asks the user whether to treat the existing docs as authoritative or supersede them", "spec_ids": ["MAP-CODE-003"] },
+        { "text": "The agent does NOT silently overwrite the existing HLD or the existing auth LLD", "spec_ids": ["MAP-CODE-003", "MAP-CODE-018"] }
+      ]
+    },
+    {
+      "id": 2,
+      "eval_name": "redirect-on-fully-lid-no-overlay",
+      "prompt": "/map-codebase",
+      "files": [
+        { "path": "CLAUDE.md", "content": "## LID Mode: Full\n\nLID is installed.\n" },
+        { "path": "docs/high-level-design.md", "content": "# HLD\n" },
+        { "path": "docs/llds/auth.md", "content": "# LLD: auth\n" },
+        { "path": "docs/specs/auth-specs.md", "content": "# auth specs\n\n- [x] **AUTH-001**: Users SHALL authenticate.\n" }
+      ],
+      "assertions": [
+        { "text": "The agent recognizes the project as fully LID-configured (HLD, LLD, and EARS specs present) but missing the docs/arrows/ overlay", "spec_ids": ["MAP-CODE-004"] },
+        { "text": "The agent redirects the user to /arrow-maintenance rather than running the brownfield sweep", "spec_ids": ["MAP-CODE-004"] },
+        { "text": "No new LLDs, EARS specs, or arrow docs are generated in this run", "spec_ids": ["MAP-CODE-004"] }
+      ]
+    }
+  ]
+}

@@ -2,6 +2,21 @@
 
 This reference expands on each phase of the `/map-codebase` workflow. Consult it for detailed guidance on execution.
 
+## Phase numbering
+
+The current six-phase workflow in `SKILL.md` is the canonical phase structure. This reference maps older section numbering to the current phases:
+
+| `SKILL.md` phase | This reference section |
+|---|---|
+| Phase 1: Sweep (Reconnaissance) | Phase 1 below |
+| Phase 2: Seam Identification — Lens Selection | Phase 2a below (step 2a of the old "Creative Clustering") |
+| Phase 3: Seam Identification — Slicing Granularity | Phase 2b below (step 2b of the old "Creative Clustering") |
+| Phase 4: User Reconciliation | absorbed into Phase 2b and the start of Phase 3 below |
+| Phase 5: Artifact Generation | Phases 3, 4, 5 below (per-cluster LLDs, HLD, EARS + arrows) with STOPs between each sub-step |
+| Phase 6: Terminal Verification & Flesh-out Prompt | Phase 6 below, extended with an explicit flesh-out prompt as the terminal step |
+
+Cross-reference [SKILL.md](../SKILL.md) for the canonical flow and the Five Critical Rules.
+
 ## Before Starting
 
 Warn the user:

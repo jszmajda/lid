@@ -1,0 +1,49 @@
+{
+  "skill_name": "lid-setup",
+  "evals": [
+    {
+      "id": 0,
+      "eval_name": "bootstrap-empty-project",
+      "prompt": "I have an empty project directory and want to start using linked-intent development on it. Please set it up. Use Full LID.",
+      "files": [],
+      "assertions": [
+        { "text": "docs/llds/ directory exists in the project", "spec_ids": ["LID-SETUP-002", "LID-SETUP-015"] },
+        { "text": "docs/specs/ directory exists in the project", "spec_ids": ["LID-SETUP-002", "LID-SETUP-015"] },
+        { "text": "docs/high-level-design.md exists, populated from the HLD template (not empty)", "spec_ids": ["LID-SETUP-015", "LID-SETUP-016"] },
+        { "text": "docs/planning/ directory was NOT created", "spec_ids": ["LID-SETUP-017"] },
+        { "text": "CLAUDE.md contains the literal string '## LID Mode: Full' as a heading", "spec_ids": ["LID-SETUP-008", "LID-SETUP-009"] },
+        { "text": "CLAUDE.md contains the LID directives block referencing 'linked-intent-dev'", "spec_ids": ["LID-SETUP-002", "LID-SETUP-022"] },
+        { "text": "The agent's response summarizes what files were created or modified", "spec_ids": ["LID-SETUP-027", "LID-SETUP-028"] }
+      ]
+    },
+    {
+      "id": 1,
+      "eval_name": "append-to-existing-claude-md",
+      "prompt": "I already have a CLAUDE.md with my team's existing conventions. I want to adopt linked-intent development without losing any of my existing content. Set it up.",
+      "files": [
+        { "path": "CLAUDE.md", "content": "# My Project\n\n## Conventions\n\n- Prefer functional style where possible.\n- Use TypeScript strict mode.\n- Don't add dependencies without discussion.\n" }
+      ],
+      "assertions": [
+        { "text": "CLAUDE.md still contains all of the original content ('# My Project', '## Conventions', and the three bullet points) unmodified", "spec_ids": ["LID-SETUP-003"] },
+        { "text": "CLAUDE.md has the LID directives block appended (contains 'linked-intent-dev' or 'Linked-Intent Development')", "spec_ids": ["LID-SETUP-003", "LID-SETUP-022"] },
+        { "text": "CLAUDE.md contains the '## LID Mode:' heading", "spec_ids": ["LID-SETUP-009"] },
+        { "text": "The agent's response explicitly summarizes which sections were added to CLAUDE.md", "spec_ids": ["LID-SETUP-027"] }
+      ]
+    },
+    {
+      "id": 2,
+      "eval_name": "idempotent-on-configured-project",
+      "prompt": "Please set up LID in this project.",
+      "files": [
+        { "path": "CLAUDE.md", "content": "# My Project\n\n## LID Mode: Full\n\n## Linked-Intent Development (MANDATORY)\n\n**Consult the `linked-intent-dev` skill for ALL code changes.** All changes flow through the arrow of intent in one direction:\n\n```\nHLD \u2192 LLDs \u2192 EARS \u2192 Tests \u2192 Code\n```\n" },
+        { "path": "docs/high-level-design.md", "content": "# High-Level Design\n\n## Problem\n\n*(not yet specified)*\n" },
+        { "path": "docs/llds/.gitkeep", "content": "" },
+        { "path": "docs/specs/.gitkeep", "content": "" }
+      ],
+      "assertions": [
+        { "text": "No file changes were made (CLAUDE.md and existing docs are unmodified)", "spec_ids": ["LID-SETUP-020"] },
+        { "text": "The agent's response informs the user what was detected (mode, directory status) rather than silently doing nothing", "spec_ids": ["LID-SETUP-021", "LID-SETUP-028"] }
+      ]
+    }
+  ]
+}

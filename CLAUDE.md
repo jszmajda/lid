@@ -37,3 +37,43 @@ Both LID plugins use EARS (Easy Approach to Requirements Syntax) for specificati
 - Skills follow the SKILL.md frontmatter format (`name`, `description` in YAML front matter)
 - The skill `description` field is critical — it determines when Claude auto-invokes the skill. Use specific trigger words, not vague descriptions
 - Reference templates live in `references/` subdirectories within each skill
+
+## LID Mode: Full
+
+## Linked-Intent Development (MANDATORY)
+
+**Consult the `linked-intent-dev` skill for ALL code changes.** All changes start with intent:
+
+```
+HLD → LLDs → EARS → Tests → Code
+```
+
+- **New features**: Full workflow (HLD → LLD → EARS → Tests → Code)
+- **Bug fixes**: Walk the arrow like any other change — find where intent diverged, cascade from there. No short-circuit.
+- **If unsure**: Use the full workflow.
+
+Mutation, not accumulation — docs reflect current intent, not history.
+
+### Navigation
+
+| What you need | Where to look |
+|---|---|
+| High-level design | `docs/high-level-design.md` |
+| Low-level designs | `docs/llds/` |
+| EARS specs | `docs/specs/` |
+
+### Terminology
+
+- **LLD**: Low-level design — detailed component design docs in `docs/llds/`
+- **EARS**: Easy Approach to Requirements Syntax — structured requirements in `docs/specs/`. Markers: `[x]` implemented, `[ ]` active gap, `[D]` deferred
+- **Arrow**: A traced dependency from HLD through code, tracked in `docs/arrows/`
+
+### Code Annotations
+
+Annotate code with `@spec` comments linking to EARS IDs:
+
+```
+// @spec AUTH-UI-001, AUTH-UI-002
+```
+
+Test files also reference specs for traceability.
