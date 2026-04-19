@@ -588,7 +588,7 @@ hr {
 .hero-grid {
   display: grid;
   gap: var(--s-8);
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
   position: relative;
 }
@@ -721,15 +721,24 @@ hr {
   font-size: 5.5px;
   letter-spacing: 0.1em;
 }
+/* Rect fills: hardcoded `fill="#0c1117"` attribute on each rect handles
+ * dark mode (the default). Light-mode override via external CSS below —
+ * presentation attributes have lower specificity than CSS, so the media
+ * query wins when it matches. No variables in SVG. */
 .hero-schematic .node {
   stroke: currentColor;
   stroke-width: 1.25;
-  fill: var(--paper);
 }
 .hero-schematic .node-accent {
-  fill: var(--paper);
   stroke: var(--nib);
   stroke-width: 1;
+}
+
+@media (prefers-color-scheme: light) {
+  .hero-schematic .node,
+  .hero-schematic .node-accent {
+    fill: #f2ecd8;
+  }
 }
 /* Scroll-triggered schematic reveal.
  * Elements start "un-drawn". When the SVG enters the viewport via
@@ -866,7 +875,7 @@ hr {
 .quickstart-shell {
   display: grid;
   gap: var(--s-7);
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
 }
 
@@ -876,6 +885,8 @@ hr {
     gap: var(--s-8);
   }
 }
+
+.quickstart-meta, .quickstart-card { min-width: 0; }
 
 .quickstart-meta { min-width: 0; }
 .quickstart-meta h2 {
@@ -915,7 +926,7 @@ hr {
 .quickstart-steps li {
   counter-increment: qsstep;
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: auto minmax(0, 1fr);
   column-gap: var(--s-4);
   align-items: start;
 }
@@ -984,7 +995,7 @@ hr {
 .demo-grid {
   display: grid;
   gap: var(--s-7);
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
 }
 
@@ -1180,7 +1191,7 @@ hr {
 .page-header {
   display: grid;
   gap: var(--s-5);
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   margin-bottom: var(--s-8);
   align-items: end;
   padding-bottom: var(--s-6);
@@ -1244,7 +1255,7 @@ hr {
 .audience {
   display: grid;
   gap: var(--s-5);
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   padding: var(--s-7) 0;
   border-bottom: 1px dashed var(--graphite);
 }

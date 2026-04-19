@@ -1,6 +1,12 @@
 <svg class="hero-schematic" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 420" role="img" aria-labelledby="hero-schematic-title hero-schematic-desc">
   <title id="hero-schematic-title">Arrow of intent — schematic</title>
   <desc id="hero-schematic-desc">Five nodes — HLD, LLDs, EARS, Tests, Code — connected by a trace line, drawn as a technical diagram with dimension marks and annotations.</desc>
+<!-- Node rects have a hardcoded dark fill attribute. Light-mode override
+     comes from an external CSS media query targeting these classes.
+     No CSS variables inside SVG, no inline <style> block, no mask —
+     this combination avoids the Firefox-Mobile quirks that killed the
+     earlier approaches. -->
+
 
   <g stroke="currentColor" stroke-width="0.8" opacity="0.5">
     <path d="M 8 8 L 18 8 M 8 8 L 8 18"/>
@@ -10,7 +16,7 @@
   </g>
 
   <text x="295" y="396" class="label">PLATE · 001</text>
-  <text x="295" y="408" class="label" style="fill: #e0a060">ARROW / INTENT</text>
+  <text x="295" y="408" class="label" style="fill: var(--nib)">ARROW / INTENT</text>
   <text x="14" y="408" class="coord">COORD · A1</text>
 
   <g class="dim" opacity="0.6">
@@ -38,7 +44,7 @@
   <path class="trace-line" pathLength="1" d="M 90 130 Q 155 130 170 170 Q 185 210 250 210 Q 315 210 330 250 Q 345 290 345 325"/>
 
   <g class="fade-in" style="--d: 0.4s">
-    <rect x="55" y="115" width="70" height="30" class="node"/>
+    <rect x="55" y="115" width="70" height="30" class="node" fill="#0c1117"/>
     <text x="90" y="134" text-anchor="middle" class="node-label">HLD</text>
   </g>
   <text x="90" y="104" text-anchor="middle" class="label">§ 01 · VISION</text>
@@ -49,16 +55,16 @@
   <text x="90" y="174" text-anchor="middle" class="coord">PROBLEM · APPROACH</text>
 
   <g class="fade-in" style="--d: 0.6s">
-    <rect x="135" y="155" width="70" height="30" class="node"/>
+    <rect x="135" y="155" width="70" height="30" class="node" fill="#0c1117"/>
     <text x="170" y="174" text-anchor="middle" class="node-label">LLDs</text>
   </g>
   <text x="170" y="144" text-anchor="middle" class="label">§ 02 · COMPONENTS</text>
 
   <g class="fade-in" style="--d: 0.8s">
-    <rect x="215" y="195" width="70" height="30" class="node-accent"/>
-    <text x="250" y="214" text-anchor="middle" class="node-label" style="fill: #e0a060">EARS</text>
+    <rect x="215" y="195" width="70" height="30" class="node-accent" fill="#0c1117"/>
+    <text x="250" y="214" text-anchor="middle" class="node-label" style="fill: var(--nib)">EARS</text>
   </g>
-  <text x="250" y="184" text-anchor="middle" class="label" style="fill: #e0a060">§ 03 · CLAIMS</text>
+  <text x="250" y="184" text-anchor="middle" class="label" style="fill: var(--nib)">§ 03 · CLAIMS</text>
   <g class="dim" opacity="0.65">
     <line x1="250" y1="227" x2="250" y2="242"/>
     <line x1="242" y1="242" x2="258" y2="242"/>
@@ -66,13 +72,13 @@
   <text x="250" y="254" text-anchor="middle" class="coord">GREP-ADDRESSABLE</text>
 
   <g class="fade-in" style="--d: 1.0s">
-    <rect x="295" y="235" width="70" height="30" class="node"/>
+    <rect x="295" y="235" width="70" height="30" class="node" fill="#0c1117"/>
     <text x="330" y="254" text-anchor="middle" class="node-label">Tests</text>
   </g>
   <text x="330" y="224" text-anchor="middle" class="label">§ 04 · FAILING-FIRST</text>
 
   <g class="fade-in" style="--d: 1.2s">
-    <rect x="310" y="310" width="70" height="30" class="node"/>
+    <rect x="310" y="310" width="70" height="30" class="node" fill="#0c1117"/>
     <text x="345" y="329" text-anchor="middle" class="node-label">Code</text>
   </g>
   <text x="345" y="299" text-anchor="middle" class="label">§ 05 · COMPILED</text>
@@ -89,10 +95,7 @@
     <!-- Tiny terminal tick perpendicular to leader end -->
     <line x1="345" y1="105" x2="351" y2="111"/>
   </g>
-  <text x="392" y="106" text-anchor="end" class="label" style="fill: #e0a060; font-size: 7.5px">CASCADE</text>
+  <text x="392" y="106" text-anchor="end" class="label" style="fill: var(--nib); font-size: 7.5px">CASCADE</text>
   <text x="392" y="118" text-anchor="end" class="coord">CHANGE FLOWS DOWN</text>
 
-  <g class="dim" stroke-dasharray="2 3" opacity="0.35">
-    <path d="M 330 250 C 260 220 180 170 125 130"/>
-  </g>
 </svg>
