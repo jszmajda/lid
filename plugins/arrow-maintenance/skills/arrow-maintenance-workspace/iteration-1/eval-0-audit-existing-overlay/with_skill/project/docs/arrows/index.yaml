@@ -1,0 +1,19 @@
+schema_version: 1
+last_updated: 2026-04-18
+
+arrows:
+  auth:
+    status: MAPPED
+    sampled: 2025-01-01
+    audited: 2026-04-18
+    audited_sha: efa20068050b7dd75b8eedf5a8cb84d12570f9e2
+    blocks: []
+    blockedBy: []
+    detail: auth.md
+    next: "Add eval coverage for AUTH-001; flesh out HLD/LLD detail and link tests+code in arrow doc once implementation exists."
+    drift: "AUTH-001 has no eval assertion; no tests or code yet linked from the arrow doc."
+
+unmapped:
+  docs:
+    llds: []
+    specs: []

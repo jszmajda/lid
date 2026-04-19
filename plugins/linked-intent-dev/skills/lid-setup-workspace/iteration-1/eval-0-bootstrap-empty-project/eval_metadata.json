@@ -1,0 +1,14 @@
+{
+  "eval_id": 0,
+  "eval_name": "bootstrap-empty-project",
+  "prompt": "I have an empty project directory and want to start using linked-intent development on it. Please set it up. Use Full LID.",
+  "assertions": [
+    { "text": "docs/llds/ directory exists in the project", "spec_ids": ["LID-SETUP-002", "LID-SETUP-015"] },
+    { "text": "docs/specs/ directory exists in the project", "spec_ids": ["LID-SETUP-002", "LID-SETUP-015"] },
+    { "text": "docs/high-level-design.md exists, populated from the HLD template (not empty)", "spec_ids": ["LID-SETUP-015", "LID-SETUP-016"] },
+    { "text": "docs/planning/ directory was NOT created", "spec_ids": ["LID-SETUP-017"] },
+    { "text": "CLAUDE.md contains the literal string '## LID Mode: Full' as a heading", "spec_ids": ["LID-SETUP-008", "LID-SETUP-009"] },
+    { "text": "CLAUDE.md contains the LID directives block referencing 'linked-intent-dev'", "spec_ids": ["LID-SETUP-002", "LID-SETUP-022"] },
+    { "text": "The agent's response summarizes what files were created or modified", "spec_ids": ["LID-SETUP-027", "LID-SETUP-028"] }
+  ]
+}

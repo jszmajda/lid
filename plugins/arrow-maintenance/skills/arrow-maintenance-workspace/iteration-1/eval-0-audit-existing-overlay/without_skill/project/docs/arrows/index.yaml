@@ -1,0 +1,19 @@
+schema_version: 1
+last_updated: 2026-04-18
+
+arrows:
+  auth:
+    status: MAPPED
+    sampled: 2025-01-01
+    audited: 2026-04-18
+    audited_sha: null
+    blocks: []
+    blockedBy: []
+    detail: auth.md
+    next: null
+    drift: null
+
+unmapped:
+  docs:
+    llds: []
+    specs: []

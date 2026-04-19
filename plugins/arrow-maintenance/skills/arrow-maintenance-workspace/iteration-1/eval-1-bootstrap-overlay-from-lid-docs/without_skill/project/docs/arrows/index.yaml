@@ -1,0 +1,15 @@
+arrows:
+  - name: auth
+    file: docs/arrows/auth.md
+    hld: docs/high-level-design.md
+    lld: docs/llds/auth.md
+    specs: []
+    tests: []
+    code: []
+  - name: billing
+    file: docs/arrows/billing.md
+    hld: docs/high-level-design.md
+    lld: docs/llds/billing.md
+    specs: []
+    tests: []
+    code: []

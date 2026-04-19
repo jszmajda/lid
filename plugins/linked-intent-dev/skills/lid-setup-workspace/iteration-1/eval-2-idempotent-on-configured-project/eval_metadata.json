@@ -1,0 +1,9 @@
+{
+  "eval_id": 2,
+  "eval_name": "idempotent-on-configured-project",
+  "prompt": "Please set up LID in this project.",
+  "assertions": [
+    { "text": "No file changes were made (CLAUDE.md and existing docs are unmodified)", "spec_ids": ["LID-SETUP-020"] },
+    { "text": "The agent's response informs the user what was detected (mode, directory status) rather than silently doing nothing", "spec_ids": ["LID-SETUP-021", "LID-SETUP-028"] }
+  ]
+}
