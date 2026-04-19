@@ -721,19 +721,24 @@ hr {
   font-size: 5.5px;
   letter-spacing: 0.1em;
 }
-/* Nodes are outline-only. The trace line is masked (in the SVG) so it
- * doesn't render inside the rect regions — so no fill is needed to
- * "hide" the line behind the boxes, which lets us sidestep the whole
- * theme-in-SVG variable-resolution mess. */
+/* Rect fills: hardcoded `fill="#0c1117"` attribute on each rect handles
+ * dark mode (the default). Light-mode override via external CSS below —
+ * presentation attributes have lower specificity than CSS, so the media
+ * query wins when it matches. No variables in SVG. */
 .hero-schematic .node {
   stroke: currentColor;
   stroke-width: 1.25;
-  fill: none;
 }
 .hero-schematic .node-accent {
   stroke: var(--nib);
   stroke-width: 1;
-  fill: none;
+}
+
+@media (prefers-color-scheme: light) {
+  .hero-schematic .node,
+  .hero-schematic .node-accent {
+    fill: #f2ecd8;
+  }
 }
 /* Scroll-triggered schematic reveal.
  * Elements start "un-drawn". When the SVG enters the viewport via
