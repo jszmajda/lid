@@ -1,8 +1,5 @@
 # LLD: shortener-core
 
-**Created**: 2026-04-18
-**Status**: Design Phase (intent-only example; code to be generated)
-
 ## Context and Design Philosophy
 
 The shortener core is the one component whose behavior stays fixed regardless of transport or storage backend. It turns an ascending integer ID into a compact short code and back again, and ensures that submitting the same URL twice produces the same code.

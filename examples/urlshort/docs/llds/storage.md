@@ -1,8 +1,5 @@
 # LLD: storage
 
-**Created**: 2026-04-18
-**Status**: Design Phase
-
 ## Context and Design Philosophy
 
 Storage is the persistence layer for URL ↔ code mappings. This LLD specifies the *contract* — what operations must exist and what guarantees they must provide. It deliberately does **not** specify the backend. SQLite, Postgres, Redis, DynamoDB, a JSON file on disk, or any equivalent system can satisfy this contract; the implementation picks one.

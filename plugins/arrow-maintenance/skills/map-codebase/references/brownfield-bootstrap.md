@@ -170,10 +170,6 @@ Follow the LLD template structure, adapted for existing code:
 ```markdown
 # [Cluster Name]
 
-**Created**: YYYY-MM-DD
-**Status**: Mapped from existing code
-**Source**: Brownfield bootstrap via /map-codebase
-
 ## Context and Current State
 
 Why this code exists and what problem it currently solves.

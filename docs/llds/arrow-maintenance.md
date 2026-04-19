@@ -1,8 +1,5 @@
 # LLD: arrow-maintenance Plugin
 
-**Created**: 2026-04-18
-**Status**: Design Phase
-
 ## Context and Design Philosophy
 
 The `arrow-maintenance` plugin is the optional navigation and audit overlay for LID. It is installed alongside `linked-intent-dev` by default but is load-bearing only when the project has enough intent components that orientation takes more than a glance at the file list, when the project is brownfield and needs initial mapping, or when the user wants a navigation aid for its own sake. It is never wrong to have the overlay; the question is only whether the overhead of maintaining it pays for itself on a given project.

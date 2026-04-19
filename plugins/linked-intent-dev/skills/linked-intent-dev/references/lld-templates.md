@@ -28,9 +28,6 @@ Create LLDs in `/docs/llds/` with descriptive names:
 ```markdown
 # [Component Name]
 
-**Created**: YYYY-MM-DD
-**Status**: Design Phase | Implementation | Complete
-
 ## Context and Design Philosophy
 
 Why this component exists and guiding principles.

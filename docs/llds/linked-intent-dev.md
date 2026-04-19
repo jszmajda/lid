@@ -1,8 +1,5 @@
 # LLD: linked-intent-dev Plugin
 
-**Created**: 2026-04-18
-**Status**: Design Phase
-
 ## Context and Design Philosophy
 
 The `linked-intent-dev` plugin is the mandatory core of LID. It translates the methodology described in the High-Level Design (HLD) into two artifacts: a pure-prose skill that shapes how the agent approaches code changes, and a behavioral skill that bootstraps and maintains project state. This Low-Level Design (LLD) describes intent; the `SKILL.md` files and references under `plugins/linked-intent-dev/` are the compiled outcome. Terms like *arrow*, *segment*, *drift*, *coherence*, and *cascade* are defined in the HLD's Glossary section.

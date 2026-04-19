@@ -1,8 +1,5 @@
 # LLD: api
 
-**Created**: 2026-04-18
-**Status**: Design Phase
-
 ## Context and Design Philosophy
 
 The API is the HTTP surface of the URL shortener. Two endpoints: create a short code, follow a short code. The API is intentionally thin — it translates between HTTP and the shortener-core's interface, handles error-to-status mapping, and does nothing else. No authentication, no rate limiting, no analytics.
