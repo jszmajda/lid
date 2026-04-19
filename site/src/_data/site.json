@@ -1,0 +1,26 @@
+{
+  "title": "Linked-Intent Development",
+  "tagline": "How to write code when your compiler speaks English.",
+  "framing": [
+    "LID is the language.",
+    "Claude is the compiler.",
+    "Code is the output."
+  ],
+  "repoUrl": "https://github.com/jszmajda/lid",
+  "marketplace": "jszmajda/lid",
+  "description": "A Claude Code plugin marketplace for Linked-Intent Development — treat the agent as an English compiler, and keep intent coherent across sessions.",
+  "quickstart": [
+    {
+      "cmd": "/plugin marketplace add jszmajda/lid",
+      "note": "Register the marketplace in Claude Code."
+    },
+    {
+      "cmd": "/plugin install linked-intent-dev@jszmajda-lid",
+      "note": "Install the core workflow plugin."
+    },
+    {
+      "cmd": "/linked-intent-dev:lid-setup",
+      "note": "Bootstrap your project — adds a docs/ tree and LID directives to CLAUDE.md."
+    }
+  ]
+}

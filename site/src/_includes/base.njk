@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{% if title %}{{ title }} — {% endif %}{{ site.title }}</title>
+    <meta name="description" content="{{ description or site.description }}" />
+    <!-- Typography: Bunny Fonts — GDPR-compliant, no tracking. Per MKT-SITE-030. -->
+    <link rel="preconnect" href="https://fonts.bunny.net" crossorigin />
+    <link rel="stylesheet" href="https://fonts.bunny.net/css?family=fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=jetbrains-mono:wght@400;500&display=swap" />
+    <link rel="stylesheet" href="{{ '/assets/css/main.css' | url }}" />
+    <link rel="icon" href="{{ '/assets/favicon.svg' | url }}" type="image/svg+xml" />
+    <meta name="theme-color" content="#0c1117" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f2ecd8" media="(prefers-color-scheme: light)" />
+    <meta property="og:title" content="{% if title %}{{ title }} — {% endif %}{{ site.title }}" />
+    <meta property="og:description" content="{{ description or site.description }}" />
+    <meta property="og:type" content="website" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    {% include "nav.njk" %}
+    <main id="main">
+      {{ content | safe }}
+    </main>
+    <script src="{{ '/assets/js/site.js' | url }}" defer></script>
+    <footer class="site-footer">
+      <div class="container">
+        <div class="footer-grid">
+          <div class="footer-brand">
+            <span class="mark">LID · LINKED-INTENT DEVELOPMENT</span>
+            <span class="meta">{{ site.marketplace }} · MIT · © {{ "" | year }} JESS SZMAJDA</span>
+            <p class="trace">
+              This site is itself a segment of the arrow —
+              <a href="{{ site.repoUrl }}/blob/main/docs/llds/marketing-site.md">LLD</a> ·
+              <a href="{{ site.repoUrl }}/blob/main/docs/specs/marketing-site-specs.md">EARS</a>.
+              If you spot drift, <a href="{{ site.repoUrl }}/issues">open an issue</a>.
+            </p>
+          </div>
+          <div class="footer-meta">
+            <span>SHEET 01 OF 04</span>
+            <span class="coord">DRAWN · JS</span>
+            <span class="coord">REV · {{ "" | year }}</span>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,28 @@
+<!-- @spec MKT-SITE-019, MKT-SITE-020 -->
+<header class="site-nav">
+  <div class="container nav-inner">
+    <a class="brand" href="{{ '/' | url }}" aria-label="LID home">
+      <span class="brand-mark" aria-hidden="true">L</span>
+      <span class="brand-text">Linked-Intent Dev<span class="brand-ver">· v0.1</span></span>
+    </a>
+
+    <input type="checkbox" id="nav-menu-toggle" class="nav-toggle-input" aria-hidden="true" tabindex="-1" />
+    <label for="nav-menu-toggle" class="nav-toggle-btn" aria-label="Toggle menu" role="button" tabindex="0">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" aria-hidden="true">
+        <line x1="4" y1="7" x2="20" y2="7" class="bar bar-top"/>
+        <line x1="4" y1="12" x2="20" y2="12" class="bar bar-mid"/>
+        <line x1="4" y1="17" x2="20" y2="17" class="bar bar-btm"/>
+      </svg>
+    </label>
+
+    <nav aria-label="Primary" class="primary-nav">
+      <ul class="nav-list">
+        <li><a href="{{ '/' | url }}"{% if page.url == '/' %} aria-current="page"{% endif %}>Home</a></li>
+        <li><a href="{{ '/start/' | url }}"{% if page.url == '/start/' %} aria-current="page"{% endif %}>Start</a></li>
+        <li><a href="{{ '/examples/' | url }}"{% if page.url == '/examples/' %} aria-current="page"{% endif %}>Examples</a></li>
+        <li><a href="{{ '/anti-patterns/' | url }}"{% if page.url == '/anti-patterns/' %} aria-current="page"{% endif %}>Anti-patterns</a></li>
+        <li><a href="{{ site.repoUrl }}" class="nav-repo">GitHub ↗</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>

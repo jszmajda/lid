@@ -19,6 +19,16 @@ Agentic coding magnifies all of this. Each session brings a new capable programm
 
 LID reframes the problem: **code is no longer the artifact of attention. Intent is.** The agent is an english compiler; specifications are source; code is compiled output. A system is correct only when its *arrow of intent* — vision through design through requirements through tests through code — stays coherent top to bottom. LID exists to keep that arrow coherent with the minimum possible tooling.
 
+## LID as Source Language
+
+The clearest way to describe what LID *is*, rather than what it *does*, is that it is **a source language for the English compiler**. Agentic coding tools — Claude Code, Cursor, GitHub Copilot Workspace, their descendants — accept English as input and produce working software as output. They compile English into code. Unstructured English is too ambiguous to compile faithfully: the compiler guesses, the guesses drift, and the drift compounds across sessions. LID is the dialect of English that makes this compilation reliable. The artifacts look like documentation; their load-bearing job is to be source code an agent can parse unambiguously.
+
+Other spec-driven-development systems — BMAD, spec-kit, OpenSpec, Kiro — are also dialects of this new source language. Read this way, LID is not in the "SDD methodology" category competing for the same slot; it is a sibling dialect with particular design trade-offs. LID's choices optimize for three things: *minimum surface* (few conventions for the user to learn), *continuous coherence across the whole project over time* (not just the next change), and *aggressive cascade downstream when intent changes*. Other dialects make different choices — specialized agents, multi-step orchestration, enforcement layers. The question a project should ask is not "should I use LID?" but "which source language do I want my English compiler to accept?" LID is one principled answer; other dialects are others.
+
+A practical consequence: **changes to LID are language-design work, not tool-design work**. Adding a command is adding a keyword. Changing a convention is changing syntax. The minimum-system discipline named in Goal 2 is therefore not an aesthetic preference — it is the load-bearing design constraint that holds LID apart from dialects that reach for orchestration or enforcement. Where other dialects add syntax, LID leaves the job to the compiler (the agent) and the library (the user's own project tooling).
+
+The sections that follow describe LID's specific mechanisms — narrowing the latent space, linkage, semantic legibility, tests-first. Read them as the grammar of this particular dialect, not as a generic methodology. Every mechanism is there because it makes the resulting English more compilable by an agent that has not been in this project before.
+
 ## Approach: Narrowing the Latent Space
 
 Frontier agents produce a vast range of plausible systems from any given prompt. Prompts never exhaustively specify intent — most of what the user wants remains latent, carried in their head and never written down. Without constraint, the agent samples from its distribution of plausible outputs; what it picks is usually close to the user's intent, but rarely exact, and the delta is the intent gap.
@@ -90,8 +100,15 @@ The operating principles that tie the preceding approaches to day-to-day work:
 2. **Stay a minimum system.** LID is a blueprint-and-workbench, not a factory. Every new command or skill is challenged; absorbing behavior into existing surface is the default over adding new surface.
 3. **Meet teams where they are.** Two adoption modes — Full and Scoped — let solo users, scoped subsystems, full teams, and brownfield projects use LID at proportional cost. No boiling-ocean commitment required.
 4. **Dogfood itself — falsifiably.** LID describes LID using LID, and this repository is the canonical mature-project example. Two concrete failure signals test the claim **as applied to this repository** (not to every user's LID project — user projects use LID, they do not falsify it): the **process signal** — every non-trivial change to `plugins/` must trace through an LLD or spec update, so an edit to a `SKILL.md` without a corresponding upstream change is a dogfooding violation — and the **coherence signal** — every behavioral skill has a navigable chain of LLD → EARS → evals, audited periodically by the `arrow-maintenance` overlay. Both signals are live here because this repo installs the overlay; projects that adopt LID without the overlay are not inside LID's dogfooding claim. Either signal going red means dogfooding has failed and the system needs repair.
+5. **Make LID's value legible to those not yet using it.** The gap between "heard of LID" and "running LID" is itself an intent gap at project scale. LID's onboarding surface — the README, the marketing site, examples, and positioning content — is load-bearing intent, not distribution overhead. It cascades from this HLD like any other segment: claims that appear on the onboarding surface trace to specific HLD and LLD sections and must stay coherent with the system they describe. A site that oversells, that names capabilities LID does not have, or that drifts from the current LLDs fails this goal as cleanly as a broken test.
 
 ## Target Users
+
+LID is for developers using agentic coding systems — Claude Code, Cursor, GitHub Copilot Workspace, and their descendants — who have noticed that English is a surprisingly imprecise programming language. A prompt that feels complete in your head emerges as something close to, but not exactly, what you meant. Most of the delta is latent intent — constraints you assumed were obvious and never wrote down. The agent fills those in plausibly, sometimes correctly, often close-but-wrong, and the gap compounds: one session's close-but-wrong becomes the next session's starting assumption.
+
+LID treats the agent as an *english compiler* (see Glossary) and adds the minimum scaffolding for that compilation to stay faithful to the intent it was given. The target user has already noticed the compounding problem and is looking for tooling that is opinionated enough to help and small enough not to get in the way. LID does not depend on any specific agent, harness, or IDE; the plugins described here ship for Claude Code, but the methodology applies anywhere a developer is compiling English into running software.
+
+### Adoption modes
 
 LID recognizes two adoption postures, which we call **modes**. A project is in exactly one mode at a time; `/update-lid` is the supported path between them.
 
@@ -156,6 +173,8 @@ LID-on-LID has a three-variant arrow depending on what kind of skill is being sp
   The `arrow-maintenance` skill is canonical: ambient guidance when `docs/arrows/` is present, directed audit-and-update when invoked as `/arrow-maintenance`. Arrow for the command-mode assertions: `HLD → LLD → EARS → evals + SKILL.md + references/`. EARS cover command-mode behavior; ambient-mode behavior is verified by dogfooding.
 
 The pragmatic test: does the skill support both auto-trigger and explicit slash-command invocation? If yes, dual-mode. If only auto-trigger, pure-prose. If only command invocation, behavioral. Each LLD declares which variant applies to its skill, so downstream work is unambiguous.
+
+**Content artifacts.** Non-skill artifacts in this repository — the marketing site, examples, and similar content produced for an outside audience — follow the behavioral-skill arrow shape: `HLD → LLD → EARS → content + assets`. EARS is retained because linkage matters independent of artifact kind; spec IDs give content the same `grep`-addressable anchors that skills have, let site claims trace back to specific HLD and LLD sections, and make drift between content and current intent detectable through the same cascade mechanics as code drift. Verification substitutes content-appropriate mechanisms (build-time link and structural checks, dogfooding content review against the HLD) for test-harness evals, but the arrow is structurally identical and the content-artifact case is not a separate variant.
 
 ### Code and tests for LID
 

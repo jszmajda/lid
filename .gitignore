@@ -1,0 +1,11 @@
+.DS_Store
+
+# Local Claude Code session data
+.claude/
+
+# Playwright review artifacts
+.playwright-mcp/
+
+# Ad-hoc screenshots at repo root (site screenshots live in site/src/assets/)
+/*.png
+/*.jpg

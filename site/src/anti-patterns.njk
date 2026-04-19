@@ -1,0 +1,84 @@
+---
+layout: base.njk
+title: Anti-patterns
+eleventyNavigation:
+  key: Anti-patterns
+  order: 4
+permalink: /anti-patterns/
+description: When LID is the wrong choice. Honest non-fits, so you can decide before you invest.
+---
+
+<!-- @spec MKT-SITE-017, MKT-SITE-018 -->
+<div class="page">
+  <div class="container">
+
+    <header class="page-header">
+      <div class="page-header-main">
+        <span class="plate">Sheet 04 / Anti-patterns</span>
+        <h1>Not every project needs a <em>blueprint</em>.</h1>
+        <p class="lede">
+          LID has real costs — design before code, review between phases, cascade discipline across changes. When the benefit doesn't outweigh the cost, LID is the wrong choice. Fit problems, not product deficiencies.
+        </p>
+      </div>
+      <aside class="page-header-aside" aria-label="Sheet notes">
+        <dl>
+          <dt>Sheet</dt>         <dd>04 / 04</dd>
+          <dt>Non-fits</dt>      <dd>04 listed</dd>
+          <dt>Grown from</dt>    <dd>Real feedback</dd>
+          <dt>Loop back</dt>     <dd><a href="{{ '/' | url }}">Home ↺</a></dd>
+        </dl>
+      </aside>
+    </header>
+
+    <ol class="ap-list">
+      <li class="ap-item">
+        <span class="ap-num">N·01</span>
+        <div class="ap-body">
+          <h3>Throwaway scripts and one-week prototypes.</h3>
+          <p>
+            If the code's lifespan is measured in days and nobody will maintain it, the up-front design phase is pure overhead. Vibe-code the prototype, ship it, delete it. LID compounds over months — use it where months are on the table.
+          </p>
+        </div>
+      </li>
+
+      <li class="ap-item">
+        <span class="ap-num">N·02</span>
+        <div class="ap-body">
+          <h3>Exploratory research code.</h3>
+          <p>
+            Code where you genuinely don't know the intent yet — you're exploring a problem space to figure out what you're building. LID requires an articulated HLD as its universal floor; if you can't write even a rough one, you're not ready for LID. Explore first, formalize when the target clears up.
+          </p>
+        </div>
+      </li>
+
+      <li class="ap-item">
+        <span class="ap-num">N·03</span>
+        <div class="ap-body">
+          <h3>Teams that won't review specs before code lands.</h3>
+          <p>
+            LID depends on humans reading the design before the agent writes the implementation. A team that skips LLD review, approves specs blindly, or only reads code in PRs will get weaker results from LID than from looser approaches. The discipline matters; without it, you're paying the cost without getting the benefit.
+          </p>
+        </div>
+      </li>
+
+      <li class="ap-item">
+        <span class="ap-num">N·04</span>
+        <div class="ap-body">
+          <h3>Projects where English-as-source is a hard sell.</h3>
+          <p>
+            LID treats the agent as an English compiler and specs as the source. If your team, company, or compliance context requires code as the canonical artifact (regulated industries, certain auditing regimes, formal-methods environments), LID's plastic-code philosophy will rub against those constraints. It can still work, but the cultural overhead may outweigh the gain.
+          </p>
+        </div>
+      </li>
+    </ol>
+
+    <aside class="epilogue" aria-labelledby="ap-note">
+      <span class="plate">Note</span>
+      <h2 id="ap-note">Found another non-fit?</h2>
+      <p>
+        <a href="{{ site.repoUrl }}/issues">Open an issue</a> — this list grows from real feedback, not guesses. The aim is honesty about where LID helps and where it gets in the way.
+      </p>
+    </aside>
+
+  </div>
+</div>

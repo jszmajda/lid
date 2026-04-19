@@ -1,0 +1,70 @@
+---
+layout: base.njk
+title: Examples
+eleventyNavigation:
+  key: Examples
+  order: 3
+permalink: /examples/
+description: Two example LID projects — one small and clean, one real and messy — plus the repository itself as the canonical mature example.
+---
+
+<!-- @spec MKT-SITE-013, MKT-SITE-014, MKT-SITE-015, MKT-SITE-016 -->
+<div class="page">
+  <div class="container">
+
+    <header class="page-header">
+      <div class="page-header-main">
+        <span class="plate">Sheet 03 / Examples</span>
+        <h1>See LID in <em>two different lights</em>.</h1>
+        <p class="lede">
+          One example is small, clean, intent-only — try to regenerate the code from the docs alone. The other is real, long-running, and messier than any pedagogical example could honestly be. Both are useful; they answer different questions.
+        </p>
+      </div>
+      <aside class="page-header-aside" aria-label="Sheet notes">
+        <dl>
+          <dt>Sheet</dt>         <dd>03 / 04</dd>
+          <dt>Examples</dt>      <dd>02 + self</dd>
+          <dt>Purpose</dt>       <dd>See it in use</dd>
+          <dt>Next sheet</dt>    <dd><a href="{{ '/anti-patterns/' | url }}">Anti-patterns →</a></dd>
+        </dl>
+      </aside>
+    </header>
+
+    <div class="example-grid">
+
+      <article class="example-card bracketed">
+        <span class="tag">Clean · 5-minute read</span>
+        <h2>URL shortener</h2>
+        <p>
+          A deliberately small fictional project. HLD, a handful of LLDs, EARS specs — no implementation. The challenge: delete the intent tree, regenerate it; delete the code, regenerate that too. When the docs are the source of truth, either can be recreated from either.
+        </p>
+        <div class="foot">
+          <a class="cross" href="{{ site.repoUrl }}/tree/main/examples/urlshort">Browse <code>examples/urlshort/</code></a>
+          <p class="muted" style="margin-top: var(--s-3); font-size: 0.85rem;">This example may not exist yet — check the repo tree. It ships alongside the plugins.</p>
+        </div>
+      </article>
+
+      <article class="example-card bracketed">
+        <span class="tag">Real · long-running</span>
+        <h2>Threadkeeper</h2>
+        <p>
+          A working project that has used LID for months. The LLDs are striated — multiple generations, uneven coherence, the honest shape any living system acquires. Not a teaching example. A stress test for cascade discipline, and a proof that LID survives real conditions.
+        </p>
+        <div class="foot">
+          <a class="cross" href="https://threadkeeper.app/">Visit threadkeeper.app</a>
+          <p class="muted" style="margin-top: var(--s-3); font-size: 0.85rem;">The live product is at threadkeeper.app. Internal design docs aren't public, but the shape of the project shows LID at work over time.</p>
+        </div>
+      </article>
+
+    </div>
+
+    <aside class="epilogue" aria-labelledby="meta-heading">
+      <span class="plate">Addendum</span>
+      <h2 id="meta-heading">And LID itself.</h2>
+      <p>
+        This whole repository is <a href="{{ site.repoUrl }}">LID applied to LID</a>. The <a href="{{ site.repoUrl }}/blob/main/docs/high-level-design.md">HLD</a>, the <a href="{{ site.repoUrl }}/tree/main/docs/llds">LLDs</a>, the <a href="{{ site.repoUrl }}/tree/main/docs/specs">EARS specs</a> — all live in <code>docs/</code>, traceable to the plugin code under <code>plugins/</code>. If LID could not describe itself, LID would be broken. It describes itself.
+      </p>
+    </aside>
+
+  </div>
+</div>
