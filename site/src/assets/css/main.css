@@ -588,7 +588,7 @@ hr {
 .hero-grid {
   display: grid;
   gap: var(--s-8);
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
   position: relative;
 }
@@ -721,13 +721,17 @@ hr {
   font-size: 5.5px;
   letter-spacing: 0.1em;
 }
+/* Node rects use fill: none so the page background shows through directly.
+ * Earlier we filled with var(--paper), but Firefox Mobile was resolving
+ * that variable inconsistently inside inline SVG, rendering a light fill
+ * even in dark mode. Outline-only sidesteps the whole theme-in-SVG issue. */
 .hero-schematic .node {
   stroke: currentColor;
   stroke-width: 1.25;
-  fill: var(--paper);
+  fill: none;
 }
 .hero-schematic .node-accent {
-  fill: var(--paper);
+  fill: none;
   stroke: var(--nib);
   stroke-width: 1;
 }
@@ -866,7 +870,7 @@ hr {
 .quickstart-shell {
   display: grid;
   gap: var(--s-7);
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
 }
 
@@ -876,6 +880,8 @@ hr {
     gap: var(--s-8);
   }
 }
+
+.quickstart-meta, .quickstart-card { min-width: 0; }
 
 .quickstart-meta { min-width: 0; }
 .quickstart-meta h2 {
@@ -915,7 +921,7 @@ hr {
 .quickstart-steps li {
   counter-increment: qsstep;
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: auto minmax(0, 1fr);
   column-gap: var(--s-4);
   align-items: start;
 }
@@ -984,7 +990,7 @@ hr {
 .demo-grid {
   display: grid;
   gap: var(--s-7);
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
 }
 
@@ -1180,7 +1186,7 @@ hr {
 .page-header {
   display: grid;
   gap: var(--s-5);
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   margin-bottom: var(--s-8);
   align-items: end;
   padding-bottom: var(--s-6);
@@ -1244,7 +1250,7 @@ hr {
 .audience {
   display: grid;
   gap: var(--s-5);
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr);
   padding: var(--s-7) 0;
   border-bottom: 1px dashed var(--graphite);
 }

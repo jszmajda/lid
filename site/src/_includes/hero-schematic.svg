@@ -10,7 +10,7 @@
   </g>
 
   <text x="295" y="396" class="label">PLATE · 001</text>
-  <text x="295" y="408" class="label" style="fill: #e0a060">ARROW / INTENT</text>
+  <text x="295" y="408" class="label" style="fill: var(--nib)">ARROW / INTENT</text>
   <text x="14" y="408" class="coord">COORD · A1</text>
 
   <g class="dim" opacity="0.6">
@@ -56,9 +56,9 @@
 
   <g class="fade-in" style="--d: 0.8s">
     <rect x="215" y="195" width="70" height="30" class="node-accent"/>
-    <text x="250" y="214" text-anchor="middle" class="node-label" style="fill: #e0a060">EARS</text>
+    <text x="250" y="214" text-anchor="middle" class="node-label" style="fill: var(--nib)">EARS</text>
   </g>
-  <text x="250" y="184" text-anchor="middle" class="label" style="fill: #e0a060">§ 03 · CLAIMS</text>
+  <text x="250" y="184" text-anchor="middle" class="label" style="fill: var(--nib)">§ 03 · CLAIMS</text>
   <g class="dim" opacity="0.65">
     <line x1="250" y1="227" x2="250" y2="242"/>
     <line x1="242" y1="242" x2="258" y2="242"/>
@@ -89,7 +89,7 @@
     <!-- Tiny terminal tick perpendicular to leader end -->
     <line x1="345" y1="105" x2="351" y2="111"/>
   </g>
-  <text x="392" y="106" text-anchor="end" class="label" style="fill: #e0a060; font-size: 7.5px">CASCADE</text>
+  <text x="392" y="106" text-anchor="end" class="label" style="fill: var(--nib); font-size: 7.5px">CASCADE</text>
   <text x="392" y="118" text-anchor="end" class="coord">CHANGE FLOWS DOWN</text>
 
   <g class="dim" stroke-dasharray="2 3" opacity="0.35">
