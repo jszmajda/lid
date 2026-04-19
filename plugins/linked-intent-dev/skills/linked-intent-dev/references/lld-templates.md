@@ -1,11 +1,20 @@
 # LLD Templates Reference
 
-Low-Level Designs (LLDs) document component-specific technical decisions before implementation. LLDs are **pure design documents** — they describe *how* things work, the constraints, trade-offs, and decisions. They do not track implementation status.
+Low-Level Designs (LLDs) document component-specific technical decisions. LLDs are **pure design documents** — they describe *how* things work, the constraints, trade-offs, and decisions. They do not track implementation status.
 
 Implementation status is tracked in:
 - **Spec files** (`docs/specs/`) via `[x]`/`[ ]`/`[D]` markers on EARS specs
-- **Planning docs** (`docs/planning/`) via checkboxes for multi-session progress
-- **Arrow docs** (`docs/arrows/`) via coverage tables (if using arrow-maintenance skill)
+- **Arrow docs** (`docs/arrows/`) via coverage tables (if using arrow-maintenance plugin)
+
+## Greenfield vs. Brownfield
+
+The template below is used for both greenfield LLDs (authored before implementation) and brownfield LLDs (reverse-engineered from existing code). There is no separate brownfield template. What varies is the *content's starting state*:
+
+- **Brownfield Decisions & Alternatives** rows carry `[inferred]` in the Rationale column when the decision was observed in code rather than authored by the user. As the user confirms or refutes the inference in subsequent sessions, the `[inferred]` marker is removed and the rationale is written out.
+- **Brownfield Open Questions & Future Decisions** holds observed-but-unexplained behaviors and technical debt discovered during reconnaissance. These migrate into Decisions, into specs, or into a planned remediation as the user engages with the code.
+- **Brownfield Major sections** may describe current state alongside intended behavior when the two differ — flag divergence explicitly rather than pretending the code matches intent.
+
+As a brownfield LLD matures through normal LID cascades, inferred content becomes authored content. No migration or "graduation" step is needed — the LLD evolves in place.
 
 ## File Location
 
@@ -18,9 +27,6 @@ Create LLDs in `/docs/llds/` with descriptive names:
 
 ```markdown
 # [Component Name]
-
-**Created**: YYYY-MM-DD
-**Status**: Design Phase | Implementation | Complete
 
 ## Context and Design Philosophy
 

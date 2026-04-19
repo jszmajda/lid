@@ -1,0 +1,135 @@
+---
+layout: base.njk
+eleventyNavigation:
+  key: Home
+  order: 1
+permalink: /
+description: Linked-Intent Development — treat your coding agent as an English compiler. Intent is the source; code is the output. A minimum-surface plugin marketplace for Claude Code.
+---
+
+<!-- @spec MKT-SITE-001, MKT-SITE-002, MKT-SITE-004, MKT-SITE-005 -->
+<section class="hero">
+  <div class="container hero-grid">
+    <div class="hero-text">
+      <div class="hero-eyebrow">
+        <span class="plate">Plate 00 / Intro</span>
+        <span class="dash" aria-hidden="true"></span>
+        <span class="tag">For agentic coding</span>
+      </div>
+
+      <h1 class="pitch">
+        How to write code when your compiler speaks <em>English</em>.
+      </h1>
+
+      <ol class="framing" aria-label="Three-line framing">
+        <li>LID is the language.</li>
+        <li>Claude is the compiler.</li>
+        <li>Code is the output.</li>
+      </ol>
+
+      <p class="hero-lede">
+        Modern coding agents rarely write bugs. What they write are <em>intent gaps</em> — places where the agent assumed one meaning and you held another. LID closes those gaps by giving your agent a <em>dialect</em> of English it can compile faithfully: specs are source, code is compiled output, and every intent change cascades downstream. A minimum system. Not a factory.
+      </p>
+
+      <div class="cta-row">
+        <a class="button button-primary" href="#quickstart">
+          Install<span class="arr" aria-hidden="true">→</span>
+        </a>
+        <a class="button" href="{{ site.repoUrl }}">
+          On GitHub<span class="arr" aria-hidden="true">↗</span>
+        </a>
+      </div>
+    </div>
+
+    <aside class="hero-aside" aria-label="Arrow-of-intent schematic">
+      {% include "hero-schematic.svg" %}
+    </aside>
+  </div>
+</section>
+
+<!-- @spec MKT-SITE-006, MKT-SITE-007, MKT-SITE-008 -->
+<section class="quickstart section" id="quickstart" aria-labelledby="quickstart-heading">
+  <div class="container">
+    <div class="quickstart-shell">
+      <div class="quickstart-meta">
+        <span class="plate">Plate 01 / Quickstart</span>
+        <h2 id="quickstart-heading"><em style="font-style:italic;color:var(--nib)">Three commands</em>, inside Claude&nbsp;Code.</h2>
+        <p class="lede">
+          Register the marketplace, install the plugin, bootstrap your project. After that you describe what you want to build and the skill walks you through design, specs, and tests before it writes any code.
+        </p>
+        <p class="extras">
+          Corporate environment blocks marketplaces? <a href="{{ site.repoUrl }}">Clone the repo directly</a> — same plugins, same behavior.
+        </p>
+      </div>
+
+      <div class="quickstart-card bracketed" role="region" aria-label="Install steps">
+        <ol class="quickstart-steps" aria-label="Quickstart steps">
+          {% for step in site.quickstart %}
+            <li>
+              <span class="qs-mark" aria-hidden="true"></span>
+              <div>
+                <code class="qs-cmd">{{ step.cmd }}</code>
+                <p class="qs-note">{{ step.note }}</p>
+              </div>
+            </li>
+          {% endfor %}
+        </ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- @spec MKT-SITE-003 -->
+<section class="demo section" aria-labelledby="demo-heading">
+  <div class="container demo-grid">
+    <div class="section-head demo-head">
+      <span class="plate">Plate 02 / Demonstration</span>
+      <h2 id="demo-heading">See the <em style="font-style:italic;color:var(--nib)">cascade</em>.</h2>
+      <p class="lede">
+        The most persuasive thing about LID isn't the prose — it's watching intent propagate. Describe a change in English. The agent updates the LLD, cascades through the specs, regenerates the tests, and rewrites the code. Two minutes, one real project.
+      </p>
+    </div>
+
+    <div class="demo-frame">
+      <span class="demo-plate"><span class="num">001</span>CASCADE · LLD → SPECS → TESTS → CODE</span>
+      <script src="https://asciinema.org/a/Cmsq3CuOnSY6NbqP.js" id="asciicast-Cmsq3CuOnSY6NbqP" data-size="small" async="true"></script>
+    </div>
+  </div>
+</section>
+
+<section class="paths section" aria-labelledby="paths-heading">
+  <div class="container">
+    <div class="section-head">
+      <span class="plate">Plate 03 / Entry points</span>
+      <h2 id="paths-heading">Which path is yours?</h2>
+      <p class="lede">Four starting points, depending on where you're coming from. Each one has a short orientation on the Start page.</p>
+    </div>
+
+    <div class="paths-grid">
+      <a class="path-card" href="{{ '/start/#evaluating' | url }}">
+        <span class="plate-num"><span class="n">01</span> / Path</span>
+        <h3>Evaluating</h3>
+        <p>Decide if LID solves a problem you have. Skim, browse an example, read on.</p>
+        <span class="go">Orient</span>
+      </a>
+      <a class="path-card" href="{{ '/start/#greenfield' | url }}">
+        <span class="plate-num"><span class="n">02</span> / Path</span>
+        <h3>Starting new</h3>
+        <p>Greenfield project. Install, describe what you want, let the skill walk you through it.</p>
+        <span class="go">Begin</span>
+      </a>
+      <a class="path-card" href="{{ '/start/#brownfield' | url }}">
+        <span class="plate-num"><span class="n">03</span> / Path</span>
+        <h3>Existing codebase</h3>
+        <p>Brownfield. Map the code first, then layer LID's discipline on top of what exists.</p>
+        <span class="go">Map</span>
+      </a>
+      <a class="path-card" href="{{ '/start/#scoped' | url }}">
+        <span class="plate-num"><span class="n">04</span> / Path</span>
+        <h3>Scoped to a subsystem</h3>
+        <p>Solo trying LID on one slice of a larger non-LID project. Scoped mode is made for this.</p>
+        <span class="go">Scope</span>
+      </a>
+    </div>
+  </div>
+</section>

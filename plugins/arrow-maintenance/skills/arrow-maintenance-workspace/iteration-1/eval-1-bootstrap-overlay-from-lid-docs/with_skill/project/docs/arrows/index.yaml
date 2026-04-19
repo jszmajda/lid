@@ -1,0 +1,35 @@
+schema_version: 1
+last_updated: 2026-04-18
+
+taxonomy:
+  core:
+    - auth
+    - billing
+
+arrows:
+  auth:
+    status: MAPPED
+    sampled: 2026-04-18
+    audited: null
+    audited_sha: null
+    blocks: []
+    blockedBy: []
+    detail: auth.md
+    next: "Populate LLD auth.md and author EARS specs; then audit."
+    drift: null
+
+  billing:
+    status: MAPPED
+    sampled: 2026-04-18
+    audited: null
+    audited_sha: null
+    blocks: []
+    blockedBy: []
+    detail: billing.md
+    next: "Populate LLD billing.md and author EARS specs; then audit."
+    drift: null
+
+unmapped:
+  docs:
+    llds: []
+    specs: []

@@ -1,0 +1,17 @@
+{
+  "name": "lid-site",
+  "version": "0.0.1",
+  "description": "Marketing site for Linked-Intent Development (LID) — see ../docs/llds/marketing-site.md",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "eleventy --serve --port=8080",
+    "build": "eleventy",
+    "check": "node scripts/link-check.js",
+    "clean": "rm -rf _site"
+  },
+  "devDependencies": {
+    "@11ty/eleventy": "^3.0.0",
+    "@11ty/eleventy-navigation": "^0.3.5"
+  }
+}

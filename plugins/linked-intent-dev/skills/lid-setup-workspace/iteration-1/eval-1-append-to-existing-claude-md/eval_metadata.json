@@ -1,0 +1,11 @@
+{
+  "eval_id": 1,
+  "eval_name": "append-to-existing-claude-md",
+  "prompt": "I already have a CLAUDE.md with my team's existing conventions. I want to adopt linked-intent development without losing any of my existing content. Set it up.",
+  "assertions": [
+    { "text": "CLAUDE.md still contains all original content (# My Project, ## Conventions, and three bullet points) unmodified", "spec_ids": ["LID-SETUP-003"] },
+    { "text": "CLAUDE.md has the LID directives block appended (contains 'linked-intent-dev' or 'Linked-Intent Development')", "spec_ids": ["LID-SETUP-003", "LID-SETUP-022"] },
+    { "text": "CLAUDE.md contains the '## LID Mode:' heading", "spec_ids": ["LID-SETUP-009"] },
+    { "text": "The agent's response explicitly summarizes which sections were added to CLAUDE.md", "spec_ids": ["LID-SETUP-027"] }
+  ]
+}

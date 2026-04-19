@@ -9,7 +9,7 @@ One-line description of what this domain covers.
 
 ## Status
 
-**{STATUS}** - YYYY-MM-DD. Brief summary of current state.
+**{STATUS}** — last audited YYYY-MM-DD (git SHA `{audited_sha}`). One-line summary of current state.
 
 ## References
 
@@ -36,7 +36,7 @@ One-line description of what this domain covers.
 1. Component A — role
 2. Component B — role
 
-## EARS Coverage
+## Spec Coverage
 
 | Category | Spec IDs | Implemented | Deferred | Gaps |
 |----------|----------|-------------|----------|------|
@@ -64,7 +64,8 @@ One-line description of what this domain covers.
 
 ## Guidelines
 
-- Keep arrow docs **focused on status and references**, not design (that's the LLD's job)
-- Use file:line references so findings are greppable
-- Update the EARS Coverage table during audits
-- The "Work Required" section drives the index.yaml `next` field
+- Keep arrow docs **focused on status and references**, not design (that's the LLD's job).
+- Use file:line references so findings are greppable.
+- The **References** and **EARS Coverage** sections are *derived views* — they are regenerated during audit from source scans (grep for `@spec`, file existence checks, eval-citation checks). Do not hand-edit them in ways that contradict source.
+- The "Work Required" section drives the `next` field in `index.yaml`.
+- For brownfield-inferred segments, `Key Findings` may record observations without clear design intent; flag these so they can be confirmed or refuted in later sessions.
