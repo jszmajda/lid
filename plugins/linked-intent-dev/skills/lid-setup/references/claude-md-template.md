@@ -3,12 +3,24 @@
 Append this block to the project's `CLAUDE.md` during bootstrap. Conditional-include rules (applied before writing to the user's file):
 
 - The `## LID Mode: {Full|Scoped}` heading is mandatory — substitute the user's chosen mode.
+- The `## LID Scope` section is **included only** when mode is Scoped. When mode is Full, omit the section entirely — its absence means "entire project in scope." For Scoped mode, substitute the user's declared include/exclude patterns into the bulleted lists below.
 - The "Arrow of intent overlay" row in the navigation table is **included only** when `docs/arrows/` exists in the project root at invocation time. When absent, omit that row entirely — do not write the parenthetical note to the user's file.
 - The `## LID Tooling` section is **included only** when the project has tooling to declare (most commonly a coherence-check script). Omit entirely when there is nothing to declare; the skill falls back to in-prompt audit when the section is missing or empty.
 
 ---
 
 ## LID Mode: {Full|Scoped}
+
+## LID Scope
+
+*(Include this section only when mode is Scoped. Omit entirely when mode is Full.)*
+
+Paths in scope:
+- `{pattern}`
+- `{pattern}`
+
+Paths explicitly excluded:
+- `{pattern}`
 
 ## Linked-Intent Development (MANDATORY)
 

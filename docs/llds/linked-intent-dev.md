@@ -40,7 +40,34 @@ Shape the agent's approach to every code change in a LID project so that intent 
 The skill declares itself relevant for all prompts that propose changes to project code or specifications. Triggering is *mode-aware*:
 
 - **In Full LID**, the skill triggers broadly — any prompt that could result in a code change is in scope.
-- **In Scoped LID**, the skill additionally checks whether the files or subsystems the prompt touches fall within the declared scope. If the prompt is entirely outside scope, the skill does not trigger. If any touched area is in scope, the skill triggers. *Until the scope-declaration format is finalized (see Deferred Questions), Scoped-mode triggering treats all prompts as in-scope and surfaces a one-line warning that scope has not yet been declared.*
+- **In Scoped LID**, the skill additionally checks whether the files or subsystems the prompt touches fall within the declared scope. If the prompt is entirely outside scope, the skill does not trigger. If any touched area is in scope, the skill triggers. For prompts that do not reference any specific file paths, the skill defaults to triggering (benefit of doubt) and asks the user to confirm scope applicability when the situation is ambiguous.
+
+### Scope declaration format (Scoped mode)
+
+A Scoped-LID project declares its scope in `CLAUDE.md` immediately after the `## LID Mode:` heading, in a `## LID Scope` section:
+
+```markdown
+## LID Mode: Scoped
+
+## LID Scope
+
+Paths in scope:
+- `src/auth/**`
+- `packages/billing/**`
+- `apps/mobile/src/services/auth/**`
+
+Paths explicitly excluded (even within in-scope roots):
+- `src/auth/legacy/**`
+- `**/*.test.ts`
+```
+
+Rules:
+
+- Patterns follow gitignore-style glob semantics. A trailing `/**` matches any path under the directory; a leading `**/` matches at any depth.
+- A file path is "in scope" when it matches at least one pattern in *Paths in scope* and matches no pattern in *Paths explicitly excluded*. Exclude wins when both match.
+- The "Paths explicitly excluded" list is optional; when absent, only the include list governs.
+- When the mode is Full, the `## LID Scope` section is **omitted entirely** from CLAUDE.md. The skill treats a missing `## LID Scope` as "entire project is in scope."
+- A Scoped-mode project with a missing or empty `## LID Scope` section is a misconfiguration: the skill defaults to triggering on all prompts and surfaces a one-line warning that scope has not been declared (same fallback as before the format was finalized). The user should run `/update-lid` to declare scope.
 
 The skill errs toward over-triggering rather than under-triggering. An over-triggered consult costs a handful of tokens; an under-triggered one lets drift accumulate silently. To keep over-triggering cheap, the SKILL.md body contains only guidance universal to every consult — the mode-aware dispatch, the phase list, the cascade rule. Per-phase and per-mode expansions (EARS syntax, LLD template, HLD template, cascade edge cases) live under `references/` and are loaded only when the relevant phase is entered. This keeps the always-loaded surface small enough that the skill can trigger liberally without burdening the user's context window. Description optimization via `skill-creator`'s `run_loop.py` remains available for calibrating trigger accuracy over time.
 
@@ -314,7 +341,7 @@ Coverage audit: every behavioral EARS spec should appear in at least one asserti
 
 ### Deferred to implementation
 
-1. **Scope declaration format** — how a Scoped-LID project declares which files/paths fall inside scope. Until this is decided, Scoped-mode triggering treats all prompts as in-scope and surfaces a warning. Candidates: a `## LID Scope:` block in `CLAUDE.md` with glob patterns; a dedicated `docs/scope.yaml`; inferred from `docs/llds/` file list.
+1. ~~**Scope declaration format**~~ — *Resolved*. Declared in `## LID Scope` section of `CLAUDE.md` with bulleted include/exclude globs; section omitted when mode is Full. See the Scope declaration format section above. Original candidates (dedicated `docs/scope.yaml`, inferred from `docs/llds/`) were rejected because CLAUDE.md is already read unconditionally and the section-in-a-file form matches the `## LID Mode:` precedent.
 2. **HLD template file format** — referenced by the `lid-setup` skill for bootstraps in either mode. The standard section list (problem / approach / users / goals-and-non-goals / system design / key decisions / success metrics / FAQ / references) is the intended baseline; exact headings and commentary prose to be drafted during implementation.
 3. **Description-optimization cadence** — when is `run_loop.py` run against the `linked-intent-dev` skill's description to keep trigger accuracy calibrated. Candidates: every skill-body change; periodic; on-demand only.
 4. **Cross-scope change surfacing UX** — when a change touches multiple arrow boundaries, does the skill list all affected arrows up front, walk one at a time, or produce a structured confirmation? To be refined after running the skill on real changes.

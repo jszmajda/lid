@@ -67,3 +67,11 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 - `[x]` **LID-SETUP-027**: After making any file changes (bootstrap, append directives, mode transition, drift reconciliation), the system SHALL read back the modified files and surface a summary to the user naming the files changed and the sections added or modified.
 - `[x]` **LID-SETUP-028**: The system SHALL NOT complete its invocation without either reporting changes made (per LID-SETUP-027) or explicitly reporting that no changes were needed (per LID-SETUP-021).
 - `[x]` **LID-SETUP-029**: When convention drift is detected (per LID-SETUP-005) and the user declines every proposed update, the system SHALL still inform the user of what was detected before exiting, exercising the same inform-and-skip pathway as LID-SETUP-021.
+
+## Scope Declaration (Scoped mode)
+
+- `[x]` **LID-SETUP-030**: When the chosen mode is Scoped, the system SHALL prompt the user for the initial scope patterns (paths to include and, optionally, paths to exclude) before writing the `## LID Mode: Scoped` heading.
+- `[x]` **LID-SETUP-031**: When writing a Scoped-mode configuration, the system SHALL append a `## LID Scope` section to `CLAUDE.md` immediately after the `## LID Mode: Scoped` heading, with bulleted "Paths in scope" and (if any were declared) "Paths explicitly excluded" subsections using gitignore-style glob patterns.
+- `[x]` **LID-SETUP-032**: When the chosen mode is Full, the system SHALL NOT write a `## LID Scope` section to `CLAUDE.md`. A missing section means "entire project in scope."
+- `[x]` **LID-SETUP-033**: During a mode transition from Full to Scoped, the system SHALL prompt the user for scope patterns and write a new `## LID Scope` section following LID-SETUP-031.
+- `[x]` **LID-SETUP-034**: During a mode transition from Scoped to Full, the system SHALL remove any existing `## LID Scope` section from `CLAUDE.md`.

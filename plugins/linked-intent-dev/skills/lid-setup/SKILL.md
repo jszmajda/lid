@@ -43,9 +43,37 @@ During a full bootstrap, prompt the user for the intended mode with **Full LID**
 
 If the user does not specify a mode, select Full.
 
-**Caller-provided mode.** When this skill is invoked by another skill (for example, `/map-codebase` at its terminal verification step) that has already determined the mode from its own scope question, the caller passes the mode through and this skill honors it without re-prompting. Re-prompting the user for a mode at the end of a long mapping session is a bad UX; the scope question the caller already asked is the mode decision.
+**When mode is Scoped, prompt for scope patterns** before writing CLAUDE.md. Ask the user:
+- Which paths (directories, files, glob patterns) are in scope? At minimum one pattern required.
+- Which paths, if any, should be explicitly excluded even within the in-scope roots? (Optional.)
+
+Write the answers into a `## LID Scope` section immediately after the `## LID Mode: Scoped` heading:
+
+```markdown
+## LID Mode: Scoped
+
+## LID Scope
+
+Paths in scope:
+- `src/auth/**`
+- `packages/billing/**`
+
+Paths explicitly excluded:
+- `src/auth/legacy/**`
+- `**/*.test.ts`
+```
+
+When mode is Full, **do not write a `## LID Scope` section**. Its absence means "entire project in scope."
+
+**Caller-provided mode.** When this skill is invoked by another skill (for example, `/map-codebase` at its terminal verification step) that has already determined the mode from its own scope question, the caller passes the mode — and, if Scoped, the scope patterns — through, and this skill honors them without re-prompting. Re-prompting the user for a mode at the end of a long mapping session is a bad UX; the scope question the caller already asked is the mode decision.
 
 Persist the mode in `CLAUDE.md` under a `## LID Mode: {Full|Scoped}` heading. This is the sole source of truth for mode detection by the `linked-intent-dev` skill.
+
+## Mode transitions and scope
+
+- **Full → Scoped.** Prompt for scope patterns and write a new `## LID Scope` section following the format above.
+- **Scoped → Full.** Remove any existing `## LID Scope` section from `CLAUDE.md`.
+- **Scoped → Scoped (scope update).** Use `/update-lid` and pass the new scope patterns; the skill rewrites the `## LID Scope` section in place.
 
 ## Mode transitions
 

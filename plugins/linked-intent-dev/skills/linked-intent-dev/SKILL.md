@@ -24,7 +24,7 @@ If drift is detected, fix the docs first, then implement. A resumption check pre
 Every LID project declares its mode in `CLAUDE.md` under a `## LID Mode:` heading. Defaults to Full if missing or malformed (surface a one-line warning).
 
 - **Full LID**: the skill triggers broadly — any prompt that could result in a code change is in scope.
-- **Scoped LID**: additionally checks whether the files or subsystems the prompt touches fall within the declared scope. If the prompt is entirely outside scope, the skill does not trigger. Until the scope-declaration format is formalized, Scoped-mode triggering treats all prompts as in-scope and surfaces a one-line warning that scope has not yet been declared.
+- **Scoped LID**: additionally checks whether the files or subsystems the prompt touches fall within the declared scope. Scope is declared in `CLAUDE.md` under a `## LID Scope` section (see `docs/llds/linked-intent-dev.md § Scope declaration format`) with include/exclude glob patterns. If every file the prompt touches is outside scope (in the exclude list, or not in the include list), the skill does not trigger. If any touched path is in scope, the skill triggers. For prompts that reference no specific paths, default to triggering and ask the user to confirm when ambiguous. When the `## LID Scope` section is missing or empty in a Scoped-mode project (misconfiguration), fall back to treating all prompts as in-scope and surface a warning suggesting `/update-lid` to declare scope.
 
 ## The six phases
 
