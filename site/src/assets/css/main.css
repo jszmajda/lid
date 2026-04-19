@@ -721,17 +721,14 @@ hr {
   font-size: 5.5px;
   letter-spacing: 0.1em;
 }
-/* Node rects use fill: none so the page background shows through directly.
- * Earlier we filled with var(--paper), but Firefox Mobile was resolving
- * that variable inconsistently inside inline SVG, rendering a light fill
- * even in dark mode. Outline-only sidesteps the whole theme-in-SVG issue. */
+/* Node rect fill is set inside the SVG itself (hardcoded + media query)
+ * to avoid Firefox Mobile's CSS-variable-in-inline-SVG inconsistency.
+ * External CSS only controls the stroke here. */
 .hero-schematic .node {
   stroke: currentColor;
   stroke-width: 1.25;
-  fill: none;
 }
 .hero-schematic .node-accent {
-  fill: none;
   stroke: var(--nib);
   stroke-width: 1;
 }

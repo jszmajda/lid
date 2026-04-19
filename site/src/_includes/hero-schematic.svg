@@ -1,6 +1,18 @@
 <svg class="hero-schematic" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 420" role="img" aria-labelledby="hero-schematic-title hero-schematic-desc">
   <title id="hero-schematic-title">Arrow of intent — schematic</title>
   <desc id="hero-schematic-desc">Five nodes — HLD, LLDs, EARS, Tests, Code — connected by a trace line, drawn as a technical diagram with dimension marks and annotations.</desc>
+  <!-- Node fills are set here rather than from external CSS so the
+       theming is self-contained inside the SVG. External CSS variables
+       inside inline SVG resolve inconsistently on Firefox Mobile; this
+       hardcoded + media-query approach is bulletproof. Colors mirror the
+       --paper / --nib values in main.css. -->
+  <style>
+    .hero-schematic .node { fill: #0c1117; }
+    .hero-schematic .node-accent { fill: #0c1117; }
+    @media (prefers-color-scheme: light) {
+      .hero-schematic .node, .hero-schematic .node-accent { fill: #f2ecd8; }
+    }
+  </style>
 
   <g stroke="currentColor" stroke-width="0.8" opacity="0.5">
     <path d="M 8 8 L 18 8 M 8 8 L 8 18"/>
