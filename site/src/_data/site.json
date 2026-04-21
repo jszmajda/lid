@@ -3,16 +3,16 @@
   "tagline": "How to write code when your compiler speaks English.",
   "framing": [
     "LID is the language.",
-    "Claude is the compiler.",
+    "Your agent is the compiler.",
     "Code is the output."
   ],
   "repoUrl": "https://github.com/jszmajda/lid",
-  "marketplace": "jszmajda/lid",
-  "description": "A Claude Code plugin marketplace for Linked-Intent Development — structure the English your agent compiles so design, specs, tests, and code stay in sync.",
+  "repoSlug": "jszmajda/lid",
+  "description": "Linked-Intent Development for agentic coding — structure the English your agent compiles so design, specs, tests, and code stay in sync. Claude Code plugins; rule-file adapters for Cursor, Windsurf, Copilot, and other tools.",
   "quickstart": [
     {
       "cmd": "/plugin marketplace add jszmajda/lid",
-      "note": "Register the marketplace in Claude Code."
+      "note": "Register the plugin source in Claude Code."
     },
     {
       "cmd": "/plugin install linked-intent-dev@jszmajda-lid",
@@ -24,7 +24,7 @@
     },
     {
       "cmd": "/linked-intent-dev:lid-setup",
-      "note": "Bootstrap your project — adds a docs/ tree and LID directives to CLAUDE.md."
+      "note": "Bootstrap your project — adds a docs/ tree and an AGENTS.md (symlinked to CLAUDE.md)."
     }
   ]
 }

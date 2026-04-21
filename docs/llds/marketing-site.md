@@ -20,9 +20,9 @@ This LLD traces upstream to three HLD elements:
 
 - **Goal 5 — "Make LID's value legible to those not yet using it."** This is the direct mandate for the onboarding surface (README, marketing site, examples). The HLD names the gap between "heard of LID" and "running LID" as an intent gap at project scale, and designates the marketing site as load-bearing intent that must cascade from the HLD like any other segment. This LLD is the site's realization of that goal.
 - **Goal 3 — "Meet teams where they are."** Adoption friction is the broader problem the site addresses; orientation by audience path (evaluating / greenfield / brownfield / scoped) is the mechanism.
-- **Architecture § Marketplace.** The HLD names the repository as the distribution mechanism. The marketing site extends that distribution layer with a discoverable on-ramp that does not require having already found the repo.
+- **Architecture § Distribution.** The HLD names the repository as the distribution mechanism. The marketing site extends that distribution layer with a discoverable on-ramp that does not require having already found the repo.
 
-Goal 5 is the anchor that most directly names the site's reason for existing; Goal 3 and Architecture § Marketplace are how Goal 5 is served in practice.
+Goal 5 is the anchor that most directly names the site's reason for existing; Goal 3 and Architecture § Distribution are how Goal 5 is served in practice.
 
 ## Component Variant
 
@@ -55,7 +55,7 @@ Verification substitutes content-appropriate mechanisms for test-harness evals:
 ### Non-Goals
 
 - **Not a docs site.** The README is deep docs. The site links to it; it does not duplicate or replace it.
-- **Not interactive tooling.** No live try-it, no in-browser playground. Interactivity belongs in Claude Code itself.
+- **Not interactive tooling.** No live try-it, no in-browser playground. Interactivity belongs in the user's coding agent itself.
 - **Not a community hub.** No forums, no comment threads, no user-submitted content. Community lives on GitHub (issues, discussions) and external channels the user already has.
 - **Not a metrics dashboard.** No analytics beyond GitHub Pages defaults. No third-party tracking. No newsletter signup.
 - **Not a marketing funnel with calls-to-action for a paid product.** LID is MIT-licensed; the "conversion" is "install the plugin," nothing more.
@@ -70,7 +70,7 @@ Within that cut:
 - **Secondary — returning users.** People who installed LID, want a link to send a coworker, or need to re-find a specific concept. The site serves them by being unambiguous and cross-linkable.
 - **Tertiary — contributors.** People who want to hack on LID go directly to the repo. The site does not optimize for them; a single link to the GitHub repo is sufficient.
 
-The site explicitly does not serve users *already using* LID day-to-day. Those users have the plugin installed; they interact with LID through Claude Code, not through a web page.
+The site explicitly does not serve users *already using* LID day-to-day. Those users have their adapter or plugin installed; they interact with LID through their coding agent, not through a web page.
 
 ## Site Structure
 
@@ -152,7 +152,7 @@ The page frames these as *fit problems*, not deficiencies in LID. A user who rec
 
 Site lives at `site/` in the repo root. Reasoning:
 
-- **Corporate-clone friendly.** Users whose environments disallow Claude Code plugin marketplaces clone the repo directly; `site/` comes with them.
+- **Corporate-clone friendly.** Users whose environments disallow third-party plugin sources clone the repo directly; `site/` comes with them.
 - **Single source of truth.** The site's content cascades from `docs/high-level-design.md` and the LLDs. Keeping them in the same repo makes that cascade a local review, not a cross-repo sync.
 - **Discoverable.** `site/` at the repo root is obvious to contributors who want to edit it.
 
@@ -164,7 +164,7 @@ A separate `jszmajda/lid-site` repo was considered and rejected — it optimizes
 
 Rationale:
 
-- **JavaScript toolchain** matches what most LID users already have locally (Node.js is a common dependency for Claude Code projects).
+- **JavaScript toolchain** matches what most LID users already have locally (Node.js is a common dependency for agentic coding projects).
 - **Small API surface.** 11ty is close to "markdown plus a templating engine" — adds little complexity over plain markdown.
 - **Native mermaid rendering** via `@11ty/eleventy-plugin-mermaid` or equivalent, matching LID's default diagram format.
 - **Fast builds** at our scale; GitHub Pages can host the output directly.
@@ -279,7 +279,7 @@ Once `docs/arrows/` is bootstrapped for this repository, the site appears as a *
 
 ## References
 
-- `docs/high-level-design.md` — Goal 3, Architecture § Marketplace, Key Design Decisions § The arrow for LID itself.
+- `docs/high-level-design.md` — Goal 3, Architecture § Distribution, Key Design Decisions § The arrow for LID itself.
 - `docs/llds/linked-intent-dev.md` — cascade discipline, skill behaviors the Start page describes.
 - `docs/llds/arrow-maintenance.md` — the brownfield onboarding story the Start page surfaces.
 - `README.md` — the deep documentation the site links to for everything below surface.
