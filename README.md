@@ -95,7 +95,7 @@ After installing, run the setup skill to configure your project:
 /linked-intent-dev:lid-setup
 ```
 
-This creates your `docs/` directory structure and adds the required directives to your project's `AGENTS.md` (and `CLAUDE.md`, which Claude Code reads).
+This creates your `docs/` directory structure and adds the required directives to your project's `CLAUDE.md`. If you want `AGENTS.md` as an alias for other agentic coding tools, see [`docs/setup.md`](docs/setup.md) — a symlink or one-line import is all it takes.
 
 ## Getting Started: Greenfield Project
 
@@ -107,7 +107,7 @@ You're starting something new. Here's the workflow:
 /linked-intent-dev:lid-setup
 ```
 
-This creates `docs/high-level-design.md`, `docs/llds/`, `docs/specs/` and appends LID directives to your project's `AGENTS.md` (and symlinked `CLAUDE.md` for Claude Code compatibility). It asks which mode you want — **Full LID** (whole project) or **Scoped LID** (a bounded piece of a larger project, with glob patterns declaring what's in scope).
+This creates `docs/high-level-design.md`, `docs/llds/`, `docs/specs/` and appends LID directives to your project's `CLAUDE.md` (which Claude Code reads). If you also use Cursor, Windsurf, Codex, or another AGENTS.md-honoring tool, [`docs/setup.md`](docs/setup.md) shows how to alias `AGENTS.md` to the same content. It asks which mode you want — **Full LID** (whole project) or **Scoped LID** (a bounded piece of a larger project, with glob patterns declaring what's in scope).
 
 ### 2. Design before you code
 
@@ -180,7 +180,7 @@ Once the mapping is done, the resulting `docs/` tree and `AGENTS.md` work in any
 
 **Phase 5 — Artifact generation.** For each approved segment, Claude drafts a skeleton LLD, an EARS spec file, an arrow doc, and an `index.yaml` entry — with a STOP after each sub-step. Brownfield LLDs use the *standard* LLD template (no separate brownfield format); content carries `[inferred]` markers in the Decisions table and Open Questions for observed-but-unexplained behaviors. As you confirm or refute inferences, the markers come out.
 
-**Phase 6 — Terminal verification.** Claude runs `/lid-setup` to configure the project's `AGENTS.md`, then issues a flesh-out prompt directing you to fill in skeleton LLDs and EARS specs segment-by-segment via the `linked-intent-dev` workflow. Partial arrows propagate incoherence, so this prompt isn't optional.
+**Phase 6 — Terminal verification.** Claude runs `/lid-setup` to configure the project's `CLAUDE.md`, then issues a flesh-out prompt directing you to fill in skeleton LLDs and EARS specs segment-by-segment via the `linked-intent-dev` workflow. Partial arrows propagate incoherence, so this prompt isn't optional.
 
 ### 3. Work with arrows
 

@@ -26,16 +26,18 @@ Claude Code users get both for free: `/linked-intent-dev:lid-setup` scaffolds th
 
 | Tool | Notes |
 |---|---|
-| **Claude Code** | Via the `CLAUDE.md` symlink this repo ships (Claude Code reads `CLAUDE.md`). The LID plugins add auto-invoking skills and slash commands on top — see the [Claude Code section below](#claude-code). |
 | **OpenAI Codex CLI** | Hierarchical merge from project root down to cwd; `AGENTS.override.md` as escape hatch. [docs](https://developers.openai.com/codex/guides/agents-md) |
 | **Amp** (Sourcegraph) | Walks cwd + parents up to `$HOME`; strongest hierarchical support. [docs](https://ampcode.com/manual) |
 | **Jules** (Google) | "Automatically looks for `AGENTS.md` in the root of your repository." [docs](https://jules.google/docs) |
+| **Pi** ([pi.dev](https://pi.dev/)) | Auto-loads `AGENTS.md` on every session. Search order: `~/.pi/agent/AGENTS.md` (global) → parent directories → cwd; all matches concatenated. `CLAUDE.md` honored as alias. Disable per-session with `--no-context-files`. [docs](https://github.com/badlogic/pi-mono/tree/main/packages/coding-agent) |
 | **Zed** | Supported, but picks a single file from a 9-entry precedence list (`.rules`, `.cursorrules`, `.windsurfrules`, `.clinerules`, `.github/copilot-instructions.md`, `AGENT.md`, `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`) — first match wins. [docs](https://zed.dev/docs/ai/rules) |
 | **Cline** | Supported as a cross-tool compatibility source; Cline's primary format is `.clinerules/`. [docs](https://docs.cline.bot/features/cline-rules) |
 | **JetBrains Junie** | Reads repo-root `AGENTS.md` as a fallback. Lookup order: IDE custom path → `.junie/AGENTS.md` → `AGENTS.md` → legacy `.junie/guidelines.md`. [docs](https://junie.jetbrains.com/docs/guidelines-and-memory.html) |
 | **GitHub Copilot** | `AGENTS.md` is read by VS Code Chat, Copilot CLI, and the Copilot coding agent (cloud) across its surfaces, as of [Aug 2025](https://github.blog/changelog/2025-08-28-copilot-coding-agent-now-supports-agents-md-custom-instructions/). IDE inline completions and GitHub.com Chat still need `.github/copilot-instructions.md` — see the [Copilot section below](#github-copilot). |
 | **Windsurf** | Treated as an always-on rule by the Cascade rules engine. [docs](https://docs.windsurf.com/windsurf/cascade/memories) |
 | **Cursor** | `AGENTS.md` is listed as an alternative to `.cursor/rules`; behavior when both exist isn't documented. Safer to also ship a `.cursor/rules/lid.mdc` — see the [Cursor section below](#cursor). |
+
+**Claude Code is different** — it reads `CLAUDE.md`, not `AGENTS.md`. See the [Claude Code section below](#claude-code) for how to keep a single source of truth across both files.
 
 Other tools that honor `AGENTS.md` per the [spec](https://agents.md/) and should work with just the root file: **Factory, goose, opencode, Warp, Devin, Gemini CLI, RooCode, Kilo Code, Augment Code**.
 
@@ -56,7 +58,15 @@ Richest integration. The plugins automate phase gates, auto-invoke the workflow 
 /linked-intent-dev:lid-setup
 ```
 
-After setup, describe what you want to build. The `linked-intent-dev` skill activates automatically. Claude Code reads `CLAUDE.md`; this project symlinks it to `AGENTS.md` so a single source of truth covers both.
+After setup, describe what you want to build. The `linked-intent-dev` skill activates automatically.
+
+**Claude Code reads `CLAUDE.md`, not `AGENTS.md` directly.** `/linked-intent-dev:lid-setup` creates `CLAUDE.md` only. If you want a single source of truth across both filenames so that Claude Code and other AGENTS.md-honoring tools see the same content, pick one:
+
+1. **Symlink `AGENTS.md → CLAUDE.md`** — content lives in `CLAUDE.md`, `AGENTS.md` is a symlink pointing at it. From your project root: `ln -s CLAUDE.md AGENTS.md`. Other tools open `AGENTS.md`; the OS resolves the symlink and they see `CLAUDE.md`'s content.
+2. **Reverse direction — content in `AGENTS.md`, `CLAUDE.md` imports it.** Move the content into `AGENTS.md`, then make `CLAUDE.md` a one-line file: `@AGENTS.md` (Claude Code's import syntax pulls in the sibling file). This is the direction *this repository* uses — `AGENTS.md` is canonical because it's the cross-tool convention.
+3. **Claude-Code-only?** Just keep `CLAUDE.md` and skip `AGENTS.md`. Add it later if you pick up a second tool.
+
+Claude Code also reads `.claude/CLAUDE.local.md` (local, uncommitted overrides) and `~/.claude/CLAUDE.md` (user-global instructions) — both additive, both optional.
 
 ---
 
