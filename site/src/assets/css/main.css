@@ -1263,17 +1263,26 @@ hr {
   .arrow-inset-schematic .inset-flow { stroke: #6e7079; }
 }
 
-/* Reveal animation — same staggered fade-in pattern as the hero schematic. */
-.dag-schematic .fade-in,
+/* Reveal animation — staggered fade-in on the inset only. The DAG's
+ * fade-in groups intentionally keep `opacity: 1` at rest instead of
+ * animating from 0: on Firefox for Android the staggered-opacity reveal
+ * on 21 simultaneous SVG groups was producing a first-paint compositor
+ * glitch where some rects stayed rendered with transparent fills
+ * (appearing "white" through the cream paper) until the tab was
+ * backgrounded and re-activated. The hero and the inset are small
+ * enough (5 groups each, max delay ≤1.2s) to avoid the threshold; the
+ * DAG has 21 groups and delays up to 1.5s. Disabling the DAG's
+ * opacity animation fixes the bug without affecting other browsers'
+ * experience meaningfully. */
 .arrow-inset-schematic .fade-in {
   opacity: 0;
   transition: opacity 0.6s var(--ease-out);
 }
-.dag-schematic.in-view .fade-in,
 .arrow-inset-schematic.in-view .fade-in {
   opacity: 1;
   transition-delay: var(--d, 0s);
 }
+.dag-schematic .fade-in { opacity: 1; }
 
 /* ═══════════════════════════════════════════════════════════════════════
  * 7. SECTION CHROME (plate headings, rhythm)
