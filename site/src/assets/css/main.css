@@ -1146,62 +1146,47 @@ hr {
   letter-spacing: 0.05em;
 }
 
-/* Node rects. CSS sets stroke only — the dark-mode fill comes from the
- * SVG rect's `fill="#0c1117"` attribute on each rect. This matches the
- * hero schematic's pattern exactly, which is known to render correctly
- * on Firefox for Android. Earlier iterations set `fill` in CSS as a
- * belt-and-suspenders defense, but that produced a first-paint
- * compositor glitch on mobile Firefox (some rects rendered with
- * transparent fills, showing the cream paper as "white") — the
- * attribute-only pattern avoids it. Light-mode fills are overridden
- * below via media query. */
+/* Node rects. CSS sets STROKE ONLY — the dark-mode fill comes from the
+ * SVG rect's `fill="#0c1117"` attribute on each rect. Light-mode
+ * fills are overridden below via media query.
+ *
+ * This mirrors the hero schematic exactly, which renders correctly on
+ * Firefox Android across both hard AND soft reload. Earlier iterations
+ * set `fill: #0c1117` in the CSS base rule as belt-and-suspenders, plus
+ * an explicit `@media (prefers-color-scheme: dark)` block, plus an
+ * inline `style="fill:#0c1117"` on each rect. None of that helped — the
+ * smaller lower-tier rects still rendered with transparent fill on
+ * soft refresh (showing cream page background as "white"), while the
+ * hero's attribute-only rects stayed dark. The cascade through CSS is
+ * where Firefox Android's soft-reload paint is inconsistent; bypass it
+ * by letting the presentation attribute own fill in the default state. */
 .dag-schematic .dag-node {
-  fill: #0c1117;
   stroke: currentColor;
   stroke-width: 1.25;
 }
 .dag-schematic .dag-node-accent {
-  fill: #0c1117;
   stroke: #e0a060;
   stroke-width: 1.3;
 }
 .dag-schematic .dag-node-ears {
-  fill: #0c1117;
   stroke: currentColor;
   stroke-width: 1;
 }
 .dag-schematic .dag-node-tests {
-  fill: #0c1117;
   stroke: currentColor;
   stroke-width: 0.9;
 }
 .dag-schematic .dag-node-code {
-  fill: #0c1117;
   stroke: #b8b4a2;
   stroke-width: 0.8;
 }
 .arrow-inset-schematic .node {
-  fill: #0c1117;
   stroke: currentColor;
   stroke-width: 1.25;
 }
 .arrow-inset-schematic .node-accent {
-  fill: #0c1117;
   stroke: #e0a060;
   stroke-width: 1.3;
-}
-
-/* Explicit dark-mode match (belt-and-suspenders against Firefox Android's
- * soft-reload paint behavior where the base rules above don't always
- * apply consistently between hard refresh and soft refresh). */
-@media (prefers-color-scheme: dark) {
-  .dag-schematic .dag-node,
-  .dag-schematic .dag-node-accent,
-  .dag-schematic .dag-node-ears,
-  .dag-schematic .dag-node-tests,
-  .dag-schematic .dag-node-code,
-  .arrow-inset-schematic .node,
-  .arrow-inset-schematic .node-accent { fill: #0c1117; }
 }
 
 /* Edge strokes — used as-is, with hardcoded hex so the stroke color can
