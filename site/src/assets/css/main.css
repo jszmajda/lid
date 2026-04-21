@@ -1146,54 +1146,40 @@ hr {
   letter-spacing: 0.05em;
 }
 
-/* Node rects. Each class gets its own rule with a hardcoded dark fill in the
- * dark-mode default and an explicit light-mode override via media query —
- * same pattern as the hero schematic's rects, just written out per-class
- * so any one selector failing can't take down the others. No `var()` on
- * fill anywhere inside the SVG-facing rules; mobile Safari/Firefox have
- * had intermittent issues propagating custom properties into <rect> fills. */
+/* Node rects. CSS sets stroke only — the dark-mode fill comes from the
+ * SVG rect's `fill="#0c1117"` attribute on each rect. This matches the
+ * hero schematic's pattern exactly, which is known to render correctly
+ * on Firefox for Android. Earlier iterations set `fill` in CSS as a
+ * belt-and-suspenders defense, but that produced a first-paint
+ * compositor glitch on mobile Firefox (some rects rendered with
+ * transparent fills, showing the cream paper as "white") — the
+ * attribute-only pattern avoids it. Light-mode fills are overridden
+ * below via media query. */
 .dag-schematic .dag-node {
-  fill: #0c1117;
   stroke: currentColor;
   stroke-width: 1.25;
 }
 .dag-schematic .dag-node-accent {
-  fill: #0c1117;
   stroke: #e0a060;
   stroke-width: 1.3;
 }
-/* IMPORTANT: do not add any opacity-family property (opacity,
- * fill-opacity, stroke-opacity) to these rect classes. The rects sit
- * inside <g class="fade-in"> groups whose own `opacity` animates from 0
- * to 1 on page load. Firefox for Android mishandles any rect-level
- * opacity composed against an animating parent opacity — the fill drops
- * and the box renders as the paper color ("white"). The hero schematic
- * and the DAG's HLD/LLD classes above never hit this because they never
- * carry a rect-level opacity. fill-opacity and stroke-opacity are NOT
- * safe substitutes — they trigger the same compose bug. Visual recede
- * for the lower tiers comes from node size and stroke-width only. */
 .dag-schematic .dag-node-ears {
-  fill: #0c1117;
   stroke: currentColor;
   stroke-width: 1;
 }
 .dag-schematic .dag-node-tests {
-  fill: #0c1117;
   stroke: currentColor;
   stroke-width: 0.9;
 }
 .dag-schematic .dag-node-code {
-  fill: #0c1117;
   stroke: #b8b4a2;
   stroke-width: 0.8;
 }
 .arrow-inset-schematic .node {
-  fill: #0c1117;
   stroke: currentColor;
   stroke-width: 1.25;
 }
 .arrow-inset-schematic .node-accent {
-  fill: #0c1117;
   stroke: #e0a060;
   stroke-width: 1.3;
 }
@@ -1263,26 +1249,17 @@ hr {
   .arrow-inset-schematic .inset-flow { stroke: #6e7079; }
 }
 
-/* Reveal animation — staggered fade-in on the inset only. The DAG's
- * fade-in groups intentionally keep `opacity: 1` at rest instead of
- * animating from 0: on Firefox for Android the staggered-opacity reveal
- * on 21 simultaneous SVG groups was producing a first-paint compositor
- * glitch where some rects stayed rendered with transparent fills
- * (appearing "white" through the cream paper) until the tab was
- * backgrounded and re-activated. The hero and the inset are small
- * enough (5 groups each, max delay ≤1.2s) to avoid the threshold; the
- * DAG has 21 groups and delays up to 1.5s. Disabling the DAG's
- * opacity animation fixes the bug without affecting other browsers'
- * experience meaningfully. */
+/* Reveal animation — same staggered fade-in pattern as the hero schematic. */
+.dag-schematic .fade-in,
 .arrow-inset-schematic .fade-in {
   opacity: 0;
   transition: opacity 0.6s var(--ease-out);
 }
+.dag-schematic.in-view .fade-in,
 .arrow-inset-schematic.in-view .fade-in {
   opacity: 1;
   transition-delay: var(--d, 0s);
 }
-.dag-schematic .fade-in { opacity: 1; }
 
 /* ═══════════════════════════════════════════════════════════════════════
  * 7. SECTION CHROME (plate headings, rhythm)
