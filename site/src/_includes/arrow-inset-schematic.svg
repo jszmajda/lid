@@ -2,6 +2,18 @@
   <title id="inset-title">One arrow segment — zoomed</title>
   <desc id="inset-desc">A single arrow segment within the larger DAG: HLD, LLD, EARS, Tests, and code rendered as five nodes connected by left-to-right arrows, with annotation labels above and below each node naming what that node carries.</desc>
 
+  <!-- Arrowhead marker — same filled-triangle shape and size as the DAG's
+       marker so both schematics share one visual vocabulary for direction.
+       Dark-mode fill is hardcoded on the path attribute; light-mode is
+       overridden via the shared `.arr-head` CSS class. -->
+  <defs>
+    <marker id="inset-arr" viewBox="0 0 8 8" refX="8" refY="4"
+            markerWidth="4" markerHeight="4"
+            orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M 0 1 L 8 4 L 0 7 z" class="arr-head" fill="#7d7a6c"/>
+    </marker>
+  </defs>
+
   <!-- Corner registration brackets (subtler since the figure is small) -->
   <g stroke="currentColor" stroke-width="0.6" opacity="0.4">
     <path d="M 6 6 L 14 6 M 6 6 L 6 14"/>
@@ -14,20 +26,14 @@
   <text x="430" y="124" class="label">PLATE · 003 / SEGMENT</text>
   <text x="14" y="124" class="coord">ZOOM · ONE ARROW</text>
 
-  <!-- Edges between nodes (right-edge of source to left-edge of target).
-       Stroke is set in CSS via .inset-flow so the lines read clearly
-       against both dark and light paper. -->
+  <!-- Edges between nodes. Lines extend from source-rect right-edge to the
+       target-rect left-edge; `marker-end` drops a filled-triangle arrowhead
+       tip exactly at the target edge. Matches the DAG's arrow vocabulary. -->
   <g class="inset-flow">
-    <line x1="105" y1="60" x2="143" y2="60"/>
-    <line x1="201" y1="60" x2="239" y2="60"/>
-    <line x1="297" y1="60" x2="335" y2="60"/>
-    <line x1="393" y1="60" x2="431" y2="60"/>
-  </g>
-  <g class="inset-flow-tick">
-    <path d="M 140 57 L 146 60 L 140 63"/>
-    <path d="M 236 57 L 242 60 L 236 63"/>
-    <path d="M 332 57 L 338 60 L 332 63"/>
-    <path d="M 428 57 L 434 60 L 428 63"/>
+    <line x1="105" y1="60" x2="146" y2="60" marker-end="url(#inset-arr)"/>
+    <line x1="201" y1="60" x2="242" y2="60" marker-end="url(#inset-arr)"/>
+    <line x1="297" y1="60" x2="338" y2="60" marker-end="url(#inset-arr)"/>
+    <line x1="393" y1="60" x2="434" y2="60" marker-end="url(#inset-arr)"/>
   </g>
 
   <!-- Nodes — HLD (accent) -->
