@@ -8,7 +8,7 @@
     <!-- Typography: Bunny Fonts — GDPR-compliant, no tracking. Per MKT-SITE-030. -->
     <link rel="preconnect" href="https://fonts.bunny.net" crossorigin />
     <link rel="stylesheet" href="https://fonts.bunny.net/css?family=fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=jetbrains-mono:wght@400;500&display=swap" />
-    <link rel="stylesheet" href="{{ '/assets/css/main.css' | url }}" />
+    <link rel="stylesheet" href="{{ '/assets/css/main.css' | url }}?v={{ buildId }}" />
     <link rel="icon" href="{{ '/assets/favicon.svg' | url }}" type="image/svg+xml" />
     <meta name="theme-color" content="#0c1117" media="(prefers-color-scheme: dark)" />
     <meta name="theme-color" content="#f2ecd8" media="(prefers-color-scheme: light)" />
@@ -22,7 +22,7 @@
     <main id="main">
       {{ content | safe }}
     </main>
-    <script src="{{ '/assets/js/site.js' | url }}" defer></script>
+    <script src="{{ '/assets/js/site.js' | url }}?v={{ buildId }}" defer></script>
     <footer class="site-footer">
       <div class="container">
         <div class="footer-grid">

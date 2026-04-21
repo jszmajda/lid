@@ -16,6 +16,13 @@ export default function (eleventyConfig) {
   // Date filter for footer year.
   eleventyConfig.addFilter("year", () => new Date().getFullYear());
 
+  // Build-time timestamp for cache-busting static asset URLs. Every build
+  // gets a new value, so references like `/assets/css/main.css?v={{ buildId }}`
+  // generate fresh URLs that force browsers to re-fetch. Without this,
+  // aggressive mobile-browser caching (Firefox Android especially) serves
+  // stale CSS/JS across dev-server rebuilds and production redeploys.
+  eleventyConfig.addGlobalData("buildId", Date.now().toString(36));
+
   return {
     dir: {
       input: "src",
