@@ -7,7 +7,8 @@ permalink: /
 description: Linked-Intent Development — treat your coding agent as an English compiler. Intent is the source; code is the output. A minimum-surface plugin marketplace for Claude Code.
 ---
 
-<!-- @spec MKT-SITE-001, MKT-SITE-002, MKT-SITE-004, MKT-SITE-005 -->
+<!-- @spec MKT-SITE-007 (home page section ordering) -->
+<!-- @spec MKT-SITE-001, MKT-SITE-002, MKT-SITE-004, MKT-SITE-005, MKT-SITE-040 -->
 <section class="hero">
   <div class="container hero-grid">
     <div class="hero-text">
@@ -28,7 +29,7 @@ description: Linked-Intent Development — treat your coding agent as an English
       </ol>
 
       <p class="hero-lede">
-        Modern coding agents rarely write bugs. What they write are <em>intent gaps</em> — places where the agent assumed one meaning and you held another. LID closes those gaps by giving your agent a <em>dialect</em> of English it can compile faithfully: specs are source, code is compiled output, and every intent change cascades downstream. A minimum system. Not a factory.
+        Modern coding agents write code that runs. What they miss is what you <em>meant</em> — the places where the agent assumed one thing and you had something else in mind. LID closes that gap. You write your design at a few levels of detail your agent can compile faithfully: the design is the source, code is the output, and an edit upstream rewrites everything below it.
       </p>
 
       <div class="cta-row">
@@ -36,7 +37,7 @@ description: Linked-Intent Development — treat your coding agent as an English
           Install<span class="arr" aria-hidden="true">→</span>
         </a>
         <a class="button" href="{{ site.repoUrl }}">
-          On GitHub<span class="arr" aria-hidden="true">↗</span>
+          Read the source<span class="arr" aria-hidden="true">↗</span>
         </a>
       </div>
     </div>
@@ -47,33 +48,57 @@ description: Linked-Intent Development — treat your coding agent as an English
   </div>
 </section>
 
-<!-- @spec MKT-SITE-006, MKT-SITE-007, MKT-SITE-008 -->
-<section class="quickstart section" id="quickstart" aria-labelledby="quickstart-heading">
-  <div class="container">
-    <div class="quickstart-shell">
-      <div class="quickstart-meta">
-        <span class="plate">Plate 01 / Quickstart</span>
-        <h2 id="quickstart-heading"><em style="font-style:italic;color:var(--nib)">Three commands</em>, inside Claude&nbsp;Code.</h2>
-        <p class="lede">
-          Register the marketplace, install the plugin, bootstrap your project. After that you describe what you want to build and the skill walks you through design, specs, and tests before it writes any code.
-        </p>
-        <p class="extras">
-          Corporate environment blocks marketplaces? <a href="{{ site.repoUrl }}">Clone the repo directly</a> — same plugins, same behavior.
+<!-- @spec MKT-SITE-038, MKT-SITE-039, MKT-SITE-041, MKT-SITE-044, MKT-SITE-045, MKT-SITE-046 -->
+<section class="howitworks section" id="howitworks" aria-labelledby="howitworks-heading">
+  <div class="container howit-stack">
+    <header class="howit-head">
+      <span class="plate">Plate 01 / How it works</span>
+      <h2 id="howitworks-heading">You design. <em>The agent writes the rest.</em></h2>
+      <p class="lede">
+        LID treats your whole repository as a graph rooted in intent. Every code file reachable, by name, from a test; every test from a spec; every spec from a low-level design; every design from the high-level design at the top. <em>Checking that the code still matches the design is just a walk through the graph.</em>
+      </p>
+    </header>
+
+    <div class="howit-pair">
+      <figure class="howit-inset" aria-label="One arrow segment, zoomed in">
+        {% include "arrow-inset-schematic.svg" %}
+        <figcaption>
+          <span class="num">FIG · 001</span>
+          <strong>One arrow.</strong> The HLD names the <em>why</em>; the LLD shapes the <em>how</em>; an EARS spec (structured-English notation for requirements — short for <em>Easy Approach to Requirements Syntax</em>) makes one atomic claim; a failing-first test asserts that claim before code exists; code carries matching <code>@spec</code> annotations. Every spec gets a grep-addressable ID — <code>AUTH-UI-001</code>, <code>AUTH-UI-002</code>, and so on. That's LID's overlay on top of EARS, and it's what makes the graph navigable by name.
+        </figcaption>
+      </figure>
+
+      <div class="howit-snippet-block">
+        <span class="howit-snippet-label">In code</span>
+        <pre class="howit-snippet"><code><span class="sn-c">// services/auth.ts</span>
+<span class="sn-c">// @spec AUTH-UI-001, AUTH-UI-002</span>
+<span class="sn-k">async function</span> <span class="sn-fn">authenticate</span>(credentials) {
+  <span class="sn-c">// ...</span>
+}</code></pre>
+        <p class="howit-snippet-note">
+          Every implementation file carries <code>@spec</code> comments pointing back at the EARS claims it satisfies. A spec ID is a grep target: run <code>grep -r AUTH-UI-001</code> and you get the spec text, its failing-first test, and every line of code that implements it.
         </p>
       </div>
+    </div>
 
-      <div class="quickstart-card bracketed" role="region" aria-label="Install steps">
-        <ol class="quickstart-steps" aria-label="Quickstart steps">
-          {% for step in site.quickstart %}
-            <li>
-              <span class="qs-mark" aria-hidden="true"></span>
-              <div>
-                <code class="qs-cmd">{{ step.cmd }}</code>
-                <p class="qs-note">{{ step.note }}</p>
-              </div>
-            </li>
-          {% endfor %}
-        </ol>
+    <p class="howit-bridge">
+      Now do that for every design, every spec, and every test in your repository — not in a binder somewhere, in the code itself. Your whole codebase looks like this:
+    </p>
+
+    <div class="howit-reveal">
+      <figure class="howit-visual" aria-label="DAG of LID arrows across the codebase">
+        {% include "dag-schematic.svg" %}
+        <figcaption>
+          <span class="num">FIG · 002</span>
+          <strong>Every arrow, for every piece of code.</strong> One HLD, many LLDs and specs, many tests, many files — one graph. Highlighted edges mark where one test covers more than one file, or one file is covered by more than one test.
+        </figcaption>
+      </figure>
+
+      <div class="howit-outro-col">
+        <span class="howit-outro-label">In practice</span>
+        <p class="howit-outro">
+          You spend your time in the HLD and, more often, in the LLDs. That's where the design work lives. The agent handles the specs, the tests, and most of the code from your design — you read, you nod, you move on. When something needs to change — a new feature, a bug, a shift in direction — you almost always go back to an LLD, edit it, and let everything built on the old answer rewrite itself to match the new one. The demo below is what that loop looks like live.
+        </p>
       </div>
     </div>
   </div>
@@ -97,10 +122,42 @@ description: Linked-Intent Development — treat your coding agent as an English
   </div>
 </section>
 
+<!-- @spec MKT-SITE-006, MKT-SITE-008 -->
+<section class="quickstart section" id="quickstart" aria-labelledby="quickstart-heading">
+  <div class="container">
+    <div class="quickstart-shell">
+      <div class="quickstart-meta">
+        <span class="plate">Plate 03 / Quickstart</span>
+        <h2 id="quickstart-heading"><em style="font-style:italic;color:var(--nib)">Four commands</em>, inside Claude&nbsp;Code.</h2>
+        <p class="lede">
+          Register the marketplace, install the two plugins, bootstrap your project. After that you describe what you want to build and the skill walks you through design, specs, and tests before it writes any code.
+        </p>
+        <p class="extras">
+          Corporate environment blocks marketplaces? <a href="{{ site.repoUrl }}">Clone the repo directly</a> — same plugins, same behavior.
+        </p>
+      </div>
+
+      <div class="quickstart-card bracketed" role="region" aria-label="Install steps">
+        <ol class="quickstart-steps" aria-label="Quickstart steps">
+          {% for step in site.quickstart %}
+            <li>
+              <span class="qs-mark" aria-hidden="true"></span>
+              <div>
+                <code class="qs-cmd">{{ step.cmd }}</code>
+                <p class="qs-note">{{ step.note }}</p>
+              </div>
+            </li>
+          {% endfor %}
+        </ol>
+      </div>
+    </div>
+  </div>
+</section>
+
 <section class="paths section" aria-labelledby="paths-heading">
   <div class="container">
     <div class="section-head">
-      <span class="plate">Plate 03 / Entry points</span>
+      <span class="plate">Plate 04 / Entry points</span>
       <h2 id="paths-heading">Which path is yours?</h2>
       <p class="lede">Four starting points, depending on where you're coming from. Each one has a short orientation on the Start page.</p>
     </div>

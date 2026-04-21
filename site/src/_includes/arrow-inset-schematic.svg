@@ -1,0 +1,79 @@
+<svg class="arrow-inset-schematic" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 140" role="img" aria-labelledby="inset-title inset-desc">
+  <title id="inset-title">One arrow segment — zoomed</title>
+  <desc id="inset-desc">A single arrow segment within the larger DAG: HLD, LLD, EARS, Tests, and code rendered as five nodes connected by left-to-right arrows, with annotation labels above and below each node naming what that node carries.</desc>
+
+  <!-- Arrowhead marker — same filled-triangle shape and size as the DAG's
+       marker so both schematics share one visual vocabulary for direction.
+       Dark-mode fill is hardcoded on the path attribute; light-mode is
+       overridden via the shared `.arr-head` CSS class. -->
+  <defs>
+    <marker id="inset-arr" viewBox="0 0 8 8" refX="8" refY="4"
+            markerWidth="4" markerHeight="4"
+            orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M 0 1 L 8 4 L 0 7 z" class="arr-head" fill="#7d7a6c"/>
+    </marker>
+  </defs>
+
+  <!-- Corner registration brackets (subtler since the figure is small) -->
+  <g stroke="currentColor" stroke-width="0.6" opacity="0.4">
+    <path d="M 6 6 L 14 6 M 6 6 L 6 14"/>
+    <path d="M 534 6 L 526 6 M 534 6 L 534 14"/>
+    <path d="M 6 134 L 14 134 M 6 134 L 6 126"/>
+    <path d="M 534 134 L 526 134 M 534 134 L 534 126"/>
+  </g>
+
+  <!-- Plate identifier -->
+  <text x="430" y="124" class="label">PLATE · 003 / SEGMENT</text>
+  <text x="14" y="124" class="coord">ZOOM · ONE ARROW</text>
+
+  <!-- Edges between nodes. Lines extend from source-rect right-edge to the
+       target-rect left-edge; `marker-end` drops a filled-triangle arrowhead
+       tip exactly at the target edge. Matches the DAG's arrow vocabulary. -->
+  <g class="inset-flow">
+    <line x1="113" y1="60" x2="139" y2="60" marker-end="url(#inset-arr)"/>
+    <line x1="209" y1="60" x2="235" y2="60" marker-end="url(#inset-arr)"/>
+    <line x1="305" y1="60" x2="331" y2="60" marker-end="url(#inset-arr)"/>
+    <line x1="401" y1="60" x2="427" y2="60" marker-end="url(#inset-arr)"/>
+  </g>
+
+  <!-- Nodes — HLD (accent). All rects 70×36; rect x = center - 35, where
+       centers align with label columns at 78, 174, 270, 366, 462. -->
+  <g class="fade-in" style="--d: 0.2s">
+    <rect x="43" y="42" width="70" height="36" class="node-accent" fill="#0c1117"/>
+    <text x="78" y="64" text-anchor="middle" class="node-label" style="fill: var(--nib)">HLD</text>
+  </g>
+  <text x="78" y="34" text-anchor="middle" class="label">§ INTENT</text>
+  <text x="78" y="100" text-anchor="middle" class="coord">THE WHY</text>
+
+  <!-- LLD -->
+  <g class="fade-in" style="--d: 0.35s">
+    <rect x="139" y="42" width="70" height="36" class="node" fill="#0c1117"/>
+    <text x="174" y="64" text-anchor="middle" class="node-label">LLD</text>
+  </g>
+  <text x="174" y="34" text-anchor="middle" class="label">§ DESIGN</text>
+  <text x="174" y="100" text-anchor="middle" class="coord">THE HOW</text>
+
+  <!-- EARS -->
+  <g class="fade-in" style="--d: 0.5s">
+    <rect x="235" y="42" width="70" height="36" class="node" fill="#0c1117"/>
+    <text x="270" y="64" text-anchor="middle" class="node-label">EARS</text>
+  </g>
+  <text x="270" y="34" text-anchor="middle" class="label">§ CLAIMS</text>
+  <text x="270" y="100" text-anchor="middle" class="coord">GREP-ADDRESSABLE</text>
+
+  <!-- Tests -->
+  <g class="fade-in" style="--d: 0.65s">
+    <rect x="331" y="42" width="70" height="36" class="node" fill="#0c1117"/>
+    <text x="366" y="64" text-anchor="middle" class="node-label">Tests</text>
+  </g>
+  <text x="366" y="34" text-anchor="middle" class="label">§ TESTS</text>
+  <text x="366" y="100" text-anchor="middle" class="coord">FAILING-FIRST</text>
+
+  <!-- CODE -->
+  <g class="fade-in" style="--d: 0.8s">
+    <rect x="427" y="42" width="70" height="36" class="node" fill="#0c1117"/>
+    <text x="462" y="64" text-anchor="middle" class="node-label">CODE</text>
+  </g>
+  <text x="462" y="34" text-anchor="middle" class="label">§ COMPILED</text>
+  <text x="462" y="100" text-anchor="middle" class="coord">@SPEC ANCHORS</text>
+</svg>

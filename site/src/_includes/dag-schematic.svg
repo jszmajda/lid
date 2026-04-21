@@ -1,0 +1,158 @@
+<svg class="dag-schematic" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 420" role="img" aria-labelledby="dag-title dag-desc">
+  <title id="dag-title">LID arrows across the codebase — DAG</title>
+  <desc id="dag-desc">A directed acyclic graph showing one HLD node fanning down through three LLD nodes, six EARS-spec nodes, six failing-first test nodes, and five code-file nodes. Two highlighted edges between tests and code cross or converge, illustrating that one test can cover more than one code file, and one code file can be covered by more than one test.</desc>
+
+  <!-- Arrowhead markers. Same pattern as the hero: path has a dark fill
+       attribute, .arr-head class only flips fill in light mode. -->
+  <defs>
+    <marker id="dag-arr" viewBox="0 0 8 8" refX="8" refY="4"
+            markerWidth="4" markerHeight="4"
+            orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M 0 1 L 8 4 L 0 7 z" class="arr-head" fill="#7d7a6c"/>
+    </marker>
+    <marker id="dag-arr-cross" viewBox="0 0 8 8" refX="8" refY="4"
+            markerWidth="4.5" markerHeight="4.5"
+            orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M 0 1 L 8 4 L 0 7 z" class="arr-head-cross" fill="#e0a060"/>
+    </marker>
+  </defs>
+
+  <!-- Corner registration brackets -->
+  <g stroke="currentColor" stroke-width="0.8" opacity="0.5">
+    <path d="M 8 8 L 18 8 M 8 8 L 8 18"/>
+    <path d="M 532 8 L 522 8 M 532 8 L 532 18"/>
+    <path d="M 8 412 L 18 412 M 8 412 L 8 402"/>
+    <path d="M 532 412 L 522 412 M 532 412 L 532 402"/>
+  </g>
+
+  <!-- Plate identifier -->
+  <text x="430" y="396" class="label">PLATE · 002 / DAG</text>
+  <text x="430" y="408" class="label" style="fill: var(--nib)">ARROWS · CODEBASE</text>
+  <text x="14" y="408" class="coord">COORD · A1</text>
+
+  <!-- Tier rail labels (left). y values recentered for 70×30 rects. -->
+  <text x="14" y="58" class="label" style="fill: var(--nib)">§ HLD</text>
+  <text x="14" y="136" class="label" style="fill: var(--nib)">§ LLDs</text>
+  <text x="14" y="214" class="label" style="fill: var(--nib)">§ EARS</text>
+  <text x="14" y="288" class="label" style="fill: var(--nib)">§ TESTS</text>
+  <text x="14" y="370" class="label" style="fill: var(--nib)">§ CODE</text>
+
+  <!-- Edges (drawn first so node rects overlay neatly).
+       All rects are 70×30. Tier bottoms/tops per tier:
+         HLD    y 40-70
+         LLDs   y 118-148
+         EARS   y 196-226
+         Tests  y 270-300
+         Code   y 352-382
+       Rect centers (x):
+         HLD    270
+         LLDs   70, 270, 470
+         EARS   55, 145, 235, 325, 415, 505
+         Tests  55, 145, 235, 325, 415, 505
+         Code   75, 170, 270, 370, 465
+  -->
+  <g class="dag-edges">
+    <!-- HLD → LLDs -->
+    <path class="dag-edge" marker-end="url(#dag-arr)" d="M 270 70 Q 200 90 70 118"/>
+    <path class="dag-edge" marker-end="url(#dag-arr)" d="M 270 70 L 270 118"/>
+    <path class="dag-edge" marker-end="url(#dag-arr)" d="M 270 70 Q 340 90 470 118"/>
+
+    <!-- LLDs → EARS (each LLD fans to two adjacent EARS) -->
+    <path class="dag-edge" marker-end="url(#dag-arr)" d="M 70 148 Q 62 170 55 196"/>
+    <path class="dag-edge" marker-end="url(#dag-arr)" d="M 70 148 Q 110 170 145 196"/>
+    <path class="dag-edge" marker-end="url(#dag-arr)" d="M 270 148 Q 250 170 235 196"/>
+    <path class="dag-edge" marker-end="url(#dag-arr)" d="M 270 148 Q 300 170 325 196"/>
+    <path class="dag-edge" marker-end="url(#dag-arr)" d="M 470 148 Q 440 170 415 196"/>
+    <path class="dag-edge" marker-end="url(#dag-arr)" d="M 470 148 Q 488 170 505 196"/>
+
+    <!-- EARS → Tests (1:1 straight down) -->
+    <path class="dag-edge" marker-end="url(#dag-arr)" d="M 55 226 L 55 270"/>
+    <path class="dag-edge" marker-end="url(#dag-arr)" d="M 145 226 L 145 270"/>
+    <path class="dag-edge" marker-end="url(#dag-arr)" d="M 235 226 L 235 270"/>
+    <path class="dag-edge" marker-end="url(#dag-arr)" d="M 325 226 L 325 270"/>
+    <path class="dag-edge" marker-end="url(#dag-arr)" d="M 415 226 L 415 270"/>
+    <path class="dag-edge" marker-end="url(#dag-arr)" d="M 505 226 L 505 270"/>
+
+    <!-- Tests → Code -->
+    <path class="dag-edge" marker-end="url(#dag-arr)" d="M 55 300 Q 55 326 75 352"/>
+    <path class="dag-edge" marker-end="url(#dag-arr)" d="M 145 300 Q 145 326 170 352"/>
+    <!-- Cross-link: one test covering two code files -->
+    <path class="dag-edge dag-edge-cross" marker-end="url(#dag-arr-cross)" d="M 145 300 Q 200 326 270 352"/>
+    <path class="dag-edge" marker-end="url(#dag-arr)" d="M 235 300 Q 245 326 270 352"/>
+    <path class="dag-edge" marker-end="url(#dag-arr)" d="M 325 300 Q 340 326 370 352"/>
+    <!-- Cross-link: one code file covered by two tests -->
+    <path class="dag-edge dag-edge-cross" marker-end="url(#dag-arr-cross)" d="M 415 300 Q 395 326 370 352"/>
+    <path class="dag-edge" marker-end="url(#dag-arr)" d="M 505 300 Q 495 326 465 352"/>
+  </g>
+
+  <!-- Nodes are grouped per-tier. All rects are uniformly 70×30 — smaller
+       rects triggered a Firefox Android soft-reload paint bug where the
+       fill never rasterized (page background showed through as "white"),
+       regardless of how fill was specified (attribute, inline style, CSS,
+       @media). Uniform 70×30 matches the hero schematic's size exactly,
+       which is known to render correctly. Visual tier hierarchy now comes
+       from the left rail labels, node count per tier, and vertical order,
+       not rect size. -->
+
+  <!-- HLD (accent) -->
+  <g class="fade-in" style="--d: 0.15s">
+    <rect x="235" y="40" width="70" height="30" class="dag-node-accent" fill="#0c1117"/>
+    <text x="270" y="59" text-anchor="middle" class="node-label" style="fill: var(--nib)">HLD</text>
+  </g>
+
+  <!-- LLDs -->
+  <g class="fade-in" style="--d: 0.35s">
+    <rect x="35" y="118" width="70" height="30" class="dag-node" fill="#0c1117"/>
+    <text x="70" y="137" text-anchor="middle" class="node-label">LLD</text>
+    <rect x="235" y="118" width="70" height="30" class="dag-node" fill="#0c1117"/>
+    <text x="270" y="137" text-anchor="middle" class="node-label">LLD</text>
+    <rect x="435" y="118" width="70" height="30" class="dag-node" fill="#0c1117"/>
+    <text x="470" y="137" text-anchor="middle" class="node-label">LLD</text>
+  </g>
+
+  <!-- EARS -->
+  <g class="fade-in" style="--d: 0.6s">
+    <rect x="20" y="196" width="70" height="30" class="dag-node" fill="#0c1117"/>
+    <text x="55" y="215" text-anchor="middle" class="node-label">EARS</text>
+    <rect x="110" y="196" width="70" height="30" class="dag-node" fill="#0c1117"/>
+    <text x="145" y="215" text-anchor="middle" class="node-label">EARS</text>
+    <rect x="200" y="196" width="70" height="30" class="dag-node" fill="#0c1117"/>
+    <text x="235" y="215" text-anchor="middle" class="node-label">EARS</text>
+    <rect x="290" y="196" width="70" height="30" class="dag-node" fill="#0c1117"/>
+    <text x="325" y="215" text-anchor="middle" class="node-label">EARS</text>
+    <rect x="380" y="196" width="70" height="30" class="dag-node" fill="#0c1117"/>
+    <text x="415" y="215" text-anchor="middle" class="node-label">EARS</text>
+    <rect x="470" y="196" width="70" height="30" class="dag-node" fill="#0c1117"/>
+    <text x="505" y="215" text-anchor="middle" class="node-label">EARS</text>
+  </g>
+
+  <!-- Tests -->
+  <g class="fade-in" style="--d: 0.9s">
+    <rect x="20" y="270" width="70" height="30" class="dag-node" fill="#0c1117"/>
+    <text x="55" y="289" text-anchor="middle" class="node-label">Tests</text>
+    <rect x="110" y="270" width="70" height="30" class="dag-node" fill="#0c1117"/>
+    <text x="145" y="289" text-anchor="middle" class="node-label">Tests</text>
+    <rect x="200" y="270" width="70" height="30" class="dag-node" fill="#0c1117"/>
+    <text x="235" y="289" text-anchor="middle" class="node-label">Tests</text>
+    <rect x="290" y="270" width="70" height="30" class="dag-node" fill="#0c1117"/>
+    <text x="325" y="289" text-anchor="middle" class="node-label">Tests</text>
+    <rect x="380" y="270" width="70" height="30" class="dag-node" fill="#0c1117"/>
+    <text x="415" y="289" text-anchor="middle" class="node-label">Tests</text>
+    <rect x="470" y="270" width="70" height="30" class="dag-node" fill="#0c1117"/>
+    <text x="505" y="289" text-anchor="middle" class="node-label">Tests</text>
+  </g>
+
+  <!-- Code -->
+  <g class="fade-in" style="--d: 1.15s">
+    <rect x="40" y="352" width="70" height="30" class="dag-node" fill="#0c1117"/>
+    <text x="75" y="371" text-anchor="middle" class="node-label">code</text>
+    <rect x="135" y="352" width="70" height="30" class="dag-node" fill="#0c1117"/>
+    <text x="170" y="371" text-anchor="middle" class="node-label">code</text>
+    <rect x="235" y="352" width="70" height="30" class="dag-node" fill="#0c1117"/>
+    <text x="270" y="371" text-anchor="middle" class="node-label">code</text>
+    <rect x="335" y="352" width="70" height="30" class="dag-node" fill="#0c1117"/>
+    <text x="370" y="371" text-anchor="middle" class="node-label">code</text>
+    <rect x="430" y="352" width="70" height="30" class="dag-node" fill="#0c1117"/>
+    <text x="465" y="371" text-anchor="middle" class="node-label">code</text>
+  </g>
+</svg>
