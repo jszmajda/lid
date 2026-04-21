@@ -1,0 +1,435 @@
+---
+layout: base.njk
+title: DAG Firefox Android diagnostic
+permalink: /dag-test/
+eleventyExcludeFromCollections: true
+---
+
+<style>
+  /* Isolate test variants — each gets its own wrapper class so I can
+     toggle one variable at a time without cross-contamination. */
+  .dag-test-page { max-width: 720px; margin: 2rem auto; padding: 0 1rem; }
+  .dag-test-page h1 { font-family: var(--type-serif); margin: 0 0 0.5rem; }
+  .dag-test-page p.intro { font-family: var(--type-mono); font-size: 13px; opacity: 0.8; margin-bottom: 2rem; }
+  .dag-test-variant { margin-bottom: 2.5rem; padding: 1rem; border: 1px solid var(--nib); border-radius: 4px; }
+  .dag-test-variant h2 {
+    font-family: var(--type-mono); font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase;
+    margin: 0 0 0.25rem; color: var(--nib);
+  }
+  .dag-test-variant .hypothesis {
+    font-family: var(--type-mono); font-size: 11px; opacity: 0.7; margin: 0 0 1rem;
+  }
+  .dag-test-variant svg { width: 100%; height: auto; display: block; }
+  .dag-test-variant text { font-family: var(--type-mono); font-size: 9px; fill: var(--ink); }
+  .dag-test-variant .node-label { font-size: 10px; }
+  .dag-test-variant .node-label-sm { font-size: 8.5px; }
+
+  /* V1 (control): reuse existing .dag-schematic CSS — no changes here. */
+
+  /* V2 (all 70×30 rects): same CSS as control. */
+
+  /* V3 (crispEdges): same CSS. The attribute is on each rect. */
+
+  /* V4 (no fade-in groups): defeat the fade-in rules for this variant. */
+  .dag-test-noanim rect { opacity: 1 !important; }
+
+  /* V5 (always opacity 1): override fade-in CSS. */
+  .dag-test-always-visible .fade-in { opacity: 1 !important; }
+
+  /* V6 (no markers): no marker-end on paths. Same rect CSS. */
+
+  /* V7 (all attributes, no CSS): deliberately no CSS class match.
+     Stroke/stroke-width/fill all live on rect as attributes. */
+  .dag-test-attrs-only rect { stroke: none; fill: inherit; }
+
+  /* V8 (SVG-internal <style>): CSS lives inside the SVG. */
+
+  /* V9 (smaller rendered size): cap width. */
+  .dag-test-small { max-width: 320px; }
+
+  /* V10 (fill-opacity="1" explicit): rect has fill-opacity="1" attribute. */
+
+  /* V11: stroke="none" — remove stroke entirely, see if the stroke cascade is interfering */
+  .dag-test-no-stroke rect { stroke: none !important; }
+
+  /* V12: <img> embedded SVG (test if inline vs external differs) */
+  .dag-test-img img { width: 100%; display: block; }
+</style>
+
+<div class="dag-test-page">
+  <h1>DAG paint diagnostic</h1>
+  <p class="intro">
+    Twelve variants of the DAG, each toggling one thing. On Firefox Android,
+    soft-reload the page and tell me the variant numbers where the lower-tier
+    rects render <strong>dark</strong> (correct) vs <strong>white/cream</strong>
+    (the bug). That narrows it to one variable.
+  </p>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       V1: CONTROL — current DAG, exactly as deployed
+       ═══════════════════════════════════════════════════════════ -->
+  <section class="dag-test-variant">
+    <h2>V1 · Control</h2>
+    <p class="hypothesis">Current production state. Should show the bug.</p>
+    {% include "dag-schematic.svg" %}
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       V2: ALL RECTS 70×30 — match hero rect size exactly
+       ═══════════════════════════════════════════════════════════ -->
+  <section class="dag-test-variant">
+    <h2>V2 · All rects 70×30 (match hero size)</h2>
+    <p class="hypothesis">Hypothesis: rects below some size threshold fail.
+      If all 70×30 rects render correctly, it's a size bug.</p>
+    <svg class="dag-schematic" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 420">
+      <g class="fade-in" style="--d: 0.1s">
+        <rect x="235" y="40" width="70" height="30" class="dag-node-accent" fill="#0c1117"/>
+        <rect x="35" y="118" width="70" height="30" class="dag-node" fill="#0c1117"/>
+        <rect x="235" y="118" width="70" height="30" class="dag-node" fill="#0c1117"/>
+        <rect x="435" y="118" width="70" height="30" class="dag-node" fill="#0c1117"/>
+        <rect x="20" y="196" width="70" height="30" class="dag-node" fill="#0c1117"/>
+        <rect x="110" y="196" width="70" height="30" class="dag-node" fill="#0c1117"/>
+        <rect x="200" y="196" width="70" height="30" class="dag-node" fill="#0c1117"/>
+        <rect x="290" y="196" width="70" height="30" class="dag-node" fill="#0c1117"/>
+        <rect x="380" y="196" width="70" height="30" class="dag-node" fill="#0c1117"/>
+        <rect x="470" y="196" width="70" height="30" class="dag-node" fill="#0c1117"/>
+        <rect x="20" y="270" width="70" height="30" class="dag-node" fill="#0c1117"/>
+        <rect x="110" y="270" width="70" height="30" class="dag-node" fill="#0c1117"/>
+        <rect x="200" y="270" width="70" height="30" class="dag-node" fill="#0c1117"/>
+        <rect x="290" y="270" width="70" height="30" class="dag-node" fill="#0c1117"/>
+        <rect x="380" y="270" width="70" height="30" class="dag-node" fill="#0c1117"/>
+        <rect x="470" y="270" width="70" height="30" class="dag-node" fill="#0c1117"/>
+        <rect x="40" y="352" width="70" height="30" class="dag-node" fill="#0c1117"/>
+        <rect x="135" y="352" width="70" height="30" class="dag-node" fill="#0c1117"/>
+        <rect x="235" y="352" width="70" height="30" class="dag-node" fill="#0c1117"/>
+        <rect x="335" y="352" width="70" height="30" class="dag-node" fill="#0c1117"/>
+        <rect x="430" y="352" width="70" height="30" class="dag-node" fill="#0c1117"/>
+      </g>
+    </svg>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       V3: shape-rendering="crispEdges" on all rects
+       ═══════════════════════════════════════════════════════════ -->
+  <section class="dag-test-variant">
+    <h2>V3 · shape-rendering="crispEdges"</h2>
+    <p class="hypothesis">Hypothesis: sub-pixel AA is the bug. crispEdges bypasses it.</p>
+    <svg class="dag-schematic" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 420" shape-rendering="crispEdges">
+      <g class="fade-in" style="--d: 0.1s">
+        <rect x="235" y="40" width="70" height="30" class="dag-node-accent" fill="#0c1117"/>
+        <rect x="80" y="118" width="60" height="28" class="dag-node" fill="#0c1117"/>
+        <rect x="240" y="118" width="60" height="28" class="dag-node" fill="#0c1117"/>
+        <rect x="400" y="118" width="60" height="28" class="dag-node" fill="#0c1117"/>
+        <rect x="45" y="196" width="50" height="24" class="dag-node" fill="#0c1117"/>
+        <rect x="125" y="196" width="50" height="24" class="dag-node" fill="#0c1117"/>
+        <rect x="215" y="196" width="50" height="24" class="dag-node" fill="#0c1117"/>
+        <rect x="295" y="196" width="50" height="24" class="dag-node" fill="#0c1117"/>
+        <rect x="385" y="196" width="50" height="24" class="dag-node" fill="#0c1117"/>
+        <rect x="465" y="196" width="50" height="24" class="dag-node" fill="#0c1117"/>
+        <rect x="47" y="270" width="46" height="22" class="dag-node" fill="#0c1117"/>
+        <rect x="127" y="270" width="46" height="22" class="dag-node" fill="#0c1117"/>
+        <rect x="217" y="270" width="46" height="22" class="dag-node" fill="#0c1117"/>
+        <rect x="297" y="270" width="46" height="22" class="dag-node" fill="#0c1117"/>
+        <rect x="387" y="270" width="46" height="22" class="dag-node" fill="#0c1117"/>
+        <rect x="467" y="270" width="46" height="22" class="dag-node" fill="#0c1117"/>
+        <rect x="58" y="352" width="44" height="20" class="dag-node" fill="#0c1117"/>
+        <rect x="153" y="352" width="44" height="20" class="dag-node" fill="#0c1117"/>
+        <rect x="248" y="352" width="44" height="20" class="dag-node" fill="#0c1117"/>
+        <rect x="343" y="352" width="44" height="20" class="dag-node" fill="#0c1117"/>
+        <rect x="438" y="352" width="44" height="20" class="dag-node" fill="#0c1117"/>
+      </g>
+    </svg>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       V4: NO FADE-IN GROUPS — plain static rects, no opacity animation
+       ═══════════════════════════════════════════════════════════ -->
+  <section class="dag-test-variant">
+    <h2>V4 · No fade-in groups (static, no animation)</h2>
+    <p class="hypothesis">Hypothesis: fade-in opacity:0 state stays on soft reload because
+      IntersectionObserver doesn't re-fire. If static rects render, animation is the culprit.</p>
+    <svg class="dag-schematic" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 420">
+      <rect x="235" y="40" width="70" height="30" class="dag-node-accent" fill="#0c1117"/>
+      <rect x="80" y="118" width="60" height="28" class="dag-node" fill="#0c1117"/>
+      <rect x="240" y="118" width="60" height="28" class="dag-node" fill="#0c1117"/>
+      <rect x="400" y="118" width="60" height="28" class="dag-node" fill="#0c1117"/>
+      <rect x="45" y="196" width="50" height="24" class="dag-node" fill="#0c1117"/>
+      <rect x="125" y="196" width="50" height="24" class="dag-node" fill="#0c1117"/>
+      <rect x="215" y="196" width="50" height="24" class="dag-node" fill="#0c1117"/>
+      <rect x="295" y="196" width="50" height="24" class="dag-node" fill="#0c1117"/>
+      <rect x="385" y="196" width="50" height="24" class="dag-node" fill="#0c1117"/>
+      <rect x="465" y="196" width="50" height="24" class="dag-node" fill="#0c1117"/>
+      <rect x="47" y="270" width="46" height="22" class="dag-node" fill="#0c1117"/>
+      <rect x="127" y="270" width="46" height="22" class="dag-node" fill="#0c1117"/>
+      <rect x="217" y="270" width="46" height="22" class="dag-node" fill="#0c1117"/>
+      <rect x="297" y="270" width="46" height="22" class="dag-node" fill="#0c1117"/>
+      <rect x="387" y="270" width="46" height="22" class="dag-node" fill="#0c1117"/>
+      <rect x="467" y="270" width="46" height="22" class="dag-node" fill="#0c1117"/>
+      <rect x="58" y="352" width="44" height="20" class="dag-node" fill="#0c1117"/>
+      <rect x="153" y="352" width="44" height="20" class="dag-node" fill="#0c1117"/>
+      <rect x="248" y="352" width="44" height="20" class="dag-node" fill="#0c1117"/>
+      <rect x="343" y="352" width="44" height="20" class="dag-node" fill="#0c1117"/>
+      <rect x="438" y="352" width="44" height="20" class="dag-node" fill="#0c1117"/>
+    </svg>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       V5: ALWAYS opacity:1 — groups present but CSS forces visible
+       ═══════════════════════════════════════════════════════════ -->
+  <section class="dag-test-variant dag-test-always-visible">
+    <h2>V5 · Groups kept, opacity forced to 1</h2>
+    <p class="hypothesis">Hypothesis: groups create compositor layers even without transition.
+      Forcing opacity:1 keeps groups but removes the starting-transparent state.</p>
+    <svg class="dag-schematic" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 420">
+      <g class="fade-in">
+        <rect x="235" y="40" width="70" height="30" class="dag-node-accent" fill="#0c1117"/>
+        <rect x="80" y="118" width="60" height="28" class="dag-node" fill="#0c1117"/>
+        <rect x="240" y="118" width="60" height="28" class="dag-node" fill="#0c1117"/>
+        <rect x="400" y="118" width="60" height="28" class="dag-node" fill="#0c1117"/>
+        <rect x="45" y="196" width="50" height="24" class="dag-node" fill="#0c1117"/>
+        <rect x="125" y="196" width="50" height="24" class="dag-node" fill="#0c1117"/>
+        <rect x="215" y="196" width="50" height="24" class="dag-node" fill="#0c1117"/>
+        <rect x="295" y="196" width="50" height="24" class="dag-node" fill="#0c1117"/>
+        <rect x="385" y="196" width="50" height="24" class="dag-node" fill="#0c1117"/>
+        <rect x="465" y="196" width="50" height="24" class="dag-node" fill="#0c1117"/>
+        <rect x="47" y="270" width="46" height="22" class="dag-node" fill="#0c1117"/>
+        <rect x="127" y="270" width="46" height="22" class="dag-node" fill="#0c1117"/>
+        <rect x="217" y="270" width="46" height="22" class="dag-node" fill="#0c1117"/>
+        <rect x="297" y="270" width="46" height="22" class="dag-node" fill="#0c1117"/>
+        <rect x="387" y="270" width="46" height="22" class="dag-node" fill="#0c1117"/>
+        <rect x="467" y="270" width="46" height="22" class="dag-node" fill="#0c1117"/>
+        <rect x="58" y="352" width="44" height="20" class="dag-node" fill="#0c1117"/>
+        <rect x="153" y="352" width="44" height="20" class="dag-node" fill="#0c1117"/>
+        <rect x="248" y="352" width="44" height="20" class="dag-node" fill="#0c1117"/>
+        <rect x="343" y="352" width="44" height="20" class="dag-node" fill="#0c1117"/>
+        <rect x="438" y="352" width="44" height="20" class="dag-node" fill="#0c1117"/>
+      </g>
+    </svg>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       V6: NO MARKERS / NO ARROWHEADS — remove <defs>, no marker-end
+       ═══════════════════════════════════════════════════════════ -->
+  <section class="dag-test-variant">
+    <h2>V6 · No arrowhead markers</h2>
+    <p class="hypothesis">Hypothesis: markers interact badly with rect paint on soft reload.</p>
+    <svg class="dag-schematic" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 420">
+      <rect x="235" y="40" width="70" height="30" class="dag-node-accent" fill="#0c1117"/>
+      <rect x="80" y="118" width="60" height="28" class="dag-node" fill="#0c1117"/>
+      <rect x="240" y="118" width="60" height="28" class="dag-node" fill="#0c1117"/>
+      <rect x="400" y="118" width="60" height="28" class="dag-node" fill="#0c1117"/>
+      <rect x="45" y="196" width="50" height="24" class="dag-node" fill="#0c1117"/>
+      <rect x="125" y="196" width="50" height="24" class="dag-node" fill="#0c1117"/>
+      <rect x="215" y="196" width="50" height="24" class="dag-node" fill="#0c1117"/>
+      <rect x="295" y="196" width="50" height="24" class="dag-node" fill="#0c1117"/>
+      <rect x="385" y="196" width="50" height="24" class="dag-node" fill="#0c1117"/>
+      <rect x="465" y="196" width="50" height="24" class="dag-node" fill="#0c1117"/>
+      <rect x="47" y="270" width="46" height="22" class="dag-node" fill="#0c1117"/>
+      <rect x="127" y="270" width="46" height="22" class="dag-node" fill="#0c1117"/>
+      <rect x="217" y="270" width="46" height="22" class="dag-node" fill="#0c1117"/>
+      <rect x="297" y="270" width="46" height="22" class="dag-node" fill="#0c1117"/>
+      <rect x="387" y="270" width="46" height="22" class="dag-node" fill="#0c1117"/>
+      <rect x="467" y="270" width="46" height="22" class="dag-node" fill="#0c1117"/>
+      <rect x="58" y="352" width="44" height="20" class="dag-node" fill="#0c1117"/>
+      <rect x="153" y="352" width="44" height="20" class="dag-node" fill="#0c1117"/>
+      <rect x="248" y="352" width="44" height="20" class="dag-node" fill="#0c1117"/>
+      <rect x="343" y="352" width="44" height="20" class="dag-node" fill="#0c1117"/>
+      <rect x="438" y="352" width="44" height="20" class="dag-node" fill="#0c1117"/>
+    </svg>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       V7: ATTRIBUTES ONLY — stroke, stroke-width as attributes, no CSS styling
+       ═══════════════════════════════════════════════════════════ -->
+  <section class="dag-test-variant dag-test-attrs-only">
+    <h2>V7 · All visual properties as SVG attributes</h2>
+    <p class="hypothesis">Hypothesis: CSS→SVG cascade is unreliable on soft reload.
+      Bypass it entirely — stroke/stroke-width/fill all as attributes.</p>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 420">
+      <rect x="235" y="40" width="70" height="30" fill="#0c1117" stroke="#e0a060" stroke-width="1.3"/>
+      <rect x="80" y="118" width="60" height="28" fill="#0c1117" stroke="#7d7a6c" stroke-width="1.25"/>
+      <rect x="240" y="118" width="60" height="28" fill="#0c1117" stroke="#7d7a6c" stroke-width="1.25"/>
+      <rect x="400" y="118" width="60" height="28" fill="#0c1117" stroke="#7d7a6c" stroke-width="1.25"/>
+      <rect x="45" y="196" width="50" height="24" fill="#0c1117" stroke="#7d7a6c" stroke-width="1"/>
+      <rect x="125" y="196" width="50" height="24" fill="#0c1117" stroke="#7d7a6c" stroke-width="1"/>
+      <rect x="215" y="196" width="50" height="24" fill="#0c1117" stroke="#7d7a6c" stroke-width="1"/>
+      <rect x="295" y="196" width="50" height="24" fill="#0c1117" stroke="#7d7a6c" stroke-width="1"/>
+      <rect x="385" y="196" width="50" height="24" fill="#0c1117" stroke="#7d7a6c" stroke-width="1"/>
+      <rect x="465" y="196" width="50" height="24" fill="#0c1117" stroke="#7d7a6c" stroke-width="1"/>
+      <rect x="47" y="270" width="46" height="22" fill="#0c1117" stroke="#7d7a6c" stroke-width="0.9"/>
+      <rect x="127" y="270" width="46" height="22" fill="#0c1117" stroke="#7d7a6c" stroke-width="0.9"/>
+      <rect x="217" y="270" width="46" height="22" fill="#0c1117" stroke="#7d7a6c" stroke-width="0.9"/>
+      <rect x="297" y="270" width="46" height="22" fill="#0c1117" stroke="#7d7a6c" stroke-width="0.9"/>
+      <rect x="387" y="270" width="46" height="22" fill="#0c1117" stroke="#7d7a6c" stroke-width="0.9"/>
+      <rect x="467" y="270" width="46" height="22" fill="#0c1117" stroke="#7d7a6c" stroke-width="0.9"/>
+      <rect x="58" y="352" width="44" height="20" fill="#0c1117" stroke="#b8b4a2" stroke-width="0.8"/>
+      <rect x="153" y="352" width="44" height="20" fill="#0c1117" stroke="#b8b4a2" stroke-width="0.8"/>
+      <rect x="248" y="352" width="44" height="20" fill="#0c1117" stroke="#b8b4a2" stroke-width="0.8"/>
+      <rect x="343" y="352" width="44" height="20" fill="#0c1117" stroke="#b8b4a2" stroke-width="0.8"/>
+      <rect x="438" y="352" width="44" height="20" fill="#0c1117" stroke="#b8b4a2" stroke-width="0.8"/>
+    </svg>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       V8: SVG-INTERNAL <style> BLOCK
+       ═══════════════════════════════════════════════════════════ -->
+  <section class="dag-test-variant">
+    <h2>V8 · &lt;style&gt; block inside the SVG</h2>
+    <p class="hypothesis">Hypothesis: external CSS not applying to SVG reliably on soft reload.
+      Internal &lt;style&gt; block is scoped and parsed with the SVG.</p>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 420">
+      <style>
+        rect.n { fill: #0c1117; stroke: #7d7a6c; stroke-width: 1.25; }
+        rect.a { fill: #0c1117; stroke: #e0a060; stroke-width: 1.3; }
+      </style>
+      <rect x="235" y="40" width="70" height="30" class="a"/>
+      <rect x="80" y="118" width="60" height="28" class="n"/>
+      <rect x="240" y="118" width="60" height="28" class="n"/>
+      <rect x="400" y="118" width="60" height="28" class="n"/>
+      <rect x="45" y="196" width="50" height="24" class="n"/>
+      <rect x="125" y="196" width="50" height="24" class="n"/>
+      <rect x="215" y="196" width="50" height="24" class="n"/>
+      <rect x="295" y="196" width="50" height="24" class="n"/>
+      <rect x="385" y="196" width="50" height="24" class="n"/>
+      <rect x="465" y="196" width="50" height="24" class="n"/>
+      <rect x="47" y="270" width="46" height="22" class="n"/>
+      <rect x="127" y="270" width="46" height="22" class="n"/>
+      <rect x="217" y="270" width="46" height="22" class="n"/>
+      <rect x="297" y="270" width="46" height="22" class="n"/>
+      <rect x="387" y="270" width="46" height="22" class="n"/>
+      <rect x="467" y="270" width="46" height="22" class="n"/>
+      <rect x="58" y="352" width="44" height="20" class="n"/>
+      <rect x="153" y="352" width="44" height="20" class="n"/>
+      <rect x="248" y="352" width="44" height="20" class="n"/>
+      <rect x="343" y="352" width="44" height="20" class="n"/>
+      <rect x="438" y="352" width="44" height="20" class="n"/>
+    </svg>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       V9: SMALLER RENDERED SIZE — cap to 320px wide
+       ═══════════════════════════════════════════════════════════ -->
+  <section class="dag-test-variant dag-test-small">
+    <h2>V9 · Smaller rendered size (max-width 320px)</h2>
+    <p class="hypothesis">Hypothesis: GPU layer max size exceeded when SVG renders full-width.
+      Constraining render size tests this.</p>
+    <svg class="dag-schematic" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 420">
+      <rect x="235" y="40" width="70" height="30" class="dag-node-accent" fill="#0c1117"/>
+      <rect x="80" y="118" width="60" height="28" class="dag-node" fill="#0c1117"/>
+      <rect x="240" y="118" width="60" height="28" class="dag-node" fill="#0c1117"/>
+      <rect x="400" y="118" width="60" height="28" class="dag-node" fill="#0c1117"/>
+      <rect x="45" y="196" width="50" height="24" class="dag-node" fill="#0c1117"/>
+      <rect x="125" y="196" width="50" height="24" class="dag-node" fill="#0c1117"/>
+      <rect x="215" y="196" width="50" height="24" class="dag-node" fill="#0c1117"/>
+      <rect x="295" y="196" width="50" height="24" class="dag-node" fill="#0c1117"/>
+      <rect x="385" y="196" width="50" height="24" class="dag-node" fill="#0c1117"/>
+      <rect x="465" y="196" width="50" height="24" class="dag-node" fill="#0c1117"/>
+      <rect x="47" y="270" width="46" height="22" class="dag-node" fill="#0c1117"/>
+      <rect x="127" y="270" width="46" height="22" class="dag-node" fill="#0c1117"/>
+      <rect x="217" y="270" width="46" height="22" class="dag-node" fill="#0c1117"/>
+      <rect x="297" y="270" width="46" height="22" class="dag-node" fill="#0c1117"/>
+      <rect x="387" y="270" width="46" height="22" class="dag-node" fill="#0c1117"/>
+      <rect x="467" y="270" width="46" height="22" class="dag-node" fill="#0c1117"/>
+      <rect x="58" y="352" width="44" height="20" class="dag-node" fill="#0c1117"/>
+      <rect x="153" y="352" width="44" height="20" class="dag-node" fill="#0c1117"/>
+      <rect x="248" y="352" width="44" height="20" class="dag-node" fill="#0c1117"/>
+      <rect x="343" y="352" width="44" height="20" class="dag-node" fill="#0c1117"/>
+      <rect x="438" y="352" width="44" height="20" class="dag-node" fill="#0c1117"/>
+    </svg>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       V10: fill-opacity="1" explicit attribute
+       ═══════════════════════════════════════════════════════════ -->
+  <section class="dag-test-variant">
+    <h2>V10 · fill-opacity="1" explicit attribute</h2>
+    <p class="hypothesis">Hypothesis: Firefox Android's soft-reload paint defaults fill-opacity to 0.
+      Explicit fill-opacity="1" overrides.</p>
+    <svg class="dag-schematic" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 420">
+      <rect x="235" y="40" width="70" height="30" class="dag-node-accent" fill="#0c1117" fill-opacity="1"/>
+      <rect x="80" y="118" width="60" height="28" class="dag-node" fill="#0c1117" fill-opacity="1"/>
+      <rect x="240" y="118" width="60" height="28" class="dag-node" fill="#0c1117" fill-opacity="1"/>
+      <rect x="400" y="118" width="60" height="28" class="dag-node" fill="#0c1117" fill-opacity="1"/>
+      <rect x="45" y="196" width="50" height="24" class="dag-node" fill="#0c1117" fill-opacity="1"/>
+      <rect x="125" y="196" width="50" height="24" class="dag-node" fill="#0c1117" fill-opacity="1"/>
+      <rect x="215" y="196" width="50" height="24" class="dag-node" fill="#0c1117" fill-opacity="1"/>
+      <rect x="295" y="196" width="50" height="24" class="dag-node" fill="#0c1117" fill-opacity="1"/>
+      <rect x="385" y="196" width="50" height="24" class="dag-node" fill="#0c1117" fill-opacity="1"/>
+      <rect x="465" y="196" width="50" height="24" class="dag-node" fill="#0c1117" fill-opacity="1"/>
+      <rect x="47" y="270" width="46" height="22" class="dag-node" fill="#0c1117" fill-opacity="1"/>
+      <rect x="127" y="270" width="46" height="22" class="dag-node" fill="#0c1117" fill-opacity="1"/>
+      <rect x="217" y="270" width="46" height="22" class="dag-node" fill="#0c1117" fill-opacity="1"/>
+      <rect x="297" y="270" width="46" height="22" class="dag-node" fill="#0c1117" fill-opacity="1"/>
+      <rect x="387" y="270" width="46" height="22" class="dag-node" fill="#0c1117" fill-opacity="1"/>
+      <rect x="467" y="270" width="46" height="22" class="dag-node" fill="#0c1117" fill-opacity="1"/>
+      <rect x="58" y="352" width="44" height="20" class="dag-node" fill="#0c1117" fill-opacity="1"/>
+      <rect x="153" y="352" width="44" height="20" class="dag-node" fill="#0c1117" fill-opacity="1"/>
+      <rect x="248" y="352" width="44" height="20" class="dag-node" fill="#0c1117" fill-opacity="1"/>
+      <rect x="343" y="352" width="44" height="20" class="dag-node" fill="#0c1117" fill-opacity="1"/>
+      <rect x="438" y="352" width="44" height="20" class="dag-node" fill="#0c1117" fill-opacity="1"/>
+    </svg>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       V11: stroke="none" — remove strokes entirely
+       ═══════════════════════════════════════════════════════════ -->
+  <section class="dag-test-variant dag-test-no-stroke">
+    <h2>V11 · stroke="none"</h2>
+    <p class="hypothesis">Hypothesis: stroke rendering is somehow related. Remove strokes entirely.</p>
+    <svg class="dag-schematic" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 420">
+      <rect x="235" y="40" width="70" height="30" fill="#0c1117" stroke="none"/>
+      <rect x="80" y="118" width="60" height="28" fill="#0c1117" stroke="none"/>
+      <rect x="240" y="118" width="60" height="28" fill="#0c1117" stroke="none"/>
+      <rect x="400" y="118" width="60" height="28" fill="#0c1117" stroke="none"/>
+      <rect x="45" y="196" width="50" height="24" fill="#0c1117" stroke="none"/>
+      <rect x="125" y="196" width="50" height="24" fill="#0c1117" stroke="none"/>
+      <rect x="215" y="196" width="50" height="24" fill="#0c1117" stroke="none"/>
+      <rect x="295" y="196" width="50" height="24" fill="#0c1117" stroke="none"/>
+      <rect x="385" y="196" width="50" height="24" fill="#0c1117" stroke="none"/>
+      <rect x="465" y="196" width="50" height="24" fill="#0c1117" stroke="none"/>
+      <rect x="47" y="270" width="46" height="22" fill="#0c1117" stroke="none"/>
+      <rect x="127" y="270" width="46" height="22" fill="#0c1117" stroke="none"/>
+      <rect x="217" y="270" width="46" height="22" fill="#0c1117" stroke="none"/>
+      <rect x="297" y="270" width="46" height="22" fill="#0c1117" stroke="none"/>
+      <rect x="387" y="270" width="46" height="22" fill="#0c1117" stroke="none"/>
+      <rect x="467" y="270" width="46" height="22" fill="#0c1117" stroke="none"/>
+      <rect x="58" y="352" width="44" height="20" fill="#0c1117" stroke="none"/>
+      <rect x="153" y="352" width="44" height="20" fill="#0c1117" stroke="none"/>
+      <rect x="248" y="352" width="44" height="20" fill="#0c1117" stroke="none"/>
+      <rect x="343" y="352" width="44" height="20" fill="#0c1117" stroke="none"/>
+      <rect x="438" y="352" width="44" height="20" fill="#0c1117" stroke="none"/>
+    </svg>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       V12: TINY FIXED SIZE — display at 200px width directly
+       ═══════════════════════════════════════════════════════════ -->
+  <section class="dag-test-variant" style="max-width: 240px;">
+    <h2>V12 · Display width 200px (smallest tier in viewport)</h2>
+    <p class="hypothesis">Hypothesis: at very small display size, rects are small enough
+      in device-pixels that a different Firefox render path kicks in.</p>
+    <svg class="dag-schematic" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 420" style="width: 200px; height: auto;">
+      <rect x="235" y="40" width="70" height="30" class="dag-node-accent" fill="#0c1117"/>
+      <rect x="80" y="118" width="60" height="28" class="dag-node" fill="#0c1117"/>
+      <rect x="240" y="118" width="60" height="28" class="dag-node" fill="#0c1117"/>
+      <rect x="400" y="118" width="60" height="28" class="dag-node" fill="#0c1117"/>
+      <rect x="45" y="196" width="50" height="24" class="dag-node" fill="#0c1117"/>
+      <rect x="125" y="196" width="50" height="24" class="dag-node" fill="#0c1117"/>
+      <rect x="215" y="196" width="50" height="24" class="dag-node" fill="#0c1117"/>
+      <rect x="295" y="196" width="50" height="24" class="dag-node" fill="#0c1117"/>
+      <rect x="385" y="196" width="50" height="24" class="dag-node" fill="#0c1117"/>
+      <rect x="465" y="196" width="50" height="24" class="dag-node" fill="#0c1117"/>
+      <rect x="47" y="270" width="46" height="22" class="dag-node" fill="#0c1117"/>
+      <rect x="127" y="270" width="46" height="22" class="dag-node" fill="#0c1117"/>
+      <rect x="217" y="270" width="46" height="22" class="dag-node" fill="#0c1117"/>
+      <rect x="297" y="270" width="46" height="22" class="dag-node" fill="#0c1117"/>
+      <rect x="387" y="270" width="46" height="22" class="dag-node" fill="#0c1117"/>
+      <rect x="467" y="270" width="46" height="22" class="dag-node" fill="#0c1117"/>
+      <rect x="58" y="352" width="44" height="20" class="dag-node" fill="#0c1117"/>
+      <rect x="153" y="352" width="44" height="20" class="dag-node" fill="#0c1117"/>
+      <rect x="248" y="352" width="44" height="20" class="dag-node" fill="#0c1117"/>
+      <rect x="343" y="352" width="44" height="20" class="dag-node" fill="#0c1117"/>
+      <rect x="438" y="352" width="44" height="20" class="dag-node" fill="#0c1117"/>
+    </svg>
+  </section>
+</div>
