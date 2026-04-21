@@ -1,8 +1,10 @@
-# Linked-Intent Development for Claude Code
+# Linked-Intent Development
 
-A plugin marketplace for [Claude Code](https://claude.ai/code) that brings structured, design-driven development to your projects. Stop building the wrong thing — get alignment on *what* before writing *how*.
+A structured design-before-code methodology for agentic coding. Stop building the wrong thing — get alignment on *what* before writing *how*. Works with any coding agent that reads per-project instructions.
 
 ## Quickstart
+
+**Using Claude Code?** Install the plugins — richest integration, auto-invoking skills, slash commands:
 
 ```
 /plugin marketplace add jszmajda/lid
@@ -11,7 +13,9 @@ A plugin marketplace for [Claude Code](https://claude.ai/code) that brings struc
 /linked-intent-dev:lid-setup
 ```
 
-Then just tell Claude what you want to build. It handles the rest. For existing codebases, see [Getting Started: Brownfield Project](#getting-started-brownfield-project).
+**Using Cursor, Windsurf, GitHub Copilot, Aider, Continue, Junie, Codex, Zed, or other tools?** Drop a small rule file into your project that points the agent at an `AGENTS.md`. Copy-paste snippets for each tool are in [`docs/setup.md`](docs/setup.md).
+
+Then just describe what you want to build. The methodology handles the rest. For existing codebases, see [Getting Started: Brownfield Project](#getting-started-brownfield-project).
 
 > **LID uses LID on itself.** This repo is the canonical mature-project example — its own HLD, LLDs, EARS specs, and evals are in `docs/` and `plugins/*/skills/*/evals/`. If you want to see what LID-at-rest looks like on a real codebase, read the docs here. For a small, intent-only demo (HLD + LLDs + specs, no code — meant to be given to an agent to regenerate), see [`examples/urlshort/`](examples/urlshort/).
 
@@ -53,20 +57,24 @@ LID is optimized for **the project over time**. The design documents aren't scaf
 
 LID is also intentionally much simpler than other SDD systems. Where others reach for specialized agents, adversarial reviews, multi-phase orchestration, CI guards, or reconciliation workflows, LID has two skills and a handful of markdown templates. The complexity lives in Claude, not in the tooling — we rely on the model's judgment as much as possible and focus the system on creating durable context that survives across sessions, compactions, and even model changes.
 
-This comes from building products at AWS, where systems live for years and the biggest cost isn't building the wrong thing once — it's *maintaining* a system where nobody can explain why it does what it does. LID treats Claude Code as an English compiler: your design documents are the source, and everything downstream is compiled output.
+This comes from building products at AWS, where systems live for years and the biggest cost isn't building the wrong thing once — it's *maintaining* a system where nobody can explain why it does what it does. LID treats your coding agent as an English compiler: your design documents are the source, and everything downstream is compiled output.
 
 The tradeoff is that LID requires discipline. You review HLDs and LLDs carefully. You close intent gaps through progressive application of arrow-maintenance. You don't skip the design phases because you "already know what to build." But when used consistently, it produces systems that are more coherent, more maintainable, and self-documenting — because the documentation *is* the system, and the code just happens to implement it.
 
 ## What's in here
 
-**Two core plugins** for linked-intent development:
+**Two core Claude Code plugins** for linked-intent development, plus rule-file adapters for other agentic coding tools (see [`docs/setup.md`](docs/setup.md)):
 
 | Plugin | What it does | When to use it |
 |--------|-------------|----------------|
 | **linked-intent-dev** | Structured design-before-code workflow: HLD → LLD → EARS specs → Implementation plan | Every project. Consult for all code changes. |
 | **arrow-maintenance** | Tracks spec-to-code coherence across large projects via `docs/arrows/` index | Projects too large to hold in one context window |
 
-## Installation
+Users on other agentic coding tools follow the same workflow by pointing their tool's rule-file system at an `AGENTS.md` in their project. The plugins automate phase gates and skill invocation; other tools rely on the agent reading the instructions on every turn.
+
+## Installation (Claude Code)
+
+For other tools, see [`docs/setup.md`](docs/setup.md).
 
 Inside Claude Code:
 
@@ -87,7 +95,7 @@ After installing, run the setup skill to configure your project:
 /linked-intent-dev:lid-setup
 ```
 
-This creates your `docs/` directory structure and adds the required directives to your project's CLAUDE.md.
+This creates your `docs/` directory structure and adds the required directives to your project's `CLAUDE.md`. If you want `AGENTS.md` as an alias for other agentic coding tools, see [`docs/setup.md`](docs/setup.md) — a symlink or one-line import is all it takes.
 
 ## Getting Started: Greenfield Project
 
@@ -99,17 +107,17 @@ You're starting something new. Here's the workflow:
 /linked-intent-dev:lid-setup
 ```
 
-This creates `docs/high-level-design.md`, `docs/llds/`, `docs/specs/` and appends LID directives to your project's CLAUDE.md. It asks which mode you want — **Full LID** (whole project) or **Scoped LID** (a bounded piece of a larger project, with glob patterns declaring what's in scope).
+This creates `docs/high-level-design.md`, `docs/llds/`, `docs/specs/` and appends LID directives to your project's `CLAUDE.md` (which Claude Code reads). If you also use Cursor, Windsurf, Codex, or another AGENTS.md-honoring tool, [`docs/setup.md`](docs/setup.md) shows how to alias `AGENTS.md` to the same content. It asks which mode you want — **Full LID** (whole project) or **Scoped LID** (a bounded piece of a larger project, with glob patterns declaring what's in scope).
 
 ### 2. Design before you code
 
-Start by telling Claude what you want to build. The linked-intent-dev skill guides you through six phases, **stopping for your review after each one**:
+Start by telling your agent what you want to build. On Claude Code the linked-intent-dev skill activates automatically; on other tools the agent follows the workflow by reading your project's `AGENTS.md`. Either way, the phases are the same, and in Claude Code the skill **stops for your review after each one**:
 
-**Phase 1 — HLD check.** For new projects or architectural changes, Claude sketches 2–3 competing trade-off options and asks you to pick. Then drafts the full HLD. You review and approve before moving on.
+**Phase 1 — HLD check.** For new projects or architectural changes, the agent sketches 2–3 competing trade-off options and asks you to pick. Then drafts the full HLD. You review and approve before moving on.
 
-**Phase 2 — LLD check or draft.** For each component, Claude writes (or updates) a detailed LLD covering data models, error handling, decisions, and open questions. After drafting, Claude runs an **LLD-level edge-case probe** — "what happens when..." questions targeting gaps inside this LLD. You triage which gaps to fix. You review.
+**Phase 2 — LLD check or draft.** For each component, the agent writes (or updates) a detailed LLD covering data models, error handling, decisions, and open questions. After drafting, it runs an **LLD-level edge-case probe** — "what happens when..." questions targeting gaps inside this LLD. You triage which gaps to fix. You review.
 
-**Phase 3 — EARS specifications.** Claude generates testable requirements with semantic IDs like `AUTH-UI-001`. Each spec is something you can point at and say "is this implemented?" After drafting, Claude runs **post-draft consistency verification** — coverage (behaviors without specs?), contradiction, implicit scoping. You review.
+**Phase 3 — EARS specifications.** The agent generates testable requirements with semantic IDs like `AUTH-UI-001`. Each spec is something you can point at and say "is this implemented?" After drafting, it runs **post-draft consistency verification** — coverage (behaviors without specs?), contradiction, implicit scoping. You review.
 
 **Phase 4 — Intent-narrowing edge audit.** Distinct from Phase 2: this looks *across* the whole specification for places where the agent's interpretation could diverge from what you meant — cross-segment interactions, namespace ambiguity, composition of specs. This is the edge where LID's value lives.
 
@@ -130,13 +138,13 @@ Tests reference specs too. This creates a traceable chain from requirements to c
 
 ### 4. Keep it coherent
 
-When requirements change (they always do), the linked-intent-dev skill cascades changes downward: update the HLD → review LLDs → review specs → review tests → review code. Within one arrow segment (an LLD and its downstream), cascade runs freely. Across segment boundaries, the skill pauses and confirms — real LLDs are uneven, and aggressive cross-boundary cascade propagates incoherence.
+When requirements change (they always do), the workflow cascades changes downward: update the HLD → review LLDs → review specs → review tests → review code. Within one arrow segment (an LLD and its downstream), cascade runs freely. Across segment boundaries, pause and confirm — real LLDs are uneven, and aggressive cross-boundary cascade propagates incoherence. (On Claude Code the skill enforces the pause; elsewhere the agent honors it by reading `AGENTS.md`.)
 
 Docs always reflect *current* intent, not history. Delete obsolete specs rather than marking them; git preserves history.
 
 ### 5. Fix bugs by walking the arrow
 
-Bugs aren't a special case. Find where behavior diverged from intent, decide whether intent needs to change / is wrong / was never expressed, and cascade from there. Fixing code without walking the arrow is a bypass — the skill warns but doesn't block.
+Bugs aren't a special case. Find where behavior diverged from intent, decide whether intent needs to change / is wrong / was never expressed, and cascade from there. Fixing code without walking the arrow is a bypass — Claude Code's skill warns but doesn't block; other tools rely on you noticing.
 
 ## Getting Started: Brownfield Project
 
@@ -144,13 +152,15 @@ You have an existing codebase and want to bring structure to it. This works bott
 
 ### 1. Install and set up
 
-You'll need both plugins. Install them, then run setup:
+Brownfield bootstrap is a Claude-Code-only flow today — `arrow-maintenance`'s `/map-codebase` command orchestrates multi-phase codebase reading that other tools' rule systems can't drive. Install both plugins, then run setup:
 
 ```
 /plugin install linked-intent-dev@jszmajda-lid
 /plugin install arrow-maintenance@jszmajda-lid
 /linked-intent-dev:lid-setup
 ```
+
+Once the mapping is done, the resulting `docs/` tree and `AGENTS.md` work in any agentic coding tool — you're back on the tool-agnostic path.
 
 ### 2. Map the codebase
 
@@ -170,11 +180,11 @@ You'll need both plugins. Install them, then run setup:
 
 **Phase 5 — Artifact generation.** For each approved segment, Claude drafts a skeleton LLD, an EARS spec file, an arrow doc, and an `index.yaml` entry — with a STOP after each sub-step. Brownfield LLDs use the *standard* LLD template (no separate brownfield format); content carries `[inferred]` markers in the Decisions table and Open Questions for observed-but-unexplained behaviors. As you confirm or refute inferences, the markers come out.
 
-**Phase 6 — Terminal verification.** Claude runs `/lid-setup` to configure CLAUDE.md, then issues a flesh-out prompt directing you to fill in skeleton LLDs and EARS specs segment-by-segment via the `linked-intent-dev` workflow. Partial arrows propagate incoherence, so this prompt isn't optional.
+**Phase 6 — Terminal verification.** Claude runs `/lid-setup` to configure the project's `CLAUDE.md`, then issues a flesh-out prompt directing you to fill in skeleton LLDs and EARS specs segment-by-segment via the `linked-intent-dev` workflow. Partial arrows propagate incoherence, so this prompt isn't optional.
 
 ### 3. Work with arrows
 
-After mapping, you have a navigable index of your codebase. At the start of any work session, Claude reads `docs/arrows/index.yaml` first to find unblocked work. Per-segment arrow docs point at their LLD, EARS specs, tests, and code — you don't load the whole project to orient.
+After mapping, you have a navigable index of your codebase. At the start of any work session, the agent reads `docs/arrows/index.yaml` first to find unblocked work. Per-segment arrow docs point at their LLD, EARS specs, tests, and code — you don't load the whole project to orient.
 
 Arrow segment statuses:
 
@@ -188,9 +198,9 @@ Arrow segment statuses:
 
 Run `/arrow-maintenance` anytime to audit the overlay: it detects reference rot, spec-to-code drift, uncovered behavioral specs, stale segments, orphan files, and *reverse orphans* (`@spec` annotations pointing to spec IDs that don't exist). Unambiguous findings are fixed in place; ambiguous ones are surfaced for you to decide.
 
-For large projects, declare a coherence-check script in CLAUDE.md's `## LID Tooling` section — arrow-maintenance delegates deterministic checks to it for speed. A reference Node implementation ships with the plugin; Python/bash/any-language equivalents work identically.
+For large projects, declare a coherence-check script in `AGENTS.md`'s `## LID Tooling` section — arrow-maintenance delegates deterministic checks to it for speed. A reference Node implementation ships with the plugin; Python/bash/any-language equivalents work identically.
 
-## Quick Reference
+## Quick Reference (Claude Code slash commands)
 
 | You want to... | Run... |
 |----------------|--------|
@@ -199,7 +209,9 @@ For large projects, declare a coherence-check script in CLAUDE.md's `## LID Tool
 | Map an existing codebase | `/arrow-maintenance:map-codebase` |
 | Audit the arrow overlay for drift | `/arrow-maintenance:arrow-maintenance` |
 | Start a new feature | Just describe it — linked-intent-dev activates automatically |
-| Fix a bug | Just describe it — Claude walks the arrow to find where intent diverged |
+| Fix a bug | Just describe it — the agent walks the arrow to find where intent diverged |
+
+On other tools, the setup step is one-time (copy the adapter file from [`docs/setup.md`](docs/setup.md) into your project); the rest happens in normal prompting.
 
 ## Reference implementations and validation
 

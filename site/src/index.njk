@@ -4,7 +4,7 @@ eleventyNavigation:
   key: Home
   order: 1
 permalink: /
-description: Linked-Intent Development — treat your coding agent as an English compiler. Intent is the source; code is the output. A minimum-surface plugin marketplace for Claude Code.
+description: Linked-Intent Development — treat your coding agent as an English compiler. Intent is the source; code is the output. Claude Code plugins plus rule-file adapters for Cursor, Windsurf, Copilot, Aider, and other agentic coding tools.
 ---
 
 <!-- @spec MKT-SITE-007 (home page section ordering) -->
@@ -23,9 +23,9 @@ description: Linked-Intent Development — treat your coding agent as an English
       </h1>
 
       <ol class="framing" aria-label="Three-line framing">
-        <li>LID is the language.</li>
-        <li>Claude is the compiler.</li>
-        <li>Code is the output.</li>
+        {% for line in site.framing %}
+          <li>{{ line }}</li>
+        {% endfor %}
       </ol>
 
       <p class="hero-lede">
@@ -126,14 +126,35 @@ description: Linked-Intent Development — treat your coding agent as an English
 <section class="quickstart section" id="quickstart" aria-labelledby="quickstart-heading">
   <div class="container">
     <div class="quickstart-shell">
+      {% set setupUrl = site.repoUrl + "/blob/main/docs/setup.md" %}
+      {% set agentsAnchor = setupUrl + "#the-simple-path-just-ship-agentsmd" %}
       <div class="quickstart-meta">
         <span class="plate">Plate 03 / Quickstart</span>
         <h2 id="quickstart-heading"><em style="font-style:italic;color:var(--nib)">Four commands</em>, inside Claude&nbsp;Code.</h2>
         <p class="lede">
-          Register the marketplace, install the two plugins, bootstrap your project. After that you describe what you want to build and the skill walks you through design, specs, and tests before it writes any code.
+          Install the two plugins, bootstrap your project. After that you describe what you want to build and the skill walks you through design, specs, and tests before it writes any code.
         </p>
+        <div class="extras">
+          <p class="extras-lede">
+            Using a different coding agent? Same workflow — most tools just need an <code>AGENTS.md</code> at your project root, some want one small rule file alongside. Pick yours:
+          </p>
+          <ul class="tool-chips" aria-label="Setup instructions for other coding agents">
+            <li><a class="chip" href="{{ setupUrl }}#cursor">Cursor <span class="chip-arr" aria-hidden="true">↗</span></a></li>
+            <li><a class="chip" href="{{ setupUrl }}#windsurf">Windsurf <span class="chip-arr" aria-hidden="true">↗</span></a></li>
+            <li><a class="chip" href="{{ setupUrl }}#github-copilot">GitHub Copilot <span class="chip-arr" aria-hidden="true">↗</span></a></li>
+            <li><a class="chip" href="{{ agentsAnchor }}">Codex CLI <span class="chip-arr" aria-hidden="true">↗</span></a></li>
+            <li><a class="chip" href="{{ setupUrl }}#aider">Aider <span class="chip-arr" aria-hidden="true">↗</span></a></li>
+            <li><a class="chip" href="{{ agentsAnchor }}">Pi <span class="chip-arr" aria-hidden="true">↗</span></a></li>
+            <li><a class="chip" href="{{ setupUrl }}#continuedev">Continue <span class="chip-arr" aria-hidden="true">↗</span></a></li>
+            <li><a class="chip" href="{{ setupUrl }}#jetbrains-junie">JetBrains Junie <span class="chip-arr" aria-hidden="true">↗</span></a></li>
+            <li><a class="chip" href="{{ agentsAnchor }}">Zed <span class="chip-arr" aria-hidden="true">↗</span></a></li>
+            <li><a class="chip" href="{{ agentsAnchor }}">Amp <span class="chip-arr" aria-hidden="true">↗</span></a></li>
+            <li><a class="chip" href="{{ agentsAnchor }}">Jules <span class="chip-arr" aria-hidden="true">↗</span></a></li>
+            <li><a class="chip chip-more" href="{{ setupUrl }}">all tools <span class="chip-arr" aria-hidden="true">↗</span></a></li>
+          </ul>
+        </div>
         <p class="extras">
-          Corporate environment blocks marketplaces? <a href="{{ site.repoUrl }}">Clone the repo directly</a> — same plugins, same behavior.
+          Corporate environment blocks third-party plugins? <a href="{{ site.repoUrl }}">Clone the repo directly</a> — same plugins, same behavior.
         </p>
       </div>
 

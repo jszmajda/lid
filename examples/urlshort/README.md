@@ -7,13 +7,14 @@ This example exists to demonstrate a single claim: *if LID is working, you shoul
 ## How to use
 
 1. Clone this directory into a working location (anywhere outside the LID repo).
-2. Open it in [Claude Code](https://claude.ai/code) with the LID plugins installed:
+2. Open it in your agentic coding tool. On Claude Code, install the LID plugins for the richest integration:
    ```
    /plugin marketplace add jszmajda/lid
    /plugin install linked-intent-dev@jszmajda-lid
    ```
-3. Tell Claude something like:
-   > "Read the docs/ tree. I want to implement the URL shortener it specifies. Pick a stack (the HLD is deliberately stack-agnostic — recommend one, then we'll proceed). Use the `linked-intent-dev` workflow to generate tests first, then code, with `@spec` annotations citing the EARS IDs."
+   On other tools (Cursor, Windsurf, Copilot, Aider, Continue, Junie, Codex, Zed), drop the matching rule file from [`docs/setup.md`](../../docs/setup.md) into this example directory.
+3. Tell the agent something like:
+   > "Read the docs/ tree. I want to implement the URL shortener it specifies. Pick a stack (the HLD is deliberately stack-agnostic — recommend one, then we'll proceed). Use the LID workflow to generate tests first, then code, with `@spec` annotations citing the EARS IDs."
 4. Review what the agent proposes, approve at each phase stop, and let it build.
 5. When the coherence check passes — every EARS spec has a test citing its ID, every `@spec` annotation resolves — you have an implementation that traces to intent.
 

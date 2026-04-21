@@ -1327,6 +1327,67 @@ hr {
   font-size: 0.92rem;
 }
 
+.quickstart-meta .extras-lede {
+  margin: 0 0 var(--s-3);
+}
+
+/* Tool chips — compact variants of .button that deep-link each supported
+ * agentic coding tool to its section in docs/setup.md. Matches the
+ * drafting aesthetic: hairline border, mono caps, diagonal arrow tick
+ * that nudges on hover. Claude Code isn't chipped — it's the primary
+ * install card above. */
+.tool-chips {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--s-5);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+.tool-chips li { margin: 0; }
+
+.tool-chips .chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 0.38rem 0.7rem;
+  font-family: var(--type-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  font-weight: 500;
+  border: 1px solid var(--ink-4);
+  color: var(--ink-2);
+  background: transparent;
+  border-radius: var(--r-1);
+  text-decoration: none;
+  transition: all var(--dur-2) var(--ease);
+}
+.tool-chips .chip:hover,
+.tool-chips .chip:focus-visible {
+  border-color: var(--nib);
+  color: var(--nib);
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.tool-chips .chip-arr {
+  display: inline-block;
+  font-size: 0.85em;
+  opacity: 0.5;
+  transition: transform var(--dur-2) var(--ease), opacity var(--dur-2) var(--ease);
+}
+.tool-chips .chip:hover .chip-arr,
+.tool-chips .chip:focus-visible .chip-arr {
+  transform: translate(2px, -2px);
+  opacity: 0.9;
+}
+
+.tool-chips .chip-more {
+  border-style: dashed;
+  color: var(--nib);
+}
+
 .quickstart-card {
   background: var(--paper-2);
   border: 1px solid var(--graphite);

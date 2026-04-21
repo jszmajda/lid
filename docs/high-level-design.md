@@ -21,7 +21,7 @@ LID reframes the problem: **code is no longer the artifact of attention. Intent 
 
 ## LID as a Structure for Intent
 
-The clearest way to describe what LID *is*, rather than what it *does*, is that it is **a structure for the English you give your coding agent** — a layered way of writing intent at different levels of detail, from broad direction at the top down to the granular claims tests can verify. Agentic coding tools — Claude Code, Cursor, GitHub Copilot Workspace, their descendants — accept English as input and produce working software as output. They compile English into code. Unstructured English is too ambiguous to compile faithfully: the compiler guesses, the guesses drift, and the drift compounds across sessions. LID gives that English a shape the compiler can parse unambiguously. The artifacts look like documentation; their load-bearing job is to be source material an agent can compile without guessing.
+The clearest way to describe what LID *is*, rather than what it *does*, is that it is **a structure for the English you give your coding agent** — a layered way of writing intent at different levels of detail, from broad direction at the top down to the granular claims tests can verify. Agentic coding tools — Claude Code, Cursor, Windsurf, GitHub Copilot, Aider, Continue, Codex, JetBrains Junie, Zed, and their descendants — accept English as input and produce working software as output. They compile English into code. Unstructured English is too ambiguous to compile faithfully: the compiler guesses, the guesses drift, and the drift compounds across sessions. LID gives that English a shape the compiler can parse unambiguously. The artifacts look like documentation; their load-bearing job is to be source material an agent can compile without guessing.
 
 Other spec-driven-development systems exist, and they are also structuring choices for the same kind of input. Read this way, LID is not in the "SDD methodology" category competing for the same slot; it is one particular structure with its own design trade-offs. LID's choices optimize for three things: *minimum surface* (few conventions for the user to learn), *continuous coherence across the whole project over time* (not just the next change), and *aggressive cascade downstream when intent changes*. Other structures make different choices — specialized agents, multi-step orchestration, enforcement layers, and so on. The question a project should ask is not "should I use LID?" but "how should the input to my English compiler be organized?" LID is one principled answer; others are others.
 
@@ -104,9 +104,9 @@ The operating principles that tie the preceding approaches to day-to-day work:
 
 ## Target Users
 
-LID is for developers using agentic coding systems — Claude Code, Cursor, GitHub Copilot Workspace, and their descendants — who have noticed that English is a surprisingly imprecise programming language. A prompt that feels complete in your head emerges as something close to, but not exactly, what you meant. Most of the delta is latent intent — constraints you assumed were obvious and never wrote down. The agent fills those in plausibly, sometimes correctly, often close-but-wrong, and the gap compounds: one session's close-but-wrong becomes the next session's starting assumption.
+LID is for developers using agentic coding systems — Claude Code, Cursor, Windsurf, GitHub Copilot, Aider, Continue, Codex, JetBrains Junie, Zed, and their descendants — who have noticed that English is a surprisingly imprecise programming language. A prompt that feels complete in your head emerges as something close to, but not exactly, what you meant. Most of the delta is latent intent — constraints you assumed were obvious and never wrote down. The agent fills those in plausibly, sometimes correctly, often close-but-wrong, and the gap compounds: one session's close-but-wrong becomes the next session's starting assumption.
 
-LID treats the agent as an *english compiler* (see Glossary) and adds the minimum scaffolding for that compilation to stay faithful to the intent it was given. The target user has already noticed the compounding problem and is looking for tooling that is opinionated enough to help and small enough not to get in the way. LID does not depend on any specific agent, harness, or IDE; the plugins described here ship for Claude Code, but the methodology applies anywhere a developer is compiling English into running software.
+LID treats the agent as an *english compiler* (see Glossary) and adds the minimum scaffolding for that compilation to stay faithful to the intent it was given. The target user has already noticed the compounding problem and is looking for tooling that is opinionated enough to help and small enough not to get in the way. LID does not depend on any specific agent, harness, or IDE; the plugins described here ship for Claude Code (richest integration), and rule-file adapters for other agentic coding tools are documented in `docs/setup.md`. The methodology applies anywhere a developer is compiling English into running software.
 
 ### Adoption modes
 
@@ -137,18 +137,18 @@ HLD → LLDs → EARS → Tests → Code
 
 Intent flows in one direction. Changes originate upstream and cascade down. Docs reflect *current* intent, not the history of how intent evolved — mutation, not accumulation. Within a single arrow segment (one LLD and its downstream), cascade runs freely. Across arrow boundaries (from one segment into another's territory), agents pause and verify before propagating — real LLDs are uneven, and aggressive cross-boundary cascade in an under-specified project propagates incoherence. Changes that originate at the HLD level always fan out to multiple segments by nature; in that case cascade visits each affected segment in turn, pausing at each to confirm the segment's LLD and downstream can absorb the change.
 
-### 2. Plugins
+### 2. Plugins (Claude Code — richest integration)
 
-Two Claude Code plugins, distributed from this marketplace and installed together by default:
+Two Claude Code plugins, distributed from this repository and installed together by default:
 
 - **`linked-intent-dev`** — the core workflow skill plus `/lid-setup`, an idempotent command that bootstraps a project on first run and updates conventions or migrates modes on subsequent runs, dispatching on project state. `/update-lid` is exposed as an alias of `/lid-setup` for users whose mental model prefers a separate update verb. Mandatory.
 - **`arrow-maintenance`** — navigation overlay (`docs/arrows/index.yaml`) plus two commands: `/arrow-maintenance` (audit-and-update pass; bootstraps the overlay on existing LID projects) and `/map-codebase` (brownfield bootstrap from raw code). Installed by default, **optional at runtime** — projects that do not need the overlay carry none of its overhead.
 
 Both plugins are mode-aware. A skill detects the project's mode from its state and branches its behavior accordingly. Modes are therefore both a communication framing *and* a configuration axis — but the configuration lives inside skill logic, not as flags the user has to pass.
 
-### 3. Marketplace
+### 3. Distribution (Claude Code)
 
-The `jszmajda/lid` repository is a Claude Code plugin marketplace. Installation:
+The `jszmajda/lid` repository uses Claude Code's plugin-marketplace mechanism to distribute the plugins — a technical detail of Claude Code, not a statement that LID accepts third-party plugin submissions. It ships two first-party plugins, nothing more. Installation:
 
 ```
 /plugin marketplace add jszmajda/lid
@@ -157,6 +157,14 @@ The `jszmajda/lid` repository is a Claude Code plugin marketplace. Installation:
 ```
 
 This repository is simultaneously the distribution mechanism *and* the canonical mature-project reference — the `docs/` tree here is LID applied to LID.
+
+### 4. Rule-file adapters (other agentic coding tools)
+
+Tools without Claude Code's skill system (Cursor, Windsurf, GitHub Copilot, Aider, Continue, JetBrains Junie, Zed, Codex CLI, and any tool that reads `AGENTS.md` at the project root) use LID through a small adapter file committed to the user's project. Each adapter points the agent at an `AGENTS.md` that holds the project's LID workflow. The methodology is identical; what differs is how the agent is *reminded* of the workflow on each turn — Claude Code uses skill auto-invocation, other tools rely on the agent reading the rule file on every task.
+
+The adapter files (one per tool, copy-paste ready) are documented in `docs/setup.md`. They are not distributed by this repository — each user drops the appropriate adapter into their own LID project. This keeps LID itself minimum-surface: one `AGENTS.md` source of truth, N thin adapter pointers.
+
+The brownfield `/map-codebase` flow is Claude-Code-specific today — the multi-phase codebase sweep orchestrates too much reading and subagent coordination to drive from a rule file. Once a project is bootstrapped (whether through `/map-codebase` or manually), the resulting artifacts work identically under any tool.
 
 ## Key Design Decisions
 
