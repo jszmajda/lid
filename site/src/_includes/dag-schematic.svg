@@ -97,77 +97,66 @@
     <text x="430" y="136" text-anchor="middle" class="node-label">LLD</text>
   </g>
 
+  <!-- DIAGNOSTIC: text labels removed from EARS/Tests/Code tiers to test
+       whether the text is somehow painting over the rect fill on mobile
+       Firefox. If the rects render correctly without labels, text is the
+       culprit. If they still render white, text isn't it and the bug
+       must be in rect geometry, position, or class-name parsing. -->
+
   <!-- EARS -->
   <g class="fade-in" style="--d: 0.6s">
     <rect x="45" y="196" width="50" height="24" class="dag-node-ears" fill="#0c1117"/>
-    <text x="70" y="212" text-anchor="middle" class="node-label-sm">EARS</text>
   </g>
   <g class="fade-in" style="--d: 0.65s">
     <rect x="125" y="196" width="50" height="24" class="dag-node-ears" fill="#0c1117"/>
-    <text x="150" y="212" text-anchor="middle" class="node-label-sm">EARS</text>
   </g>
   <g class="fade-in" style="--d: 0.7s">
     <rect x="215" y="196" width="50" height="24" class="dag-node-ears" fill="#0c1117"/>
-    <text x="240" y="212" text-anchor="middle" class="node-label-sm">EARS</text>
   </g>
   <g class="fade-in" style="--d: 0.75s">
     <rect x="295" y="196" width="50" height="24" class="dag-node-ears" fill="#0c1117"/>
-    <text x="320" y="212" text-anchor="middle" class="node-label-sm">EARS</text>
   </g>
   <g class="fade-in" style="--d: 0.8s">
     <rect x="385" y="196" width="50" height="24" class="dag-node-ears" fill="#0c1117"/>
-    <text x="410" y="212" text-anchor="middle" class="node-label-sm">EARS</text>
   </g>
   <g class="fade-in" style="--d: 0.85s">
     <rect x="465" y="196" width="50" height="24" class="dag-node-ears" fill="#0c1117"/>
-    <text x="490" y="212" text-anchor="middle" class="node-label-sm">EARS</text>
   </g>
 
-  <!-- Tests (same silhouette as EARS, slightly different stroke via class) -->
+  <!-- Tests -->
   <g class="fade-in" style="--d: 0.95s">
     <rect x="47" y="270" width="46" height="22" class="dag-node-tests" fill="#0c1117"/>
-    <text x="70" y="285" text-anchor="middle" class="node-label-sm">Tests</text>
   </g>
   <g class="fade-in" style="--d: 1.0s">
     <rect x="127" y="270" width="46" height="22" class="dag-node-tests" fill="#0c1117"/>
-    <text x="150" y="285" text-anchor="middle" class="node-label-sm">Tests</text>
   </g>
   <g class="fade-in" style="--d: 1.05s">
     <rect x="217" y="270" width="46" height="22" class="dag-node-tests" fill="#0c1117"/>
-    <text x="240" y="285" text-anchor="middle" class="node-label-sm">Tests</text>
   </g>
   <g class="fade-in" style="--d: 1.1s">
     <rect x="297" y="270" width="46" height="22" class="dag-node-tests" fill="#0c1117"/>
-    <text x="320" y="285" text-anchor="middle" class="node-label-sm">Tests</text>
   </g>
   <g class="fade-in" style="--d: 1.15s">
     <rect x="387" y="270" width="46" height="22" class="dag-node-tests" fill="#0c1117"/>
-    <text x="410" y="285" text-anchor="middle" class="node-label-sm">Tests</text>
   </g>
   <g class="fade-in" style="--d: 1.2s">
     <rect x="467" y="270" width="46" height="22" class="dag-node-tests" fill="#0c1117"/>
-    <text x="490" y="285" text-anchor="middle" class="node-label-sm">Tests</text>
   </g>
 
   <!-- Code -->
   <g class="fade-in" style="--d: 1.3s">
     <rect x="58" y="352" width="44" height="20" class="dag-node-code" fill="#0c1117"/>
-    <text x="80" y="366" text-anchor="middle" class="node-label-xs">code</text>
   </g>
   <g class="fade-in" style="--d: 1.35s">
     <rect x="153" y="352" width="44" height="20" class="dag-node-code" fill="#0c1117"/>
-    <text x="175" y="366" text-anchor="middle" class="node-label-xs">code</text>
   </g>
   <g class="fade-in" style="--d: 1.4s">
     <rect x="248" y="352" width="44" height="20" class="dag-node-code" fill="#0c1117"/>
-    <text x="270" y="366" text-anchor="middle" class="node-label-xs">code</text>
   </g>
   <g class="fade-in" style="--d: 1.45s">
     <rect x="343" y="352" width="44" height="20" class="dag-node-code" fill="#0c1117"/>
-    <text x="365" y="366" text-anchor="middle" class="node-label-xs">code</text>
   </g>
   <g class="fade-in" style="--d: 1.5s">
     <rect x="438" y="352" width="44" height="20" class="dag-node-code" fill="#0c1117"/>
-    <text x="460" y="366" text-anchor="middle" class="node-label-xs">code</text>
   </g>
 </svg>
