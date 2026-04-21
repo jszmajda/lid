@@ -828,6 +828,448 @@ hr {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
+ * 6b. HOW IT WORKS — DAG + zoomed-arrow inset
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+/* Layout. Single-column narrative at all breakpoints: header + lede,
+ * one-arrow inset, @spec code snippet, bridge paragraph, full DAG, outro.
+ * Replaces an earlier side-by-side layout where the DAG sat in a figure
+ * column beside the text; that arrangement caused readers to parse the
+ * inset (nested inside the text column) and the DAG as one artifact. */
+.howitworks {
+  padding: var(--s-8) 0;
+}
+
+.howit-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-6);
+  max-width: 72rem;
+  margin-inline: auto;
+}
+
+.howit-head { max-width: 62rem; }
+
+.howit-head h2 {
+  margin: var(--s-2) 0 var(--s-4);
+  font-size: clamp(1.6rem, 1.4vw + 1.1rem, 2.3rem);
+  line-height: 1.1;
+}
+.howit-head h2 em { font-style: italic; color: var(--nib); }
+
+.howit-head .lede {
+  color: var(--ink-2);
+  font-size: 1.08rem;
+  max-width: 62ch;
+  margin: 0;
+}
+.howit-head .lede em { font-style: italic; color: var(--ink); }
+
+/* Pair block — at wide breakpoints the one-arrow inset and the @spec code
+ * snippet sit side-by-side as "two views of one arrow" (diagrammed vs.
+ * literal). Stacks vertically at narrow widths. The right column is
+ * slightly narrower so the diagram (the visual prime) gets a touch more
+ * emphasis — drafting-table asymmetry, not a sales grid. */
+.howit-pair {
+  display: grid;
+  gap: var(--s-6);
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+@media (min-width: 960px) {
+  .howit-pair {
+    grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+    gap: var(--s-7);
+  }
+}
+@media (min-width: 1280px) {
+  .howit-pair {
+    grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
+    gap: var(--s-8);
+  }
+}
+
+/* Compact one-arrow inset — introduced BEFORE the full DAG so the reader
+ * knows what one arrow means before they see the whole repo graph. */
+.howit-inset {
+  margin: 0;
+  padding: var(--s-4) var(--s-5) var(--s-5);
+  background: var(--paper-2);
+  border: 1px solid var(--graphite);
+  border-radius: var(--r-2);
+  min-width: 0;
+}
+
+.howit-inset figcaption {
+  margin-top: var(--s-3);
+  font-family: var(--type-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  color: var(--ink-3);
+  line-height: 1.7;
+  max-width: 78ch;
+}
+.howit-inset figcaption strong {
+  color: var(--ink);
+  font-weight: 500;
+  font-family: var(--type-serif);
+  font-style: italic;
+  letter-spacing: 0;
+  text-transform: none;
+  margin-right: var(--s-2);
+}
+.howit-inset figcaption em { font-style: italic; color: var(--ink); }
+.howit-inset figcaption code { font-family: var(--type-mono); font-size: 0.9em; }
+
+/* @spec code snippet block — paired with the inset at wide breakpoints
+ * as "the same arrow, shown literally." The label above reads as a plate
+ * caption in mono, echoing the inset's PLATE markers. */
+.howit-snippet-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  min-width: 0;
+}
+
+.howit-snippet-label {
+  font-family: var(--type-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding-bottom: var(--s-2);
+  border-bottom: 1px solid var(--graphite);
+}
+.howit-snippet-label::before {
+  content: "§";
+  color: var(--nib);
+  font-family: var(--type-serif);
+  font-size: 1em;
+  font-style: italic;
+  letter-spacing: 0;
+}
+
+.howit-snippet {
+  margin: 0;
+  padding: var(--s-4) var(--s-5);
+  background: var(--paper-3);
+  border: 1px solid var(--graphite);
+  border-left: 3px solid var(--nib);
+  border-radius: 0 var(--r-2) var(--r-2) 0;
+  font-family: var(--type-mono);
+  font-size: 0.88rem;
+  line-height: 1.6;
+  overflow-x: auto;
+}
+.howit-snippet code {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  color: var(--ink);
+  white-space: pre;
+}
+.howit-snippet .sn-c { color: var(--ink-3); }
+.howit-snippet .sn-k { color: var(--azure); }
+.howit-snippet .sn-fn { color: var(--nib); }
+
+.howit-snippet-note {
+  color: var(--ink-2);
+  font-size: 0.98rem;
+  max-width: 56ch;
+  margin: 0;
+}
+.howit-snippet-note code {
+  font-family: var(--type-mono);
+  font-size: 0.88em;
+}
+
+.howit-bridge {
+  max-width: 62rem;
+  color: var(--ink);
+  font-size: 1.05rem;
+  margin: var(--s-2) 0 0;
+}
+
+/* Reveal block — pairs the full DAG with the locus-of-work outro at wide
+ * widths. DAG on the left gets more horizontal weight; outro on the right
+ * reads as annotation alongside the graph. The earlier full-width DAG was
+ * too large on wide monitors and the outro paragraph afterward felt
+ * disconnected; pairing them visually puts "where you spend your time" next
+ * to the graph that shows where that time lives. */
+.howit-reveal {
+  display: grid;
+  gap: var(--s-6);
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+/* At wide widths the outro column sits LEFT and the DAG figure sits RIGHT —
+ * mirrored vs the inset+code-snippet pair above (diagram left, text right).
+ * Alternating which side carries the figure keeps the two pair blocks from
+ * reading as the same layout twice. HTML order stays DAG-first / outro-
+ * second so the stacked narrow view still delivers the "looks like this:"
+ * bridge → DAG → outro sequence. */
+@media (min-width: 1100px) {
+  .howit-reveal {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.55fr);
+    gap: var(--s-7);
+  }
+  .howit-reveal > .howit-visual {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  .howit-reveal > .howit-outro-col {
+    grid-column: 1;
+    grid-row: 1;
+  }
+}
+@media (min-width: 1280px) {
+  .howit-reveal {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr);
+    gap: var(--s-8);
+  }
+}
+
+.howit-outro-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-4);
+  min-width: 0;
+}
+
+.howit-outro-label {
+  font-family: var(--type-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding-bottom: var(--s-2);
+  border-bottom: 1px solid var(--graphite);
+}
+.howit-outro-label::before {
+  content: "§";
+  color: var(--nib);
+  font-family: var(--type-serif);
+  font-size: 1em;
+  font-style: italic;
+  letter-spacing: 0;
+}
+
+/* Full DAG — the "every arrow" reveal after the inset has primed the unit. */
+.howit-visual { margin: 0; min-width: 0; }
+.howit-visual figcaption {
+  margin-top: var(--s-4);
+  font-family: var(--type-mono);
+  font-size: 0.74rem;
+  letter-spacing: 0.02em;
+  color: var(--ink-3);
+  line-height: 1.65;
+  max-width: 78ch;
+}
+.howit-visual figcaption strong {
+  color: var(--ink);
+  font-weight: 500;
+  font-family: var(--type-serif);
+  font-style: italic;
+  letter-spacing: 0;
+  text-transform: none;
+  margin-right: var(--s-2);
+}
+
+.howit-visual figcaption .num,
+.howit-inset figcaption .num {
+  display: inline-block;
+  margin-right: var(--s-3);
+  color: var(--nib);
+  font-size: 0.66rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.howit-outro {
+  color: var(--ink);
+  margin: 0;
+  max-width: 54ch;
+}
+
+/* DAG schematic — shares the drafting visual language with .hero-schematic
+ * but uses its own classes so styling can diverge as the diagram evolves. */
+.dag-schematic,
+.arrow-inset-schematic {
+  width: 100%;
+  height: auto;
+  color: var(--nib);
+}
+
+.dag-schematic .label,
+.arrow-inset-schematic .label {
+  fill: var(--ink-2);
+  font-family: var(--type-mono);
+  font-size: 7px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.dag-schematic .coord,
+.arrow-inset-schematic .coord {
+  fill: var(--ink-3);
+  font-family: var(--type-mono);
+  font-size: 5.5px;
+  letter-spacing: 0.1em;
+}
+
+.dag-schematic .node-label,
+.arrow-inset-schematic .node-label {
+  fill: var(--ink);
+  font-family: var(--type-serif);
+  font-size: 10px;
+  font-style: italic;
+}
+
+.dag-schematic .node-label-sm {
+  fill: var(--ink);
+  font-family: var(--type-serif);
+  font-size: 8.5px;
+  font-style: italic;
+}
+
+.dag-schematic .node-label-xs {
+  fill: var(--ink-2);
+  font-family: var(--type-mono);
+  font-size: 6.5px;
+  letter-spacing: 0.05em;
+}
+
+/* Node rects. Each class gets its own rule with a hardcoded dark fill in the
+ * dark-mode default and an explicit light-mode override via media query —
+ * same pattern as the hero schematic's rects, just written out per-class
+ * so any one selector failing can't take down the others. No `var()` on
+ * fill anywhere inside the SVG-facing rules; mobile Safari/Firefox have
+ * had intermittent issues propagating custom properties into <rect> fills. */
+.dag-schematic .dag-node {
+  fill: #0c1117;
+  stroke: currentColor;
+  stroke-width: 1.25;
+}
+.dag-schematic .dag-node-accent {
+  fill: #0c1117;
+  stroke: #e0a060;
+  stroke-width: 1.3;
+}
+.dag-schematic .dag-node-ears {
+  fill: #0c1117;
+  stroke: currentColor;
+  stroke-width: 1;
+  opacity: 0.95;
+}
+.dag-schematic .dag-node-tests {
+  fill: #0c1117;
+  stroke: currentColor;
+  stroke-width: 0.9;
+  opacity: 0.9;
+}
+.dag-schematic .dag-node-code {
+  fill: #0c1117;
+  stroke: #b8b4a2;
+  stroke-width: 0.8;
+  opacity: 0.9;
+}
+.arrow-inset-schematic .node {
+  fill: #0c1117;
+  stroke: currentColor;
+  stroke-width: 1.25;
+}
+.arrow-inset-schematic .node-accent {
+  fill: #0c1117;
+  stroke: #e0a060;
+  stroke-width: 1.3;
+}
+
+/* Edge strokes — used as-is, with hardcoded hex so the stroke color can
+ * flow into `context-stroke`-free arrowhead markers without theme loss. */
+.dag-schematic .dag-edge {
+  stroke: #7d7a6c;
+  stroke-width: 0.7;
+  fill: none;
+  opacity: 0.55;
+}
+.dag-schematic .dag-edge-cross {
+  stroke: #e0a060;
+  stroke-width: 0.85;
+  fill: none;
+  opacity: 0.75;
+}
+
+/* Arrowhead marker fills. Dark-mode fill lives on the <path fill="#..."/>
+ * attribute inside the SVG; light-mode override here. Two classes so the
+ * normal edges and cross edges can retain their distinct theming. */
+@media (prefers-color-scheme: light) {
+  .dag-schematic .arr-head { fill: #6e7079; }
+  .dag-schematic .arr-head-cross { fill: #8c3b1a; }
+}
+
+.dag-schematic .dim,
+.arrow-inset-schematic .dim {
+  stroke: #4a4a44;
+  fill: none;
+  stroke-width: 0.5;
+}
+
+/* Inset arrow bodies — thicker and more visible than .dim so the
+ * left-to-right flow in the zoomed view reads at a glance. */
+.arrow-inset-schematic .inset-flow {
+  stroke: #b8b4a2;
+  stroke-width: 1.4;
+  fill: none;
+  opacity: 0.7;
+}
+.arrow-inset-schematic .inset-flow-tick {
+  stroke: #e0a060;
+  stroke-width: 1.3;
+  fill: none;
+  opacity: 0.95;
+}
+
+/* Light-mode overrides. Per-class so if any one selector fails to match,
+ * the others still apply. Same hex values as the dark-mode hero / existing
+ * node rules, just inverted for the cream paper theme. */
+@media (prefers-color-scheme: light) {
+  .dag-schematic .dag-node { fill: #f2ecd8; stroke: #e0a060; }
+  .dag-schematic .dag-node-accent { fill: #f2ecd8; stroke: #8c3b1a; }
+  .dag-schematic .dag-node-ears { fill: #f2ecd8; stroke: #8c3b1a; }
+  .dag-schematic .dag-node-tests { fill: #f2ecd8; stroke: #8c3b1a; }
+  .dag-schematic .dag-node-code { fill: #f2ecd8; stroke: #44484f; }
+  .arrow-inset-schematic .node { fill: #f2ecd8; stroke: #8c3b1a; }
+  .arrow-inset-schematic .node-accent { fill: #f2ecd8; stroke: #8c3b1a; }
+
+  .dag-schematic .dag-edge { stroke: #6e7079; }
+  .dag-schematic .dag-edge-cross { stroke: #8c3b1a; }
+
+  .dag-schematic .dim,
+  .arrow-inset-schematic .dim { stroke: #c8c3b0; }
+
+  .arrow-inset-schematic .inset-flow { stroke: #44484f; }
+  .arrow-inset-schematic .inset-flow-tick { stroke: #8c3b1a; }
+}
+
+/* Reveal animation — same staggered fade-in pattern as the hero schematic. */
+.dag-schematic .fade-in,
+.arrow-inset-schematic .fade-in {
+  opacity: 0;
+  transition: opacity 0.6s var(--ease-out);
+}
+.dag-schematic.in-view .fade-in,
+.arrow-inset-schematic.in-view .fade-in {
+  opacity: 1;
+  transition-delay: var(--d, 0s);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
  * 7. SECTION CHROME (plate headings, rhythm)
  * ═══════════════════════════════════════════════════════════════════════ */
 

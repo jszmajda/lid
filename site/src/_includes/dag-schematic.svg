@@ -1,0 +1,173 @@
+<svg class="dag-schematic" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 420" role="img" aria-labelledby="dag-title dag-desc">
+  <title id="dag-title">LID arrows across the codebase — DAG</title>
+  <desc id="dag-desc">A directed acyclic graph showing one HLD node fanning down through three LLD nodes, six EARS-spec nodes, six failing-first test nodes, and five code-file nodes. Two highlighted edges between tests and code cross or converge, illustrating that one test can cover more than one code file, and one code file can be covered by more than one test.</desc>
+
+  <!-- Arrowhead markers. Each path has a hardcoded dark-mode fill attribute;
+       light-mode override is via external CSS media query targeting the
+       .arr-head / .arr-head-cross classes. No `context-stroke` — mobile
+       Safari renders it inconsistently across theme changes. Same
+       belt-and-suspenders pattern as the node rects: SVG attribute + CSS
+       class, no variables inside the SVG itself. -->
+  <defs>
+    <marker id="dag-arr" viewBox="0 0 8 8" refX="8" refY="4"
+            markerWidth="4" markerHeight="4"
+            orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M 0 1 L 8 4 L 0 7 z" class="arr-head" fill="#7d7a6c"/>
+    </marker>
+    <marker id="dag-arr-cross" viewBox="0 0 8 8" refX="8" refY="4"
+            markerWidth="4.5" markerHeight="4.5"
+            orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M 0 1 L 8 4 L 0 7 z" class="arr-head-cross" fill="#e0a060"/>
+    </marker>
+  </defs>
+
+  <!-- Corner registration brackets -->
+  <g stroke="currentColor" stroke-width="0.8" opacity="0.5">
+    <path d="M 8 8 L 18 8 M 8 8 L 8 18"/>
+    <path d="M 532 8 L 522 8 M 532 8 L 532 18"/>
+    <path d="M 8 412 L 18 412 M 8 412 L 8 402"/>
+    <path d="M 532 412 L 522 412 M 532 412 L 532 402"/>
+  </g>
+
+  <!-- Plate identifier -->
+  <text x="430" y="396" class="label">PLATE · 002 / DAG</text>
+  <text x="430" y="408" class="label" style="fill: var(--nib)">ARROWS · CODEBASE</text>
+  <text x="14" y="408" class="coord">COORD · A1</text>
+
+  <!-- Tier rail labels (left) -->
+  <text x="14" y="58" class="label" style="fill: var(--nib)">§ HLD</text>
+  <text x="14" y="136" class="label" style="fill: var(--nib)">§ LLDs</text>
+  <text x="14" y="212" class="label" style="fill: var(--nib)">§ EARS</text>
+  <text x="14" y="285" class="label" style="fill: var(--nib)">§ TESTS</text>
+  <text x="14" y="364" class="label" style="fill: var(--nib)">§ CODE</text>
+
+  <!-- Edges (drawn first so node rects overlay neatly).
+       `marker-end` places the arrowhead right at each path's endpoint. -->
+  <g class="dag-edges">
+    <!-- HLD → LLDs -->
+    <path class="dag-edge" marker-end="url(#dag-arr)" d="M 270 70 Q 200 90 110 118"/>
+    <path class="dag-edge" marker-end="url(#dag-arr)" d="M 270 70 L 270 118"/>
+    <path class="dag-edge" marker-end="url(#dag-arr)" d="M 270 70 Q 340 90 430 118"/>
+
+    <!-- LLDs → EARS -->
+    <path class="dag-edge" marker-end="url(#dag-arr)" d="M 110 146 Q 90 170 70 196"/>
+    <path class="dag-edge" marker-end="url(#dag-arr)" d="M 110 146 Q 130 170 150 196"/>
+    <path class="dag-edge" marker-end="url(#dag-arr)" d="M 270 146 Q 250 170 240 196"/>
+    <path class="dag-edge" marker-end="url(#dag-arr)" d="M 270 146 Q 290 170 320 196"/>
+    <path class="dag-edge" marker-end="url(#dag-arr)" d="M 430 146 Q 410 170 410 196"/>
+    <path class="dag-edge" marker-end="url(#dag-arr)" d="M 430 146 Q 450 170 490 196"/>
+
+    <!-- EARS → Tests (1:1 under each EARS) -->
+    <path class="dag-edge" marker-end="url(#dag-arr)" d="M 70 220 L 70 270"/>
+    <path class="dag-edge" marker-end="url(#dag-arr)" d="M 150 220 L 150 270"/>
+    <path class="dag-edge" marker-end="url(#dag-arr)" d="M 240 220 L 240 270"/>
+    <path class="dag-edge" marker-end="url(#dag-arr)" d="M 320 220 L 320 270"/>
+    <path class="dag-edge" marker-end="url(#dag-arr)" d="M 410 220 L 410 270"/>
+    <path class="dag-edge" marker-end="url(#dag-arr)" d="M 490 220 L 490 270"/>
+
+    <!-- Tests → Code -->
+    <path class="dag-edge" marker-end="url(#dag-arr)" d="M 70 292 L 80 352"/>
+    <path class="dag-edge" marker-end="url(#dag-arr)" d="M 150 292 Q 150 320 175 352"/>
+    <!-- Cross-link: one test covering two code files -->
+    <path class="dag-edge dag-edge-cross" marker-end="url(#dag-arr-cross)" d="M 150 292 Q 200 320 270 352"/>
+    <path class="dag-edge" marker-end="url(#dag-arr)" d="M 240 292 Q 250 320 270 352"/>
+    <path class="dag-edge" marker-end="url(#dag-arr)" d="M 320 292 Q 330 320 365 352"/>
+    <!-- Cross-link: one code file covered by two tests -->
+    <path class="dag-edge dag-edge-cross" marker-end="url(#dag-arr-cross)" d="M 410 292 Q 380 320 365 352"/>
+    <path class="dag-edge" marker-end="url(#dag-arr)" d="M 490 292 Q 480 320 460 352"/>
+  </g>
+
+  <!-- Nodes — HLD (accent) -->
+  <g class="fade-in" style="--d: 0.15s">
+    <rect x="235" y="40" width="70" height="30" class="dag-node-accent" fill="#0c1117"/>
+    <text x="270" y="59" text-anchor="middle" class="node-label" style="fill: var(--nib)">HLD</text>
+  </g>
+
+  <!-- LLDs -->
+  <g class="fade-in" style="--d: 0.35s">
+    <rect x="80" y="118" width="60" height="28" class="dag-node" fill="#0c1117"/>
+    <text x="110" y="136" text-anchor="middle" class="node-label">LLD</text>
+  </g>
+  <g class="fade-in" style="--d: 0.42s">
+    <rect x="240" y="118" width="60" height="28" class="dag-node" fill="#0c1117"/>
+    <text x="270" y="136" text-anchor="middle" class="node-label">LLD</text>
+  </g>
+  <g class="fade-in" style="--d: 0.49s">
+    <rect x="400" y="118" width="60" height="28" class="dag-node" fill="#0c1117"/>
+    <text x="430" y="136" text-anchor="middle" class="node-label">LLD</text>
+  </g>
+
+  <!-- EARS -->
+  <g class="fade-in" style="--d: 0.6s">
+    <rect x="45" y="196" width="50" height="24" class="dag-node-ears" fill="#0c1117"/>
+    <text x="70" y="212" text-anchor="middle" class="node-label-sm">EARS</text>
+  </g>
+  <g class="fade-in" style="--d: 0.65s">
+    <rect x="125" y="196" width="50" height="24" class="dag-node-ears" fill="#0c1117"/>
+    <text x="150" y="212" text-anchor="middle" class="node-label-sm">EARS</text>
+  </g>
+  <g class="fade-in" style="--d: 0.7s">
+    <rect x="215" y="196" width="50" height="24" class="dag-node-ears" fill="#0c1117"/>
+    <text x="240" y="212" text-anchor="middle" class="node-label-sm">EARS</text>
+  </g>
+  <g class="fade-in" style="--d: 0.75s">
+    <rect x="295" y="196" width="50" height="24" class="dag-node-ears" fill="#0c1117"/>
+    <text x="320" y="212" text-anchor="middle" class="node-label-sm">EARS</text>
+  </g>
+  <g class="fade-in" style="--d: 0.8s">
+    <rect x="385" y="196" width="50" height="24" class="dag-node-ears" fill="#0c1117"/>
+    <text x="410" y="212" text-anchor="middle" class="node-label-sm">EARS</text>
+  </g>
+  <g class="fade-in" style="--d: 0.85s">
+    <rect x="465" y="196" width="50" height="24" class="dag-node-ears" fill="#0c1117"/>
+    <text x="490" y="212" text-anchor="middle" class="node-label-sm">EARS</text>
+  </g>
+
+  <!-- Tests (same silhouette as EARS, slightly different stroke via class) -->
+  <g class="fade-in" style="--d: 0.95s">
+    <rect x="47" y="270" width="46" height="22" class="dag-node-tests" fill="#0c1117"/>
+    <text x="70" y="285" text-anchor="middle" class="node-label-sm">Tests</text>
+  </g>
+  <g class="fade-in" style="--d: 1.0s">
+    <rect x="127" y="270" width="46" height="22" class="dag-node-tests" fill="#0c1117"/>
+    <text x="150" y="285" text-anchor="middle" class="node-label-sm">Tests</text>
+  </g>
+  <g class="fade-in" style="--d: 1.05s">
+    <rect x="217" y="270" width="46" height="22" class="dag-node-tests" fill="#0c1117"/>
+    <text x="240" y="285" text-anchor="middle" class="node-label-sm">Tests</text>
+  </g>
+  <g class="fade-in" style="--d: 1.1s">
+    <rect x="297" y="270" width="46" height="22" class="dag-node-tests" fill="#0c1117"/>
+    <text x="320" y="285" text-anchor="middle" class="node-label-sm">Tests</text>
+  </g>
+  <g class="fade-in" style="--d: 1.15s">
+    <rect x="387" y="270" width="46" height="22" class="dag-node-tests" fill="#0c1117"/>
+    <text x="410" y="285" text-anchor="middle" class="node-label-sm">Tests</text>
+  </g>
+  <g class="fade-in" style="--d: 1.2s">
+    <rect x="467" y="270" width="46" height="22" class="dag-node-tests" fill="#0c1117"/>
+    <text x="490" y="285" text-anchor="middle" class="node-label-sm">Tests</text>
+  </g>
+
+  <!-- Code -->
+  <g class="fade-in" style="--d: 1.3s">
+    <rect x="58" y="352" width="44" height="20" class="dag-node-code" fill="#0c1117"/>
+    <text x="80" y="366" text-anchor="middle" class="node-label-xs">code</text>
+  </g>
+  <g class="fade-in" style="--d: 1.35s">
+    <rect x="153" y="352" width="44" height="20" class="dag-node-code" fill="#0c1117"/>
+    <text x="175" y="366" text-anchor="middle" class="node-label-xs">code</text>
+  </g>
+  <g class="fade-in" style="--d: 1.4s">
+    <rect x="248" y="352" width="44" height="20" class="dag-node-code" fill="#0c1117"/>
+    <text x="270" y="366" text-anchor="middle" class="node-label-xs">code</text>
+  </g>
+  <g class="fade-in" style="--d: 1.45s">
+    <rect x="343" y="352" width="44" height="20" class="dag-node-code" fill="#0c1117"/>
+    <text x="365" y="366" text-anchor="middle" class="node-label-xs">code</text>
+  </g>
+  <g class="fade-in" style="--d: 1.5s">
+    <rect x="438" y="352" width="44" height="20" class="dag-node-code" fill="#0c1117"/>
+    <text x="460" y="366" text-anchor="middle" class="node-label-xs">code</text>
+  </g>
+</svg>

@@ -37,7 +37,7 @@ For more background, see [The Arrow of Intent](https://loki.ws/code/2026/01/25/t
 
 ## How LID Differs from Other SDD Systems
 
-Several spec-driven development (SDD) systems exist for agentic coding — [BMAD](https://docs.bmad-method.org/), [spec-kit](https://github.com/github/spec-kit), and others. They all share the insight that you should specify before you code. Where they differ is in what happens *after*.
+Several spec-driven development (SDD) systems exist for agentic coding. They all share the insight that you should specify before you code. Where LID differs is in what happens *after*.
 
 Most SDD systems are optimized for **the next change**: generate specs, plan tasks, implement, ship. The artifacts are scaffolding for delivery. Some have extensions for detecting drift or updating specs post-implementation, but the core workflow is a pipeline that ends at "done."
 
@@ -51,7 +51,7 @@ LID is optimized for **the project over time**. The design documents aren't scaf
 | **Tests and code** | The artifact you maintain | Output. Regenerable from intent. |
 | **Scope** | Per-feature or per-change | Per-project, tracked across all components |
 
-LID is also intentionally much simpler than other SDD systems. BMAD has specialized agents, adversarial reviews, and multi-phase orchestration. Spec-kit has extensions, CI guards, and reconciliation workflows. LID has two skills and a handful of markdown templates. The complexity lives in Claude, not in the tooling — we rely on the model's judgment as much as possible and focus the system on creating durable context that survives across sessions, compactions, and even model changes.
+LID is also intentionally much simpler than other SDD systems. Where others reach for specialized agents, adversarial reviews, multi-phase orchestration, CI guards, or reconciliation workflows, LID has two skills and a handful of markdown templates. The complexity lives in Claude, not in the tooling — we rely on the model's judgment as much as possible and focus the system on creating durable context that survives across sessions, compactions, and even model changes.
 
 This comes from building products at AWS, where systems live for years and the biggest cost isn't building the wrong thing once — it's *maintaining* a system where nobody can explain why it does what it does. LID treats Claude Code as an English compiler: your design documents are the source, and everything downstream is compiled output.
 

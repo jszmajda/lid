@@ -1,0 +1,72 @@
+<svg class="arrow-inset-schematic" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 540 140" role="img" aria-labelledby="inset-title inset-desc">
+  <title id="inset-title">One arrow segment — zoomed</title>
+  <desc id="inset-desc">A single arrow segment within the larger DAG: HLD, LLD, EARS, Tests, and code rendered as five nodes connected by left-to-right arrows, with annotation labels above and below each node naming what that node carries.</desc>
+
+  <!-- Corner registration brackets (subtler since the figure is small) -->
+  <g stroke="currentColor" stroke-width="0.6" opacity="0.4">
+    <path d="M 6 6 L 14 6 M 6 6 L 6 14"/>
+    <path d="M 534 6 L 526 6 M 534 6 L 534 14"/>
+    <path d="M 6 134 L 14 134 M 6 134 L 6 126"/>
+    <path d="M 534 134 L 526 134 M 534 134 L 534 126"/>
+  </g>
+
+  <!-- Plate identifier -->
+  <text x="430" y="124" class="label">PLATE · 003 / SEGMENT</text>
+  <text x="14" y="124" class="coord">ZOOM · ONE ARROW</text>
+
+  <!-- Edges between nodes (right-edge of source to left-edge of target).
+       Stroke is set in CSS via .inset-flow so the lines read clearly
+       against both dark and light paper. -->
+  <g class="inset-flow">
+    <line x1="105" y1="60" x2="143" y2="60"/>
+    <line x1="201" y1="60" x2="239" y2="60"/>
+    <line x1="297" y1="60" x2="335" y2="60"/>
+    <line x1="393" y1="60" x2="431" y2="60"/>
+  </g>
+  <g class="inset-flow-tick">
+    <path d="M 140 57 L 146 60 L 140 63"/>
+    <path d="M 236 57 L 242 60 L 236 63"/>
+    <path d="M 332 57 L 338 60 L 332 63"/>
+    <path d="M 428 57 L 434 60 L 428 63"/>
+  </g>
+
+  <!-- Nodes — HLD (accent) -->
+  <g class="fade-in" style="--d: 0.2s">
+    <rect x="50" y="42" width="55" height="36" class="node-accent" fill="#0c1117"/>
+    <text x="78" y="64" text-anchor="middle" class="node-label" style="fill: var(--nib)">HLD</text>
+  </g>
+  <text x="78" y="34" text-anchor="middle" class="label">§ INTENT</text>
+  <text x="78" y="100" text-anchor="middle" class="coord">THE WHY</text>
+
+  <!-- LLD -->
+  <g class="fade-in" style="--d: 0.35s">
+    <rect x="146" y="42" width="55" height="36" class="node" fill="#0c1117"/>
+    <text x="174" y="64" text-anchor="middle" class="node-label">LLD</text>
+  </g>
+  <text x="174" y="34" text-anchor="middle" class="label">§ DESIGN</text>
+  <text x="174" y="100" text-anchor="middle" class="coord">THE HOW</text>
+
+  <!-- EARS -->
+  <g class="fade-in" style="--d: 0.5s">
+    <rect x="242" y="42" width="55" height="36" class="node" fill="#0c1117"/>
+    <text x="270" y="64" text-anchor="middle" class="node-label">EARS</text>
+  </g>
+  <text x="270" y="34" text-anchor="middle" class="label">§ CLAIMS</text>
+  <text x="270" y="100" text-anchor="middle" class="coord">GREP-ADDRESSABLE</text>
+
+  <!-- Tests -->
+  <g class="fade-in" style="--d: 0.65s">
+    <rect x="338" y="42" width="55" height="36" class="node" fill="#0c1117"/>
+    <text x="366" y="64" text-anchor="middle" class="node-label">Tests</text>
+  </g>
+  <text x="366" y="34" text-anchor="middle" class="label">§ TESTS</text>
+  <text x="366" y="100" text-anchor="middle" class="coord">FAILING-FIRST</text>
+
+  <!-- CODE -->
+  <g class="fade-in" style="--d: 0.8s">
+    <rect x="434" y="42" width="55" height="36" class="node" fill="#0c1117"/>
+    <text x="462" y="64" text-anchor="middle" class="node-label">CODE</text>
+  </g>
+  <text x="462" y="34" text-anchor="middle" class="label">§ COMPILED</text>
+  <text x="462" y="100" text-anchor="middle" class="coord">@SPEC ANCHORS</text>
+</svg>

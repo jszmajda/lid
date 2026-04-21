@@ -21,12 +21,14 @@
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   // ── 1. Schematic reveal ────────────────────────────────────────────────
-  // Fire once on page load. The CSS transitions + per-node `--d` delays
-  // produce the staggered draw-in. `prefers-reduced-motion` is honored
-  // via the global reduce rule at the bottom of main.css, which collapses
-  // transition durations to ~0 and shows the final state immediately.
-  const schematic = document.querySelector(".hero-schematic");
-  if (schematic) schematic.classList.add("in-view");
+  // Fire once on page load for every drafting-style schematic on the page.
+  // The CSS transitions + per-node `--d` delays produce the staggered
+  // draw-in. `prefers-reduced-motion` is honored via the global reduce rule
+  // at the bottom of main.css, which collapses transition durations to ~0
+  // and shows the final state immediately.
+  document
+    .querySelectorAll(".hero-schematic, .dag-schematic, .arrow-inset-schematic")
+    .forEach((el) => el.classList.add("in-view"));
 
   // ── 2. Copy-to-clipboard ───────────────────────────────────────────────
   const COPY_SVG = `

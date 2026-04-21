@@ -21,9 +21,21 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 ## Home: Quickstart
 
 - `[ ]` **MKT-SITE-006**: When a user loads the home page, the site SHALL present a Quickstart section containing copy-pastable install commands with a one-line explanation per command.
-- `[ ]` **MKT-SITE-007**: The Quickstart section SHALL be placed sufficiently high on the home page that an evaluator scrolling for "what do I run" finds it without navigating away.
+- `[ ]` **MKT-SITE-007**: The home page SHALL present its primary sections in this order: hero, How it works, cascade demo, Quickstart, audience-path links.
 - `[ ]` **MKT-SITE-008**: The Quickstart commands SHALL match the repository README's Quickstart section exactly.
 - `[ ]` **MKT-SITE-009**: When the README's Quickstart changes, the site's Quickstart SHALL cascade to match before the next deploy.
+- `[ ]` **MKT-SITE-040**: The hero SHALL include a primary call-to-action that anchor-links to the Quickstart section on the same page, so an evaluator who has already decided can reach the install commands without scrolling past the structural orientation content.
+
+## Home: How It Works
+
+- `[ ]` **MKT-SITE-038**: When a user loads the home page, the site SHALL present a "How it works" section containing a primary diagram that depicts a directed acyclic graph from a single high-level design node, through multiple low-level design nodes, EARS-spec nodes, and failing-first test nodes, terminating at code nodes.
+- `[ ]` **MKT-SITE-039**: The How it works section SHALL also present a secondary, smaller diagram depicting the same shape for a single arrow segment (HLD → LLD → EARS → Tests → code) to give the primary DAG's nodes concrete meaning.
+- `[ ]` **MKT-SITE-042**: Every edge in the primary DAG diagram SHALL render with a directional arrowhead at its terminus so cascade directionality is unambiguous.
+- `[ ]` **MKT-SITE-043**: The primary DAG diagram SHALL include at least one edge rendered in the accent color whose endpoints demonstrate the DAG-not-tree property (one node with more than one outgoing edge to the tier below, or one node with more than one incoming edge from the tier above).
+- `[ ]` **MKT-SITE-041**: The How it works section SHALL present a single-column narrative flow at all breakpoints, with content ordered: section header, lede, one-arrow inset diagram, `@spec`-annotated code snippet, bridge paragraph, full DAG diagram, outro paragraph.
+- `[ ]` **MKT-SITE-044**: The site SHALL NOT name specific peer spec-driven-development systems anywhere in its content. LID's positioning is expressed through its own claim (a graph rooted in intent, traceable across the whole repository), not through comparison to named alternatives.
+- `[ ]` **MKT-SITE-045**: The How it works section SHALL include a code snippet displaying an `@spec` annotation comment that references at least one EARS spec ID, paired with a short note describing how spec IDs are grep-addressable.
+- `[ ]` **MKT-SITE-046**: The How it works section SHALL explicitly state where users spend their time in LID (the HLD and the LLDs) and that downstream artifacts (EARS specs, failing-first tests, code) are primarily agent-generated and reviewed rather than hand-written. The section SHALL also state that application changes and bug fixes both route back to an LLD edit.
 
 ## Start Page
 
