@@ -30,15 +30,16 @@
        target-rect left-edge; `marker-end` drops a filled-triangle arrowhead
        tip exactly at the target edge. Matches the DAG's arrow vocabulary. -->
   <g class="inset-flow">
-    <line x1="105" y1="60" x2="146" y2="60" marker-end="url(#inset-arr)"/>
-    <line x1="201" y1="60" x2="242" y2="60" marker-end="url(#inset-arr)"/>
-    <line x1="297" y1="60" x2="338" y2="60" marker-end="url(#inset-arr)"/>
-    <line x1="393" y1="60" x2="434" y2="60" marker-end="url(#inset-arr)"/>
+    <line x1="113" y1="60" x2="139" y2="60" marker-end="url(#inset-arr)"/>
+    <line x1="209" y1="60" x2="235" y2="60" marker-end="url(#inset-arr)"/>
+    <line x1="305" y1="60" x2="331" y2="60" marker-end="url(#inset-arr)"/>
+    <line x1="401" y1="60" x2="427" y2="60" marker-end="url(#inset-arr)"/>
   </g>
 
-  <!-- Nodes — HLD (accent) -->
+  <!-- Nodes — HLD (accent). All rects 70×36; rect x = center - 35, where
+       centers align with label columns at 78, 174, 270, 366, 462. -->
   <g class="fade-in" style="--d: 0.2s">
-    <rect x="50" y="42" width="55" height="36" class="node-accent" fill="#0c1117"/>
+    <rect x="43" y="42" width="70" height="36" class="node-accent" fill="#0c1117"/>
     <text x="78" y="64" text-anchor="middle" class="node-label" style="fill: var(--nib)">HLD</text>
   </g>
   <text x="78" y="34" text-anchor="middle" class="label">§ INTENT</text>
@@ -46,7 +47,7 @@
 
   <!-- LLD -->
   <g class="fade-in" style="--d: 0.35s">
-    <rect x="146" y="42" width="55" height="36" class="node" fill="#0c1117"/>
+    <rect x="139" y="42" width="70" height="36" class="node" fill="#0c1117"/>
     <text x="174" y="64" text-anchor="middle" class="node-label">LLD</text>
   </g>
   <text x="174" y="34" text-anchor="middle" class="label">§ DESIGN</text>
@@ -54,7 +55,7 @@
 
   <!-- EARS -->
   <g class="fade-in" style="--d: 0.5s">
-    <rect x="242" y="42" width="55" height="36" class="node" fill="#0c1117"/>
+    <rect x="235" y="42" width="70" height="36" class="node" fill="#0c1117"/>
     <text x="270" y="64" text-anchor="middle" class="node-label">EARS</text>
   </g>
   <text x="270" y="34" text-anchor="middle" class="label">§ CLAIMS</text>
@@ -62,7 +63,7 @@
 
   <!-- Tests -->
   <g class="fade-in" style="--d: 0.65s">
-    <rect x="338" y="42" width="55" height="36" class="node" fill="#0c1117"/>
+    <rect x="331" y="42" width="70" height="36" class="node" fill="#0c1117"/>
     <text x="366" y="64" text-anchor="middle" class="node-label">Tests</text>
   </g>
   <text x="366" y="34" text-anchor="middle" class="label">§ TESTS</text>
@@ -70,7 +71,7 @@
 
   <!-- CODE -->
   <g class="fade-in" style="--d: 0.8s">
-    <rect x="434" y="42" width="55" height="36" class="node" fill="#0c1117"/>
+    <rect x="427" y="42" width="70" height="36" class="node" fill="#0c1117"/>
     <text x="462" y="64" text-anchor="middle" class="node-label">CODE</text>
   </g>
   <text x="462" y="34" text-anchor="middle" class="label">§ COMPILED</text>
