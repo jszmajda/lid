@@ -37,7 +37,7 @@
             </p>
           </div>
           <div class="footer-meta">
-            <span>SHEET 01 OF 04</span>
+            <span>SHEET {% if eleventyNavigation and eleventyNavigation.order %}{% if eleventyNavigation.order < 10 %}0{% endif %}{{ eleventyNavigation.order }}{% else %}01{% endif %} OF 04</span>
             <span class="coord">DRAWN · JS</span>
             <span class="coord">REV · {{ "" | year }}</span>
           </div>

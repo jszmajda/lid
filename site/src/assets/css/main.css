@@ -8,7 +8,8 @@
  * Hard constraints (from MKT-SITE specs):
  *   - System-aware theme via prefers-color-scheme; dark default (024, 025, 026).
  *   - WCAG AA contrast in both themes (026).
- *   - System fonts only; no remote loads (030).
+ *   - Typefaces from Bunny Fonts (no-tracking service) with system-font
+ *     fallbacks for first paint (030 allows a no-tracking font service).
  *   - No heavy JavaScript; mobile nav uses native <details>.
  *   - Fast first paint.
  */

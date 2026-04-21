@@ -16,12 +16,13 @@ Two design constraints shape the site:
 
 ## HLD Trace
 
-This LLD traces upstream to two HLD elements:
+This LLD traces upstream to three HLD elements:
 
-- **Goal 3 — "Meet teams where they are."** Adoption friction is the problem the site addresses directly; orientation by audience path (evaluating / greenfield / brownfield / scoped) is the mechanism.
+- **Goal 5 — "Make LID's value legible to those not yet using it."** This is the direct mandate for the onboarding surface (README, marketing site, examples). The HLD names the gap between "heard of LID" and "running LID" as an intent gap at project scale, and designates the marketing site as load-bearing intent that must cascade from the HLD like any other segment. This LLD is the site's realization of that goal.
+- **Goal 3 — "Meet teams where they are."** Adoption friction is the broader problem the site addresses; orientation by audience path (evaluating / greenfield / brownfield / scoped) is the mechanism.
 - **Architecture § Marketplace.** The HLD names the repository as the distribution mechanism. The marketing site extends that distribution layer with a discoverable on-ramp that does not require having already found the repo.
 
-A future HLD revision may promote "onboarding surface" to a named architectural element; until then, this LLD is anchored to Goal 3 and the Marketplace section.
+Goal 5 is the anchor that most directly names the site's reason for existing; Goal 3 and Architecture § Marketplace are how Goal 5 is served in practice.
 
 ## Component Variant
 
@@ -264,7 +265,7 @@ Once `docs/arrows/` is bootstrapped for this repository, the site appears as a *
 12. ✅ Explicit Quickstart section on the Home page, synchronized with the README's Quickstart.
 13. ✅ Home section ordering: Hero → How it works → Cascade demo → Quickstart → Paths. Reverses the earlier install-high ordering once a structural How-it-works section is present.
 14. ✅ How-it-works presents two diagrams in sequence — a compact "one arrow" inset followed by a full "every arrow" DAG across the repository. Narrative order: inset first to prime the unit shape, DAG second as the "now do this for your whole repo" reveal.
-15. ✅ How-it-works uses a single-column narrative flow at all breakpoints: header → lede → inset → `@spec` code snippet → bridge → DAG → outro. Replaces earlier side-by-side layout that caused the nested-artifact reading problem.
+15. ✅ How-it-works narrative order: header → lede → inset → `@spec` code snippet → bridge → DAG → outro. Stacks as a single column at narrow widths and as two mirrored side-by-side pair blocks at wide widths (see item 19 for the pair-block decision).
 16. ✅ How-it-works lede does not name any specific peer systems. The lede leads with LID's own claim ("your whole repository is one graph rooted in intent"). Naming competitors is a follower's move, dates quickly, and is not needed once the lede carries a concrete differentiator.
 17. ✅ How-it-works includes a concrete `@spec`-annotated code snippet between the inset and the DAG so the EARS-claim-to-code-annotation relationship is tangible rather than abstract.
 18. ✅ How-it-works outro explicitly names the user's locus-of-work (HLD and LLDs) and what the downstream artifacts feel like in practice (agent-generated, reviewed rather than hand-written). Application changes and bug fixes both route back to an LLD edit.

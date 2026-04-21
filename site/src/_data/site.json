@@ -8,7 +8,7 @@
   ],
   "repoUrl": "https://github.com/jszmajda/lid",
   "marketplace": "jszmajda/lid",
-  "description": "A Claude Code plugin marketplace for Linked-Intent Development — treat the agent as an English compiler, and keep intent coherent across sessions.",
+  "description": "A Claude Code plugin marketplace for Linked-Intent Development — structure the English your agent compiles so design, specs, tests, and code stay in sync.",
   "quickstart": [
     {
       "cmd": "/plugin marketplace add jszmajda/lid",
@@ -17,6 +17,10 @@
     {
       "cmd": "/plugin install linked-intent-dev@jszmajda-lid",
       "note": "Install the core workflow plugin."
+    },
+    {
+      "cmd": "/plugin install arrow-maintenance@jszmajda-lid",
+      "note": "Install the arrow-maintenance overlay for spec-to-code coherence audits."
     },
     {
       "cmd": "/linked-intent-dev:lid-setup",
