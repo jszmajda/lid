@@ -1155,25 +1155,22 @@ hr {
  * transparent fills, showing the cream paper as "white") — the
  * attribute-only pattern avoids it. Light-mode fills are overridden
  * below via media query. */
-.dag-schematic .dag-node {
+/* Diagnostic: collapse the lower tiers onto the exact same rule as
+ * `.dag-node` (which renders correctly on the user's Firefox mobile).
+ * If the bug persists with identical CSS applied, we've proven it's not
+ * in the CSS — has to be something about the SVG markup, class names,
+ * or rect geometry for those specific nodes. Losing the visual recede
+ * for the lower tiers temporarily to get a definitive diagnostic. */
+.dag-schematic .dag-node,
+.dag-schematic .dag-node-ears,
+.dag-schematic .dag-node-tests,
+.dag-schematic .dag-node-code {
   stroke: currentColor;
   stroke-width: 1.25;
 }
 .dag-schematic .dag-node-accent {
   stroke: #e0a060;
   stroke-width: 1.3;
-}
-.dag-schematic .dag-node-ears {
-  stroke: currentColor;
-  stroke-width: 1;
-}
-.dag-schematic .dag-node-tests {
-  stroke: currentColor;
-  stroke-width: 0.9;
-}
-.dag-schematic .dag-node-code {
-  stroke: #b8b4a2;
-  stroke-width: 0.8;
 }
 .arrow-inset-schematic .node {
   stroke: currentColor;
