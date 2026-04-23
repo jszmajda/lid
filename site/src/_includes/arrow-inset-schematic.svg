@@ -22,9 +22,11 @@
     <path d="M 534 134 L 526 134 M 534 134 L 534 126"/>
   </g>
 
-  <!-- Plate identifier -->
-  <text x="430" y="124" class="label">PLATE · 003 / SEGMENT</text>
-  <text x="14" y="124" class="coord">ZOOM · ONE ARROW</text>
+  <!-- Plate identifier. The schematic serves as the legend/key paired with
+       the trace strip on the home page; its marginalia name it as such
+       rather than as a standalone zoom. -->
+  <text x="430" y="124" class="label">PLATE · 003 / KEY</text>
+  <text x="14" y="124" class="coord">KEY · ARROW SEGMENTS</text>
 
   <!-- Edges between nodes. Lines extend from source-rect right-edge to the
        target-rect left-edge; `marker-end` drops a filled-triangle arrowhead
