@@ -866,43 +866,47 @@ hr {
 }
 .howit-head .lede em { font-style: italic; color: var(--ink); }
 
-/* Pair block — at wide breakpoints the one-arrow inset and the @spec code
- * snippet sit side-by-side as "two views of one arrow" (diagrammed vs.
- * literal). Stacks vertically at narrow widths. The right column is
- * slightly narrower so the diagram (the visual prime) gets a touch more
- * emphasis — drafting-table asymmetry, not a sales grid. */
-.howit-pair {
+/* Trace block — one worked example threaded through HLD → LLD → EARS → Tests
+ * → Code. The five panels render as a vertical stack (always — cascade is a
+ * downward flow, and the shared EARS ID AUTH-UI-001 literally propagates
+ * *down* the column from EARS to Tests to Code, which is the moment the
+ * "grep-addressable" claim stops being a claim and starts being a fact the
+ * reader can see). At narrow widths the legend, the strip, and the grep-
+ * addressability note stack in reading order. At ≥960px the layout splits
+ * into a two-column pair: the legend (schematic + caption) and the grep-note
+ * live in the left column as "how to read the trace"; the vertical strip of
+ * five panels fills the right column as "the trace itself". HTML order stays
+ * legend → strip → outro so the narrow-width reading flow is natural. */
+.howit-trace {
   display: grid;
-  gap: var(--s-6);
-  grid-template-columns: minmax(0, 1fr);
-  align-items: start;
-}
-@media (min-width: 960px) {
-  .howit-pair {
-    grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
-    gap: var(--s-7);
-  }
-}
-@media (min-width: 1280px) {
-  .howit-pair {
-    grid-template-columns: minmax(0, 1.12fr) minmax(0, 0.88fr);
-    gap: var(--s-8);
-  }
+  gap: var(--s-5);
+  grid-template-columns: 1fr;
 }
 
-/* Compact one-arrow inset — introduced BEFORE the full DAG so the reader
- * knows what one arrow means before they see the whole repo graph. */
-.howit-inset {
+@media (min-width: 960px) {
+  .howit-trace {
+    grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr);
+    grid-template-areas:
+      "legend strip"
+      "outro  strip";
+    gap: var(--s-6) var(--s-7);
+    align-items: start;
+  }
+  .trace-legend { grid-area: legend; }
+  .trace-strip  { grid-area: strip; }
+  .trace-outro  { grid-area: outro; }
+}
+
+.trace-legend {
   margin: 0;
-  padding: var(--s-4) var(--s-5) var(--s-5);
+  padding: var(--s-4) var(--s-5) var(--s-3);
   background: var(--paper-2);
   border: 1px solid var(--graphite);
   border-radius: var(--r-2);
-  min-width: 0;
 }
 
-.howit-inset figcaption {
-  margin-top: var(--s-3);
+.trace-legend-cap {
+  margin: 0 0 var(--s-4);
   font-family: var(--type-mono);
   font-size: 0.72rem;
   letter-spacing: 0.02em;
@@ -910,7 +914,15 @@ hr {
   line-height: 1.7;
   max-width: 78ch;
 }
-.howit-inset figcaption strong {
+.trace-legend-cap .num {
+  display: inline-block;
+  margin-right: var(--s-3);
+  color: var(--nib);
+  font-size: 0.66rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.trace-legend-cap strong {
   color: var(--ink);
   font-weight: 500;
   font-family: var(--type-serif);
@@ -919,20 +931,265 @@ hr {
   text-transform: none;
   margin-right: var(--s-2);
 }
-.howit-inset figcaption em { font-style: italic; color: var(--ink); }
-.howit-inset figcaption code { font-family: var(--type-mono); font-size: 0.9em; }
+.trace-legend-cap em { font-style: italic; color: var(--ink); }
+.trace-legend-cap code { font-family: var(--type-mono); font-size: 0.9em; }
 
-/* @spec code snippet block — paired with the inset at wide breakpoints
- * as "the same arrow, shown literally." The label above reads as a plate
- * caption in mono, echoing the inset's PLATE markers. */
-.howit-snippet-block {
+.trace-legend .arrow-inset-schematic {
+  max-width: 680px;
+  margin-inline: auto;
+  display: block;
+}
+
+/* The five-panel strip. Always a vertical stack so the cascade direction
+ * (down) matches both the methodology and the DAG below. Connector chevrons
+ * sit in the gap between panels pointing down, echoing the inset schematic's
+ * arrow vocabulary so the legend and the strip read as the same visual
+ * language. The stack shape also lets the shared EARS ID (AUTH-UI-001)
+ * propagate *down* the column from EARS to Tests to Code, which is the
+ * visual payoff the horizontal version couldn't deliver.
+ *
+ * Grid layout: col 1 holds the panels, col 2 (18px fixed) holds the through-
+ * line rail — a thin ochre dimension-line connecting the ID chips on the
+ * three ID-carrying panels (see .trace-strip::after below). The rail makes
+ * the through-line a drawn object rather than a repeated label; it's the
+ * payoff of the stacked orientation. */
+.trace-strip {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 18px;
+  column-gap: 0;
+  row-gap: var(--s-6);
+}
+
+.trace-panel { grid-column: 1; }
+
+/* Through-line rail — a thin ochre vertical line spanning rows 3–5 of the
+ * strip (EARS, Tests, Code). Visually connects the three AUTH-UI-001 chips
+ * that stack on the right side of those panels. Each chip has its own tick
+ * mark (.trace-id-chip::after) extending from the chip's right edge to
+ * meet this rail. The combination reads as a dimension line in the drafting
+ * vocabulary the hero and DAG schematics already use. */
+.trace-strip::after {
+  content: "";
+  grid-column: 2;
+  grid-row: 3 / 6;
+  justify-self: start;
+  align-self: stretch;
+  margin-left: 5px;
+  width: 1px;
+  background: color-mix(in srgb, var(--nib) 55%, transparent);
+  pointer-events: none;
+}
+
+.trace-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: var(--s-4);
+  background: var(--paper-2);
+  border: 1px solid var(--graphite);
+  border-left: 2px solid var(--nib);
+  border-radius: 0 var(--r-2) var(--r-2) 0;
+  min-width: 0;
+  /* Staggered entry, gated on the strip's `.in-view` class which site.js
+   * adds when the strip scrolls into view. The cascading delay (0.10s →
+   * 0.50s per --d custom property) makes the cascade "draw in" top-to-
+   * bottom at the moment the reader's eye arrives. Reduced-motion users
+   * see panels appear immediately via the global prefers-reduced-motion
+   * rule in section 12 that collapses all transitions to near-zero. */
+  opacity: 0;
+  transform: translateY(4px);
+  transition:
+    opacity 0.6s var(--ease-out),
+    transform 0.6s var(--ease-out);
+}
+.trace-strip.in-view .trace-panel {
+  opacity: 1;
+  transform: none;
+  transition-delay: var(--d, 0s);
+}
+
+/* Connector glyph between panels — always pointing down, centered in the
+ * gap below each non-last panel. Uses the inset schematic's triangle-arrow
+ * feel rather than a plain arrow character so the visual vocabulary carries.
+ * The "cascade flows down" message is reinforced every time the reader's
+ * eye crosses one of these. */
+.trace-panel:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0.75;
+  left: 50%;
+  bottom: calc(-1 * var(--s-6) / 2);
+  transform: translate(-50%, 50%);
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 8px solid var(--nib);
+}
+
+.trace-panel-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-2);
+  padding-bottom: var(--s-2);
+  margin-bottom: var(--s-3);
+  border-bottom: 1px solid var(--graphite);
+}
+
+.trace-panel-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: var(--type-mono);
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.trace-panel-label em {
+  font-family: var(--type-serif);
+  font-style: italic;
+  letter-spacing: 0;
+  text-transform: lowercase;
+  color: var(--ink-2);
+  font-size: 1.05em;
+}
+.trace-panel-label .trace-label-sep {
+  color: var(--nib);
+  margin: 0 0.1em;
+  opacity: 0.7;
+}
+
+/* ID chip — the grep-addressable through-line, visible on EARS/Tests/Code
+ * panels only. Small, nib-ochre outline, reads as a plate stamp. Each chip
+ * has a tick-mark pseudo-element (::after below) that extends from its
+ * right edge to meet the through-line rail on the strip's right side. */
+.trace-id-chip {
+  flex: 0 0 auto;
+  position: relative;
+  display: inline-block;
+  padding: 0.14rem 0.45rem;
+  font-family: var(--type-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  color: var(--nib);
+  border: 1px solid color-mix(in srgb, var(--nib) 45%, transparent);
+  border-radius: var(--r-1);
+  background: color-mix(in srgb, var(--nib) 7%, transparent);
+  white-space: nowrap;
+}
+
+/* Tick mark from chip to rail — short horizontal dash starting at the
+ * chip's right edge and ending at the rail. The 21px width is tuned so
+ * the tick terminates exactly at the rail's left edge: chip-right sits
+ * at panel-right − 1rem (the panel's right padding); the rail sits at
+ * panel-right + 5px (col-2 offset); 1rem + 5px = 21px. */
+.trace-id-chip::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 100%;
+  width: 21px;
+  height: 1px;
+  background: color-mix(in srgb, var(--nib) 70%, transparent);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.trace-panel-body {
+  flex: 1;
+  min-width: 0;
+  color: var(--ink);
+  line-height: 1.55;
+}
+
+/* Body variants — the type choice itself carries meaning. Prose rungs
+ * (HLD, LLD) use the serif body; the EARS claim uses mono with
+ * keyword-highlighted When/shall; Tests and Code are mono-monospace. As
+ * the reader moves down the trace, the type becomes more code-like —
+ * the same cascade the methodology describes. */
+.trace-panel-body--prose {
+  font-family: var(--type-serif);
+  font-size: 1rem;
+  color: var(--ink);
+}
+.trace-panel-body--prose code {
+  font-family: var(--type-mono);
+  font-size: 0.88em;
+}
+
+.trace-panel-body--claim {
+  font-family: var(--type-mono);
+  font-size: 0.86rem;
+  line-height: 1.65;
+  color: var(--ink);
+}
+.ears-kw {
+  color: var(--nib);
+  font-weight: 500;
+}
+
+.trace-panel-body--code {
+  font-family: var(--type-mono);
+  /* Lower bound tuned so the longest test string fits the panel at 375px,
+   * after the rail column (18px) and panel padding (2rem) subtract from
+   * available width. Scales up to 0.8rem at wide viewports where panels
+   * have 2-up breathing room. */
+  font-size: clamp(0.62rem, 0.5rem + 0.6vw, 0.8rem);
+  line-height: 1.6;
+  overflow-x: auto;
+}
+.trace-panel-body--code code {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  color: var(--ink);
+  white-space: pre;
+  display: block;
+}
+.trace-panel-body--code .sn-c { color: var(--ink-3); }
+.trace-panel-body--code .sn-k { color: var(--azure); }
+.trace-panel-body--code .sn-fn { color: var(--nib); }
+.trace-panel-body--code .sn-s { color: var(--ink-2); }
+.trace-id-ref {
+  display: inline-block;
+  color: var(--nib);
+  opacity: 0.75;
+}
+
+.trace-outro {
+  max-width: 72ch;
+  margin: var(--s-2) 0 0;
+  color: var(--ink-2);
+  font-size: 0.98rem;
+}
+.trace-outro code {
+  font-family: var(--type-mono);
+  font-size: 0.88em;
+}
+
+/* Bridge between the worked-example trace and the whole-repo DAG reveal.
+ * The eyebrow label marks the move from "one arrow" to "every arrow" as
+ * a transition rather than just more body prose — it's where the reader's
+ * frame of reference changes scale. */
+.howit-bridge {
+  max-width: 62rem;
+  margin: var(--s-2) 0 0;
   display: flex;
   flex-direction: column;
   gap: var(--s-3);
-  min-width: 0;
+}
+.howit-bridge > p {
+  margin: 0;
+  color: var(--ink);
+  font-size: 1.05rem;
 }
 
-.howit-snippet-label {
+.howit-bridge-label {
   font-family: var(--type-mono);
   font-size: 0.7rem;
   letter-spacing: 0.2em;
@@ -943,8 +1200,9 @@ hr {
   gap: var(--s-2);
   padding-bottom: var(--s-2);
   border-bottom: 1px solid var(--graphite);
+  align-self: flex-start;
 }
-.howit-snippet-label::before {
+.howit-bridge-label::before {
   content: "§";
   color: var(--nib);
   font-family: var(--type-serif);
@@ -952,46 +1210,11 @@ hr {
   font-style: italic;
   letter-spacing: 0;
 }
-
-.howit-snippet {
-  margin: 0;
-  padding: var(--s-4) var(--s-5);
-  background: var(--paper-3);
-  border: 1px solid var(--graphite);
-  border-left: 3px solid var(--nib);
-  border-radius: 0 var(--r-2) var(--r-2) 0;
-  font-family: var(--type-mono);
-  font-size: 0.88rem;
-  line-height: 1.6;
-  overflow-x: auto;
-}
-.howit-snippet code {
-  background: transparent;
-  border: 0;
-  padding: 0;
-  color: var(--ink);
-  white-space: pre;
-}
-.howit-snippet .sn-c { color: var(--ink-3); }
-.howit-snippet .sn-k { color: var(--azure); }
-.howit-snippet .sn-fn { color: var(--nib); }
-
-.howit-snippet-note {
-  color: var(--ink-2);
-  font-size: 0.98rem;
-  max-width: 56ch;
-  margin: 0;
-}
-.howit-snippet-note code {
-  font-family: var(--type-mono);
-  font-size: 0.88em;
-}
-
-.howit-bridge {
-  max-width: 62rem;
-  color: var(--ink);
-  font-size: 1.05rem;
-  margin: var(--s-2) 0 0;
+.howit-bridge-sep,
+.howit-bridge-arr {
+  color: var(--nib);
+  opacity: 0.85;
+  margin: 0 0.05em;
 }
 
 /* Reveal block — pairs the full DAG with the locus-of-work outro at wide

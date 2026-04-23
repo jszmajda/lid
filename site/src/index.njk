@@ -55,35 +55,85 @@ description: Linked-Intent Development — treat your coding agent as an English
       <span class="plate">Plate 01 / How it works</span>
       <h2 id="howitworks-heading">You design. <em>The agent writes the rest.</em></h2>
       <p class="lede">
-        LID treats your whole repository as a graph rooted in intent. Every code file reachable, by name, from a test; every test from a spec; every spec from a low-level design; every design from the high-level design at the top. <em>Checking that the code still matches the design is just a walk through the graph.</em>
+        LID treats your whole repository as a graph rooted in intent. Every code file reachable, by name, from a test; every test from a spec; every spec from a low-level design (LLD); every design from the high-level design (HLD) at the top. <em>Checking that the code still matches the design is just a walk through the graph.</em>
       </p>
     </header>
 
-    <div class="howit-pair">
-      <figure class="howit-inset" aria-label="One arrow segment, zoomed in">
-        {% include "arrow-inset-schematic.svg" %}
-        <figcaption>
+    <!-- @spec MKT-SITE-039, MKT-SITE-045, MKT-SITE-047, MKT-SITE-048 -->
+    <div class="howit-trace" aria-label="One intent, traced from HLD through code">
+      <figure class="trace-legend" aria-hidden="true">
+        <figcaption class="trace-legend-cap">
           <span class="num">FIG · 001</span>
-          <strong>One arrow.</strong> The HLD names the <em>why</em>; the LLD shapes the <em>how</em>; an EARS spec (structured-English notation for requirements — short for <em>Easy Approach to Requirements Syntax</em>) makes one atomic claim; a failing-first test asserts that claim before code exists; code carries matching <code>@spec</code> annotations. Every spec gets a grep-addressable ID — <code>AUTH-UI-001</code>, <code>AUTH-UI-002</code>, and so on. That's LID's overlay on top of EARS, and it's what makes the graph navigable by name.
+          <strong>Legend.</strong> The HLD names the <em>why</em>; the LLD shapes the <em>how</em>; an EARS spec (structured-English notation for requirements — short for <em>Easy Approach to Requirements Syntax</em>) makes one atomic claim; a failing-first test asserts that claim before code exists; code carries matching <code>@spec</code> annotations. Every spec gets a grep-addressable ID — <code>AUTH-UI-001</code>, <code>AUTH-UI-002</code>, and so on. That's LID's overlay on top of EARS, and it's what makes the graph navigable by name.
         </figcaption>
+        {% include "arrow-inset-schematic.svg" %}
       </figure>
 
-      <div class="howit-snippet-block">
-        <span class="howit-snippet-label">In code</span>
-        <pre class="howit-snippet"><code><span class="sn-c">// services/auth.ts</span>
+      <ol class="trace-strip" role="list" aria-label="One worked example at five levels of resolution">
+        <li class="trace-panel trace-panel-hld" style="--d: 0.10s">
+          <header class="trace-panel-head">
+            <span class="trace-panel-label">§ HLD <span class="trace-label-sep" aria-hidden="true">/</span> <em>the why</em></span>
+          </header>
+          <div class="trace-panel-body trace-panel-body--prose">
+            The app is account-scoped — only the account owner can see or change their data. Every request has to identify the caller.
+          </div>
+        </li>
+
+        <li class="trace-panel trace-panel-lld" style="--d: 0.20s">
+          <header class="trace-panel-head">
+            <span class="trace-panel-label">§ LLD <span class="trace-label-sep" aria-hidden="true">/</span> <em>the how</em></span>
+          </header>
+          <div class="trace-panel-body trace-panel-body--prose">
+            Credentials enter at the login form, pass to the auth service, and resolve to one of two outcomes: a session scoped to the user, or a structured <code>AuthError</code>. The UI translates <code>AuthError</code> into a user-safe message; the session rides subsequent requests.
+          </div>
+        </li>
+
+        <li class="trace-panel trace-panel-ears" style="--d: 0.30s">
+          <header class="trace-panel-head">
+            <span class="trace-panel-label">§ EARS <span class="trace-label-sep" aria-hidden="true">/</span> <em>the claim</em></span>
+            <span class="trace-id-chip">AUTH-UI-001</span>
+          </header>
+          <div class="trace-panel-body trace-panel-body--claim">
+            <span class="ears-kw">When</span> a user submits valid credentials, the authentication service <span class="ears-kw">shall</span> return a session scoped to that user.
+          </div>
+        </li>
+
+        <li class="trace-panel trace-panel-tests" style="--d: 0.40s">
+          <header class="trace-panel-head">
+            <span class="trace-panel-label">§ TESTS <span class="trace-label-sep" aria-hidden="true">/</span> <em>failing-first</em></span>
+            <span class="trace-id-chip">AUTH-UI-001</span>
+          </header>
+          <div class="trace-panel-body trace-panel-body--code"><code><span class="sn-k">test</span>(<span class="sn-s">"returns a session on valid credentials"</span>)
+<span class="trace-id-ref">▸ AUTH-UI-001</span>
+
+<span class="sn-k">test</span>(<span class="sn-s">"returns AuthError on invalid credentials"</span>)
+<span class="trace-id-ref">▸ AUTH-UI-002</span></code></div>
+        </li>
+
+        <li class="trace-panel trace-panel-code" style="--d: 0.50s">
+          <header class="trace-panel-head">
+            <span class="trace-panel-label">§ CODE <span class="trace-label-sep" aria-hidden="true">/</span> <em>@spec anchors</em></span>
+            <span class="trace-id-chip">AUTH-UI-001</span>
+          </header>
+          <div class="trace-panel-body trace-panel-body--code"><code><span class="sn-c">// services/auth.ts</span>
 <span class="sn-c">// @spec AUTH-UI-001, AUTH-UI-002</span>
 <span class="sn-k">async function</span> <span class="sn-fn">authenticate</span>(credentials) {
   <span class="sn-c">// ...</span>
-}</code></pre>
-        <p class="howit-snippet-note">
-          Every implementation file carries <code>@spec</code> comments pointing back at the EARS claims it satisfies. A spec ID is a grep target: run <code>grep -r AUTH-UI-001</code> and you get the spec text, its failing-first test, and every line of code that implements it.
-        </p>
-      </div>
+}</code></div>
+        </li>
+      </ol>
+
+      <p class="trace-outro">
+        Every implementation file carries <code>@spec</code> comments pointing back at the EARS claims it satisfies. A spec ID is a grep target: run <code>grep -r AUTH-UI-001</code> and you get the spec text, its failing-first tests, and every line of code that implements it.
+      </p>
     </div>
 
-    <p class="howit-bridge">
-      Now do that for every design, every spec, and every test in your repository — not in a binder somewhere, in the code itself. Your whole codebase looks like this:
-    </p>
+    <div class="howit-bridge">
+      <span class="howit-bridge-label">Scale <span class="howit-bridge-sep" aria-hidden="true">/</span> one <span class="howit-bridge-arr" aria-hidden="true">→</span> every</span>
+      <p>
+        Now do that for every design, every spec, and every test in your repository — not in a binder somewhere, in the code itself. Your whole codebase looks like this:
+      </p>
+    </div>
 
     <div class="howit-reveal">
       <figure class="howit-visual" aria-label="DAG of LID arrows across the codebase">
