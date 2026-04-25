@@ -1,0 +1,14 @@
+{
+  "assertions": [
+    {
+      "text": "Correctly identified B-only drift / unstated invariant",
+      "passed": true,
+      "evidence": "Concluded 'B-only / unstated invariant — code is stricter than spec'"
+    },
+    {
+      "text": "Recommendation aligned (tighten EARS, not code)",
+      "passed": true,
+      "evidence": "Recommended 'Tighten the spec, not the code' with proposed wording citing order preservation"
+    }
+  ]
+}

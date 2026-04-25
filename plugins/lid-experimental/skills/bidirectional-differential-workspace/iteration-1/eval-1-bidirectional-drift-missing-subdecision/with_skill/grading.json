@@ -1,0 +1,34 @@
+{
+  "assertions": [
+    {
+      "text": "Audit record written to pref/PREF-001.md",
+      "passed": true,
+      "evidence": "Confirmed via find"
+    },
+    {
+      "text": "Classification = BIDIRECTIONAL-DRIFT",
+      "passed": true,
+      "evidence": "Subagent + audit record both report BIDIRECTIONAL-DRIFT"
+    },
+    {
+      "text": "B-direction elevates empty-string fallback + skip-on-empty as missing requirements",
+      "passed": true,
+      "evidence": "B-direction section explicitly names truthiness fallback and skip-on-empty as elevated invariants (3/3 B-runs)"
+    },
+    {
+      "text": "A-direction shows >=2 distinct tiebreaker choices",
+      "passed": false,
+      "evidence": "All 3 A-runs were byte-identical (`function render(x, y) { return x ?? y; }`). Fixture-design flaw: this EARS shape collapsed naive impls onto a single tight idiom, so A-variance didn't materialize. Classification still landed correctly because B-direction did the lifting."
+    },
+    {
+      "text": "Drift findings tagged with severity (possible-bug | latent-refactor-hazard | pure-documentation)",
+      "passed": true,
+      "evidence": "Three findings tagged: silent-skip=possible-bug, ||-vs-??=latent-refactor-hazard, list-iteration-shape=latent-refactor-hazard"
+    },
+    {
+      "text": "Default Action = triage-required (or both reconcile-code + reconcile-EARS)",
+      "passed": true,
+      "evidence": "Reported triage-required, with reconcile-code as the dominant cascade starting point"
+    }
+  ]
+}

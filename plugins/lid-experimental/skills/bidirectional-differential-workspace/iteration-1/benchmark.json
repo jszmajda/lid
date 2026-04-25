@@ -1,0 +1,22 @@
+{
+  "skill_name": "bidirectional-differential",
+  "iteration": 1,
+  "configurations": {
+    "with_skill": {
+      "pass_rate": "15/18",
+      "pass_pct": "83.3",
+      "total_tokens": 151340,
+      "total_duration_ms": 642075,
+      "mean_tokens_per_eval": 50447,
+      "mean_duration_ms_per_eval": 214025
+    },
+    "without_skill": {
+      "pass_rate": "6/6",
+      "pass_pct": "100.0",
+      "total_tokens": 69202,
+      "total_duration_ms": 162920,
+      "mean_tokens_per_eval": 23067,
+      "mean_duration_ms_per_eval": 54307
+    }
+  }
+}

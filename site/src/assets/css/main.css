@@ -1688,6 +1688,130 @@ hr {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
+ * 8B. EXPERIMENTAL ANNEX (peer section between Quickstart and Paths)
+ * ═══════════════════════════════════════════════════════════════════════
+ * Drafting-vocabulary "annex" callout for the optional experimental plugin.
+ * Lives in its own .section so it inherits the standard major-section
+ * vertical padding (--s-8 0) and reads as a peer of Quickstart and Paths
+ * rather than a tag-along inside the Quickstart shell. The aesthetic
+ * borrows the page's registration-bracket frame but signals "secondary
+ * track" via a dashed accent rail down the left edge and a slightly
+ * recessed paper tone. Plate label uses an asterisk lead-glyph (vs. the
+ * section's usual middot) to reinforce the "supplementary" reading. */
+.experimental {
+  /* Standard .section padding via the cascade; this rule is a hook
+   * for any future overrides specific to the experimental section. */
+}
+
+.annex {
+  padding: var(--s-5) var(--s-6);
+  background: color-mix(in oklab, var(--paper) 70%, var(--paper-2) 30%);
+  border-radius: var(--r-2);
+  position: relative;
+  display: grid;
+  gap: var(--s-3);
+  max-width: 56rem;
+}
+
+/* Dashed accent rail down the left edge — the annex's signature. */
+.annex::before {
+  /* Override the .bracketed top-left corner; we want the rail instead. */
+  content: "";
+  position: absolute;
+  left: 0;
+  top: var(--s-3);
+  bottom: var(--s-3);
+  width: 2px;
+  background: repeating-linear-gradient(
+    to bottom,
+    var(--nib) 0 4px,
+    transparent 4px 9px
+  );
+  border: 0;
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.annex:hover::before { opacity: 0.85; }
+
+.annex-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: var(--s-4);
+  flex-wrap: wrap;
+}
+
+.plate--annex::before {
+  /* Asterisk lead-glyph — "see also / supplementary" connotation. */
+  content: "✱ ";
+  color: var(--nib);
+  margin-right: 0.15em;
+}
+
+.annex-status {
+  font-family: var(--type-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  border: 1px solid var(--ink-4);
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.annex-aside {
+  margin: 0;
+  color: var(--ink-3);
+  font-size: 0.88rem;
+  font-style: italic;
+  border-left: 1px solid var(--ink-4);
+  padding-left: var(--s-3);
+}
+.annex-aside em {
+  color: var(--ink-2);
+  font-style: italic;
+  font-weight: 500;
+}
+
+.cmd--annex {
+  margin: 0;
+  font-family: var(--type-mono);
+  font-size: 0.9rem;
+  padding: var(--s-2) var(--s-4);
+  background: var(--paper-3);
+  border: 1px solid var(--graphite);
+  border-radius: var(--r-1);
+  color: var(--ink);
+  overflow-x: auto;
+}
+
+.annex-readmore {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  margin-top: var(--s-1);
+  font-family: var(--type-mono);
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--nib);
+  border-bottom: 1px solid color-mix(in srgb, var(--nib) 38%, transparent);
+  padding-bottom: 2px;
+  width: fit-content;
+}
+.annex-readmore:hover {
+  color: var(--nib-2);
+  border-bottom-color: var(--nib-2);
+}
+.annex-readmore .arr {
+  font-style: normal;
+  transition: transform 0.18s ease;
+}
+.annex-readmore:hover .arr { transform: translate(2px, -2px); }
+
+/* ═══════════════════════════════════════════════════════════════════════
  * 9. DEMO (asciinema placeholder)
  * ═══════════════════════════════════════════════════════════════════════ */
 

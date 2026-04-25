@@ -13,6 +13,12 @@ A structured design-before-code methodology for agentic coding. Stop building th
 /linked-intent-dev:lid-setup
 ```
 
+**Optional:** the `lid-experimental` plugin adds opt-in skills that aren't part of the core workflow but layer on top of it. Currently includes `bidirectional-differential` for auditing EARS↔code coherence on a chosen scope. See [`plugins/lid-experimental/README.md`](plugins/lid-experimental/README.md) for what's in it and how to use it. Install separately:
+
+```
+/plugin install lid-experimental@jszmajda-lid
+```
+
 **Using Cursor, Windsurf, GitHub Copilot, Aider, Continue, Junie, Codex, Zed, or other tools?** Drop a small rule file into your project that points the agent at an `AGENTS.md`. Copy-paste snippets for each tool are in [`docs/setup.md`](docs/setup.md).
 
 Then just describe what you want to build. The methodology handles the rest. For existing codebases, see [Getting Started: Brownfield Project](#getting-started-brownfield-project).
@@ -70,7 +76,13 @@ The tradeoff is that LID requires discipline. You review HLDs and LLDs carefully
 | **linked-intent-dev** | Structured design-before-code workflow: HLD → LLD → EARS specs → Implementation plan | Every project. Consult for all code changes. |
 | **arrow-maintenance** | Tracks spec-to-code coherence across large projects via `docs/arrows/` index | Projects too large to hold in one context window |
 
-Users on other agentic coding tools follow the same workflow by pointing their tool's rule-file system at an `AGENTS.md` in their project. The plugins automate phase gates and skill invocation; other tools rely on the agent reading the instructions on every turn.
+**One opt-in experimental plugin** with skills that have earned their place but aren't yet promoted into the core workflow. Experimental skills can be retired or promoted as real-world usage tells us where they belong:
+
+| Plugin | What it does | When to use it |
+|--------|-------------|----------------|
+| **[lid-experimental](plugins/lid-experimental/README.md)** | Currently bundles `bidirectional-differential` — runs two parallel fresh Claude sessions on a chosen EARS+code pair (one reconstructs code from the EARS, the other reconstructs the EARS from stripped code) to surface intent the EARS doesn't state and unstated invariants the code encodes | When you want a deeper coherence check than `arrow-maintenance` provides, on a scoped slice of your specs. Requires `arrow-maintenance` overlay. |
+
+See the experimental [plugin README](plugins/lid-experimental/README.md) for an end-user walkthrough; lifecycle and design rationale live in [`docs/llds/lid-experimental.md`](docs/llds/lid-experimental.md). Users on other agentic coding tools follow the same workflow by pointing their tool's rule-file system at an `AGENTS.md` in their project. The plugins automate phase gates and skill invocation; other tools rely on the agent reading the instructions on every turn. Experimental skills are Claude-Code-only in their first iteration.
 
 ## Installation (Claude Code)
 
@@ -87,6 +99,12 @@ Then install the plugins you need. Choose "project" scope to share with your tea
 ```
 /plugin install linked-intent-dev@jszmajda-lid
 /plugin install arrow-maintenance@jszmajda-lid
+```
+
+If you want the experimental skills (currently `bidirectional-differential`), install that plugin too — it's separate from the core install on purpose. The [experimental plugin README](plugins/lid-experimental/README.md) walks through what's in it and when to reach for it.
+
+```
+/plugin install lid-experimental@jszmajda-lid
 ```
 
 After installing, run the setup skill to configure your project:
@@ -210,6 +228,7 @@ For large projects, declare a coherence-check script in `AGENTS.md`'s `## LID To
 | Audit the arrow overlay for drift | `/arrow-maintenance:arrow-maintenance` |
 | Start a new feature | Just describe it — linked-intent-dev activates automatically |
 | Fix a bug | Just describe it — the agent walks the arrow to find where intent diverged |
+| Run a bidirectional differential audit on EARS↔code (opt-in, requires `lid-experimental` plugin) | `/lid-experimental:differential-audit` |
 
 On other tools, the setup step is one-time (copy the adapter file from [`docs/setup.md`](docs/setup.md) into your project); the rest happens in normal prompting.
 

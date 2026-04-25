@@ -1,0 +1,34 @@
+{
+  "assertions": [
+    {
+      "text": "Audit record written to dedup/DEDUP-001.md",
+      "passed": true,
+      "evidence": "Confirmed via find"
+    },
+    {
+      "text": "Classification = B-ONLY-DRIFT",
+      "passed": true,
+      "evidence": "Reported by subagent"
+    },
+    {
+      "text": "B-direction elevates first-occurrence order preservation as unstated requirement",
+      "passed": true,
+      "evidence": "All 3 B-runs added 'preserving the first-occurrence order' clause; record explicitly cites this elevation"
+    },
+    {
+      "text": "A-direction shows at least one Set-based (unordered) dedup",
+      "passed": false,
+      "evidence": "All 3 A-runs produced [...new Set(ids)] — Set-based but JS Set spread is order-preserving on string inputs. Fixture-design flaw: 'deduplicate' is too strong an idiom; modern TS naive default is Set-based. To exercise A-variance, EARS would need a more abstract verb. Classification still landed correctly."
+    },
+    {
+      "text": "Default Action = reconcile-EARS",
+      "passed": true,
+      "evidence": "Reported by subagent and audit record"
+    },
+    {
+      "text": "Recommended reconciliation cites order-preservation in updated EARS text",
+      "passed": true,
+      "evidence": "Proposed 'deduplicate a list of IDs, preserving first-occurrence order.' verbatim in the recommendation"
+    }
+  ]
+}

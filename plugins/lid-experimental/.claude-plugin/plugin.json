@@ -1,0 +1,10 @@
+{
+  "name": "lid-experimental",
+  "description": "Experimental LID skills with opt-in installation and explicit lifecycle (promotion or retirement). Layers on top of linked-intent-dev and arrow-maintenance.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Jess Szmajda"
+  },
+  "repository": "https://github.com/jszmajda/lid",
+  "license": "MIT"
+}

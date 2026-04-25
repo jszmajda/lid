@@ -25,6 +25,8 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 - `[x]` **MKT-SITE-008**: The Quickstart commands SHALL match the repository README's Quickstart section exactly.
 - `[ ]` **MKT-SITE-009**: When the README's Quickstart changes, the site's Quickstart SHALL cascade to match before the next deploy.
 - `[x]` **MKT-SITE-040**: The hero SHALL include a primary call-to-action that anchor-links to the Quickstart section on the same page, so an evaluator who has already decided can reach the install commands without scrolling past the structural orientation content.
+- `[x]` **MKT-SITE-050**: The Home page SHALL include a peer "Annex" section (placed between the Quickstart and the audience-path links) that surfaces the existence of the `lid-experimental` plugin as an optional, opt-in install — naming the plugin, showing its install command, framing it as not part of the core install path, and linking to the plugin's user-facing README — so an evaluator learns the experimental capabilities exist without those capabilities being promoted into the core four-command Quickstart flow. The Annex section SHALL use the same major-section structure (section-head plate + h2 + lede, then a content block) as Plates 01 through 04 so it inherits the page's standard vertical rhythm rather than crowding any neighbouring section.
+- `[x]` **MKT-SITE-051**: The Start page's Evaluating section SHALL include a one-sentence mention of the experimental plugin as an opt-in onboarding consideration, with a link to the experimental skill's source in the repository for evaluators who want to inspect what the experimental layer contains.
 
 ## Home: How It Works
 
