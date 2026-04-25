@@ -234,6 +234,7 @@ An arrow-maintained project's `docs/arrows/` contains:
 - `README.md` — instructions for working with the overlay: loading order, `yq` query patterns, workflow for mapping/auditing/fixing/splitting/merging, status enum. Cloned from the skill's `references/` on bootstrap; the project may edit it.
 - `index.yaml` — the manifest.
 - `{segment-name}.md` — one file per arrow segment.
+- `experiments/` — *reserved namespace* for experiment-produced artifacts (see §"Experiment-produced artifacts (reserved namespace)" below). Not owned or audited by this skill.
 
 ### `index.yaml` Schema
 
@@ -267,6 +268,30 @@ unmapped:
 ```
 
 The schema is intentionally flat — agents query it with `yq` or simple reads. Extensions (new status values, additional metadata per arrow) are permitted but should be added to this LLD first so the schema stays coherent across projects.
+
+### Experiment-produced artifacts (reserved namespace)
+
+The `docs/arrows/experiments/` subtree is reserved for artifacts produced by `lid-experimental` plugin skills that want to attach per-segment or per-EARS experiment state to the arrow overlay. The subtree is **not owned by this skill** — each experiment owns its own namespace inside it and is responsible for creating, updating, and removing its own artifacts.
+
+Convention:
+
+```
+docs/arrows/experiments/<experiment-name>/<segment-name>/<artifact>.md
+```
+
+- `<experiment-name>` — the `lid-experimental` skill's directory name (e.g., `bidirectional-differential`). Each experiment gets its own peer directory.
+- `<segment-name>` — the arrow segment the artifact applies to, mirroring the segment names used at `docs/arrows/{segment-name}.md`.
+- `<artifact>.md` — experiment-specific shape. Typically one file per EARS, but experiments may choose their own leaf structure.
+
+**Audit behavior**: the `arrow-maintenance` skill (both ambient and command modes) **ignores** the `experiments/` subtree. It does not audit, clean up, or regenerate files under it. Reference-rot and spec-to-code drift checks scan arrow docs and code; they do not scan `experiments/`.
+
+**Lifecycle**: when an experiment is retired, its entire `docs/arrows/experiments/<experiment-name>/` subtree is removed in the same commit that removes the experiment from `lid-experimental`. When an experiment is promoted into a core plugin, the subtree either migrates into core ownership (this LLD's schema gets extended to track the artifact type formally) or is removed in favor of a first-class schema entry. That decision is made at promotion time, not in advance.
+
+**`index.yaml` coordination**: `arrows.<segment>.experiments` is a reserved key. If a future experiment needs per-segment metadata tracked in `index.yaml` (e.g., "last audit date" for an experiment's artifacts), that experiment proposes the sub-schema at promotion review and this LLD extends `index.yaml` then. Until then, experiments keep their state in the `experiments/` subtree only.
+
+Active experiments at this LLD's current version:
+
+- `bidirectional-differential` — see `docs/llds/lid-experimental/bidirectional-differential.md`. Uses `docs/arrows/experiments/bidirectional-differential/<segment-name>/<EARS-ID>.md`.
 
 ## Audit Mechanics
 

@@ -1,0 +1,14 @@
+{
+  "assertions": [
+    {
+      "text": "Correctly identified bidirectional drift on missing sub-decisions",
+      "passed": true,
+      "evidence": "Concluded 'Bidirectional drift via missing sub-decision' and named both axes (||-vs-?? and both-missing handling) — same shape with_skill found"
+    },
+    {
+      "text": "Recommendation aligned with cascade discipline",
+      "passed": true,
+      "evidence": "Recommended tightening PREF-001 + companion EARS for both-absent + flipping arrow status"
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "eval_id": 2,
+  "eval_name": "b-only-drift-unstated-invariant",
+  "prompt": "/differential-audit DEDUP-001",
+  "assertions": [
+    {
+      "text": "An audit record is written to docs/arrows/experiments/bidirectional-differential/dedup/DEDUP-001.md",
+      "spec_ids": [
+        "BIDIFF-013"
+      ]
+    },
+    {
+      "text": "The audit record's Classification field is B-ONLY-DRIFT",
+      "spec_ids": [
+        "BIDIFF-011"
+      ]
+    },
+    {
+      "text": "The audit record's B-direction section elevates first-occurrence order preservation as an unstated requirement encoded by the code",
+      "spec_ids": [
+        "BIDIFF-011"
+      ]
+    },
+    {
+      "text": "The audit record's A-direction section shows at least one A-run that uses Set-based (unordered) dedup, illustrating that the EARS permits multiple valid implementations",
+      "spec_ids": [
+        "BIDIFF-011"
+      ]
+    },
+    {
+      "text": "The Default Action is reconcile-EARS",
+      "spec_ids": [
+        "BIDIFF-014"
+      ]
+    },
+    {
+      "text": "The Recommended reconciliations section proposes specific updated EARS text that cites order preservation",
+      "spec_ids": [
+        "BIDIFF-014"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "eval_id": 0,
+  "eval_name": "bd-coherent-bounded-matrix",
+  "prompt": "/differential-audit SCORE-001",
+  "assertions": [
+    {
+      "text": "An audit record is written to docs/arrows/experiments/bidirectional-differential/scoring/SCORE-001.md",
+      "spec_ids": [
+        "BIDIFF-013"
+      ]
+    },
+    {
+      "text": "The audit record's Classification field is BD-COHERENT",
+      "spec_ids": [
+        "BIDIFF-011"
+      ]
+    },
+    {
+      "text": "The audit record's Default Action is acknowledged-coherent",
+      "spec_ids": [
+        "BIDIFF-014"
+      ]
+    },
+    {
+      "text": "The audit record includes a git SHA and ISO timestamp in its header",
+      "spec_ids": [
+        "BIDIFF-014"
+      ]
+    },
+    {
+      "text": "The stripping spot-check in the record is 'pass' (word overlap below the ~70% threshold, since the EARS vocabulary — 3/2/1/0, A, B — is fundamentally different from the code's identifier vocabulary)",
+      "spec_ids": [
+        "BIDIFF-022"
+      ]
+    },
+    {
+      "text": "The user summary includes the scoring arrow's classification count with SCORE-001 listed as BD-COHERENT",
+      "spec_ids": [
+        "BIDIFF-015"
+      ]
+    }
+  ]
+}

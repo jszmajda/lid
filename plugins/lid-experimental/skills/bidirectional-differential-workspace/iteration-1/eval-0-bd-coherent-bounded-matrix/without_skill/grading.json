@@ -1,0 +1,14 @@
+{
+  "assertions": [
+    {
+      "text": "Correctly identified spec/code as coherent",
+      "passed": true,
+      "evidence": "Concluded 'SCORE-001 and src/scoring.ts agree. ... No drift of substance.'"
+    },
+    {
+      "text": "Spent reasonable wall-clock on review",
+      "passed": true,
+      "evidence": "9 tool uses, 45s wall-clock"
+    }
+  ]
+}

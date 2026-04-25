@@ -1,0 +1,43 @@
+{
+  "eval_id": 1,
+  "eval_name": "bidirectional-drift-missing-subdecision",
+  "prompt": "/differential-audit PREF-001",
+  "assertions": [
+    {
+      "text": "An audit record is written to docs/arrows/experiments/bidirectional-differential/pref/PREF-001.md",
+      "spec_ids": [
+        "BIDIFF-013"
+      ]
+    },
+    {
+      "text": "The audit record's Classification field is BIDIRECTIONAL-DRIFT",
+      "spec_ids": [
+        "BIDIFF-011"
+      ]
+    },
+    {
+      "text": "The audit record's B-direction section elevates the empty-string fallback and the skip-on-empty behavior as unstated requirements",
+      "spec_ids": [
+        "BIDIFF-011"
+      ]
+    },
+    {
+      "text": "The audit record's A-direction section shows at least two distinct tiebreaker choices across the N runs (different behavior when both primary and secondary are missing)",
+      "spec_ids": [
+        "BIDIFF-011"
+      ]
+    },
+    {
+      "text": "The Drift findings list tags at least one finding with one of the three severities (possible-bug, latent-refactor-hazard, or pure-documentation)",
+      "spec_ids": [
+        "BIDIFF-014"
+      ]
+    },
+    {
+      "text": "The Default Action is 'triage-required' or includes both reconcile-code and reconcile-EARS options given the severity ambiguity",
+      "spec_ids": [
+        "BIDIFF-014"
+      ]
+    }
+  ]
+}

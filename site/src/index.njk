@@ -222,6 +222,33 @@ description: Linked-Intent Development — treat your coding agent as an English
         </ol>
       </div>
     </div>
+
+  </div>
+</section>
+
+<!-- @spec MKT-SITE-050 -->
+{% set experimentalReadme = site.repoUrl + "/blob/main/plugins/lid-experimental/README.md" %}
+<section class="experimental section" aria-labelledby="experimental-heading">
+  <div class="container">
+    <div class="section-head">
+      <span class="plate plate--annex">Annex 03A / Experimental</span>
+      <h2 id="experimental-heading">Beyond the core: <em style="font-style:italic;color:var(--nib)">experimental skills</em>.</h2>
+      <p class="lede">
+        The <code>lid-experimental</code> plugin bundles techniques that have earned their place but aren't yet promoted into the core workflow. Right now it ships with <code>bidirectional-differential</code> — a way to check whether your specs and your code still agree on what the system does. It runs two fresh AI sessions in parallel: one writes naive code from your spec alone; the other reconstructs a spec from your code alone. When both reconstructions match what you already have, intent and implementation are coherent. When they don't, the differences point at drift worth investigating — unstated rules the code enforces, edge cases the spec doesn't pin down, or genuine bugs.
+      </p>
+    </div>
+    <div class="annex bracketed">
+      <header class="annex-head">
+        <span class="annex-status" aria-hidden="true">Opt-in · v0.x</span>
+      </header>
+      <p class="annex-aside">
+        Lifecycle is explicit — every experiment will either be <em>promoted</em> into core or <em>retired</em>. Adopt with eyes open.
+      </p>
+      <pre class="cmd cmd--annex"><code>{{ site.experimental.installCmd }}</code></pre>
+      <a class="annex-readmore" href="{{ experimentalReadme }}">
+        Read the experimental plugin README<span class="arr" aria-hidden="true">↗</span>
+      </a>
+    </div>
   </div>
 </section>
 

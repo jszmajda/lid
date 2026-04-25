@@ -26,5 +26,10 @@
       "cmd": "/linked-intent-dev:lid-setup",
       "note": "Bootstrap your project — adds a docs/ tree and an AGENTS.md (symlinked to CLAUDE.md)."
     }
-  ]
+  ],
+  "experimental": {
+    "name": "lid-experimental",
+    "blurb": "Opt-in experimental skills that aren't part of the core workflow. Currently bundles bidirectional-differential — audits EARS↔code coherence by reconstructing each side from the other in fresh Claude sessions.",
+    "installCmd": "/plugin install lid-experimental@jszmajda-lid"
+  }
 }

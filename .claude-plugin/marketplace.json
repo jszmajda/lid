@@ -22,6 +22,14 @@
       "version": "1.0.0",
       "category": "development",
       "license": "MIT"
+    },
+    {
+      "name": "lid-experimental",
+      "description": "Experimental LID skills with opt-in installation and explicit promotion/retirement lifecycle. Current experiment: bidirectional-differential — audits EARS↔code coherence via parallel fresh-context LLM reconstructions. Layers on top of linked-intent-dev and arrow-maintenance; requires both.",
+      "source": "./plugins/lid-experimental",
+      "version": "0.1.0",
+      "category": "development",
+      "license": "MIT"
     }
   ]
 }

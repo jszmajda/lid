@@ -1,0 +1,34 @@
+{
+  "assertions": [
+    {
+      "text": "Audit record written to scoring/SCORE-001.md",
+      "passed": true,
+      "evidence": "Confirmed via find"
+    },
+    {
+      "text": "Classification = BD-COHERENT",
+      "passed": true,
+      "evidence": "Subagent reported BD-COHERENT"
+    },
+    {
+      "text": "Default Action = acknowledged-coherent",
+      "passed": true,
+      "evidence": "Reported in run summary"
+    },
+    {
+      "text": "Header has git SHA + ISO timestamp",
+      "passed": true,
+      "evidence": "Recorded c1944e70... + 2026-04-25T... timestamp"
+    },
+    {
+      "text": "Stripping spot-check = pass",
+      "passed": true,
+      "evidence": "Overlap 21-26%, well below ~70%"
+    },
+    {
+      "text": "User summary includes per-arrow classification count",
+      "passed": false,
+      "evidence": "Subagent did not produce a per-arrow rollup summary; only the per-EARS audit record. Skill harness blocked summary.md write."
+    }
+  ]
+}

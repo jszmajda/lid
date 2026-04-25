@@ -9,3 +9,16 @@
 # Ad-hoc screenshots at repo root (site screenshots live in site/src/assets/)
 /*.png
 /*.jpg
+
+# private (for now?) potential next action notes
+TODO.md
+
+# Research tree. Publishes: the exploration docs, the dispatcher prototype,
+# and each experiment's RESULTS.md writeup. Hides everything else under
+# experiments/ — copied source, generated proofs, raw LLM runs, overlay
+# manifests with absolute paths, logs — which would leak the private
+# case-study app ("Threadkeeper") this research was run against.
+docs/research/threadkeeper-recommendations.md
+docs/research/**/node_modules/
+docs/research/experiments/*/**
+!docs/research/experiments/*/RESULTS.md

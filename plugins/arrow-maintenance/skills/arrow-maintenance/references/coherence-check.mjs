@@ -59,7 +59,7 @@ function collectSpecIdsFromCode() {
   let output;
   try {
     output = execSync(
-      `grep -rn "@spec" --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx" --include="*.py" --include="*.go" --include="*.rs" .`,
+      `grep -rn "@spec" --include="*.ts" --include="*.tsx" --include="*.js" --include="*.jsx" --include="*.py" --include="*.go" --include="*.rs" --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=dist --exclude-dir=build --exclude-dir=target --exclude-dir=cdk.out --exclude-dir=coverage --exclude-dir=.next --exclude-dir=__pycache__ .`,
       { cwd: ROOT, encoding: 'utf-8', maxBuffer: 50 * 1024 * 1024 }
     );
   } catch (e) {
@@ -67,7 +67,9 @@ function collectSpecIdsFromCode() {
   }
 
   const codeRefs = new Map(); // specId -> [{file, line}]
-  const idPattern = /[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+/g;
+  // Negative lookahead (?![a-z]) prevents mid-CamelCase matches like "GSI-B" from "GSI-ByReminderDue"
+  // Post-filter (below): require at least one digit — excludes "A-Z" and "YYYYMMDD-HHMM" false positives
+  const idPattern = /[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+(?![a-z])/g;
 
   for (const line of output.split('\n').filter(Boolean)) {
     const match = line.match(/^\.\/(.+?):(\d+):(.*)/);
@@ -79,6 +81,7 @@ function collectSpecIdsFromCode() {
     let m;
     while ((m = idPattern.exec(rest)) !== null) {
       const id = m[0];
+      if (!/\d/.test(id)) continue; // skip ID-shaped tokens with no digits
       if (!codeRefs.has(id)) codeRefs.set(id, []);
       codeRefs.get(id).push({ file, line: parseInt(lineNum) });
     }
@@ -111,6 +114,18 @@ function collectSpecIdsFromSpecs() {
       const heading = line.match(/^###\s+([A-Z][\w-]+)\b/);
       if (heading) {
         specDefs.set(heading[1], { file, status: 'defined' });
+        continue;
+      }
+      // Bold style: **SPEC-ID**: description, with optional leading "- " dash-bullet (no checkbox)
+      const bold = line.match(/^(?:-\s+)?\*\*([A-Z][\w-]+)\*\*:/);
+      if (bold) {
+        specDefs.set(bold[1], { file, status: 'defined' });
+        continue;
+      }
+      // Table-cell style: | **SPEC-ID** | description | ... | (markdown table row)
+      const tableCell = line.match(/^\|\s*\*\*([A-Z][\w-]+)\*\*\s*\|/);
+      if (tableCell) {
+        specDefs.set(tableCell[1], { file, status: 'defined' });
       }
     }
   }

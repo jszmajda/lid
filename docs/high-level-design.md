@@ -141,19 +141,21 @@ Intent flows in one direction. Changes originate upstream and cascade down. Docs
 
 Two Claude Code plugins, distributed from this repository and installed together by default:
 
-- **`linked-intent-dev`** — the core workflow skill plus `/lid-setup`, an idempotent command that bootstraps a project on first run and updates conventions or migrates modes on subsequent runs, dispatching on project state. `/update-lid` is exposed as an alias of `/lid-setup` for users whose mental model prefers a separate update verb. Mandatory.
+- **`linked-intent-dev`** — the core workflow skill, plus `/lid-setup` and `/lid-coach`. `/lid-setup` is an idempotent command that bootstraps a project on first run and updates conventions or migrates modes on subsequent runs, dispatching on project state; `/update-lid` is exposed as an alias for users whose mental model prefers a separate update verb. `/lid-coach` is an advisory principle-review command that reads the project's current LID artifacts and produces a prioritized report of recommendations for getting more out of the methodology — it does not edit files. Mandatory.
 - **`arrow-maintenance`** — navigation overlay (`docs/arrows/index.yaml`) plus two commands: `/arrow-maintenance` (audit-and-update pass; bootstraps the overlay on existing LID projects) and `/map-codebase` (brownfield bootstrap from raw code). Installed by default, **optional at runtime** — projects that do not need the overlay carry none of its overhead.
+- **`lid-experimental`** — houses novel capabilities under evaluation for promotion into core: new intent-coherence mechanisms today, other behaviors over time. **Opt-in** — not installed by default; users who want LID's minimum surface ignore it. Each experiment walks the standard arrow, rooted in the plugin's LLD. Successful experiments are promoted into `linked-intent-dev` or `arrow-maintenance`; unsuccessful ones are retired. See *Experimental features as a separate plugin* under Key Design Decisions.
 
-Both plugins are mode-aware. A skill detects the project's mode from its state and branches its behavior accordingly. Modes are therefore both a communication framing *and* a configuration axis — but the configuration lives inside skill logic, not as flags the user has to pass.
+All three plugins are mode-aware. A skill detects the project's mode from its state and branches its behavior accordingly. Modes are therefore both a communication framing *and* a configuration axis — but the configuration lives inside skill logic, not as flags the user has to pass.
 
 ### 3. Distribution (Claude Code)
 
-The `jszmajda/lid` repository uses Claude Code's plugin-marketplace mechanism to distribute the plugins — a technical detail of Claude Code, not a statement that LID accepts third-party plugin submissions. It ships two first-party plugins, nothing more. Installation:
+The `jszmajda/lid` repository uses Claude Code's plugin-marketplace mechanism to distribute the plugins — a technical detail of Claude Code, not a statement that LID accepts third-party plugin submissions. It ships three first-party plugins: two core (`linked-intent-dev` and `arrow-maintenance`, installed together by default) and one opt-in for novel capabilities under evaluation (`lid-experimental`). Installation:
 
 ```
 /plugin marketplace add jszmajda/lid
 /plugin install linked-intent-dev@jszmajda-lid
 /plugin install arrow-maintenance@jszmajda-lid
+/plugin install lid-experimental@jszmajda-lid   # opt-in
 ```
 
 This repository is simultaneously the distribution mechanism *and* the canonical mature-project reference — the `docs/` tree here is LID applied to LID.
@@ -209,7 +211,7 @@ LID is minimum by design, not by omission. The reasoning is pragmatic division o
 
 Every capability LID does not have is a capability delegated to the fast-moving layer. Validation, cascade enforcement, diagram rendering, code generation, test running — these belong to the agent, the user's IDE, or the user's own tooling. LID's job ends at "the intent is specified and linkable." The agent takes it from there.
 
-This is why surface growth is aggressively resisted. A new command or skill is not just cognitive load for the user; it is LID reaching into territory the fast-moving layer will handle better next quarter. When a proposal arrives, the first question is: *can the existing surface absorb this, or is the agent about to absorb it anyway?* Only if both answers are no does a new surface get considered.
+This is why surface growth is aggressively resisted. A new command or skill is not just cognitive load for the user; it is LID reaching into territory the fast-moving layer will handle better next quarter. When a proposal arrives, the first question is: *can the existing surface absorb this, or is the agent about to absorb it anyway?* Only if both answers are no does a new surface get considered — and even then, the surface lands first in the `lid-experimental` plugin (see *Experimental features as a separate plugin* below), where it must earn community adoption before being promoted into core.
 
 ### Modes: detection and transitions
 
@@ -232,6 +234,19 @@ CLAUDE.md is the right location because it is already the bootstrap entry point 
 
 Arrow-maintenance is installed alongside `linked-intent-dev` by default but remains a distinct plugin. Small projects carry zero runtime overhead from it. The core skill references arrow-maintenance without depending on it — a belt-and-suspenders relationship, where arrow-maintenance catches drift the core cascade should have caught, and becomes load-bearing only in modes where code exceeds one context window.
 
+### Experimental features as a separate plugin
+
+Novel capabilities — new intent-coherence mechanisms today, other behaviors over time — are housed in a third plugin, `lid-experimental`, installed opt-in alongside the core plugins. The separation is load-bearing. Minimum-system discipline (Goal 2, and the *why* above) keeps LID's core surface thin and resists speculative additions, but real progress requires somewhere to try ideas under realistic conditions. The experimental plugin is the sanctioned route. Users who want to try a candidate capability install the plugin; users who want LID's minimum surface ignore it; either choice is fine and neither imposes runtime cost on the other.
+
+Each experiment walks the standard arrow, rooted in the experimental plugin's LLD, with EARS specs, tests or evals, and the same cascade discipline as core. Experimental status is a marker on the surface, not a relaxation of the underlying coherence requirement — experiments earn their keep by being legibly designed, not by being exempt from design.
+
+Two outcomes are explicit at adoption time:
+
+- **Promotion** into `linked-intent-dev` or `arrow-maintenance` when an experiment accumulates community adoption and concrete real-world value stories that make baking it into core a clear win. Promotion migrates the experiment's LLD and specs into the receiving plugin; the experimental version is removed in the same change.
+- **Retirement** when an experiment fails to find adoption, or when the fast-moving tooling layer LID delegates to (per the minimum-system reasoning) absorbs the capability LID was probing. Retirement removes the artifact rather than marking it deprecated — mutation, not accumulation.
+
+The repository publishes each experiment as it lands and actively seeks community feedback to inform the promotion-or-retirement decision. The feedback channel and cadence are aspirational at this stage and will firm up as the first experiments arrive, but the commitment to evaluating experiments in the open — rather than in private — is structural.
+
 ## Glossary
 
 Core terms, with the meaning they carry across LID documents.
@@ -253,6 +268,7 @@ Core terms, with the meaning they carry across LID documents.
 - **Linkage** — explicit identifiers that let an agent walk from one level of the arrow to adjacent levels without loading the whole document — EARS IDs, `@spec` annotations, spec-file headers.
 - **Orphan / reverse orphan** — an *orphan* is a code or spec artifact not referenced by any arrow segment. A *reverse orphan* is the inverse: a `@spec` annotation (in code or tests) that points to a spec ID which does not exist anywhere in the spec files. Both are drift signals surfaced by audit.
 - **Behavioral skill / pure-prose skill** — a behavioral skill produces verifiable project-state changes when invoked (e.g., `/lid-setup` edits files). A pure-prose skill shapes how the agent approaches work without producing a definite artifact (e.g., `linked-intent-dev`).
+- **Experimental plugin / experiment** — `lid-experimental` is the opt-in third plugin that houses novel capabilities under evaluation for promotion into core. An *experiment* is one such capability. Experiments walk the standard arrow and are published for community feedback; successful experiments are promoted into a core plugin, unsuccessful ones are retired.
 - **TDD (Test-Driven Development) / BDD (Behavior-Driven Development)** — standard acronyms retained for reference. LID adopts TDD as a load-bearing discipline; BDD is discussed only as a comparison in the Problem section.
 
 ## Non-Goals

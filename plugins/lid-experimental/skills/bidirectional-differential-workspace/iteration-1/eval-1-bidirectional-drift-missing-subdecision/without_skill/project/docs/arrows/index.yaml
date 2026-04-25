@@ -1,0 +1,19 @@
+schema_version: 1
+last_updated: 2026-04-24
+
+arrows:
+  pref:
+    status: OK
+    sampled: 2026-04-24
+    audited: 2026-04-24
+    audited_sha: null
+    blocks: []
+    blockedBy: []
+    detail: pref.md
+    next: null
+    drift: null
+
+unmapped:
+  docs:
+    llds: []
+    specs: []
