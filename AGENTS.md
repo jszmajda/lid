@@ -75,6 +75,7 @@ Mutation, not accumulation — docs reflect current intent, not history.
 | High-level design | `docs/high-level-design.md` |
 | Low-level designs | `docs/llds/` |
 | EARS specs | `docs/specs/` |
+| Arrow of intent overlay | `docs/arrows/index.yaml` and per-segment docs in `docs/arrows/` |
 | Setup for other tools | `docs/setup.md` |
 
 ### Terminology

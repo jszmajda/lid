@@ -1,7 +1,7 @@
 # LLD: lid-experimental Plugin
 
 **Created**: 2026-04-23
-**Status**: Skeleton — no experiments yet
+**Status**: Active — one experiment landed (`bidirectional-differential`)
 
 ## Context and Design Philosophy
 

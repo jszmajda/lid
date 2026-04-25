@@ -1,0 +1,73 @@
+schema_version: 1
+last_updated: 2026-04-25
+
+taxonomy:
+  core:
+    - linked-intent-dev
+    - arrow-maintenance
+  experimental:
+    - lid-experimental
+    - bidirectional-differential
+  onboarding:
+    - marketing-site
+
+arrows:
+  linked-intent-dev:
+    status: MAPPED
+    sampled: 2026-04-25
+    audited: null
+    audited_sha: null
+    blocks: [arrow-maintenance, lid-experimental, bidirectional-differential, marketing-site]
+    blockedBy: []
+    detail: linked-intent-dev.md
+    next: "Implement /lid-coach skill body and flip 47 LID-COACH specs from [ ] to [x] as behavior lands."
+    drift: "lid-coach work in-flight: skill directory and command stub untracked; 47 LID-COACH specs all marked [ ]."
+
+  arrow-maintenance:
+    status: MAPPED
+    sampled: 2026-04-25
+    audited: null
+    audited_sha: null
+    blocks: [marketing-site]
+    blockedBy: [linked-intent-dev]
+    detail: arrow-maintenance.md
+    next: "Run first /arrow-maintenance audit pass (this is it) and refresh audited / audited_sha across all segments."
+    drift: null
+
+  lid-experimental:
+    status: MAPPED
+    sampled: 2026-04-25
+    audited: null
+    audited_sha: null
+    blocks: [bidirectional-differential]
+    blockedBy: [linked-intent-dev]
+    detail: lid-experimental.md
+    next: "Container only — no behavioral surface. Add per-experiment segments under taxonomy.experimental as new experiments land."
+    drift: null
+
+  bidirectional-differential:
+    status: MAPPED
+    sampled: 2026-04-25
+    audited: null
+    audited_sha: null
+    blocks: []
+    blockedBy: [lid-experimental, arrow-maintenance]
+    detail: bidirectional-differential.md
+    next: "Reword BIDIFF-007's reference pointer (currently names non-existent stripping-rules.md; behavior lives in audit-protocol.md §Stripping rule categories). After that, run skill-creator evals against the three baseline fixtures."
+    drift: "BIDIFF-007 spec text references a reference file (`stripping-rules.md`) that was consolidated into `audit-protocol.md`. Behavior is implemented; spec prose is stale."
+
+  marketing-site:
+    status: MAPPED
+    sampled: 2026-04-25
+    audited: null
+    audited_sha: null
+    blocks: []
+    blockedBy: [linked-intent-dev, arrow-maintenance]
+    detail: marketing-site.md
+    next: "Close 18 active MKT-SITE gaps (notably MKT-SITE-047 five-panel trace and MKT-SITE-009 README/Quickstart cascade)."
+    drift: "18 of 51 MKT-SITE specs marked [ ] — site is partially built; trace block and quickstart-cascade behaviors are gaps."
+
+unmapped:
+  docs:
+    llds: []
+    specs: []
