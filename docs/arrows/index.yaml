@@ -1,5 +1,5 @@
 schema_version: 1
-last_updated: 2026-04-25
+last_updated: 2026-05-05
 
 taxonomy:
   core:
@@ -10,6 +10,7 @@ taxonomy:
     - bidirectional-differential
   onboarding:
     - marketing-site
+    - project-structure
 
 arrows:
   linked-intent-dev:
@@ -66,6 +67,17 @@ arrows:
     detail: marketing-site.md
     next: "Close 18 active MKT-SITE gaps (notably MKT-SITE-047 five-panel trace and MKT-SITE-009 README/Quickstart cascade)."
     drift: "18 of 51 MKT-SITE specs marked [ ] — site is partially built; trace block and quickstart-cascade behaviors are gaps."
+
+  project-structure:
+    status: MAPPED
+    sampled: 2026-05-05
+    audited: null
+    audited_sha: null
+    blocks: []
+    blockedBy: [linked-intent-dev]
+    detail: project-structure.md
+    next: "Wire build-time structural checks for the three deferred specs (PROJ-STRUCT-039 link-check, PROJ-STRUCT-040 marketplace.json validity, PROJ-STRUCT-041 CLAUDE.md symlink integrity), most cheaply by extending the marketing-site CI workflow once it exists."
+    drift: null
 
 unmapped:
   docs:
