@@ -26,7 +26,7 @@ Before spawning any blind sessions in either mode, verify the arrow-maintenance 
 
 If absent, abort with:
 
-> *Bidirectional differential audits attach to the arrow-maintenance overlay. Run /lid-setup and then /arrow-maintenance first to establish the arrow surface this skill extends.*
+> *Bidirectional differential audits attach to the arrow-maintenance overlay. Run /update-lid and then /arrow-maintenance first to establish the arrow surface this skill extends.*
 
 Do not spawn any `claude -p` sessions and do not write any files when the overlay is absent. This skill is heavier maintenance than arrow-maintenance; a project without the lighter layer in place will not act on this skill's findings either.
 

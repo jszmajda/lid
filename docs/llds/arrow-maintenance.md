@@ -54,7 +54,7 @@ When invoked explicitly as `/arrow-maintenance`, the skill runs an audit-and-upd
 - cleans up `unmapped.docs` by assigning entries to segments where it can, and flagging the rest for user assignment;
 - produces a structured report of findings that could not be resolved automatically.
 
-When invoked on a project that has LID docs but no `docs/arrows/`, the command creates the overlay from existing LLDs and specs — one arrow doc per LLD, a populated `index.yaml`, no upstream skeleton generation (LLDs already exist). When invoked on a project with no LID docs at all, the skill describes what it found and offers to dispatch inline to `/lid-setup` (greenfield) or `/map-codebase` (brownfield) rather than asking the user to re-invoke. The user's answer proceeds directly into the chosen command without requiring a second manual invocation.
+When invoked on a project that has LID docs but no `docs/arrows/`, the command creates the overlay from existing LLDs and specs — one arrow doc per LLD, a populated `index.yaml`, no upstream skeleton generation (LLDs already exist). When invoked on a project with no LID docs at all, the skill describes what it found and offers to dispatch inline to `/linked-intent-dev` (greenfield — invoke with a description of what to build; the workflow bootstraps LID as part of Phase 1) or `/map-codebase` (brownfield) rather than asking the user to re-invoke. The user's answer proceeds directly into the chosen command without requiring a second manual invocation.
 
 Command-mode behavior produces verifiable project-state changes and is therefore behavioral — EARS specs cover its assertions and eval suite runs gate changes to its prompt.
 
@@ -212,7 +212,7 @@ Phases:
    - **Entry in `index.yaml`** including the taxonomy placement chosen during reconciliation.
    - **Skeleton HLD** (`docs/high-level-design.md`) *if one does not already exist*. Uses the standard HLD template with bodies marked "not yet specified." **STOP after HLD draft.** If an HLD already exists, skip this step.
 
-6. **Terminal verification and flesh-out prompt.** After artifact generation completes, the skill runs `/lid-setup` (or its equivalent bootstrap logic) to ensure CLAUDE.md is configured with LID directives and the chosen mode marker. Then it issues a **flesh-out prompt** directing the user to move into the `linked-intent-dev` workflow segment-by-segment to populate the skeleton LLDs and EARS specs. Without this prompt the user may leave the reconstruction incomplete, and partial arrows propagate incoherence into future sessions. The prompt is not optional from the skill's side; it is the terminal step. The exact ordering of the lid-setup call and the flesh-out prompt is an implementation choice — both must happen before the command exits.
+6. **Terminal verification and flesh-out prompt.** After artifact generation completes, the skill runs `/update-lid` (or its equivalent bootstrap logic) to ensure CLAUDE.md is configured with LID directives and the chosen mode marker. Then it issues a **flesh-out prompt** directing the user to move into the `linked-intent-dev` workflow segment-by-segment to populate the skeleton LLDs and EARS specs. Without this prompt the user may leave the reconstruction incomplete, and partial arrows propagate incoherence into future sessions. The prompt is not optional from the skill's side; it is the terminal step. The exact ordering of the `update-lid` call and the flesh-out prompt is an implementation choice — both must happen before the command exits.
 
 ### Output Summary
 
@@ -367,7 +367,7 @@ The two skills share artifacts but own different questions. Coordination is impl
 8. ✅ Arrow doc updates flow through `linked-intent-dev` during changes; `arrow-maintenance` re-audits and cleans up `unmapped.docs` on its runs.
 9. ✅ Ambient activation is detected by presence of `docs/arrows/`; command activation is explicit slash-command invocation.
 10. ✅ `/arrow-maintenance` always repairs broken `docs/arrows/` state when it runs — this is the skill's domain.
-11. ✅ `/arrow-maintenance` invoked on project with LID docs but no `docs/arrows/` generates the overlay from existing docs. On a project with nothing, it redirects to `/map-codebase` or `/lid-setup`.
+11. ✅ `/arrow-maintenance` invoked on project with LID docs but no `docs/arrows/` generates the overlay from existing docs. On a project with nothing, it redirects to `/map-codebase` (brownfield) or `/linked-intent-dev` (greenfield).
 12. ✅ `/map-codebase` on partial-LID projects asks the user whether to treat existing docs as authoritative or supersede.
 13. ✅ Subagent conflicts during mapping are tentatively resolved by the orchestrator and flagged for user reconciliation.
 14. ✅ Sweep overflow beyond context window uses per-subagent files as the handoff mechanism, processed in chunks.
@@ -379,7 +379,7 @@ The two skills share artifacts but own different questions. Coordination is impl
 20. ✅ Brownfield LLDs use the standard LLD template with `[inferred]` markers (Option B). Initial EARS status: `[x]` for observed, `[ ]` for broken, `[D]` for explicit non-wants.
 21. ✅ Coherence-check script shipped as optional reference implementation; skill delegates when present.
 22. ✅ Five Critical Rules govern `/map-codebase`: read actual code, each STOP mandatory, LLDs describe current reality, thorough over fast, humble but guide.
-23. ✅ `/map-codebase` terminal step runs `/lid-setup` (or equivalent) plus flesh-out prompt — both required.
+23. ✅ `/map-codebase` terminal step runs `/update-lid` (or equivalent) plus flesh-out prompt — both required.
 
 ### Deferred to implementation
 

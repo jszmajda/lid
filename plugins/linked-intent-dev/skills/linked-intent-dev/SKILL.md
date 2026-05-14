@@ -7,7 +7,7 @@ description: Guide for linked-intent development (LID). Consult for ALL code cha
 
 This skill guides a structured linked-intent development workflow. LID's goal is to narrow the agent's output distribution to the user's latent intent — specs, tests, and linkage together make the arrow of intent walkable, and the workflow's stops are where the agent's interpretation meets the user's intent for reconciliation.
 
-## Two rules govern every phase
+## Three rules govern every phase
 
 **Stop and iterate at every phase boundary.** After completing each phase below, present the output to the user, incorporate numbered feedback, and proceed only on explicit approval. Each stop is mandatory. Skipping stops is the single most common way this workflow degrades into a rush — the discipline is non-optional. (Carveout: command-mode skills that execute a single directed pass, like `/arrow-maintenance`'s audit-and-update, are not phase-structured in this sense and do not pause mid-pass. This workflow is generative; phases here produce intent, so every boundary gets a stop.)
 
@@ -19,6 +19,8 @@ This skill guides a structured linked-intent development workflow. LID's goal is
 
 If drift is detected, fix the docs first, then implement. A resumption check prevents one session's drift from being compounded into the next session's change.
 
+**Write docs context-free.** Every HLD, LLD, and EARS spec produced by these phases must read correctly without the conversation that produced it. Future sessions open without your chat history — rationale, alternatives considered, dependencies on assumptions — if they're not on the page, the next agent can't reach them. As you draft or revise a doc, verify: would a reader with no conversation context understand this? Are decisions written with their rationale? Are alternatives named? This is the second half of the *what is currently here is the truth* tenet: write what's current, and write what's known.
+
 ## Mode-aware triggering
 
 Every LID project declares its mode in `CLAUDE.md` under a `## LID Mode:` heading. Defaults to Full if missing or malformed (surface a one-line warning).
@@ -28,11 +30,15 @@ Every LID project declares its mode in `CLAUDE.md` under a `## LID Mode:` headin
 
 ## The six phases
 
-### Phase 1 — HLD check
+### Phase 1 — HLD check (with bootstrap when needed)
 
-Does a top-level HLD exist at `docs/high-level-design.md`? Does it cover the domain of the change? If the change alters the project's architecture, update the HLD first.
+**First, check whether the project is LID-configured.** If CLAUDE.md has no LID directives AND no LID-shaped artifacts exist (no `docs/llds/` content, no `docs/specs/` content, no `docs/high-level-design.md`, no `docs/arrows/index.yaml`), this is a fresh project — the user invoked `/linked-intent-dev` with a description of what they want to build. Apply the `update-lid` skill's bootstrap branch as a sub-step: create `docs/llds/` and `docs/specs/`, create or append-to CLAUDE.md with LID directives, add `## LID Mode:` (default Full unless the user indicates Scoped). Read the `update-lid` skill's SKILL.md if you need details on the bootstrap behavior; the bootstrap is the same skill called inline, not a separate workflow.
 
-For consequential architectural changes (a new approach, a significant trade-off, a new mode), before drafting the full HLD **sketch 2–3 competing options** (~200 words each, naming downstream consequences) and present them for user selection. Surfacing decisions as *choices among alternatives* — rather than as the agent's best guess — is the primary edge-detection mechanism at the HLD level.
+Once configured, proceed with the HLD check: does a top-level HLD exist at `docs/high-level-design.md`? Does it cover the domain of the change? If the change alters the project's architecture, update the HLD first. If no HLD exists (fresh project), draft one from the user's description.
+
+For consequential architectural changes (a new approach, a significant trade-off, a new mode) — and on a fresh-project HLD draft — before committing to a full HLD **sketch 2–3 competing options** (~200 words each, naming downstream consequences) and present them for user selection. Surfacing decisions as *choices among alternatives* — rather than as the agent's best guess — is the primary edge-detection mechanism at the HLD level.
+
+Whatever you draft, verify the HLD reads **context-free**: rationale present, alternatives named, no reliance on conversation context that won't travel to the next session.
 
 See `references/hld-template.md` for standard HLD sections.
 
@@ -50,6 +56,8 @@ If an LLD exists, confirm coherence with the change and update as needed.
 
 After drafting or substantially revising an LLD, run an **LLD-level edge-case probe**: a list of "what happens when..." questions pointed at *this LLD's own gaps* — missing state transitions, unstated invariants, unspecified API error shapes, ordering assumptions inside the component. (Cross-component and cross-spec interactions come later in Phase 4, not here.) When a subagent is available, delegate the probe to the subagent for cleaner, less-biased coverage. Present the gap list; the user triages which gaps to fix in the LLD vs. defer as open questions.
 
+Verify the LLD reads **context-free**: the Decisions & Alternatives table has filled-out Rationale columns, alternatives considered are named, and the prose doesn't rely on assumptions only present in the conversation. A reader without your chat history should be able to follow the design.
+
 **STOP for user review.**
 
 ### Phase 3 — EARS spec draft or update
@@ -65,6 +73,7 @@ After drafting or revising specs, run **post-draft consistency verification**:
 - **Coverage** — are there behaviors described in the LLD that have no corresponding EARS spec?
 - **Contradiction** — do any specs say different things about the same behavior?
 - **Implicit scoping** — are any specs phrased as universal when they actually apply only to one context? When the current change adds a new mode or variant, audit sibling specs for scope that was implicit when only one variant existed. See `references/ears-syntax.md § Scope Disambiguation` for the litmus.
+- **Context-free reading** — read each spec as if you have no conversation context. Are scopes explicit (no reliance on the surrounding section name to disambiguate)? Are conditions concrete (no "as we discussed" assumptions)? Specs travel by `grep`, so each line has to stand alone.
 
 Present a brief consistency report alongside the specs.
 

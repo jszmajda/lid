@@ -12,7 +12,7 @@ If you're new to LID, start with the [main README](../../README.md) and the core
 /plugin install lid-experimental@jszmajda-lid
 ```
 
-That's it. The plugin's skills become available in Claude Code immediately. No `lid-setup`-style bootstrapping is required at the plugin level — each experimental skill declares its own preconditions (and aborts cleanly if they aren't met).
+That's it. The plugin's skills become available in Claude Code immediately. No `/update-lid`-style bootstrapping is required at the plugin level — each experimental skill declares its own preconditions (and aborts cleanly if they aren't met).
 
 ---
 

@@ -17,7 +17,7 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 
 - `[x]` **ARROW-MAINT-001**: When the user invokes `/arrow-maintenance` on a project where `docs/arrows/` is present, the system SHALL run an audit-and-update pass.
 - `[x]` **ARROW-MAINT-002**: When the user invokes `/arrow-maintenance` on a project that has LID docs (`docs/high-level-design.md` and at least one LLD) but no `docs/arrows/` directory, the system SHALL create the overlay from the existing LID docs — populating `docs/arrows/index.yaml` and one arrow doc per LLD — without generating new HLD, LLD, or EARS skeletons.
-- `[x]` **ARROW-MAINT-003**: When the user invokes `/arrow-maintenance` on a project with no LID docs, the system SHALL describe what it found (no LID installation), offer to dispatch to `/lid-setup` (greenfield) or `/map-codebase` (brownfield) inline, and proceed based on the user's answer rather than requiring the user to re-invoke. The system SHALL NOT silently run the audit-and-update pass on such a project.
+- `[x]` **ARROW-MAINT-003**: When the user invokes `/arrow-maintenance` on a project with no LID docs, the system SHALL describe what it found (no LID installation), offer to dispatch to `/linked-intent-dev` (greenfield — invoke with a description of what to build) or `/map-codebase` (brownfield) inline, and proceed based on the user's answer rather than requiring the user to re-invoke. The system SHALL NOT silently run the audit-and-update pass on such a project.
 
 ## Audit Checks
 

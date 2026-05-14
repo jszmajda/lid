@@ -134,7 +134,7 @@ The landing page. Section ordering is deliberate: the page walks a cold evaluato
 Audience-path orientation. Four short sections:
 
 - **Evaluating LID?** — "Read the README. Skim the HLD. Try `examples/urlshort/`." This audience wants to validate the claims before committing.
-- **Starting a new project?** — Greenfield onboarding: install plugins, run `/linked-intent-dev:lid-setup`, describe your project to Claude.
+- **Starting a new project?** — Greenfield onboarding: install plugins, then invoke `/linked-intent-dev` with a description of what you want to build (the workflow bootstraps LID as part of Phase 1).
 - **Adding LID to an existing codebase?** — Brownfield onboarding: same install, plus `/arrow-maintenance:map-codebase` with a token-intensity warning.
 - **Scoped to one subsystem?** — Scoped LID introduction: when the team hasn't adopted and you're trying it on a slice. Explicitly links to the HLD's modes section.
 
@@ -219,7 +219,7 @@ Embedded via asciinema.org's official embed snippet. Self-hosting the asciicast 
 The site is downstream of the HLD and the plugin LLDs. Changes propagate as follows:
 
 - **HLD change** — site content is reviewed for claim drift (modes, framing, goals, non-goals). Drift is a coherence signal the dogfooding check catches.
-- **LLD change** — the Start page's path descriptions are reviewed (they describe `/lid-setup` and `/map-codebase` behavior at a high level). If a command's behavior changes materially, the Start page must cascade.
+- **LLD change** — the Start page's path descriptions are reviewed (they describe `/linked-intent-dev`, `/update-lid`, and `/map-codebase` behavior at a high level). If a command's behavior changes materially, the Start page must cascade.
 - **Skill behavior change** — the asciinema demo is reviewed for currency. If the demo shows behavior the skills no longer produce, it is re-recorded.
 - **Anti-patterns change** — driven by user feedback (issues, surveys, case studies), not by HLD changes. Anti-patterns cascade *up* into the HLD only if the feedback reveals a genuine non-fit the HLD didn't anticipate.
 

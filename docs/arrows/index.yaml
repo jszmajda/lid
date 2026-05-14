@@ -4,6 +4,7 @@ last_updated: 2026-05-05
 taxonomy:
   core:
     - linked-intent-dev
+    - lid-coach
     - arrow-maintenance
   experimental:
     - lid-experimental
@@ -15,14 +16,25 @@ taxonomy:
 arrows:
   linked-intent-dev:
     status: MAPPED
-    sampled: 2026-04-25
+    sampled: 2026-05-05
     audited: null
     audited_sha: null
-    blocks: [arrow-maintenance, lid-experimental, bidirectional-differential, marketing-site]
+    blocks: [lid-coach, arrow-maintenance, lid-experimental, bidirectional-differential, marketing-site]
     blockedBy: []
     detail: linked-intent-dev.md
+    next: null
+    drift: null
+
+  lid-coach:
+    status: MAPPED
+    sampled: 2026-05-05
+    audited: null
+    audited_sha: null
+    blocks: []
+    blockedBy: [linked-intent-dev]
+    detail: lid-coach.md
     next: "Implement /lid-coach skill body and flip 47 LID-COACH specs from [ ] to [x] as behavior lands."
-    drift: "lid-coach work in-flight: skill directory and command stub untracked; 47 LID-COACH specs all marked [ ]."
+    drift: "Skill body and command stub present in the working tree but untracked; all 47 LID-COACH specs still marked [ ]. Segment was split out from linked-intent-dev on 2026-05-05."
 
   arrow-maintenance:
     status: MAPPED

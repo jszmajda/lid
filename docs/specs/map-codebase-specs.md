@@ -66,10 +66,10 @@ Phase structure in this file mirrors the `/map-codebase` workflow in the arrow-m
 
 ## Phase 6 — Terminal Verification & Flesh-out Prompt
 
-- `[x]` **MAP-CODE-031**: Before completing the command, the system SHALL ensure `CLAUDE.md` carries the LID directives and the mode marker determined from MAP-CODE-001's scope question. The system invokes `lid-setup` behavior (per `LID-SETUP-002`, `LID-SETUP-003`, `LID-SETUP-009`, and `LID-SETUP-025` for arrow-nav rows) **with the mode pre-determined** — the caller-provided mode is honored and `lid-setup` does not re-prompt for it (per LID-SETUP-007's caller-provided-mode behavior). The system SHALL NOT exit with `CLAUDE.md` unconfigured. `lid-setup` is invoked exactly once per `/map-codebase` run.
+- `[x]` **MAP-CODE-031**: Before completing the command, the system SHALL ensure `CLAUDE.md` carries the LID directives and the mode marker determined from MAP-CODE-001's scope question. The system invokes `update-lid` behavior (per `UPDATE-LID-002`, `UPDATE-LID-003`, `UPDATE-LID-009`, and `UPDATE-LID-025` for arrow-nav rows) **with the mode pre-determined** — the caller-provided mode is honored and `update-lid` does not re-prompt for it (per UPDATE-LID-007's caller-provided-mode behavior). The system SHALL NOT exit with `CLAUDE.md` unconfigured. `update-lid` is invoked exactly once per `/map-codebase` run.
 - `[x]` **MAP-CODE-021**: After artifact generation completes, the system SHALL issue a flesh-out prompt directing the user to move into the `linked-intent-dev` workflow segment-by-segment to populate the skeleton LLDs and EARS spec bodies.
 - `[x]` **MAP-CODE-022**: The flesh-out prompt SHALL be the terminal step of the command; the system SHALL NOT complete the command without issuing it.
 
 ## Superseded
 
-- `[D]` **MAP-CODE-020**: *Superseded by MAP-CODE-031 — lid-setup is invoked at terminal verification only, not during artifact generation.*
+- `[D]` **MAP-CODE-020**: *Superseded by MAP-CODE-031 — `update-lid` is invoked at terminal verification only, not during artifact generation.*

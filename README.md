@@ -10,7 +10,7 @@ A structured design-before-code methodology for agentic coding. Stop building th
 /plugin marketplace add jszmajda/lid
 /plugin install linked-intent-dev@jszmajda-lid
 /plugin install arrow-maintenance@jszmajda-lid
-/linked-intent-dev:lid-setup
+/linked-intent-dev
 ```
 
 **Optional:** the `lid-experimental` plugin adds opt-in skills that aren't part of the core workflow but layer on top of it. Currently includes `bidirectional-differential` for auditing EARS↔code coherence on a chosen scope. See [`plugins/lid-experimental/README.md`](plugins/lid-experimental/README.md) for what's in it and how to use it. Install separately:
@@ -110,7 +110,7 @@ If you want the experimental skills (currently `bidirectional-differential`), in
 After installing, run the setup skill to configure your project:
 
 ```
-/linked-intent-dev:lid-setup
+/linked-intent-dev
 ```
 
 This creates your `docs/` directory structure and adds the required directives to your project's `CLAUDE.md`. If you want `AGENTS.md` as an alias for other agentic coding tools, see [`docs/setup.md`](docs/setup.md) — a symlink or one-line import is all it takes.
@@ -122,7 +122,7 @@ You're starting something new. Here's the workflow:
 ### 1. Run setup
 
 ```
-/linked-intent-dev:lid-setup
+/linked-intent-dev
 ```
 
 This creates `docs/high-level-design.md`, `docs/llds/`, `docs/specs/` and appends LID directives to your project's `CLAUDE.md` (which Claude Code reads). If you also use Cursor, Windsurf, Codex, or another AGENTS.md-honoring tool, [`docs/setup.md`](docs/setup.md) shows how to alias `AGENTS.md` to the same content. It asks which mode you want — **Full LID** (whole project) or **Scoped LID** (a bounded piece of a larger project, with glob patterns declaring what's in scope).
@@ -175,7 +175,7 @@ Brownfield bootstrap is a Claude-Code-only flow today — `arrow-maintenance`'s 
 ```
 /plugin install linked-intent-dev@jszmajda-lid
 /plugin install arrow-maintenance@jszmajda-lid
-/linked-intent-dev:lid-setup
+/linked-intent-dev
 ```
 
 Once the mapping is done, the resulting `docs/` tree and `AGENTS.md` work in any agentic coding tool — you're back on the tool-agnostic path.
@@ -198,7 +198,7 @@ Once the mapping is done, the resulting `docs/` tree and `AGENTS.md` work in any
 
 **Phase 5 — Artifact generation.** For each approved segment, Claude drafts a skeleton LLD, an EARS spec file, an arrow doc, and an `index.yaml` entry — with a STOP after each sub-step. Brownfield LLDs use the *standard* LLD template (no separate brownfield format); content carries `[inferred]` markers in the Decisions table and Open Questions for observed-but-unexplained behaviors. As you confirm or refute inferences, the markers come out.
 
-**Phase 6 — Terminal verification.** Claude runs `/lid-setup` to configure the project's `CLAUDE.md`, then issues a flesh-out prompt directing you to fill in skeleton LLDs and EARS specs segment-by-segment via the `linked-intent-dev` workflow. Partial arrows propagate incoherence, so this prompt isn't optional.
+**Phase 6 — Terminal verification.** Claude runs `/update-lid` to configure the project's `CLAUDE.md`, then issues a flesh-out prompt directing you to fill in skeleton LLDs and EARS specs segment-by-segment via the `linked-intent-dev` workflow. Partial arrows propagate incoherence, so this prompt isn't optional.
 
 ### 3. Work with arrows
 
@@ -222,8 +222,8 @@ For large projects, declare a coherence-check script in `AGENTS.md`'s `## LID To
 
 | You want to... | Run... |
 |----------------|--------|
-| Set up a new project for LID | `/linked-intent-dev:lid-setup` |
-| Update LID config or change mode | `/linked-intent-dev:update-lid` |
+| Start a new project (greenfield) | `/linked-intent-dev` + description of what to build; the workflow bootstraps LID as part of Phase 1 |
+| Update LID config, reconcile drift, or change mode | `/linked-intent-dev:update-lid` |
 | Map an existing codebase | `/arrow-maintenance:map-codebase` |
 | Audit the arrow overlay for drift | `/arrow-maintenance:arrow-maintenance` |
 | Start a new feature | Just describe it — linked-intent-dev activates automatically |

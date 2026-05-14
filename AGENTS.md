@@ -15,7 +15,7 @@ There is no build system, test suite, or application code. The repo is simultane
 ## Structure
 
 - **`plugins/`**: Two installable Claude Code plugins
-  - **`linked-intent-dev/`**: Core LID workflow + `/lid-setup` command
+  - **`linked-intent-dev/`**: Core LID workflow skill (`/linked-intent-dev`), configuration skill (`/update-lid`), and principle-review coach (`/lid-coach`)
   - **`arrow-maintenance/`**: Arrow tracking overlay + `/map-codebase` command for brownfield bootstrap
 - **`.claude-plugin/marketplace.json`**: Claude Code plugin manifest (technical file — users install via `/plugin marketplace add jszmajda/lid`)
 - **`docs/setup.md`**: Per-tool setup instructions for non-Claude-Code agents
@@ -33,7 +33,7 @@ Users install via:
 
 The plugins form a layered system:
 
-1. **linked-intent-dev** is the core workflow — consult for ALL code changes. New features get full 4-phase design (HLD → LLD → EARS specs → Plan). Bug fixes skip doc creation but still verify intent coherence. Includes `/lid-setup` for project bootstrapping.
+1. **linked-intent-dev** is the core workflow — consult for ALL code changes. New features get full 4-phase design (HLD → LLD → EARS specs → Plan). Bug fixes skip doc creation but still verify intent coherence. Fresh projects start with `/linked-intent-dev` + a description of what to build (the workflow bootstraps LID inline). Established projects use `/update-lid` to reconcile drift, change modes, or refresh conventions.
 
 2. **arrow-maintenance** overlays on top — adds navigation (`index.yaml`) and tracking (arrow docs) for projects too large to hold in one context window. Includes `/map-codebase` for brownfield codebase mapping.
 
