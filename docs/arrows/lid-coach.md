@@ -4,7 +4,7 @@ Advisory principle-review skill for LID projects. Reads a project's LID artifact
 
 ## Status
 
-**MAPPED** — segment was split out from `linked-intent-dev` on 2026-05-05. Skill body is present in the working tree but untracked; all LID-COACH specs still marked `[ ]`. No skill-creator eval iteration has run yet.
+**MAPPED** — segment was split out from `linked-intent-dev` on 2026-05-05. Skill body committed; all 52 LID-COACH specs still marked `[ ]` pending skill-creator iteration-1.
 
 ## References
 
@@ -25,8 +25,8 @@ Advisory principle-review skill for LID projects. Reads a project's LID artifact
 - No skill-creator iteration runs yet (skill not implemented).
 
 ### Code (skill prompts and bundled content)
-- `plugins/linked-intent-dev/skills/lid-coach/SKILL.md` (untracked) — embedded principle body (description + *why it matters* + audit signal per principle), dispatch table, scorecard format, coach-voice guidance, advisory posture, cold-read pass directive, conversational-mode pointer.
-- `plugins/linked-intent-dev/skills/lid-coach/references/lid-faq.md` (untracked) — load-on-demand conversational guidance covering multi-repo organization, PRDs upstream of HLD, mode-fit changes, the upstream-ownership reframe, and arrow-segment splitting.
+- `plugins/linked-intent-dev/skills/lid-coach/SKILL.md` — embedded principle body (description + *why it matters* + audit signal per principle), dispatch table, scorecard format, coach-voice guidance, advisory posture, cold-read pass directive, conversational-mode pointer.
+- `plugins/linked-intent-dev/skills/lid-coach/references/lid-faq.md` — load-on-demand conversational guidance covering multi-repo organization, PRDs upstream of HLD, mode-fit changes, the upstream-ownership reframe, and arrow-segment splitting.
 
 The skill is directly invokable as `/lid-coach` — no command stub needed per Claude Code's skills model.
 
@@ -39,7 +39,7 @@ The skill is directly invokable as `/lid-coach` — no command stub needed per C
 2. **Principle body (embedded in `SKILL.md`).** Curated distillation of LID's HLD — Approach sections, Tenets, Goals, key Design Decisions — with each principle paired with a *why-it-matters* layer and an audit signal. The *why-it-matters* layer is what the coach draws on to teach during findings.
 3. **Review flow.** Read CLAUDE.md, HLD, LLDs, specs, sampled code/tests, overlay (when present); reason across review dimensions (arrow completeness, linkage hygiene, LLD granularity, HLD discipline, LLD sufficiency, intent-tree alignment, semantic legibility, mutation-vs-accumulation, scope disambiguation, tests-first, cascade health, brownfield inferred content, arrow shape, mode fit); prioritize findings high → medium → low.
 4. **Report.** Inline rendering. Executive summary (categorical posture line + ✓/⚠/✗ scorecard + headline naming what is working). Findings as paragraphs (not labeled sub-bullets), each weaving observation, principle-with-gloss, *why this matters*, and recommended action. "What was audited" inventory. Out-of-scope note in Scoped mode only.
-5. **Advisory posture.** No file changes. Configuration recommendations point at `/update-lid`/`/update-lid`; structural enumeration recommendations point at `/arrow-maintenance`.
+5. **Advisory posture.** No file changes. Configuration recommendations point at `/update-lid`; structural enumeration recommendations point at `/arrow-maintenance`.
 
 ## Spec Coverage
 
@@ -63,20 +63,19 @@ The skill is directly invokable as `/lid-coach` — no command stub needed per C
 | Conversational Guidance | LID-COACH-052 | 0 | 1 | 0 |
 | **Total** | | **0** | **52** | **0** |
 
-**Summary:** Skill is in-flight. SKILL.md and the `references/lid-faq.md` resource exist in the working tree but are untracked and not yet exercised by skill-creator evals. All 52 specs are marked `[ ]` until the skill body lands and behavior is verified.
+**Summary:** Skill body committed; specs remain `[ ]` until skill-creator iteration-1 verifies each behavior against the seven fixtures in `evals/evals.json`.
 
 ## Key Findings
 
-1. **Skill artifacts untracked.** `plugins/linked-intent-dev/skills/lid-coach/` is present in the working tree but not yet committed. Once committed, run `skill-creator` evals on the existing six prompt fixtures and flip the implemented LID-COACH specs from `[ ]` to `[x]`.
+1. **Skill committed; evals not yet run.** `plugins/linked-intent-dev/skills/lid-coach/` is in the tree but the seven prompt fixtures in `evals/evals.json` have not been exercised. Running iteration-1 is the next step before flipping implemented LID-COACH specs from `[ ]` to `[x]`.
 2. **`@spec` annotations live in the spec header, not the SKILL.md prose (LID-on-LID inversion).** The coach SKILL.md is prompt content; embedding `@spec` IDs in its body would bend runtime behavior. The spec file's `**Implementing artifacts**:` header carries the linkage downward (`docs/specs/lid-coach-specs.md:1-10`).
 3. **HLD-to-coach cascade contract.** The embedded principle body is a downstream artifact of LID's HLD in the LID-on-LID arrow. When the HLD's Approach sections, Tenets, Goals, or key Design Decisions change, cascade should reach this segment's SKILL.md. Drift between LID's HLD and the embedded principles is itself a dogfooding violation.
 
 ## Work Required
 
 ### Must Fix
-1. Commit the skill body (`git add plugins/linked-intent-dev/skills/lid-coach/`).
-2. Run `skill-creator` iteration-1 against the seven fixtures in `evals/evals.json`. Use the assertions to verify single-message report delivery, dispatch behavior, scorecard format, inventory-form findings (paragraphs only in user-driven follow-ups), plain-English principle gloss, *why-it-matters* presence, single-command (`/update-lid`) recommendation for configuration changes, index.yaml-driven sampling, and absence of grader language.
-3. Flip implemented LID-COACH specs from `[ ]` to `[x]` as the skill body satisfies them.
+1. Run `skill-creator` iteration-1 against the seven fixtures in `evals/evals.json`. Use the assertions to verify single-message report delivery, dispatch behavior, scorecard format, inventory-form findings (paragraphs only in user-driven follow-ups), plain-English principle gloss, *why-it-matters* presence, single-command (`/update-lid`) recommendation for configuration changes, index.yaml-driven sampling, and absence of grader language.
+2. Flip implemented LID-COACH specs from `[ ]` to `[x]` as the skill body satisfies them.
 
 ### Should Fix
 4. Run a Threadkeeper-style real-project review (the original false-negative case that motivated LID-COACH-045/046) to confirm the lenient dispatch produces a useful review on a project whose `CLAUDE.md` uses precursor naming.

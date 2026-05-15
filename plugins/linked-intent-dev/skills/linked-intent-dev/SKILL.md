@@ -19,7 +19,7 @@ This skill guides a structured linked-intent development workflow. LID's goal is
 
 If drift is detected, fix the docs first, then implement. A resumption check prevents one session's drift from being compounded into the next session's change.
 
-**Write docs context-free.** Every HLD, LLD, and EARS spec produced by these phases must read correctly without the conversation that produced it. Future sessions open without your chat history — rationale, alternatives considered, dependencies on assumptions — if they're not on the page, the next agent can't reach them. As you draft or revise a doc, verify: would a reader with no conversation context understand this? Are decisions written with their rationale? Are alternatives named? This is the second half of the *what is currently here is the truth* tenet: write what's current, and write what's known.
+**Write docs as their fresh author.** Every HLD, LLD, and EARS spec produced by these phases must read as if authored fresh today, by someone who knew only the current intent and nothing of this conversation. As you draft or revise a doc, run the test on each line — would that fresh author put it on the page? Three residues fail it: narration of how the intent changed; meaning that only resolves for someone who was in this conversation; and answers or rebuttals that exist only because we discussed the question here. The keep-side is load-bearing too — rationale, considered alternatives, and constraints a fresh author would independently write stay; they are present intent, not residue. Record rejected alternatives and why in the LLD's Decisions & Alternatives table, not as asides in body prose. This is the *docs carry current intent* tenet.
 
 ## Mode-aware triggering
 

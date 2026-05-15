@@ -44,6 +44,8 @@ Technical details...
 
 For each significant design choice, record what was chosen, what was considered, and why. This section preserves context for future sessions — if requirements change, the team can revisit a specific decision rather than re-exploring the entire design space.
 
+This table is the sanctioned home for rejected alternatives and why they were trimmed. A "we considered X and rejected it because Y" note belongs here, where a fresh author choosing the current design would independently record it. The same note as a defensive aside in body prose ("there is no separate X…") is residue under *docs carry current intent* — the rationale is legitimate; only its placement makes it keep-worthy here and a fossil elsewhere.
+
 | Decision | Chosen | Alternatives Considered | Rationale |
 |----------|--------|------------------------|-----------|
 | (decision point) | (selected approach) | (brief list) | (why this direction) |

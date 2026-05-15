@@ -53,7 +53,7 @@ Prior art, linked specs, related projects, external docs.
 ## Notes
 
 - **Keep it short enough to re-read.** An HLD that sprawls beyond ~2000 lines stops being an orientation doc. Split into LLDs if detail accumulates.
-- **Mutation, not accumulation.** When the HLD changes, update in place. Delete what's wrong. The HLD should always reflect current intent, not history.
+- **Docs carry current intent, written to be read cold.** When the HLD changes, update in place and delete what's wrong. Write it as if authored fresh today from current intent alone — no narration of how it changed, no meaning that needs the conversation that produced it, no rebuttals to questions only a past discussion raised. Rationale and considered alternatives that a fresh author would independently write stay; they are present intent, not history.
 - **Diagrams.** Mermaid is the default for structural, flow, state, and ERD diagrams — renders natively on GitHub and is token-efficient for agent consumption. ASCII is the convention for UI mockups. Detect existing project conventions first; ask once if unclear.
 - **Trade-off sketches.** When drafting a new HLD or making a consequential architectural change, first sketch 2–3 competing options (~200 words each with downstream consequences) and present them for user selection before committing to a full draft. See the `linked-intent-dev` skill's Phase 1 guidance.
 - **Non-Goals earn their place.** An explicit non-goal that constrains future surface growth is worth more than a vague goal.

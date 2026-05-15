@@ -33,7 +33,7 @@ Users install via:
 
 The plugins form a layered system:
 
-1. **linked-intent-dev** is the core workflow — consult for ALL code changes. New features get full 4-phase design (HLD → LLD → EARS specs → Plan). Bug fixes skip doc creation but still verify intent coherence. Fresh projects start with `/linked-intent-dev` + a description of what to build (the workflow bootstraps LID inline). Established projects use `/update-lid` to reconcile drift, change modes, or refresh conventions.
+1. **linked-intent-dev** is the core workflow — consult for ALL code changes. Every change walks the full arrow (HLD → LLD → EARS → Tests → Code) with a stop at each phase boundary. Bug fixes walk the same arrow — find where intent diverged and cascade from there; no short-circuit. Fresh projects start with `/linked-intent-dev` + a description of what to build (the workflow bootstraps LID inline). Established projects use `/update-lid` to reconcile drift, change modes, or refresh conventions.
 
 2. **arrow-maintenance** overlays on top — adds navigation (`index.yaml`) and tracking (arrow docs) for projects too large to hold in one context window. Includes `/map-codebase` for brownfield codebase mapping.
 
@@ -66,7 +66,7 @@ HLD → LLDs → EARS → Tests → Code
 - **Bug fixes**: Walk the arrow like any other change — find where intent diverged, cascade from there. No short-circuit.
 - **If unsure**: Use the full workflow.
 
-Mutation, not accumulation — docs reflect current intent, not history.
+**Docs carry current intent, written to be read cold.** Write each doc as if authored fresh today, from current intent alone — no narration of how it changed, no meaning that needs the conversation that produced it, no rebuttals to questions only a past discussion raised. Rationale, considered alternatives, and constraints a fresh author would independently write stay; record rejected alternatives and why in the LLD's Decisions & Alternatives table, not as asides in body prose.
 
 ### Navigation
 

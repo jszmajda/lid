@@ -34,7 +34,7 @@ HLD → LLDs → EARS → Tests → Code
 - **Bug fixes**: walk the arrow like any other change — find where behavior diverged from intent and cascade from there. No short-circuit.
 - **If unsure**: use the full workflow.
 
-Stop after each phase for user review. Mutation, not accumulation — docs reflect current intent, not history.
+Stop after each phase for user review. **Docs carry current intent, written to be read cold** — write each doc as if authored fresh today, from current intent alone: no narration of how it changed, no meaning that needs the conversation that produced it, no rebuttals to questions only a past discussion raised. Rationale, considered alternatives, and constraints a fresh author would independently write stay; record rejected alternatives and why in the LLD's Decisions & Alternatives table, not as asides in body prose.
 
 ### Navigation
 

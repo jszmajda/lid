@@ -96,7 +96,7 @@ An experiment is retired when:
 - The fast-moving tooling layer (agent harness, IDE, model capability) has absorbed the capability the experiment was probing, making LID's version redundant per minimum-system reasoning, **or**
 - Iteration has revealed a structural problem with the approach that cannot be repaired within experimental scope.
 
-Retirement removes the experiment's directory, EARS spec file, and entry in this LLD in a single change. No deprecation, no historical preservation in the docs tree — the commit history is the only record. This matches HLD's *what is currently here is the truth* tenet.
+Retirement removes the experiment's directory, EARS spec file, and entry in this LLD in a single change. No deprecation, no historical preservation in the docs tree — the commit history is the only record. This matches HLD's *docs carry current intent* tenet.
 
 ### Long-running experiments
 
