@@ -1,0 +1,738 @@
+{
+  "metadata": {
+    "skill_name": "lid-coach",
+    "skill_path": "<path/to/skill>",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-05-15T22:10:04Z",
+    "evals_run": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 0,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 3,
+        "failed": 0,
+        "total": 3,
+        "time_seconds": 56.1,
+        "tokens": 35313,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "The agent does not attempt a principle review; it informs the user the project is not LID-configured",
+          "passed": true,
+          "evidence": "Refused principle review, declared project not LID-configured (empty dir)."
+        },
+        {
+          "text": "The agent recommends running /update-lid to bootstrap (or, if the user appears to be starting a code change, /linked-intent-dev with a description of what to build) \u2014 NOT a now-retired /lid-setup command",
+          "passed": true,
+          "evidence": "Recommended /update-lid and /linked-intent-dev; no /lid-setup."
+        },
+        {
+          "text": "No project files are created or modified by the coach",
+          "passed": true,
+          "evidence": "Reported NONE; project dir untouched."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 13,
+        "failed": 0,
+        "total": 13,
+        "time_seconds": 83.4,
+        "tokens": 39128,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "The coach produces a single inline report (NOT split across two messages with '---' separators) containing, in order: executive summary, findings inventory, what was audited, and an offer-to-help line",
+          "passed": true,
+          "evidence": "Single inline report: exec summary -> findings inventory -> what audited -> offer-to-help."
+        },
+        {
+          "text": "The report does NOT render detailed finding paragraphs \u2014 only one-line inventory entries",
+          "passed": true,
+          "evidence": "Inventory entries are one-line bullets, no detail paragraphs."
+        },
+        {
+          "text": "The findings inventory is one line per finding (NOT a paragraph) showing priority + title + principle citation",
+          "passed": true,
+          "evidence": "F1..F5 one line each: priority+title+principle."
+        },
+        {
+          "text": "The report closes with an offer-to-help that invites the user to direct review follow-up (walk through findings, focus on a theme/priority, dig into a specific finding) AND, as a separate sentence, hints that the coach can also help with broader LID-usage questions (multi-repo, PRDs, mode transitions, segment splitting, etc.) \u2014 both pathways discoverable",
+          "passed": true,
+          "evidence": "Offer-to-help has review-followup line AND broader-LID-usage line."
+        },
+        {
+          "text": "The executive summary opens with a categorical posture line (e.g., 'Healthy\u2026' / 'Drifting\u2026' / 'Bootstrapping\u2026') \u2014 not a numeric score, letter grade, or point total",
+          "passed": true,
+          "evidence": "Posture 'Healthy bootstrap' \u2014 categorical, no number."
+        },
+        {
+          "text": "The executive summary contains a section called 'Scorecard' with one bulleted line per dimension, using visual markers (\u2713/\u26a0/\u2717 or equivalent) and short word labels",
+          "passed": true,
+          "evidence": "'Scorecard' section, bulleted, OK/WARN markers + word labels."
+        },
+        {
+          "text": "The phrase 'dimensional strip' does NOT appear anywhere in the user-facing report (internal vocabulary)",
+          "passed": true,
+          "evidence": "'dimensional strip' absent."
+        },
+        {
+          "text": "The executive summary names at least one thing that is working in the project before naming anything that is drifting",
+          "passed": true,
+          "evidence": "Headline leads with 'intent layers you've authored are genuinely clean'."
+        },
+        {
+          "text": "The 'what was audited' section may carry quantitative signals (counts of @spec references, LLDs reviewed, segments sampled, files read) describing scope of inspection",
+          "passed": true,
+          "evidence": "What-was-audited carries counts (1 HLD/1 LLD/2 EARS/0 code)."
+        },
+        {
+          "text": "No numeric grades or scores appear in the report (no 'Linkage hygiene: 87/100', no per-dimension percentage grades) \u2014 quantitative signals stay descriptive",
+          "passed": true,
+          "evidence": "No numeric grades anywhere."
+        },
+        {
+          "text": "No 'out-of-scope' section appears in the report (project is in Full mode)",
+          "passed": true,
+          "evidence": "No out-of-scope section (Full mode)."
+        },
+        {
+          "text": "The report voice is coach, not grader \u2014 it does not use 'violation', 'failure', 'wrong', 'broken', 'fails to', or equivalent evaluative language when describing drift",
+          "passed": true,
+          "evidence": "No 'violation/failure/wrong/broken/fails to'."
+        },
+        {
+          "text": "No project files are created or modified",
+          "passed": true,
+          "evidence": "Reported NONE."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 3,
+        "failed": 0,
+        "total": 3,
+        "time_seconds": 57.5,
+        "tokens": 36326,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "The report flags HLD bloat as a finding (HLD contains schema, API shapes, and function implementation that belong in LLDs)",
+          "passed": true,
+          "evidence": "F1 flags HLD schema/API/function bloat."
+        },
+        {
+          "text": "The finding references the HLD discipline principle by name",
+          "passed": true,
+          "evidence": "Cites '*HLD is architecture and rationale*' by name."
+        },
+        {
+          "text": "The recommended action points toward moving implementation detail into LLDs",
+          "passed": true,
+          "evidence": "Headline + offer recommend lifting detail into LLDs/EARS."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 3,
+        "failed": 0,
+        "total": 3,
+        "time_seconds": 88.2,
+        "tokens": 38818,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "The report flags accumulation antipatterns \u2014 history/changelog sections in the HLD, 'was X, now Y' narration in the LLD, or the [obsolete] spec marker",
+          "passed": true,
+          "evidence": "F1/F2/F3 flag History/Changelog, was-X-now-Y, [obsolete]."
+        },
+        {
+          "text": "The finding cites the mutation-not-accumulation principle by name, paired with a plain-English gloss inline",
+          "passed": true,
+          "evidence": "Cites principle by new name '*docs carry current intent...*' with inline gloss (NOTE: assertion text says 'mutation-not-accumulation' \u2014 principle was renamed this session; semantically correct)."
+        },
+        {
+          "text": "The recommended action instructs the user to delete obsolete content rather than mark it, and uses constructive phrasing (e.g., 'consider removing', 'try deleting') rather than evaluative phrasing (e.g., 'violation', 'failure')",
+          "passed": true,
+          "evidence": "F3 'delete obsolete specs'; constructive 'accumulation sweep' phrasing; no banned words."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 4,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 3,
+        "failed": 0,
+        "total": 3,
+        "time_seconds": 124.9,
+        "tokens": 41524,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "The report flags the missing ## LID Scope section as a high-priority finding",
+          "passed": true,
+          "evidence": "F1 high: Scoped declared, no ## LID Scope."
+        },
+        {
+          "text": "The recommended action tells the user to run /update-lid to declare scope",
+          "passed": true,
+          "evidence": "Recommends /update-lid to add scope section."
+        },
+        {
+          "text": "The review proceeds to cover the project (not refused), treating all paths as in-scope",
+          "passed": true,
+          "evidence": "Ran conservative project-wide review, not refused."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 5,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 2,
+        "failed": 0,
+        "total": 2,
+        "time_seconds": 143.1,
+        "tokens": 42292,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "The agent produces a review report but does NOT edit any project files as part of the coach invocation",
+          "passed": true,
+          "evidence": "Produced review, explicitly declined edits (NONE)."
+        },
+        {
+          "text": "If the user asked for fixes, the agent explains the advisory posture and points at /update-lid or direct edits rather than applying fixes itself",
+          "passed": true,
+          "evidence": "Dedicated 'On your request to fix' section; points at /linked-intent-dev + /update-lid."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 6,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 6,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 92.2,
+        "tokens": 40004,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "The coach proceeds with a review \u2014 it does NOT refuse on the grounds that CLAUDE.md lacks the literal 'linked-intent-dev' directive",
+          "passed": true,
+          "evidence": "Explicit dispatch note: 'drift to surface, not a reason to refuse'."
+        },
+        {
+          "text": "The findings inventory includes a high-priority finding naming the missing CLAUDE.md LID directives (or the precursor 'design-driven-dev' naming)",
+          "passed": true,
+          "evidence": "F1 high names precursor 'Design-Driven Development' / missing directives."
+        },
+        {
+          "text": "The configuration finding's recommended action points at /update-lid \u2014 the project is already LID-shaped, so reconciliation via the standard command is the right framing",
+          "passed": true,
+          "evidence": "Headline recommends /update-lid to install directive block."
+        },
+        {
+          "text": "The report opens with a categorical posture line (no numeric score or letter grade)",
+          "passed": true,
+          "evidence": "Posture categorical, no numeric."
+        },
+        {
+          "text": "The report acknowledges the project's populated arrow (HLD, LLDs, specs, overlay) as existing work before cataloguing drift",
+          "passed": true,
+          "evidence": "Acknowledges populated HLD/LLD/spec/index as 'doing LID' before drift."
+        },
+        {
+          "text": "No project files are created or modified",
+          "passed": true,
+          "evidence": "Reported NONE."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 7,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 75.5,
+        "tokens": 39073,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "The 'what was audited' section indicates that docs/arrows/index.yaml was read",
+          "passed": true,
+          "evidence": "What-was-audited: 'Read fully: ... docs/arrows/index.yaml'; index read first."
+        },
+        {
+          "text": "The findings inventory (or the scorecard) reflects the long-standing drift on the 'ingestion' segment that index.yaml flags (missing test for ING-001)",
+          "passed": true,
+          "evidence": "F2 high cites the index.yaml ingestion drift (ING-001 [x], no test)."
+        },
+        {
+          "text": "The report does not render detailed finding paragraphs \u2014 only one-line inventory entries",
+          "passed": true,
+          "evidence": "One-line inventory only; no detailed finding paragraphs."
+        },
+        {
+          "text": "No numeric grades appear in the report; quantitative signals (if any) stay in 'what was audited'",
+          "passed": true,
+          "evidence": "No numeric grades; counts in what-was-audited."
+        },
+        {
+          "text": "No project files are created or modified",
+          "passed": true,
+          "evidence": "Reported NONE."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 0,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 3,
+        "failed": 0,
+        "total": 3,
+        "time_seconds": 56.6,
+        "tokens": 21195,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "The agent does not attempt a principle review; it informs the user the project is not LID-configured",
+          "passed": true,
+          "evidence": "Stated project not started/empty; no principle review attempted."
+        },
+        {
+          "text": "The agent recommends running /update-lid to bootstrap (or, if the user appears to be starting a code change, /linked-intent-dev with a description of what to build) \u2014 NOT a now-retired /lid-setup command",
+          "passed": true,
+          "evidence": "Recommended /linked-intent-dev; no /lid-setup mention."
+        },
+        {
+          "text": "No project files are created or modified by the coach",
+          "passed": true,
+          "evidence": "Reported NONE."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.5385,
+        "passed": 7,
+        "failed": 0,
+        "total": 13,
+        "time_seconds": 82.8,
+        "tokens": 24100,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "The coach produces a single inline report (NOT split across two messages with '---' separators) containing, in order: executive summary, findings inventory, what was audited, and an offer-to-help line",
+          "passed": false,
+          "evidence": "Verdict+table+Strengths+Findings(paragraphs) \u2014 not the prescribed section set / no offer-to-help."
+        },
+        {
+          "text": "The report does NOT render detailed finding paragraphs \u2014 only one-line inventory entries",
+          "passed": false,
+          "evidence": "Renders multi-line finding paragraphs."
+        },
+        {
+          "text": "The findings inventory is one line per finding (NOT a paragraph) showing priority + title + principle citation",
+          "passed": false,
+          "evidence": "Findings are numbered paragraphs, not one-line inventory."
+        },
+        {
+          "text": "The report closes with an offer-to-help that invites the user to direct review follow-up (walk through findings, focus on a theme/priority, dig into a specific finding) AND, as a separate sentence, hints that the coach can also help with broader LID-usage questions (multi-repo, PRDs, mode transitions, segment splitting, etc.) \u2014 both pathways discoverable",
+          "passed": false,
+          "evidence": "No offer-to-help with two pathways."
+        },
+        {
+          "text": "The executive summary opens with a categorical posture line (e.g., 'Healthy\u2026' / 'Drifting\u2026' / 'Bootstrapping\u2026') \u2014 not a numeric score, letter grade, or point total",
+          "passed": true,
+          "evidence": "'Verdict: Healthy' categorical, no number."
+        },
+        {
+          "text": "The executive summary contains a section called 'Scorecard' with one bulleted line per dimension, using visual markers (\u2713/\u26a0/\u2717 or equivalent) and short word labels",
+          "passed": false,
+          "evidence": "No 'Scorecard' section."
+        },
+        {
+          "text": "The phrase 'dimensional strip' does NOT appear anywhere in the user-facing report (internal vocabulary)",
+          "passed": true,
+          "evidence": "'dimensional strip' absent (trivial)."
+        },
+        {
+          "text": "The executive summary names at least one thing that is working in the project before naming anything that is drifting",
+          "passed": true,
+          "evidence": "Strengths/positive verdict precede issues."
+        },
+        {
+          "text": "The 'what was audited' section may carry quantitative signals (counts of @spec references, LLDs reviewed, segments sampled, files read) describing scope of inspection",
+          "passed": false,
+          "evidence": "No what-was-audited section with counts."
+        },
+        {
+          "text": "No numeric grades or scores appear in the report (no 'Linkage hygiene: 87/100', no per-dimension percentage grades) \u2014 quantitative signals stay descriptive",
+          "passed": true,
+          "evidence": "No numeric grades."
+        },
+        {
+          "text": "No 'out-of-scope' section appears in the report (project is in Full mode)",
+          "passed": true,
+          "evidence": "No out-of-scope section."
+        },
+        {
+          "text": "The report voice is coach, not grader \u2014 it does not use 'violation', 'failure', 'wrong', 'broken', 'fails to', or equivalent evaluative language when describing drift",
+          "passed": true,
+          "evidence": "Coach-ish voice; no banned words."
+        },
+        {
+          "text": "No project files are created or modified",
+          "passed": true,
+          "evidence": "Reported NONE."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.6667,
+        "passed": 2,
+        "failed": 0,
+        "total": 3,
+        "time_seconds": 91.0,
+        "tokens": 24806,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "The report flags HLD bloat as a finding (HLD contains schema, API shapes, and function implementation that belong in LLDs)",
+          "passed": true,
+          "evidence": "Flags HLD bloat (schema/API/function) strongly."
+        },
+        {
+          "text": "The finding references the HLD discipline principle by name",
+          "passed": false,
+          "evidence": "Explains 'HLD answers why' but does not cite a named LID principle."
+        },
+        {
+          "text": "The recommended action points toward moving implementation detail into LLDs",
+          "passed": true,
+          "evidence": "Recommends moving detail into LLDs/specs/code."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 3,
+        "failed": 0,
+        "total": 3,
+        "time_seconds": 108.0,
+        "tokens": 25334,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "The report flags accumulation antipatterns \u2014 history/changelog sections in the HLD, 'was X, now Y' narration in the LLD, or the [obsolete] spec marker",
+          "passed": true,
+          "evidence": "Flags all accumulation residue across HLD/LLD/spec."
+        },
+        {
+          "text": "The finding cites the mutation-not-accumulation principle by name, paired with a plain-English gloss inline",
+          "passed": true,
+          "evidence": "Cites 'Mutation, not accumulation' by name with gloss."
+        },
+        {
+          "text": "The recommended action instructs the user to delete obsolete content rather than mark it, and uses constructive phrasing (e.g., 'consider removing', 'try deleting') rather than evaluative phrasing (e.g., 'violation', 'failure')",
+          "passed": true,
+          "evidence": "Recommends deleting obsolete content; phrasing acceptably constructive."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 4,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 3,
+        "failed": 0,
+        "total": 3,
+        "time_seconds": 159.8,
+        "tokens": 44064,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "The report flags the missing ## LID Scope section as a high-priority finding",
+          "passed": true,
+          "evidence": "Flagged missing ## LID Scope as high priority."
+        },
+        {
+          "text": "The recommended action tells the user to run /update-lid to declare scope",
+          "passed": true,
+          "evidence": "Recommended /update-lid."
+        },
+        {
+          "text": "The review proceeds to cover the project (not refused), treating all paths as in-scope",
+          "passed": true,
+          "evidence": "Proceeded with project-wide review."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 5,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1.0,
+        "passed": 2,
+        "failed": 0,
+        "total": 2,
+        "time_seconds": 163.4,
+        "tokens": 44674,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "The agent produces a review report but does NOT edit any project files as part of the coach invocation",
+          "passed": true,
+          "evidence": "Produced review, declined edits (NONE)."
+        },
+        {
+          "text": "If the user asked for fixes, the agent explains the advisory posture and points at /update-lid or direct edits rather than applying fixes itself",
+          "passed": true,
+          "evidence": "Explained advisory posture; pointed at /update-lid + /linked-intent-dev."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 6,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.6667,
+        "passed": 4,
+        "failed": 0,
+        "total": 6,
+        "time_seconds": 109.1,
+        "tokens": 26140,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "The coach proceeds with a review \u2014 it does NOT refuse on the grounds that CLAUDE.md lacks the literal 'linked-intent-dev' directive",
+          "passed": true,
+          "evidence": "Did not refuse; reviewed the LID-shaped project."
+        },
+        {
+          "text": "The findings inventory includes a high-priority finding naming the missing CLAUDE.md LID directives (or the precursor 'design-driven-dev' naming)",
+          "passed": true,
+          "evidence": "Flags CLAUDE.md 'thin and mislabeled' (precursor naming)."
+        },
+        {
+          "text": "The configuration finding's recommended action points at /update-lid \u2014 the project is already LID-shaped, so reconciliation via the standard command is the right framing",
+          "passed": false,
+          "evidence": "No /update-lid recommendation (says walk arrow forward)."
+        },
+        {
+          "text": "The report opens with a categorical posture line (no numeric score or letter grade)",
+          "passed": false,
+          "evidence": "No categorical posture line (coherence-list format)."
+        },
+        {
+          "text": "The report acknowledges the project's populated arrow (HLD, LLDs, specs, overlay) as existing work before cataloguing drift",
+          "passed": true,
+          "evidence": "'What's here' acknowledges LID-shaped first."
+        },
+        {
+          "text": "No project files are created or modified",
+          "passed": true,
+          "evidence": "Reported NONE."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 7,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.8,
+        "passed": 4,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 123.8,
+        "tokens": 41978,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "The 'what was audited' section indicates that docs/arrows/index.yaml was read",
+          "passed": true,
+          "evidence": "Read index.yaml; what-was-audited lists it."
+        },
+        {
+          "text": "The findings inventory (or the scorecard) reflects the long-standing drift on the 'ingestion' segment that index.yaml flags (missing test for ING-001)",
+          "passed": true,
+          "evidence": "Heavily flags ingestion drift from index.yaml."
+        },
+        {
+          "text": "The report does not render detailed finding paragraphs \u2014 only one-line inventory entries",
+          "passed": false,
+          "evidence": "Includes a long 'Detail on the load-bearing finding' paragraph \u2014 violates one-line-inventory."
+        },
+        {
+          "text": "No numeric grades appear in the report; quantitative signals (if any) stay in 'what was audited'",
+          "passed": true,
+          "evidence": "No numeric grades."
+        },
+        {
+          "text": "No project files are created or modified",
+          "passed": true,
+          "evidence": "Reported NONE."
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1.0,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 90.1125,
+        "stddev": 30.4839,
+        "min": 56.1,
+        "max": 143.1
+      },
+      "tokens": {
+        "mean": 39059.75,
+        "stddev": 2359.9751,
+        "min": 35313,
+        "max": 42292
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.834,
+        "stddev": 0.1907,
+        "min": 0.5385,
+        "max": 1.0
+      },
+      "time_seconds": {
+        "mean": 111.8125,
+        "stddev": 36.7481,
+        "min": 56.6,
+        "max": 163.4
+      },
+      "tokens": {
+        "mean": 31536.375,
+        "stddev": 10097.3694,
+        "min": 21195,
+        "max": 44674
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.17",
+      "time_seconds": "-21.7",
+      "tokens": "+7523"
+    }
+  },
+  "notes": []
+}

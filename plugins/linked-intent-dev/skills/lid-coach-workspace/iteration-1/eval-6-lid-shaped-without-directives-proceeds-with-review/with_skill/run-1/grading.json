@@ -1,0 +1,42 @@
+{
+  "run_id": "eval-6-with_skill",
+  "expectations": [
+    {
+      "text": "The coach proceeds with a review \u2014 it does NOT refuse on the grounds that CLAUDE.md lacks the literal 'linked-intent-dev' directive",
+      "passed": true,
+      "evidence": "Explicit dispatch note: 'drift to surface, not a reason to refuse'."
+    },
+    {
+      "text": "The findings inventory includes a high-priority finding naming the missing CLAUDE.md LID directives (or the precursor 'design-driven-dev' naming)",
+      "passed": true,
+      "evidence": "F1 high names precursor 'Design-Driven Development' / missing directives."
+    },
+    {
+      "text": "The configuration finding's recommended action points at /update-lid \u2014 the project is already LID-shaped, so reconciliation via the standard command is the right framing",
+      "passed": true,
+      "evidence": "Headline recommends /update-lid to install directive block."
+    },
+    {
+      "text": "The report opens with a categorical posture line (no numeric score or letter grade)",
+      "passed": true,
+      "evidence": "Posture categorical, no numeric."
+    },
+    {
+      "text": "The report acknowledges the project's populated arrow (HLD, LLDs, specs, overlay) as existing work before cataloguing drift",
+      "passed": true,
+      "evidence": "Acknowledges populated HLD/LLD/spec/index as 'doing LID' before drift."
+    },
+    {
+      "text": "No project files are created or modified",
+      "passed": true,
+      "evidence": "Reported NONE."
+    }
+  ],
+  "passed": 6,
+  "total": 6,
+  "summary": {
+    "passed": 6,
+    "total": 6,
+    "pass_rate": 1.0
+  }
+}

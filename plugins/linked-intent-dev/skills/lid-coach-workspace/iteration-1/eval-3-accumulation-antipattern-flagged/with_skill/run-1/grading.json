@@ -1,0 +1,27 @@
+{
+  "run_id": "eval-3-with_skill",
+  "expectations": [
+    {
+      "text": "The report flags accumulation antipatterns \u2014 history/changelog sections in the HLD, 'was X, now Y' narration in the LLD, or the [obsolete] spec marker",
+      "passed": true,
+      "evidence": "F1/F2/F3 flag History/Changelog, was-X-now-Y, [obsolete]."
+    },
+    {
+      "text": "The finding cites the mutation-not-accumulation principle by name, paired with a plain-English gloss inline",
+      "passed": true,
+      "evidence": "Cites principle by new name '*docs carry current intent...*' with inline gloss (NOTE: assertion text says 'mutation-not-accumulation' \u2014 principle was renamed this session; semantically correct)."
+    },
+    {
+      "text": "The recommended action instructs the user to delete obsolete content rather than mark it, and uses constructive phrasing (e.g., 'consider removing', 'try deleting') rather than evaluative phrasing (e.g., 'violation', 'failure')",
+      "passed": true,
+      "evidence": "F3 'delete obsolete specs'; constructive 'accumulation sweep' phrasing; no banned words."
+    }
+  ],
+  "passed": 3,
+  "total": 3,
+  "summary": {
+    "passed": 3,
+    "total": 3,
+    "pass_rate": 1.0
+  }
+}

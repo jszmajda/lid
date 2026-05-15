@@ -27,14 +27,14 @@ arrows:
 
   lid-coach:
     status: MAPPED
-    sampled: 2026-05-05
+    sampled: 2026-05-15
     audited: null
     audited_sha: null
     blocks: []
     blockedBy: [linked-intent-dev]
     detail: lid-coach.md
-    next: "Run skill-creator iteration-1 against the seven evals/evals.json fixtures and flip implemented LID-COACH specs from [ ] to [x] as behavior is verified."
-    drift: "All 52 LID-COACH specs still marked [ ]; no skill-creator iteration has run yet. Segment was split out from linked-intent-dev on 2026-05-05."
+    next: "Author iteration-2 fixtures covering the 34 unexercised LID-COACH specs (invocation 001-002, inputs 008-012, principle-body 014-015, review dims 016-032 less 019/023, 036/038/041/042/047/048/051); 048 needs a >15-LLD fixture project."
+    drift: "18 of 52 LID-COACH specs [x] (skill-creator iteration-1, 2026-05-15, 38/38 with-skill assertions). 34 remain [ ] — unexercised by the current 8 fixtures, not skill-body gaps."
 
   arrow-maintenance:
     status: MAPPED

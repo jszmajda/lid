@@ -4,7 +4,7 @@ Advisory principle-review skill for LID projects. Reads a project's LID artifact
 
 ## Status
 
-**MAPPED** — segment was split out from `linked-intent-dev` on 2026-05-05. Skill body committed; all 52 LID-COACH specs still marked `[ ]` pending skill-creator iteration-1.
+**MAPPED** — segment was split out from `linked-intent-dev` on 2026-05-05. Skill body committed; skill-creator iteration-1 run 2026-05-15 (8 fixtures, with-skill 38/38 assertions = 100%, baseline 83%). 18 of 52 LID-COACH specs flipped to `[x]` on iteration-1 eval evidence; 34 remain `[ ]` (not exercised by the current fixture set).
 
 ## References
 
@@ -21,8 +21,8 @@ Advisory principle-review skill for LID projects. Reads a project's LID artifact
 - `docs/specs/lid-coach-specs.md` (52 specs, prefix `LID-COACH-*`)
 
 ### Tests / Evals
-- `plugins/linked-intent-dev/skills/lid-coach/evals/evals.json` — seven prompt fixtures with assertions (unconfigured-project handoff, healthy full-project posture/scorecard/two-turn delivery/voice, HLD bloat, accumulation antipattern, scoped missing scope, advisory posture, lid-shaped-without-directives, index.yaml-driven arrow sampling).
-- No skill-creator iteration runs yet (skill not implemented).
+- `plugins/linked-intent-dev/skills/lid-coach/evals/evals.json` — eight prompt fixtures with assertions (unconfigured-project handoff, healthy full-project posture/scorecard/voice, HLD bloat, accumulation antipattern, scoped missing scope, advisory posture, lid-shaped-without-directives, index.yaml-driven arrow sampling).
+- skill-creator iteration-1 at `lid-coach-workspace/iteration-1/` (run 2026-05-15): with-skill 38/38 assertions (100%, ±0), baseline 83% (±19). evals 0/3/4/5 are non-discriminating (baseline already passes) — candidates to strengthen in iteration-2.
 
 ### Code (skill prompts and bundled content)
 - `plugins/linked-intent-dev/skills/lid-coach/SKILL.md` — embedded principle body (description + *why it matters* + audit signal per principle), dispatch table, scorecard format, coach-voice guidance, advisory posture, cold-read pass directive, conversational-mode pointer.
@@ -46,37 +46,37 @@ The skill is directly invokable as `/lid-coach` — no command stub needed per C
 | Category | Spec range | Implemented | Active gap | Deferred |
 |---|---|---|---|---|
 | Invocation | LID-COACH-001..002 | 0 | 2 | 0 |
-| State Dispatch | LID-COACH-003..007 | 0 | 5 | 0 |
-| Inputs | LID-COACH-008..013 | 0 | 6 | 0 |
+| State Dispatch | LID-COACH-003..007 | 2 | 3 | 0 |
+| Inputs | LID-COACH-008..013 | 1 | 5 | 0 |
 | Principle Body | LID-COACH-014..015 | 0 | 2 | 0 |
-| Review Dimensions | LID-COACH-016..029 | 0 | 14 | 0 |
+| Review Dimensions | LID-COACH-016..029 | 2 | 12 | 0 |
 | Mode Interaction | LID-COACH-030..032 | 0 | 3 | 0 |
-| Report Structure | LID-COACH-033..038 | 0 | 6 | 0 |
-| Advisory Posture | LID-COACH-039..040 | 0 | 2 | 0 |
+| Report Structure | LID-COACH-033..038 | 4 | 2 | 0 |
+| Advisory Posture | LID-COACH-039..040 | 2 | 0 | 0 |
 | Arrow-Maintenance Relationship | LID-COACH-041..042 | 0 | 2 | 0 |
-| Voice and Tone | LID-COACH-043..044 | 0 | 2 | 0 |
-| Lenient Dispatch | LID-COACH-045..046 | 0 | 2 | 0 |
+| Voice and Tone | LID-COACH-043..044 | 2 | 0 | 0 |
+| Lenient Dispatch | LID-COACH-045..046 | 2 | 0 | 0 |
 | Teach While Correcting | LID-COACH-047 | 0 | 1 | 0 |
-| Sampling Strategy | LID-COACH-048..049 | 0 | 2 | 0 |
-| Quantitative Signals | LID-COACH-050 | 0 | 1 | 0 |
+| Sampling Strategy | LID-COACH-048..049 | 1 | 1 | 0 |
+| Quantitative Signals | LID-COACH-050 | 1 | 0 | 0 |
 | Cold-Read Pass | LID-COACH-051 | 0 | 1 | 0 |
-| Conversational Guidance | LID-COACH-052 | 0 | 1 | 0 |
-| **Total** | | **0** | **52** | **0** |
+| Conversational Guidance | LID-COACH-052 | 1 | 0 | 0 |
+| **Total** | | **18** | **34** | **0** |
 
-**Summary:** Skill body committed; specs remain `[ ]` until skill-creator iteration-1 verifies each behavior against the seven fixtures in `evals/evals.json`.
+**Summary:** Skill body committed; skill-creator iteration-1 (2026-05-15, 8 fixtures) passed 38/38 with-skill assertions. 18 specs flipped to `[x]` on that eval evidence. The 34 remaining `[ ]` are not exercised by the current fixtures — chiefly invocation/frontmatter (001–002), input-reading (008–012), principle-body (014–015), most review dimensions (016–032 less 019/023), and 036/038/041/042/047/048/051. Closing them is iteration-2 fixture work, not skill-body gaps.
 
 ## Key Findings
 
-1. **Skill committed; evals not yet run.** `plugins/linked-intent-dev/skills/lid-coach/` is in the tree but the seven prompt fixtures in `evals/evals.json` have not been exercised. Running iteration-1 is the next step before flipping implemented LID-COACH specs from `[ ]` to `[x]`.
+1. **Iteration-1 run; 18 specs verified.** skill-creator iteration-1 (2026-05-15) passed all 38 with-skill assertions across 8 fixtures; 18 LID-COACH specs are now `[x]`. The 34 remaining `[ ]` are unexercised by the current fixtures, not skill-body gaps — they need new iteration-2 fixtures (notably for invocation, input-reading, principle-body, and the review dimensions beyond HLD-bloat/accumulation).
 2. **`@spec` annotations live in the spec header, not the SKILL.md prose (LID-on-LID inversion).** The coach SKILL.md is prompt content; embedding `@spec` IDs in its body would bend runtime behavior. The spec file's `**Implementing artifacts**:` header carries the linkage downward (`docs/specs/lid-coach-specs.md:1-10`).
 3. **HLD-to-coach cascade contract.** The embedded principle body is a downstream artifact of LID's HLD in the LID-on-LID arrow. When the HLD's Approach sections, Tenets, Goals, or key Design Decisions change, cascade should reach this segment's SKILL.md. Drift between LID's HLD and the embedded principles is itself a dogfooding violation.
 
 ## Work Required
 
 ### Must Fix
-1. Run `skill-creator` iteration-1 against the seven fixtures in `evals/evals.json`. Use the assertions to verify single-message report delivery, dispatch behavior, scorecard format, inventory-form findings (paragraphs only in user-driven follow-ups), plain-English principle gloss, *why-it-matters* presence, single-command (`/update-lid`) recommendation for configuration changes, index.yaml-driven sampling, and absence of grader language.
-2. Flip implemented LID-COACH specs from `[ ]` to `[x]` as the skill body satisfies them.
+1. Author iteration-2 fixtures covering the 34 unexercised specs — invocation/frontmatter (001–002), input-reading (008–012), principle-body embedding/cascade (014–015), the review dimensions beyond HLD-bloat/accumulation (016–018, 020–032), structural-handoff (036, 041–042), persistence (038), teach-the-why in isolation (047), large-project sampling threshold (048), and the cold-read pass (051). Several need larger fixture projects (>15 LLDs or >200 `@spec` files) to exercise 048.
+2. Update eval-3's assertion text: it references the retired "mutation-not-accumulation" principle name; the principle is now *docs carry current intent, written to be read cold* (the skill cited the current name correctly — the assertion is stale, not the skill).
 
 ### Should Fix
-4. Run a Threadkeeper-style real-project review (the original false-negative case that motivated LID-COACH-045/046) to confirm the lenient dispatch produces a useful review on a project whose `CLAUDE.md` uses precursor naming.
-5. Run a cold-read subagent against the SKILL.md to verify a reader unfamiliar with the conversation history reads the scorecard as a "score" and sees the *why-it-matters* layer in findings.
+3. Strengthen or replace evals 0/3/4/5 — iteration-1 showed baseline (no skill) already passes them, so they are non-discriminating and do not measure the skill's contribution.
+4. Run a Threadkeeper-style real-project review (the original false-negative case that motivated LID-COACH-045/046) to confirm the lenient dispatch produces a useful review on a real project whose `CLAUDE.md` uses precursor naming, beyond the synthetic eval-6 fixture.
