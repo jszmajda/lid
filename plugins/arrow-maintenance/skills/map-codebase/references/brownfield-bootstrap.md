@@ -306,6 +306,6 @@ arrows:
 
 Once the bootstrap is complete:
 
-1. Run `/linked-intent-dev:update-lid` if not already done (the `/map-codebase` flow normally calls it at its terminal step, but verify), to ensure CLAUDE.md has the standard LID directives.
+1. Run `/update-lid` if not already done (the `/map-codebase` flow normally calls it at its terminal step, but verify), to ensure CLAUDE.md has the standard LID directives.
 2. Verify the arrow index is accurate: read `docs/arrows/index.yaml` and spot-check a few arrow docs.
 3. The project is now ready for normal linked-intent-dev + arrow-maintenance workflow. New features get arrows. Bug fixes check arrow coherence first.

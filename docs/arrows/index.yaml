@@ -33,8 +33,8 @@ arrows:
     blocks: []
     blockedBy: [linked-intent-dev]
     detail: lid-coach.md
-    next: "Implement /lid-coach skill body and flip 47 LID-COACH specs from [ ] to [x] as behavior lands."
-    drift: "Skill body and command stub present in the working tree but untracked; all 47 LID-COACH specs still marked [ ]. Segment was split out from linked-intent-dev on 2026-05-05."
+    next: "Run skill-creator iteration-1 against the seven evals/evals.json fixtures and flip implemented LID-COACH specs from [ ] to [x] as behavior is verified."
+    drift: "All 52 LID-COACH specs still marked [ ]; no skill-creator iteration has run yet. Segment was split out from linked-intent-dev on 2026-05-05."
 
   arrow-maintenance:
     status: MAPPED

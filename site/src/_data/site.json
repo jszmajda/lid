@@ -23,8 +23,8 @@
       "note": "Install the arrow-maintenance overlay for spec-to-code coherence audits."
     },
     {
-      "cmd": "/linked-intent-dev:lid-setup",
-      "note": "Bootstrap your project — adds a docs/ tree and an AGENTS.md (symlinked to CLAUDE.md)."
+      "cmd": "/linked-intent-dev",
+      "note": "Describe what you want to build. The workflow scaffolds the docs/ tree and CLAUDE.md as it walks you through the design."
     }
   ],
   "experimental": {
