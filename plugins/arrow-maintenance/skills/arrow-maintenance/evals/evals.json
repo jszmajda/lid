@@ -47,7 +47,7 @@
       ],
       "assertions": [
         { "text": "No changes were made to the project (no docs/ directory created, no CLAUDE.md created, no index.yaml)", "spec_ids": ["ARROW-MAINT-003"] },
-        { "text": "The agent's response explicitly recommends the user try /map-codebase or /lid-setup instead", "spec_ids": ["ARROW-MAINT-003"] }
+        { "text": "The agent's response explicitly recommends the user try /map-codebase (brownfield) or /linked-intent-dev (greenfield) instead", "spec_ids": ["ARROW-MAINT-003"] }
       ]
     }
   ]

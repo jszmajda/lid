@@ -141,7 +141,7 @@ After all segments are generated, if no HLD exists:
 
 Before completing:
 
-- **Ensure CLAUDE.md is configured.** Invoke the `/lid-setup` behavior (equivalent to running the `lid-setup` skill), passing the mode that was determined from the invocation-time scope question. `lid-setup` honors caller-provided mode and does not re-prompt. Result: LID directives block present, `## LID Mode:` marker set to the determined mode, arrow-navigation rows included (since the overlay is now installed), and a `## LID Tooling` section scaffolded if a coherence script is to be declared. `lid-setup` runs exactly once per `/map-codebase` invocation — at terminal verification, not during artifact generation.
+- **Ensure CLAUDE.md is configured.** Invoke the `/update-lid` behavior (equivalent to running the `update-lid` skill), passing the mode that was determined from the invocation-time scope question. `update-lid` honors caller-provided mode and does not re-prompt. Result: LID directives block present, `## LID Mode:` marker set to the determined mode, arrow-navigation rows included (since the overlay is now installed), and a `## LID Tooling` section scaffolded if a coherence script is to be declared. `update-lid` runs exactly once per `/map-codebase` invocation — at terminal verification, not during artifact generation.
 
 - **Issue the flesh-out prompt.** Direct the user to move into the `linked-intent-dev` workflow segment-by-segment to populate the skeleton LLDs and EARS specs. Without this prompt the user may leave reconstruction incomplete — and partial arrows propagate incoherence into future sessions. **The flesh-out prompt is the terminal step; do not exit without issuing it.**
 

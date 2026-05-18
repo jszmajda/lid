@@ -1,0 +1,28 @@
+{
+  "eval_id": 3,
+  "eval_name": "accumulation-antipattern-flagged",
+  "prompt": "Run /lid-coach on this project.",
+  "assertions": [
+    {
+      "text": "The report flags accumulation antipatterns \u2014 history/changelog sections in the HLD, 'was X, now Y' narration in the LLD, or the [obsolete] spec marker",
+      "spec_ids": [
+        "LID-COACH-023"
+      ]
+    },
+    {
+      "text": "The finding cites the mutation-not-accumulation principle by name, paired with a plain-English gloss inline",
+      "spec_ids": [
+        "LID-COACH-023",
+        "LID-COACH-035",
+        "LID-COACH-044"
+      ]
+    },
+    {
+      "text": "The recommended action instructs the user to delete obsolete content rather than mark it, and uses constructive phrasing (e.g., 'consider removing', 'try deleting') rather than evaluative phrasing (e.g., 'violation', 'failure')",
+      "spec_ids": [
+        "LID-COACH-023",
+        "LID-COACH-043"
+      ]
+    }
+  ]
+}

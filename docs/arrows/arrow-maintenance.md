@@ -34,7 +34,7 @@ The optional navigation and audit overlay plugin — the `arrow-maintenance` dua
 
 **Key Components:**
 1. `arrow-maintenance` skill (dual-mode) — ambient catch-and-recommend on arrow-adjacent prompts when `docs/arrows/` exists; command-mode audit-and-update pass when invoked as `/arrow-maintenance`.
-2. `map-codebase` skill (behavioral, Claude-Code-specific) — five-phase comprehensive sweep (sweep → lens selection → slicing → reconciliation → artifact generation) with mandatory STOPs, ending in terminal `/lid-setup` + flesh-out prompt.
+2. `map-codebase` skill (behavioral, Claude-Code-specific) — five-phase comprehensive sweep (sweep → lens selection → slicing → reconciliation → artifact generation) with mandatory STOPs, ending in terminal `/update-lid` + flesh-out prompt.
 3. Optional `coherence-check.mjs` — reference Node implementation users may copy into their project and declare under `## LID Tooling` in `CLAUDE.md`.
 
 ## Spec Coverage

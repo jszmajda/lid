@@ -67,11 +67,11 @@ description: Four short paths into LID — evaluating, starting fresh, adding to
       <div class="audience-body">
         <h2 id="green-h">I'm starting a new project.</h2>
         <p>
-          Greenfield is where LID shines hardest — nothing to reconcile, nothing to reverse-engineer. Install the plugin, run setup, then describe what you want to build. The skill takes you through the four design phases, stopping for your review each time, and only writes code once the design has settled.
+          Greenfield is where LID shines hardest — nothing to reconcile, nothing to reverse-engineer. Install the plugin and tell the workflow what you want to build. It takes you through the design phases, stopping for your review each time, and only writes code once the design has settled.
         </p>
         <pre class="cmd"><code>/plugin marketplace add jszmajda/lid
 /plugin install linked-intent-dev@jszmajda-lid
-/linked-intent-dev:lid-setup</code></pre>
+/linked-intent-dev describe what you want to build</code></pre>
         <p>
           After that, tell your agent what you want to build. You'll see an HLD first (with 2–3 architectural alternatives for big decisions), then LLDs for each component, then EARS specs, then tests-first, then code. Every phase stops for your approval.
         </p>
@@ -91,7 +91,6 @@ description: Four short paths into LID — evaluating, starting fresh, adding to
         </p>
         <pre class="cmd"><code>/plugin install linked-intent-dev@jszmajda-lid
 /plugin install arrow-maintenance@jszmajda-lid
-/linked-intent-dev:lid-setup
 /arrow-maintenance:map-codebase</code></pre>
         <p>
           After mapping you get an <em>arrow</em> — a traceable chain from intent to code — plus an audit overlay that tracks what's implemented, what has drifted, and what still needs design attention. Arrows grow as you work; <code>/arrow-maintenance</code> keeps them honest.
@@ -111,9 +110,9 @@ description: Four short paths into LID — evaluating, starting fresh, adding to
           Solo on a team, or piloting LID on one slice of a larger project? <strong>Scoped LID</strong> is the mode for you. The HLD is still required, but it can mark the rest of the project as "not yet specified" — you own your scope, and the discipline relaxes at the boundary.
         </p>
         <p class="muted">
-          Scoped projects use the same setup command as Full LID; the skill asks which mode you want at bootstrap (or you can answer later).
+          Scoped projects use the same entry point as Full LID; the workflow asks which mode you want, or you can choose later with <code>/update-lid</code>.
         </p>
-        <pre class="cmd"><code>/linked-intent-dev:lid-setup
+        <pre class="cmd"><code>/linked-intent-dev describe your scoped feature
 <span class="comment"># answer "Scoped" when prompted for mode</span></code></pre>
         <p>
           Cascade pauses at the edge of your scope, so you don't accidentally propagate incoherence into teammates' territory. As the team adopts LID or your scope expands, <code>/update-lid</code> supports promoting from Scoped to Full.

@@ -78,7 +78,7 @@ The conversation does **not** attempt to auto-select, rank, or recommend a subse
 
 The skill checks for `docs/arrows/index.yaml` + per-arrow overlay files on invocation. If absent, it aborts with:
 
-> *Bidirectional differential audits attach to the arrow-maintenance overlay. Run /lid-setup and then /arrow-maintenance first to establish the arrow surface this skill extends.*
+> *Bidirectional differential audits attach to the arrow-maintenance overlay. Run /update-lid and then /arrow-maintenance first to establish the arrow surface this skill extends.*
 
 Audit records live in a reserved sibling subtree at `docs/arrows/experiments/bidirectional-differential/`. They do not mutate existing per-arrow overlay files. This keeps arrow-maintenance's audit loop hands-off the experiment's artifacts. The reserved-namespace convention is documented in `docs/llds/arrow-maintenance.md` §"Experiment-produced artifacts (reserved namespace)".
 

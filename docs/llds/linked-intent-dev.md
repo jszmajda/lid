@@ -2,13 +2,15 @@
 
 ## Context and Design Philosophy
 
-The `linked-intent-dev` plugin is the mandatory core of LID. It translates the methodology described in the High-Level Design (HLD) into two artifacts: a pure-prose skill that shapes how the agent approaches code changes, and a behavioral skill that bootstraps and maintains project state. This Low-Level Design (LLD) describes intent; the `SKILL.md` files and references under `plugins/linked-intent-dev/` are the compiled outcome. Terms like *arrow*, *segment*, *drift*, *coherence*, and *cascade* are defined in the HLD's Glossary section.
+The `linked-intent-dev` plugin is the mandatory core of LID. It translates the methodology described in the High-Level Design (HLD) into three skills: a pure-prose workflow skill (`linked-intent-dev`) that shapes how the agent approaches code changes, a behavioral skill (`update-lid`) that bootstraps and maintains project state, and a behavioral skill (`lid-coach`) that reviews a project's LID usage against LID's principles and produces improvement recommendations. This LLD covers the workflow skill and `update-lid`; **`lid-coach` has its own LLD at `docs/llds/lid-coach.md`** because its embedded principle body is substantial enough to dominate a shared document. Plugin-level concerns shared by all three skills (mode detection, spec ID format, the LID-on-LID linkage inversion, `index.yaml` update mechanics, eval metadata schema) live in this LLD and are referenced from the coach LLD.
+
+This LLD describes intent; the `SKILL.md` files and references under `plugins/linked-intent-dev/` are the compiled outcome. Terms like *arrow*, *segment*, *drift*, *coherence*, and *cascade* are defined in the HLD's Glossary section.
 
 **A note on actors.** Throughout this document, "the skill" refers to the prose guidance contained in a `SKILL.md`. The skill does not act on its own — it is content the agent consults. When this LLD says "the skill surfaces X" or "the skill warns," the mechanism is: the agent, after consulting the skill, performs the surfacing or warning in the assistant turn it produces. The skill is the instruction; the agent is the actor.
 
 Two design constraints shape the plugin:
 
-- **Minimum surface.** The plugin exposes one pure-prose skill and one behavioral skill (with an alias). Any capability that can live inside those two is absorbed into them rather than given its own entry point.
+- **Minimum surface.** The plugin exposes one pure-prose skill (`linked-intent-dev`) and two behavioral skills (`update-lid`, `lid-coach`). Any capability that can live inside those three is absorbed into them rather than given its own entry point. The skills' separation rationale is documented per-skill: see this LLD for `linked-intent-dev` and `update-lid`; see `docs/llds/lid-coach.md` for `lid-coach`.
 - **Describe, do not dictate.** This LLD describes the *behavior* each skill should produce. It does not prescribe the exact wording of skill prompts. The prompt is the implementation; its phrasing is free to change as long as the described behavior is preserved and the EARS specs pass.
 
 ## Plugin Structure
@@ -19,10 +21,12 @@ The plugin lives at `plugins/linked-intent-dev/` with this shape:
 - `skills/linked-intent-dev/` — the pure-prose workflow skill.
   - `SKILL.md`
   - `references/` — supporting reference docs (EARS syntax, LLD template, HLD template).
-- `skills/lid-setup/` — the behavioral bootstrap/update skill.
+- `skills/update-lid/` — the behavioral bootstrap/update skill.
   - `SKILL.md`
   - `references/` — CLAUDE.md template fragments keyed by mode.
-- `commands/` — command stubs that route `/lid-setup` and `/update-lid` to the `lid-setup` skill.
+- `skills/lid-coach/` — the behavioral principle-review skill. Specified in its own LLD at `docs/llds/lid-coach.md`; the skill artifact lives here under the plugin.
+
+No `commands/` directory. Per Claude Code's skills model, an identically-named skill is already directly invokable as `/skill-name`, so a separate command stub would be redundant surface (and would be shadowed by the skill anyway). Users invoke `/linked-intent-dev`, `/update-lid`, and `/lid-coach` directly against their skills.
 
 The plugin intentionally does not bundle scripts. Everything the skills do is expressed in prompts and references; there is no code layer between the skill and the agent's tool use.
 
@@ -70,17 +74,19 @@ The skill errs toward over-triggering rather than under-triggering. An over-trig
 
 ### Workflow checkpoints
 
-Two rules govern every phase below.
+Three rules govern every phase below.
 
 **Stop and iterate at every phase boundary.** After completing each phase, the agent presents its output to the user, incorporates numbered feedback, and proceeds only on explicit approval. Each stop is mandatory, not optional. Skipping stops is the single most common way this workflow degrades into a rush — the discipline is non-optional. This matches the HLD tenet of the same name.
 
 **Before starting (or resuming) implementation, run a coherence pre-flight.** Verify that the current state of HLD, LLDs, EARS specs, and tests are mutually coherent for the segment about to be touched — do EARS specs trace to the current LLD? Do tests trace to current EARS? Does the LLD still reflect the HLD's architecture? If drift is detected, fix the docs first and only then implement. A resumption check prevents one session's drift from being compounded into the next session's change.
 
+**Write docs as their fresh author.** Every HLD, LLD, and EARS spec produced by these phases must read as if authored fresh today, by someone who knew only the current intent and nothing of the conversation that produced it. As docs are drafted or revised, the agent runs the fresh-author test on each line and watches for the three residues that fail it — narration of how the intent changed; meaning that only resolves for someone who was in the conversation; and rebuttals to questions only a past discussion raised. The keep-side is load-bearing: rationale, considered alternatives, and constraints a fresh author would independently write stay, recorded in the LLD's Decisions & Alternatives table rather than as body-prose asides. This is the HLD's *docs carry current intent* tenet.
+
 When the skill triggers, it guides the agent through six phases:
 
-1. **HLD check** — does a top-level HLD exist? Does it cover the domain of the change? If the change alters the project's architecture, the HLD is updated first. For consequential architectural changes (new approach, significant trade-off, new mode), the agent first **sketches 2–3 competing options** (~200 words each, naming downstream consequences) and presents them for user selection before committing to a full HLD draft. Surfacing decisions as *choices among alternatives* — rather than as the agent's best guess — is the primary edge-detection mechanism at the HLD level.
+1. **HLD check** — first, check whether the project is LID-configured: does CLAUDE.md have LID directives? Does `docs/` exist with the standard subdirectories? If the project is unconfigured (no LID artifacts at all — typically a fresh project where the user invoked `/linked-intent-dev` with a project description), apply the `update-lid` skill's bootstrap branch as a sub-step before drafting the HLD: create `docs/llds/`, `docs/specs/`, append LID directives to (or create) CLAUDE.md, prompt for mode (default Full). After bootstrap, proceed with the HLD check: does a top-level HLD exist at `docs/high-level-design.md`? If not, draft it. Does it cover the domain of the change? If the change alters the project's architecture, the HLD is updated first. For consequential architectural changes (new approach, significant trade-off, new mode), the agent first **sketches 2–3 competing options** (~200 words each, naming downstream consequences) and presents them for user selection before committing to a full HLD draft. Surfacing decisions as *choices among alternatives* — rather than as the agent's best guess — is the primary edge-detection mechanism at the HLD level.
 2. **LLD check or draft** — does an LLD exist for the intent component being changed? If not, draft one before downstream work. In complex projects multiple LLDs may look semantically relevant; the skill helps the user select the correct one by surfacing candidates and their scopes rather than silently picking. If an LLD exists, confirm coherence with the change and update as needed. After drafting or substantially revising an LLD, the agent runs an **LLD-level edge-case probe** — a list of "what happens when..." questions pointed at *this LLD's own gaps*: missing state transitions, unstated invariants, unspecified API error shapes, ordering assumptions inside the component. Cross-component interactions and cross-spec ambiguities are the target of Phase 4, not here. When a subagent is available the probe is delegated to it for cleaner, less-biased coverage. The user triages the gap list and decides which gaps to fix in the LLD vs. defer as open questions.
-3. **EARS spec draft or update** — every LLD change produces a corresponding EARS update (new specs, revised specs, or deleted specs). Spec IDs are stable; revisions mutate text, not IDs, unless scope genuinely changes. Deleted IDs are not reused — "what is currently here is the truth," and git preserves the history. After drafting or revising specs, the agent runs **post-draft consistency verification**:
+3. **EARS spec draft or update** — every LLD change produces a corresponding EARS update (new specs, revised specs, or deleted specs). Spec IDs are stable; revisions mutate text, not IDs, unless scope genuinely changes. Deleted IDs are not reused — per *docs carry current intent*, and git preserves the history. After drafting or revising specs, the agent runs **post-draft consistency verification**:
    - **Coverage** — are there behaviors described in the LLD that have no corresponding EARS spec?
    - **Contradiction** — do any specs say different things about the same behavior?
    - **Implicit scoping** — are any specs phrased as universal when they actually apply only to one context? When the current change adds a new mode or variant, audit sibling specs for scope that was implicit when only one variant existed (see `ears-syntax.md § Scope Disambiguation` for the full litmus).
@@ -148,7 +154,7 @@ LLDs for reverse-engineered components start with incomplete or inferred content
 
 As a brownfield LLD matures through normal LID cascades — each change triggers the skill's phased workflow — inferred content becomes authored content. No migration command is needed and no "graduation" step is triggered; the LLD simply evolves in place under the standard cascade discipline. This matches the HLD-level convention for Scoped LID (HLD sections may be marked "not yet specified" and filled in over time).
 
-## The `lid-setup` Skill (behavioral)
+## The `update-lid` Skill (behavioral)
 
 ### Intent
 
@@ -156,7 +162,7 @@ Put a project into a LID-ready state. On first run, bootstrap the required direc
 
 ### Invocation
 
-The skill is invoked as either `/lid-setup` (primary) or `/update-lid` (alias). Both names route to the same skill; the alias exists because "setup" and "update" are distinct mental models even though the underlying behavior dispatches on state. Users who have never heard of LID reach for `/lid-setup`; users who know the project is already configured reach for `/update-lid`.
+The skill is invoked as `/update-lid`. A fresh-project user instead reaches for `/linked-intent-dev` (the workflow skill) and gives a description of what they want to build; the workflow's Phase 1 detects the unconfigured state and applies this skill's bootstrap branch as a sub-step before drafting the HLD. Users who already have LID configured and need to reconcile drift, change mode, or refresh conventions invoke `/update-lid` directly. The skill is also reachable as a sub-step from `/map-codebase` at its terminal verification step.
 
 ### State dispatch
 
@@ -229,7 +235,7 @@ If the marker is missing, malformed, or names an unrecognized mode value, the sk
 
 ## Spec ID Format
 
-EARS spec IDs are globally unique across the project and structured to be grep-friendly. The default shape is `{FEATURE}-{TYPE}-{NNN}` (e.g., `LID-SETUP-003`), but longer forms are permitted for namespacing — `AUTH-LOGIN-UI-001` distinguishes login-UI specs from login-API specs; `BILLING-INVOICE-RENDERING-004` disambiguates nested features. Format rules:
+EARS spec IDs are globally unique across the project and structured to be grep-friendly. The default shape is `{FEATURE}-{TYPE}-{NNN}` (e.g., `UPDATE-LID-003`), but longer forms are permitted for namespacing — `AUTH-LOGIN-UI-001` distinguishes login-UI specs from login-API specs; `BILLING-INVOICE-RENDERING-004` disambiguates nested features. Format rules:
 
 - **Global uniqueness.** Two specs cannot share an ID anywhere in the project, including across different LLDs.
 - **Grep-friendliness.** IDs use uppercase letters, digits, and hyphens only — no other characters — so `grep "FEATURE-TYPE-003"` across the repo finds every annotation, test, and spec file that references it.
@@ -291,11 +297,11 @@ For behavioral skills, `evals/evals.json` and per-eval `eval_metadata.json` carr
   "assertions": [
     {
       "text": "docs/llds/ directory exists",
-      "spec_ids": ["LID-SETUP-002"]
+      "spec_ids": ["UPDATE-LID-002"]
     },
     {
       "text": "CLAUDE.md contains '## LID Mode: Full'",
-      "spec_ids": ["LID-SETUP-004", "LID-SETUP-007"]
+      "spec_ids": ["UPDATE-LID-004", "UPDATE-LID-007"]
     }
   ]
 }
@@ -309,7 +315,7 @@ Coverage audit: every behavioral EARS spec should appear in at least one asserti
 
 | Decision | Chosen | Alternatives Considered | Rationale |
 |---|---|---|---|
-| Single behavioral skill vs. separate setup/update skills | Single skill with state dispatch, two command names | Separate `/lid-setup` and `/update-lid` skills; one skill with one name only | Minimum-system: one skill behavior, two entry points for user mental models. State dispatch is trivial; maintaining two skills with overlapping logic is not. |
+| Configure-or-reconcile: one skill (`update-lid`) vs. separate setup/update skills | One skill, one command (`/update-lid`); fresh-project entry is via `/linked-intent-dev` (the workflow skill calls `update-lid`'s bootstrap branch in Phase 1) | Separate `/lid-setup` and `/update-lid` commands aliased to one skill; standalone `/lid-setup` for fresh projects | Two command names for one skill is surface noise — users learn one name, the skill state-dispatches. Fresh-project users reach for `/linked-intent-dev` with a project description anyway (they want the workflow, not a setup ritual), so the workflow handling bootstrap inline is the natural fit. |
 | Mode detection source | `CLAUDE.md` heading (`## LID Mode: ...`) | Per-doc frontmatter; dedicated config file; directory convention | CLAUDE.md is already the bootstrap entry point and is read on every session. Mode is project-global, not per-doc. |
 | Missing/malformed mode fallback | Default to Full, surface warning | Default to Scoped; fail loudly; prompt for mode | Full is the more rigorous mode; defaulting there errs toward more specification. Full and Scoped are close enough that the cost of the wrong default is small. Failing loudly would block harmless sessions; prompting interrupts the user unnecessarily. |
 | `docs/planning/` creation | Do not create; flag obsolete if present | Create empty; create with README; create conditionally | Plans are agent-native now. Creating an unused directory is clutter; creating a README is surface growth. Flagging legacy directories respects existing user content. |
@@ -318,6 +324,8 @@ Coverage audit: every behavioral EARS spec should appear in at least one asserti
 | Bug-fix workflow | Walk the arrow like any other change | Short-circuit to coherence check; dedicated bug-fix path | Bugs are intent gaps — either the spec was wrong or never existed. Treating them as a special case lets the agent "fix" code while the upstream intent stays unexpressed, which is exactly the rot LID is designed to prevent. |
 | Spec ID format | Extensible prefix chain with global uniqueness | Fixed two-segment format (`FEATURE-TYPE-NNN`); GUID; hierarchical numeric only | Longer prefixes are necessary for namespacing in large projects. Fixed segments force collisions that have no good resolution. GUIDs break grep-friendliness. |
 | Phase override by user | Allowed, with warning | Blocked; allowed silently | The user is always right; the skill's job is to make the cost visible. Blocking would compete with the agent's authority to judge local context. Silent allow forfeits the drift signal. |
+
+Coach-specific decisions (separate skill, separate LLD, theory location, posture, auto-invocation, dispatch handling, scorecard form, voice, paragraph-form findings, teach-the-why requirement, principle citation style) are documented in `docs/llds/lid-coach.md § Decisions & Alternatives`.
 
 ## Open Questions & Future Decisions
 
@@ -339,13 +347,17 @@ Coverage audit: every behavioral EARS spec should appear in at least one asserti
 ### Deferred to implementation
 
 1. ~~**Scope declaration format**~~ — *Resolved*. Declared in `## LID Scope` section of `CLAUDE.md` with bulleted include/exclude globs; section omitted when mode is Full. See the Scope declaration format section above. Original candidates (dedicated `docs/scope.yaml`, inferred from `docs/llds/`) were rejected because CLAUDE.md is already read unconditionally and the section-in-a-file form matches the `## LID Mode:` precedent.
-2. **HLD template file format** — referenced by the `lid-setup` skill for bootstraps in either mode. The standard section list (problem / approach / users / goals-and-non-goals / system design / key decisions / success metrics / FAQ / references) is the intended baseline; exact headings and commentary prose to be drafted during implementation.
+2. **HLD template file format** — referenced by the `update-lid` skill for bootstraps in either mode. The standard section list (problem / approach / users / goals-and-non-goals / system design / key decisions / success metrics / FAQ / references) is the intended baseline; exact headings and commentary prose to be drafted during implementation.
 3. **Description-optimization cadence** — when is `run_loop.py` run against the `linked-intent-dev` skill's description to keep trigger accuracy calibrated. Candidates: every skill-body change; periodic; on-demand only.
 4. **Cross-scope change surfacing UX** — when a change touches multiple arrow boundaries, does the skill list all affected arrows up front, walk one at a time, or produce a structured confirmation? To be refined after running the skill on real changes.
+
+
+Coach-specific open questions are tracked in `docs/llds/lid-coach.md § Open Questions & Future Decisions`.
 
 ## References
 
 - `docs/high-level-design.md` — the HLD this LLD traces from.
+- `docs/llds/lid-coach.md` — sibling LLD covering the `lid-coach` skill, which is also part of this plugin. The coach LLD references this one for plugin-level concerns (mode detection, spec ID format, eval metadata schema, etc.) rather than re-specifying them.
 - `docs/llds/arrow-maintenance.md` — sibling plugin LLD; the coherence-audit behavior lives there.
 - `plugins/linked-intent-dev/skills/linked-intent-dev/references/ears-syntax.md` — EARS syntax reference.
 - `plugins/linked-intent-dev/skills/linked-intent-dev/references/lld-templates.md` — LLD structure template.

@@ -1,0 +1,27 @@
+{
+  "run_id": "eval-0-without_skill",
+  "expectations": [
+    {
+      "text": "The agent does not attempt a principle review; it informs the user the project is not LID-configured",
+      "passed": true,
+      "evidence": "Stated project not started/empty; no principle review attempted."
+    },
+    {
+      "text": "The agent recommends running /update-lid to bootstrap (or, if the user appears to be starting a code change, /linked-intent-dev with a description of what to build) \u2014 NOT a now-retired /lid-setup command",
+      "passed": true,
+      "evidence": "Recommended /linked-intent-dev; no /lid-setup mention."
+    },
+    {
+      "text": "No project files are created or modified by the coach",
+      "passed": true,
+      "evidence": "Reported NONE."
+    }
+  ],
+  "passed": 3,
+  "total": 3,
+  "summary": {
+    "passed": 3,
+    "total": 3,
+    "pass_rate": 1.0
+  }
+}

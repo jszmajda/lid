@@ -21,7 +21,7 @@ Inspect the project and dispatch on state:
 
 - **Overlay present (`docs/arrows/` exists)** → run the audit-and-update pass (below).
 - **LID docs present (HLD + at least one LLD) but no `docs/arrows/`** → generate the overlay from existing LID docs: populate `index.yaml` with one `arrows:` entry per existing LLD, status `MAPPED`, `sampled: {today}`, `audited_sha: null`; create one per-segment arrow doc per LLD referencing the existing LLD and any known tests/code. Do not generate new HLD, LLD, or EARS skeletons (those exist).
-- **Neither LID docs nor overlay** → the user typed `/arrow-maintenance` on a project that isn't ready for it. Don't just print a redirect — describe what you found and offer to dispatch: "I see no LID installation here. You probably want `/lid-setup` if this is a greenfield project, or `/map-codebase` if you're bringing LID to an existing codebase. Shall I run one of those instead, or did you mean something else?" Then proceed based on the user's answer.
+- **Neither LID docs nor overlay** → the user typed `/arrow-maintenance` on a project that isn't ready for it. Don't just print a redirect — describe what you found and offer to dispatch: "I see no LID installation here. You probably want `/linked-intent-dev` if this is a greenfield project (give it a description of what you want to build; it bootstraps LID as part of Phase 1), or `/map-codebase` if you're bringing LID to an existing codebase. Shall I run one of those instead, or did you mean something else?" Then proceed based on the user's answer.
 
 ## Audit-and-update pass (command mode)
 

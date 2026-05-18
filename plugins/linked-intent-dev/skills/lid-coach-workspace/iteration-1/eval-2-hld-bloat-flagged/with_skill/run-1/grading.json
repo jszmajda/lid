@@ -1,0 +1,27 @@
+{
+  "run_id": "eval-2-with_skill",
+  "expectations": [
+    {
+      "text": "The report flags HLD bloat as a finding (HLD contains schema, API shapes, and function implementation that belong in LLDs)",
+      "passed": true,
+      "evidence": "F1 flags HLD schema/API/function bloat."
+    },
+    {
+      "text": "The finding references the HLD discipline principle by name",
+      "passed": true,
+      "evidence": "Cites '*HLD is architecture and rationale*' by name."
+    },
+    {
+      "text": "The recommended action points toward moving implementation detail into LLDs",
+      "passed": true,
+      "evidence": "Headline + offer recommend lifting detail into LLDs/EARS."
+    }
+  ],
+  "passed": 3,
+  "total": 3,
+  "summary": {
+    "passed": 3,
+    "total": 3,
+    "pass_rate": 1.0
+  }
+}

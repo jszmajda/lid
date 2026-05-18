@@ -1,0 +1,6 @@
+version: 1
+segments:
+  note-store:
+    status: active
+    lld: docs/llds/note-store.md
+    spec: docs/specs/note-store-specs.md

@@ -1,0 +1,37 @@
+{
+  "run_id": "eval-7-without_skill",
+  "expectations": [
+    {
+      "text": "The 'what was audited' section indicates that docs/arrows/index.yaml was read",
+      "passed": true,
+      "evidence": "Read index.yaml; what-was-audited lists it."
+    },
+    {
+      "text": "The findings inventory (or the scorecard) reflects the long-standing drift on the 'ingestion' segment that index.yaml flags (missing test for ING-001)",
+      "passed": true,
+      "evidence": "Heavily flags ingestion drift from index.yaml."
+    },
+    {
+      "text": "The report does not render detailed finding paragraphs \u2014 only one-line inventory entries",
+      "passed": false,
+      "evidence": "Includes a long 'Detail on the load-bearing finding' paragraph \u2014 violates one-line-inventory."
+    },
+    {
+      "text": "No numeric grades appear in the report; quantitative signals (if any) stay in 'what was audited'",
+      "passed": true,
+      "evidence": "No numeric grades."
+    },
+    {
+      "text": "No project files are created or modified",
+      "passed": true,
+      "evidence": "Reported NONE."
+    }
+  ],
+  "passed": 4,
+  "total": 5,
+  "summary": {
+    "passed": 4,
+    "total": 5,
+    "pass_rate": 0.8
+  }
+}

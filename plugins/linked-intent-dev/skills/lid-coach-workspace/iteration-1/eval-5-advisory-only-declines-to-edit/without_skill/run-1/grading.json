@@ -1,0 +1,22 @@
+{
+  "run_id": "eval-5-without_skill",
+  "expectations": [
+    {
+      "text": "The agent produces a review report but does NOT edit any project files as part of the coach invocation",
+      "passed": true,
+      "evidence": "Produced review, declined edits (NONE)."
+    },
+    {
+      "text": "If the user asked for fixes, the agent explains the advisory posture and points at /update-lid or direct edits rather than applying fixes itself",
+      "passed": true,
+      "evidence": "Explained advisory posture; pointed at /update-lid + /linked-intent-dev."
+    }
+  ],
+  "passed": 2,
+  "total": 2,
+  "summary": {
+    "passed": 2,
+    "total": 2,
+    "pass_rate": 1.0
+  }
+}

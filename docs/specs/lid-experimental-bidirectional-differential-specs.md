@@ -54,7 +54,7 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 
 ## Unwanted Behavior
 
-- `[x]` **BIDIFF-019**: If the arrow-maintenance overlay is absent when the skill is invoked in either mode, then the system SHALL abort with a message directing the user to run `/lid-setup` and `/arrow-maintenance` first, and SHALL NOT spawn any `claude -p` sessions or write any files under `docs/arrows/experiments/`.
+- `[x]` **BIDIFF-019**: If the arrow-maintenance overlay is absent when the skill is invoked in either mode, then the system SHALL abort with a message directing the user to run `/update-lid` and `/arrow-maintenance` first, and SHALL NOT spawn any `claude -p` sessions or write any files under `docs/arrows/experiments/`.
 - `[x]` **BIDIFF-020**: If a scoped EARS has no `@spec` annotation pointing at it from the codebase, then the system SHALL emit a coverage-gap entry in the user summary and SHALL NOT spawn blind sessions for that EARS.
 - `[x]` **BIDIFF-021**: If a scoped EARS is a negative requirement ("shall NOT X") with no production-code sink to annotate, then the system SHALL emit the signpost code `UNANNOTATABLE` for that EARS with a recommendation to either pair with an unwanted-behavior EARS and a test that asserts the negation (where the test carries the `@spec`), or defer to a sibling absence-audit experiment. The system SHALL NOT force one of the five coherence classification codes for such EARS.
 - `[x]` **BIDIFF-022**: If B-direction reconstruction produces an EARS with greater than approximately 70% word overlap against the real EARS, then the system SHALL flag the result as a suspected stripping-rule failure in the audit record and SHALL surface the spot-check in the user summary rather than silently emitting `BD-COHERENT`.
