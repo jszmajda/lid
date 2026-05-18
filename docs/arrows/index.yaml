@@ -1,5 +1,5 @@
 schema_version: 1
-last_updated: 2026-05-05
+last_updated: 2026-05-18
 
 taxonomy:
   core:
@@ -33,8 +33,8 @@ arrows:
     blocks: []
     blockedBy: [linked-intent-dev]
     detail: lid-coach.md
-    next: "Author iteration-2 fixtures covering the 34 unexercised LID-COACH specs (invocation 001-002, inputs 008-012, principle-body 014-015, review dims 016-032 less 019/023, 036/038/041/042/047/048/051); 048 needs a >15-LLD fixture project."
-    drift: "18 of 52 LID-COACH specs [x] (skill-creator iteration-1, 2026-05-15, 38/38 with-skill assertions). 34 remain [ ] — unexercised by the current 8 fixtures, not skill-body gaps."
+    next: "Author iteration-2 fixtures covering the 35 unexercised LID-COACH specs (invocation 001-002, inputs 008-012, principle-body 014-015, review dims 016-032 less 019/023, 036/038/041/042/047/048/051, 053 tenet-quality); 048 needs a >15-LLD fixture project; 053 needs a fixture with a tenet-less HLD and one with platitude tenets."
+    drift: "18 of 53 LID-COACH specs [x] (skill-creator iteration-1, 2026-05-15, 38/38 with-skill assertions). 35 remain [ ] — unexercised by the current 8 fixtures, not skill-body gaps. LID-COACH-053 (tenet quality) added 2026-05-18 from the HLD tenets cascade; spec + principle body in place, eval fixture pending."
 
   arrow-maintenance:
     status: MAPPED
