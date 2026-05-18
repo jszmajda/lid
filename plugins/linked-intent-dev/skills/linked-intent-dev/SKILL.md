@@ -38,6 +38,8 @@ Once configured, proceed with the HLD check: does a top-level HLD exist at `docs
 
 For consequential architectural changes (a new approach, a significant trade-off, a new mode) — and on a fresh-project HLD draft — before committing to a full HLD **sketch 2–3 competing options** (~200 words each, naming downstream consequences) and present them for user selection. Surfacing decisions as *choices among alternatives* — rather than as the agent's best guess — is the primary edge-detection mechanism at the HLD level.
 
+When drafting or revising the HLD, **elicit tenets**: surface the few decisions that could reasonably go more than one acceptable way, ask the user which way to lean, and record each as a one-line tie-breaker under `## Tenets`. Apply the defensible-opposite test before proposing one — if the reverse of the tenet is absurd rather than a choice a different project could reasonably make, it is a platitude and resolves nothing; drop it. A tenet is edge detection for choices no spec will anticipate. Surface the load-bearing ones you can see and invite more; do not interrogate the user for an exhaustive set.
+
 Whatever you draft, verify the HLD reads **context-free**: rationale present, alternatives named, no reliance on conversation context that won't travel to the next session.
 
 See `references/hld-template.md` for standard HLD sections.

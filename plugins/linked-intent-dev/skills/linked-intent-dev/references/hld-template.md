@@ -29,6 +29,15 @@ What success looks like — specific, falsifiable when possible. Prefer outcomes
 
 What this project explicitly is not. Useful boundary — makes it easier to say "no" to surface growth.
 
+## Tenets
+
+One-line tie-breakers: which way the project leans when a decision has two defensible answers and no spec covers it. A tenet is forward-looking — it governs choices the arrow has not reached yet — which makes it distinct from Key Design Decisions, which record choices already made. The discriminating test is the **defensible opposite**: a real tenet's reverse is a choice a different project could reasonably make. "We prefer X over Y" where Y is absurd is a platitude, not a tenet, and resolves nothing. State each as a single line and order them so that when two conflict, the higher one wins. A short HLD has two or three load-bearing tenets, not a manifesto.
+
+```markdown
+- **Boring over clever.** When a problem has a well-worn solution and a novel one, prefer the well-worn one unless the novel one is decisively better — a future maintainer should not have to reverse-engineer ingenuity.
+- **Fail loud, not silent.** When an operation cannot complete correctly, surface the failure rather than degrading quietly.
+```
+
 ## System Design
 
 High-level architecture: major components, how they fit, what boundaries separate them. Mermaid diagrams preferred for structural views; ASCII for UI mockups when needed.
@@ -57,6 +66,7 @@ Prior art, linked specs, related projects, external docs.
 - **Diagrams.** Mermaid is the default for structural, flow, state, and ERD diagrams — renders natively on GitHub and is token-efficient for agent consumption. ASCII is the convention for UI mockups. Detect existing project conventions first; ask once if unclear.
 - **Trade-off sketches.** When drafting a new HLD or making a consequential architectural change, first sketch 2–3 competing options (~200 words each with downstream consequences) and present them for user selection before committing to a full draft. See the `linked-intent-dev` skill's Phase 1 guidance.
 - **Non-Goals earn their place.** An explicit non-goal that constrains future surface growth is worth more than a vague goal.
+- **Tenets are elicited, not assumed.** When drafting or revising the HLD, surface the few decisions that could reasonably go more than one acceptable way and ask the user to state a preference. See the `linked-intent-dev` skill's Phase 1 guidance.
 
 ## Scoped-LID variant
 
