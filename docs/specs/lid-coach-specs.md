@@ -51,6 +51,7 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 - `[ ]` **LID-COACH-027**: During a review, the system SHALL assess brownfield inferred content — presence and age of `[inferred]` markers in LLD Decisions & Alternatives tables — and recommend the user triage stale markers (confirm and remove, or refute and revise).
 - `[ ]` **LID-COACH-028**: During a review, the system SHALL assess arrow shape — whether the project's arrow matches the canonical `HLD → LLD → EARS → Tests → Code` ordering or deviates (extra phases inserted, phases collapsed) — and where deviation is detected, report it and reason with the user about implications rather than assuming canonical shape.
 - `[ ]` **LID-COACH-029**: During a review, the system SHALL assess mode fit — whether the declared mode (Full or Scoped) matches project reality — and recommend a mode transition where warranted.
+- `[ ]` **LID-COACH-053**: During a review, the system SHALL assess tenet quality — whether a Full-LID HLD carries a `## Tenets` section and whether its entries are real tie-breakers (a defensible opposite a different project could reasonably choose) rather than platitudes phrased as values — and report missing tenets or platitude tenets.
 
 ## Mode Interaction
 

@@ -125,9 +125,11 @@ These principles are a downstream artifact of LID's own high-level design. When 
 
 ### HLD
 
-- **HLD is architecture and rationale.** Problem, approach, target users, goals and non-goals, key design decisions, success metrics. The HLD carries *why* — architecture-level rationale that lives longer than any specific implementation. *Why it matters:* implementation detail (schemas, function signatures, API shapes) rots faster than architecture. When it creeps into the HLD, the whole doc has to be reloaded to find anything current, and the architecture-level *why* gets buried under specifics that belong in LLDs. A bloated HLD becomes a tax on every future change. *Audit signal:* the HLD contains SQL schemas, function signatures, API request/response shapes, or algorithm pseudocode.
+- **HLD is architecture and rationale.** Problem, approach, target users, goals and non-goals, tenets, key design decisions, success metrics. The HLD carries *why* — architecture-level rationale that lives longer than any specific implementation. *Why it matters:* implementation detail (schemas, function signatures, API shapes) rots faster than architecture. When it creeps into the HLD, the whole doc has to be reloaded to find anything current, and the architecture-level *why* gets buried under specifics that belong in LLDs. A bloated HLD becomes a tax on every future change. *Audit signal:* the HLD contains SQL schemas, function signatures, API request/response shapes, or algorithm pseudocode.
 
 - **One HLD per project.** The HLD is project-global. *Why it matters:* competing HLDs split the architecture conversation into parallel threads and force the user to reconcile them whenever either is touched. The HLD works because it is the single place to go to understand why the system is shaped the way it is. *Audit signal:* multiple competing HLDs, or an HLD that has decomposed into per-component docs (those are LLDs, not HLDs).
+
+- **Tenets capture forward-looking preference.** A tenet is a one-line tie-breaker stating which way to lean when a decision has two defensible answers and no spec covers it — distinct from a Key Design Decision, which records a choice already made. The discriminating test is the *defensible opposite*: a real tenet's reverse is a choice a different project could reasonably make. *Why it matters:* the decision that hurts most is the one no spec anticipated — the choice a future session meets cold. Without tenets the agent samples from its own distribution and the pick is plausible-but-maybe-wrong, exactly the intent gap LID exists to close; with them, the lean is pre-narrowed to the user's. A platitude dressed as a tenet ("be good to users") narrows nothing while giving false confidence the space was constrained. *Audit signal:* no `## Tenets` section in a Full-LID HLD; tenets whose opposite is absurd rather than a real alternative; tenets phrased as values or rules rather than tie-breakers; an unordered list when more than two tenets could conflict.
 
 ### LLD
 
@@ -198,6 +200,7 @@ For each dimension, compare what you observe in the project to the audit signals
 13. **Arrow shape** (→ *canonical arrow shape*) — deviations from the canonical five phases?
 14. **Mode fit** (→ *mode fit*) — declared mode matches reality?
 15. **Minimum system** (→ *minimum surface, maximum discipline*) — unnecessary custom conventions?
+16. **Tenet quality** (→ *tenets capture forward-looking preference*) — does a Full-LID HLD have a `## Tenets` section? Are the tenets real tie-breakers (defensible opposite) or platitudes? Ordered when they could conflict?
 
 This list is the minimum. The coach may produce findings outside these dimensions when a principle violation does not fit neatly into one — always cite the principle by name.
 
