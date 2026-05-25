@@ -47,5 +47,5 @@ Iteration 1 doesn't exercise those at-scale advantages. The data still validates
 ## Per-eval drilldown
 
 - Per-run grading: `{eval-dir}/{with_skill|without_skill}/grading.json`
-- Per-EARS audit records produced by with_skill runs: `{eval-dir}/with_skill/project/docs/arrows/experiments/bidirectional-differential/{segment}/{EARS-ID}.md`
+- Per-EARS audit records produced by with_skill runs: `{eval-dir}/with_skill/project/docs/arrows/_experiments/bidirectional-differential/{segment}/{EARS-ID}.md`
 - Timing data: `{eval-dir}/{with_skill|without_skill}/timing.json`

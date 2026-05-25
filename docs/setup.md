@@ -14,7 +14,7 @@ The workflow is identical across tools (`HLD → LLDs → EARS → Tests → Cod
 Every tool below assumes your project has:
 
 1. An `AGENTS.md` at the root that describes the LID workflow for your project.
-2. A `docs/` tree with `high-level-design.md`, `llds/`, `specs/`.
+2. A `docs/` tree with `high-level-design.md` and `intent/`.
 
 Claude Code users get both for free: `/linked-intent-dev` (the workflow skill) bootstraps them as part of Phase 1 on a fresh project — invoke it with a description of what you want to build. Non-Claude-Code users can copy [this repo's `AGENTS.md`](../AGENTS.md) and `docs/` layout as a starting point, or run Claude Code once just to scaffold — the artifacts themselves are tool-agnostic.
 
@@ -92,21 +92,21 @@ before implementation.
 - Bug fixes: find where intent diverged, cascade from there.
 - Mutation, not accumulation — delete obsolete specs; don't annotate history.
 
-Navigation: `docs/high-level-design.md`, `docs/llds/`, `docs/specs/`, and
+Navigation: `docs/high-level-design.md`, `docs/intent/`, and
 any `docs/arrows/index.yaml` overlay. Code and tests carry
 `@spec SPEC-ID` annotations linking back to EARS IDs.
 
 See `AGENTS.md` at the repo root for the full workflow if you need more depth.
 ```
 
-For glob-scoped rules (e.g. a rule that fires only when editing `docs/specs/**`), create another `.mdc` file with `alwaysApply: false` and a `globs:` entry:
+For glob-scoped rules (e.g. a rule that fires only when editing spec files), create another `.mdc` file with `alwaysApply: false` and a `globs:` entry:
 
 ```markdown
 ---
 description: EARS syntax reminder for spec files
 alwaysApply: false
 globs:
-  - docs/specs/**
+  - docs/intent/**/*-specs.md
 ---
 ```
 
@@ -132,8 +132,8 @@ Follow the Linked-Intent Development workflow in `AGENTS.md` for all code change
 HLD → LLDs → EARS → Tests → Code. Before writing code, verify the arrow
 is coherent. New features use the full workflow; bug fixes walk the
 arrow to find where intent diverged. Docs reflect current intent, not
-history. Navigation: `docs/high-level-design.md`, `docs/llds/`,
-`docs/specs/`. Code and tests carry `@spec SPEC-ID` annotations.
+history. Navigation: `docs/high-level-design.md`, `docs/intent/`.
+Code and tests carry `@spec SPEC-ID` annotations.
 ```
 
 Valid `trigger:` values: `always_on`, `manual`, `model_decision`, `glob` (when `glob`, add a `globs:` key with the pattern; when `model_decision`, `description:` is what the model sees). Workspace rule files are capped at **12,000 characters** (global `global_rules.md` at 6,000). Legacy `.windsurfrules` at repo root still works as a single-file fallback. Sources: [docs.windsurf.com/windsurf/cascade/memories](https://docs.windsurf.com/windsurf/cascade/memories).
@@ -158,11 +158,11 @@ methodology. The short version:
   where intent diverged.
 - Design docs are the source of truth. Code is the output.
 - Tests come before code and carry `@spec SPEC-ID` annotations linking
-  to EARS IDs in `docs/specs/`.
+  to EARS IDs in the `*-specs.md` files under `docs/intent/`.
 - Mutation, not accumulation — delete obsolete specs rather than marking
   them historical.
 
-Navigation: `docs/high-level-design.md`, `docs/llds/`, `docs/specs/`.
+Navigation: `docs/high-level-design.md`, `docs/intent/`.
 ```
 
 This file is read by **VS Code, JetBrains, Visual Studio, Xcode, Eclipse, GitHub.com Chat, Copilot coding agent, Copilot code review, and Copilot CLI** ([support matrix](https://docs.github.com/en/copilot/reference/custom-instructions-support)).
@@ -192,8 +192,8 @@ read:
 read:
   - CONVENTIONS.md
   - docs/high-level-design.md
-  - docs/llds/auth.md
-  - docs/specs/auth-specs.md
+  - docs/intent/auth/auth-design.md
+  - docs/intent/auth/auth-specs.md
 ```
 
 Note: there is no separate `read-only:` key — `read:` *is* the read-only entry. The sibling `file:` key adds editable files to a session. Aider looks for `.aider.conf.yml` in `$HOME`, git root, and cwd in that order; later files take priority. Sources: [aider.chat/docs/config/aider_conf.html](https://aider.chat/docs/config/aider_conf.html), [aider.chat/docs/usage/conventions.html](https://aider.chat/docs/usage/conventions.html).
@@ -223,7 +223,7 @@ exist before implementation.
 - Mutation, not accumulation — delete obsolete specs, don't annotate
   history.
 
-Navigation: `docs/high-level-design.md`, `docs/llds/`, `docs/specs/`.
+Navigation: `docs/high-level-design.md`, `docs/intent/`.
 Code and tests carry `@spec SPEC-ID` annotations linking to EARS IDs.
 See `AGENTS.md` at repo root for depth.
 ```
@@ -244,7 +244,7 @@ Follow the Linked-Intent Development workflow in `AGENTS.md` for all code change
 
 Intent flows downstream: HLD → LLDs → EARS → Tests → Code. Tests precede
 code. Code carries `@spec SPEC-ID` annotations linking to EARS IDs in
-`docs/specs/`. Mutation, not accumulation.
+the `*-specs.md` files under `docs/intent/`. Mutation, not accumulation.
 
 Full methodology in the repo-root `AGENTS.md` and `docs/`.
 ```

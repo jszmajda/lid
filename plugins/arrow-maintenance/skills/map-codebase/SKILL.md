@@ -103,6 +103,8 @@ Within the chosen lens, propose **2–3 slicing variations**:
 
 Coarse absorbs more code per LLD; fine gives precise segment-scoped tracking. Pick based on project maturity and the user's appetite for maintenance.
 
+When a fine slicing produces more segments than sit comfortably at one level, propose grouping related leaves under sub-HLD (grouping) nodes — a shallow tree rather than a long flat list. Most projects map flat (depth-2: leaves directly under the root); nesting is offered only when the leaf count makes a grouping level genuinely clarifying. The tree placement chosen here drives the `parent`/`children` links and the mirrored artifact paths in Phase 5.
+
 **STOP. User picks a slicing.**
 
 ## Phase 4 — User Reconciliation
@@ -118,20 +120,24 @@ Where parallel subagents disagreed on segment assignments earlier, flag those co
 
 **Component quality check.** When reviewing, apply the working definition: a segment should be *an independent system achieving an independent purpose*. Flag proposed segments that match anti-patterns (team boundaries, deployment units, file locations, generic "utils") rather than accepting them silently.
 
+Derive segment and component names from the codebase's existing vocabulary — its module and directory names, its domain terms — rather than imposing LID labels on the project (HLD tenet: *Speak the project's language*).
+
 **STOP. User approves the final clustering before artifact generation begins.**
 
 ## Phase 5 — Artifact Generation
 
-For each approved segment, generate these artifacts in order with a **STOP after each**:
+The design layer is a recursive tree. A leaf node owns EARS and an arrow doc; an intermediate (sub-HLD) node groups its children and owns neither. Where the chosen granularity produces nested structure — leaf segments gathered under a grouping node — that nesting is the design tree, and every artifact path mirrors it. A flat depth-2 mapping (the common case) has every segment at the root level, so the mirrored path collapses to a single file name. `{segment-path}` below means the root-to-leaf path; at depth-2 it is just the segment name.
 
-1. **Per-segment arrow doc** at `docs/arrows/{segment-name}.md` — References pointing to actual files, initial `status: MAPPED`. See [arrow-doc template](../../arrow-maintenance/references/arrow-doc-template.md). **STOP.**
-2. **Skeleton LLD** at `docs/llds/{segment-name}.md` — standard LLD template ([lld-templates](../../../linked-intent-dev/skills/linked-intent-dev/references/lld-templates.md)), no separate brownfield template. Content carries brownfield state: `[inferred]` markers in Decisions & Alternatives table, Open Questions for observed-but-unexplained behaviors. **STOP.**
-3. **EARS spec file** at `docs/specs/{segment-name}-specs.md` — reserved spec-ID prefix (derived from segment name; ask the user for a namespacing segment if the prefix collides with an existing one). Initial status semantics:
+For each approved leaf segment, generate these artifacts in order with a **STOP after each**:
+
+1. **Per-segment arrow doc** at the tree-mirrored path `docs/arrows/{segment-path}.md` (e.g. `docs/arrows/billing/invoicing.md` for an `invoicing` leaf under a `billing` group; `docs/arrows/auth.md` for a root-level `auth` leaf) — References pointing to actual files, initial `status: MAPPED`. Grouping (sub-HLD) nodes are directories, not arrow docs. See [arrow-doc template](../../arrow-maintenance/references/arrow-doc-template.md). **STOP.**
+2. **Skeleton LLD** at the mirroring path `docs/intent/{segment-path}.md` — standard LLD template ([lld-templates](../../../linked-intent-dev/skills/linked-intent-dev/references/lld-templates.md)), no separate brownfield template. Content carries brownfield state: `[inferred]` markers in Decisions & Alternatives table, Open Questions for observed-but-unexplained behaviors. **STOP.**
+3. **EARS spec file** beside the segment's design doc at `docs/intent/<segment-path>/{segment-name}-specs.md` — reserved spec-ID prefix that is the segment's root-to-leaf path (path-concatenated: the leaf prefix is the full path from the root, e.g. a `runner` leaf under `prompt-eval` reserves `PEVAL-RUN`). Ask the user for a namespacing parent if the prefix collides with an existing one. Initial status semantics:
    - `[x]` — behavior is observed as working in current code.
    - `[ ]` — behavior is specified but broken or partial in current code.
    - `[D]` — explicit non-wants (intentional non-features); rare in brownfield.
    **STOP.**
-4. **`index.yaml` entry** under `arrows:` with the taxonomy placement chosen during reconciliation. Follow the schema in [index-schema.md](../../arrow-maintenance/references/index-schema.md).
+4. **`index.yaml` entry** under `arrows:` with the taxonomy placement and the `parent`/`children` tree links chosen during reconciliation. A leaf segment carries `parent` (its grouping node, or null at the root level) and no `children`; each grouping (sub-HLD) node gets its own entry carrying its `children` list and no `detail`. The `detail` of a leaf points at its tree-mirrored arrow-doc path. At depth-2 every segment sits at the root level with `parent: null` and no children. Follow the schema in [index-schema.md](../../arrow-maintenance/references/index-schema.md).
 
 After all segments are generated, if no HLD exists:
 
@@ -141,7 +147,7 @@ After all segments are generated, if no HLD exists:
 
 Before completing:
 
-- **Ensure CLAUDE.md is configured.** Invoke the `/update-lid` behavior (equivalent to running the `update-lid` skill), passing the mode that was determined from the invocation-time scope question. `update-lid` honors caller-provided mode and does not re-prompt. Result: LID directives block present, `## LID Mode:` marker set to the determined mode, arrow-navigation rows included (since the overlay is now installed), and a `## LID Tooling` section scaffolded if a coherence script is to be declared. `update-lid` runs exactly once per `/map-codebase` invocation — at terminal verification, not during artifact generation.
+- **Ensure CLAUDE.md is configured.** Invoke the `/update-lid` behavior (equivalent to running the `update-lid` skill), passing the mode that was determined from the invocation-time scope question. `update-lid` honors caller-provided mode and does not re-prompt. Result: LID directives block present, the `## LID` block's `- Mode:` bullet set to the determined mode, arrow-navigation rows included (since the overlay is now installed), and a `## LID Tooling` section scaffolded if a coherence script is to be declared. `update-lid` runs exactly once per `/map-codebase` invocation — at terminal verification, not during artifact generation.
 
 - **Issue the flesh-out prompt.** Direct the user to move into the `linked-intent-dev` workflow segment-by-segment to populate the skeleton LLDs and EARS specs. Without this prompt the user may leave reconstruction incomplete — and partial arrows propagate incoherence into future sessions. **The flesh-out prompt is the terminal step; do not exit without issuing it.**
 

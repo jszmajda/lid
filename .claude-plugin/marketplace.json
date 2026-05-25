@@ -11,7 +11,7 @@
       "name": "linked-intent-dev",
       "description": "Structured design-before-code workflow: HLD → LLD → EARS specs → Tests → Code. Includes /linked-intent-dev (workflow + bootstrap), /update-lid (configuration reconcile), and /lid-coach (principle-level review).",
       "source": "./plugins/linked-intent-dev",
-      "version": "1.0.0",
+      "version": "1.2.0",
       "category": "development",
       "license": "MIT"
     },
@@ -19,7 +19,7 @@
       "name": "arrow-maintenance",
       "description": "Scaling layer for linked-intent-dev. Tracks spec-to-code coherence across large projects via docs/arrows/ index. Includes brownfield bootstrap for mapping existing codebases.",
       "source": "./plugins/arrow-maintenance",
-      "version": "1.0.0",
+      "version": "1.2.0",
       "category": "development",
       "license": "MIT"
     },
@@ -27,7 +27,7 @@
       "name": "lid-experimental",
       "description": "Experimental LID skills with opt-in installation and explicit promotion/retirement lifecycle. Current experiment: bidirectional-differential — audits EARS↔code coherence via parallel fresh-context LLM reconstructions. Layers on top of linked-intent-dev and arrow-maintenance; requires both.",
       "source": "./plugins/lid-experimental",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "category": "development",
       "license": "MIT"
     }

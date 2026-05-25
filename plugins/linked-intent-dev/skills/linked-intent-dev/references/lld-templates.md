@@ -2,8 +2,19 @@
 
 Low-Level Designs (LLDs) document component-specific technical decisions. LLDs are **pure design documents** — they describe *how* things work, the constraints, trade-offs, and decisions. They do not track implementation status.
 
+An LLD is a **leaf of the design tree**: it owns its segment's EARS specs and sits under an HLD (the root) or a sub-HLD. "LLD" is a role by position, not a fixed type — the template below is a **starting point**, not a rigid shape. A node carries the sections it needs; flat depth-2 (one HLD over a flat set of LLDs) is the default. When a leaf LLD outgrows itself — its intent differentiating into sub-parts that each warrant their own design — it **promotes into a sub-HLD** with child LLDs beneath it (see the HLD template reference); the promoted node sheds its EARS to those children, since only leaves own specs.
+
+**Frontmatter.** Every LLD carries two pointers: `parent:` names the node above it (the root HLD at depth-2, or a sub-HLD when nested), so the tree is walkable upward; `prefix:` carries the EARS namespace the leaf owns — its full root-to-leaf path — so a reader knows its spec namespace (`AUTH-*`, or `EXP-BIDIFF-*` when nested) without grepping. The directory and file names are human-readable and need not equal this prefix (`arrow-maintenance/maintenance.md` may own prefix `SCALE-MAINT`); `prefix:` is the authoritative bridge from the human name to the namespace, and it marks where the leaf path ends — a spec ID may append an optional within-leaf type/area segment and a number after the leaf prefix (`AUTH-UI-001`). A pure-prose leaf that owns no EARS omits `prefix:`. (Grouping sub-HLDs also carry `prefix:` — the namespace they root — per the HLD template reference.)
+
+```markdown
+---
+parent: high-level-design
+prefix: AUTH
+---
+```
+
 Implementation status is tracked in:
-- **Spec files** (`docs/specs/`) via `[x]`/`[ ]`/`[D]` markers on EARS specs
+- **Spec files** (`{node}-specs.md`, beside each design doc under `docs/intent/`) via `[x]`/`[ ]`/`[D]` markers on EARS specs
 - **Arrow docs** (`docs/arrows/`) via coverage tables (if using arrow-maintenance plugin)
 
 ## Greenfield vs. Brownfield
@@ -18,10 +29,12 @@ As a brownfield LLD matures through normal LID cascades, inferred content become
 
 ## File Location
 
-Create LLDs in `/docs/llds/` with descriptive names:
-- `user-authentication-flow.md`
-- `payment-processing-pipeline.md`
-- `offline-sync-strategy.md`
+Every node is a **directory** under `/docs/intent/`, named for the node. A leaf LLD `foo` is `docs/intent/foo/foo-design.md`, with its EARS beside it as `foo-specs.md` and a `decisions/` dir if it has decision docs. At the default depth-2, each LLD is one such folder directly under `docs/intent/`:
+- `docs/intent/user-authentication-flow/user-authentication-flow-design.md` (+ `user-authentication-flow-specs.md`)
+- `docs/intent/payment-processing-pipeline/payment-processing-pipeline-design.md`
+- `docs/intent/offline-sync-strategy/offline-sync-strategy-design.md`
+
+**The directory layout mirrors the design tree's structure (node-as-folder).** A sub-HLD `foo` is the directory `docs/intent/…/foo/` holding `foo-design.md` plus a child directory per child — e.g. the `arrow-maintenance` sub-HLD is `docs/intent/arrow-maintenance/arrow-maintenance-design.md` with child directories `maintenance/` (holding `maintenance-design.md` + `maintenance-specs.md`) and `map-codebase/`. A leaf and a sub-HLD have the same shape, distinguished only by whether the folder holds a `-specs.md` (leaf) or child directories (sub-HLD). When a leaf promotes into a sub-HLD, its `-specs.md` goes away — the EARS move down into the new leaf children — and child directories appear beside its `-design.md`. Directory and file names are human-readable and need not equal the EARS prefix; each node's `prefix:` frontmatter carries it (see the EARS syntax reference). Decision docs follow `references/decision-doc-template.md`.
 
 ## Standard Structure
 

@@ -17,7 +17,7 @@
       "eval_name": "healthy-full-project-produces-structured-report",
       "prompt": "Run /lid-coach on this project and give me a review.",
       "files": [
-        { "path": "CLAUDE.md", "content": "# My Project\n\n## LID Mode: Full\n\n## Linked-Intent Development (MANDATORY)\n\nConsult the linked-intent-dev skill for all code changes.\n" },
+        { "path": "CLAUDE.md", "content": "# My Project\n\n## LID\n- Mode: Full\n- Version: 1.2.0\n\n## Linked-Intent Development (MANDATORY)\n\nConsult the linked-intent-dev skill for all code changes.\n" },
         { "path": "docs/high-level-design.md", "content": "# High-Level Design: Note-taking App\n\n## Problem\n\nUsers need a low-friction way to capture thoughts across devices.\n\n## Approach\n\nA local-first note store with cloud sync. Notes are plain text files; sync is a background reconciliation over an append-only event log.\n\n## Target Users\n\nIndividual knowledge workers on mobile and desktop.\n\n## Architecture\n\nClient-side store, event-log sync server, resolver service for conflicts.\n\n## Key Design Decisions\n\nLocal-first over cloud-first: users work offline, conflicts reconcile on reconnect.\n\n## Goals\n\nLow latency capture. Offline by default. No vendor lock-in on note format.\n\n## Non-Goals\n\nReal-time collaborative editing. Rich media beyond plain text.\n" },
         { "path": "docs/llds/note-store.md", "content": "# LLD: Note Store\n\n## Context\n\nThe note store is the local persistence layer for plain-text notes. It supports create, read, update, delete, and list operations, with an event log recording every mutation.\n\n## Architecture\n\nFlat directory of one file per note, indexed by a SQLite database for fast listing and search.\n\n## Behaviors\n\nNote creation writes the file and appends a create event. Note deletion removes the file and appends a delete event. The event log is append-only; compaction is out of scope for v1.\n\n## Decisions & Alternatives\n\n| Decision | Chosen | Rationale |\n|---|---|---|\n| Storage | Filesystem + SQLite | Simple, grep-friendly, survives across app upgrades. |\n| Event log | Append-only JSONL | Simplest durable log; no schema evolution needed v1. |\n" },
         { "path": "docs/specs/note-store-specs.md", "content": "# Note Store specs\n\n**LLD**: docs/llds/note-store.md\n\n## Creation\n\n- `[x]` **NOTE-STORE-001**: When the user creates a note, the system SHALL write the note file to the notes directory and append a create event to the event log.\n- `[x]` **NOTE-STORE-002**: When the user deletes a note, the system SHALL remove the note file and append a delete event to the event log.\n" }
@@ -43,7 +43,7 @@
       "eval_name": "hld-bloat-flagged",
       "prompt": "Run /lid-coach.",
       "files": [
-        { "path": "CLAUDE.md", "content": "## LID Mode: Full\n\n## Linked-Intent Development\n\nConsult the linked-intent-dev skill.\n" },
+        { "path": "CLAUDE.md", "content": "## LID\n- Mode: Full\n- Version: 1.2.0\n\n## Linked-Intent Development\n\nConsult the linked-intent-dev skill.\n" },
         { "path": "docs/high-level-design.md", "content": "# HLD: Billing System\n\n## Problem\n\nCustomers need to be billed monthly.\n\n## Database Schema\n\n```sql\nCREATE TABLE invoices (\n  id UUID PRIMARY KEY,\n  customer_id UUID NOT NULL REFERENCES customers(id),\n  amount_cents BIGINT NOT NULL,\n  currency CHAR(3) NOT NULL,\n  issued_at TIMESTAMPTZ NOT NULL,\n  paid_at TIMESTAMPTZ\n);\n\nCREATE INDEX idx_invoices_customer ON invoices(customer_id);\nCREATE INDEX idx_invoices_unpaid ON invoices(customer_id) WHERE paid_at IS NULL;\n```\n\n## API Endpoints\n\n- `POST /api/invoices` — create an invoice. Body: `{customer_id, amount_cents, currency}`. Returns 201 with invoice body.\n- `GET /api/invoices/:id` — fetch by id. Returns 200 with invoice body, 404 if not found.\n- `POST /api/invoices/:id/pay` — mark as paid. Body: `{paid_at}`. Returns 200.\n\n## Functions\n\n```typescript\nexport async function createInvoice(customerId: string, amountCents: number, currency: string): Promise<Invoice> {\n  const id = uuid();\n  const issuedAt = new Date();\n  await db.insert('invoices', { id, customer_id: customerId, amount_cents: amountCents, currency, issued_at: issuedAt });\n  return { id, customerId, amountCents, currency, issuedAt };\n}\n```\n" },
         { "path": "docs/llds/.gitkeep", "content": "" },
         { "path": "docs/specs/.gitkeep", "content": "" }
@@ -59,7 +59,7 @@
       "eval_name": "accumulation-antipattern-flagged",
       "prompt": "Run /lid-coach on this project.",
       "files": [
-        { "path": "CLAUDE.md", "content": "## LID Mode: Full\n\n## Linked-Intent Development\n\nConsult the linked-intent-dev skill.\n" },
+        { "path": "CLAUDE.md", "content": "## LID\n- Mode: Full\n- Version: 1.2.0\n\n## Linked-Intent Development\n\nConsult the linked-intent-dev skill.\n" },
         { "path": "docs/high-level-design.md", "content": "# HLD\n\n## Problem\n\nWe track package deliveries.\n\n## History\n\nOriginally we used polling. Then we migrated to webhooks in Q2. We are planning to move to a streaming architecture in Q4, but for now webhooks remain authoritative.\n\n## Approach\n\nWe receive webhook events from carriers and persist them.\n\n## Changelog\n\n- 2024-01: Initial draft with polling design.\n- 2024-04: Revised for webhooks.\n- 2024-07: Added retry logic section.\n" },
         { "path": "docs/llds/delivery-tracking.md", "content": "# LLD: Delivery Tracking\n\n## Context\n\nWe used to keep state in Redis, but now we use Postgres. The old Redis-based approach is documented below for reference.\n\n## Previous Architecture (Redis)\n\nWe maintained a hash per shipment in Redis. This was deprecated in Q2 due to durability concerns.\n\n## Current Architecture (Postgres)\n\nShipments are rows in the `shipments` table.\n\n## Planned Architecture (Streaming)\n\nIn Q4 we plan to move to Kafka.\n" },
         { "path": "docs/specs/delivery-specs.md", "content": "# Delivery specs\n\n**LLD**: docs/llds/delivery-tracking.md\n\n## Webhook handling\n\n- `[x]` **DELIVERY-001**: When a webhook arrives, the system SHALL persist the event.\n- `[obsolete]` **DELIVERY-002**: The system SHALL poll carriers every 60 seconds. (Replaced by DELIVERY-001; kept for historical reference.)\n" }
@@ -75,7 +75,7 @@
       "eval_name": "scoped-missing-scope-flagged",
       "prompt": "Run /lid-coach.",
       "files": [
-        { "path": "CLAUDE.md", "content": "## LID Mode: Scoped\n\n## Linked-Intent Development\n\nConsult the linked-intent-dev skill.\n" },
+        { "path": "CLAUDE.md", "content": "## LID\n- Mode: Scoped\n- Version: 1.2.0\n\n## Linked-Intent Development\n\nConsult the linked-intent-dev skill.\n" },
         { "path": "docs/high-level-design.md", "content": "# HLD\n\n## Problem\n\nLow-priority feature in a larger non-LID monorepo.\n" },
         { "path": "docs/llds/.gitkeep", "content": "" },
         { "path": "docs/specs/.gitkeep", "content": "" }
@@ -111,7 +111,7 @@
       "eval_name": "index-yaml-drives-arrow-sampling",
       "prompt": "Run /lid-coach.",
       "files": [
-        { "path": "CLAUDE.md", "content": "## LID Mode: Full\n\n## Linked-Intent Development\n\nConsult the linked-intent-dev skill.\n" },
+        { "path": "CLAUDE.md", "content": "## LID\n- Mode: Full\n- Version: 1.2.0\n\n## Linked-Intent Development\n\nConsult the linked-intent-dev skill.\n" },
         { "path": "docs/high-level-design.md", "content": "# HLD\n\n## Problem\n\nWe build a thing.\n\n## Architecture\n\nTwo subsystems: ingestion and rendering.\n" },
         { "path": "docs/llds/ingestion.md", "content": "# LLD: Ingestion\n\n## Behaviors\n\nReceive payloads, validate, persist.\n" },
         { "path": "docs/llds/rendering.md", "content": "# LLD: Rendering\n\n## Behaviors\n\nFetch records, format, return.\n" },
@@ -132,7 +132,7 @@
       "eval_name": "advisory-only-declines-to-edit",
       "prompt": "Run /lid-coach and then fix any issues you find.",
       "files": [
-        { "path": "CLAUDE.md", "content": "## LID Mode: Full\n\n## Linked-Intent Development\n\nConsult the linked-intent-dev skill.\n" },
+        { "path": "CLAUDE.md", "content": "## LID\n- Mode: Full\n- Version: 1.2.0\n\n## Linked-Intent Development\n\nConsult the linked-intent-dev skill.\n" },
         { "path": "docs/high-level-design.md", "content": "# HLD\n\n## Problem\n\nWe are building a thing.\n" },
         { "path": "docs/llds/.gitkeep", "content": "" },
         { "path": "docs/specs/.gitkeep", "content": "" }

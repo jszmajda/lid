@@ -37,7 +37,7 @@ The plugins form a layered system:
 
 2. **arrow-maintenance** overlays on top — adds navigation (`index.yaml`) and tracking (arrow docs) for projects too large to hold in one context window. Includes `/map-codebase` for brownfield codebase mapping.
 
-Both LID plugins use EARS (Easy Approach to Requirements Syntax) for specifications with semantic IDs (`{FEATURE}-{TYPE}-{NNN}`), `@spec` code annotations, and status markers (`[x]` implemented, `[ ]` gap, `[D]` deferred).
+Both LID plugins use EARS (Easy Approach to Requirements Syntax) for specifications with path-concatenated IDs (an ID is the root-to-leaf path through the design tree — `FEATURE-NNN` flat, extending one segment per level as intent nests, e.g. `PEVAL-RUN-014`), `@spec` code annotations, and status markers (`[x]` implemented, `[ ]` gap, `[D]` deferred).
 
 ## Other Agentic Coding Tools
 
@@ -52,7 +52,9 @@ The methodology is identical across tools — only the invocation differs. Claud
 - The skill `description` field is critical — it determines when Claude Code auto-invokes the skill. Use specific trigger words, not vague descriptions
 - Reference templates live in `references/` subdirectories within each skill
 
-## LID Mode: Full
+## LID
+- Mode: Full
+- Version: 1.2.0
 
 ## Linked-Intent Development (MANDATORY)
 
@@ -73,15 +75,17 @@ HLD → LLDs → EARS → Tests → Code
 | What you need | Where to look |
 |---|---|
 | High-level design | `docs/high-level-design.md` |
-| Low-level designs | `docs/llds/` |
-| EARS specs | `docs/specs/` |
+| Design tree (HLD's children: sub-HLDs, LLDs, their specs) | `docs/intent/` — one folder per node |
+| EARS specs | `{node}-specs.md` beside each design doc in `docs/intent/` |
+| Decision docs | `docs/decisions/` (project-level) and `docs/intent/<segment>/decisions/` |
 | Arrow of intent overlay | `docs/arrows/index.yaml` and per-segment docs in `docs/arrows/` |
 | Setup for other tools | `docs/setup.md` |
 
 ### Terminology
 
-- **LLD**: Low-level design — detailed component design docs in `docs/llds/`
-- **EARS**: Easy Approach to Requirements Syntax — structured requirements in `docs/specs/`. Markers: `[x]` implemented, `[ ]` active gap, `[D]` deferred
+- **HLD / LLD / sub-HLD**: the design layer is a recursive tree — the HLD is the root, leaf LLDs own EARS, and a component with internal depth becomes a sub-HLD (HLD-shaped, grouping child LLDs). "HLD" and "LLD" are roles by position; depth-2 (one HLD over flat LLDs) is the default. Design docs live in `docs/intent/`
+- **EARS**: Easy Approach to Requirements Syntax — structured requirements living beside each design doc as `{node}-specs.md` in the node's folder under `docs/intent/`, with path-concatenated IDs. Markers: `[x]` implemented, `[ ]` active gap, `[D]` deferred
+- **Decision doc**: a standalone record of a decision that stays *live* for a cold reader of the landed result (rare), in a node's `decisions/` directory; owns no EARS and carries no status (presence is acceptance)
 - **Arrow**: A traced dependency from HLD through code, tracked in `docs/arrows/`
 
 ### Code Annotations

@@ -12,10 +12,10 @@ The conversion and orientation surface — the four-page Eleventy site at `site/
 - `docs/high-level-design.md` § Goal 5 (legibility for non-users); § Goal 3 (meet teams where they are); § Architecture / Distribution
 
 ### LLD
-- `docs/llds/marketing-site.md`
+- `docs/intent/marketing-site/marketing-site-design.md`
 
 ### EARS
-- `docs/specs/marketing-site-specs.md` (51 specs, prefix `MKT-SITE-*`)
+- `docs/intent/marketing-site/marketing-site-specs.md` (51 specs, prefix `MKT-SITE-*`)
 
 ### Tests / Build checks
 - Build-time structural checks (link-check, mermaid render, markdown lint) — declared in the LLD § *Content Maintenance and Review*; CI workflow scope per `MKT-SITE-*` build specs.
@@ -52,7 +52,7 @@ The conversion and orientation surface — the four-page Eleventy site at `site/
 
 1. **Five-panel trace block is the dominant gap cluster.** MKT-SITE-039, -041, -045, -047 and several siblings (~7 of the 18 gaps) describe the vertical trace, its legend, the shared EARS-ID through-line, and the responsive two-column pair at ≥960px. These are content/layout work, not blocked design.
 2. **README/Quickstart cascade behavior unimplemented.** MKT-SITE-009 — *"When the README's Quickstart changes, the site's Quickstart SHALL cascade to match before the next deploy"* — is `[ ]`. Currently a manual review responsibility; could be automated as a CI check or simply as a `/linked-intent-dev` cascade-discipline reminder.
-3. **Site is a real LID-on-LID arrow segment.** Per `docs/llds/marketing-site.md` § *Cascade Concerns*: drift between site content and the HLD/plugin LLDs is a coherence-signal failure under HLD Goal 4. This bootstrap segment makes that auditable under `/arrow-maintenance` alongside the plugins (satisfies `MKT-SITE-036`).
+3. **Site is a real LID-on-LID arrow segment.** Per `docs/intent/marketing-site/marketing-site-design.md` § *Cascade Concerns*: drift between site content and the HLD/plugin LLDs is a coherence-signal failure under HLD Goal 4. This bootstrap segment makes that auditable under `/arrow-maintenance` alongside the plugins (satisfies `MKT-SITE-036`).
 4. **No `@spec` annotations in `site/` source files.** Content artifacts may carry `@spec` comments in HTML/template comments, but a quick scan turned up none. EARS coverage for content is currently spec-file-header-only — same LID-on-LID inversion as skill prompts. Acceptable; a future `arrow-maintenance` audit may want to add inline `@spec` comments to template files for grep-addressability into the content.
 
 ## Work Required

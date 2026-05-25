@@ -39,7 +39,7 @@ my-system/                              # container repo: holds cross-repo inten
 ├── CLAUDE.md                           # LID directives for the system
 ├── docs/
 │   ├── high-level-design.md            # system-level HLD
-│   └── llds/{frontend,backend,…}.md    # how each sub-repo fits the system
+│   └── intent/{frontend,backend,…}.md    # how each sub-repo fits the system
 ├── bin/setup                           # convenience: clones the sub-repos
 ├── .gitignore                          # ignores frontend/ backend/ shared/
 └── (sub-repos cloned as siblings)

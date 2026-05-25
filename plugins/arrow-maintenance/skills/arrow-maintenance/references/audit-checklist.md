@@ -48,8 +48,8 @@ Scan across the project:
 
 Enumerate:
 
-- LLD files in `docs/llds/` not listed as `detail` or referenced from any arrow doc's `## References`.
-- Spec files in `docs/specs/` not referenced from any arrow doc.
+- LLD files in `docs/intent/` not listed as `detail` or referenced from any arrow doc's `## References`.
+- `*-specs.md` files in the `docs/intent/` tree not referenced from any arrow doc.
 - Code files containing `@spec` annotations but not in any arrow doc's `## References`.
 - Entries in `index.yaml`'s `unmapped.docs` list — these are the trackable orphans; bulk-assign where clear, flag where ambiguous.
 

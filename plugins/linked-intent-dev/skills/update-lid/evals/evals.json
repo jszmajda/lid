@@ -7,13 +7,13 @@
       "prompt": "I have an empty project directory and want to start using linked-intent development on it. Please set it up. Use Full LID.",
       "files": [],
       "assertions": [
-        { "text": "docs/llds/ directory exists in the project", "spec_ids": ["UPDATE-LID-002", "UPDATE-LID-015"] },
-        { "text": "docs/specs/ directory exists in the project", "spec_ids": ["UPDATE-LID-002", "UPDATE-LID-015"] },
-        { "text": "docs/high-level-design.md exists, populated from the HLD template (not empty)", "spec_ids": ["UPDATE-LID-015", "UPDATE-LID-016"] },
-        { "text": "docs/planning/ directory was NOT created", "spec_ids": ["UPDATE-LID-017"] },
-        { "text": "CLAUDE.md contains the literal string '## LID Mode: Full' as a heading", "spec_ids": ["UPDATE-LID-008", "UPDATE-LID-009"] },
-        { "text": "CLAUDE.md contains the LID directives block referencing 'linked-intent-dev'", "spec_ids": ["UPDATE-LID-002", "UPDATE-LID-022"] },
-        { "text": "The agent's response summarizes what files were created or modified", "spec_ids": ["UPDATE-LID-027", "UPDATE-LID-028"] }
+        { "text": "docs/llds/ directory exists in the project", "spec_ids": ["LID-UPDATE-002", "LID-UPDATE-015"] },
+        { "text": "docs/specs/ directory exists in the project", "spec_ids": ["LID-UPDATE-002", "LID-UPDATE-015"] },
+        { "text": "docs/high-level-design.md exists, populated from the HLD template (not empty)", "spec_ids": ["LID-UPDATE-015", "LID-UPDATE-016"] },
+        { "text": "docs/planning/ directory was NOT created", "spec_ids": ["LID-UPDATE-017"] },
+        { "text": "CLAUDE.md contains a '## LID' block with a '- Mode: Full' bullet", "spec_ids": ["LID-UPDATE-008", "LID-UPDATE-009"] },
+        { "text": "CLAUDE.md contains the LID directives block referencing 'linked-intent-dev'", "spec_ids": ["LID-UPDATE-002", "LID-UPDATE-022"] },
+        { "text": "The agent's response summarizes what files were created or modified", "spec_ids": ["LID-UPDATE-027", "LID-UPDATE-028"] }
       ]
     },
     {
@@ -24,10 +24,10 @@
         { "path": "CLAUDE.md", "content": "# My Project\n\n## Conventions\n\n- Prefer functional style where possible.\n- Use TypeScript strict mode.\n- Don't add dependencies without discussion.\n" }
       ],
       "assertions": [
-        { "text": "CLAUDE.md still contains all of the original content ('# My Project', '## Conventions', and the three bullet points) unmodified", "spec_ids": ["UPDATE-LID-003"] },
-        { "text": "CLAUDE.md has the LID directives block appended (contains 'linked-intent-dev' or 'Linked-Intent Development')", "spec_ids": ["UPDATE-LID-003", "UPDATE-LID-022"] },
-        { "text": "CLAUDE.md contains the '## LID Mode:' heading", "spec_ids": ["UPDATE-LID-009"] },
-        { "text": "The agent's response explicitly summarizes which sections were added to CLAUDE.md", "spec_ids": ["UPDATE-LID-027"] }
+        { "text": "CLAUDE.md still contains all of the original content ('# My Project', '## Conventions', and the three bullet points) unmodified", "spec_ids": ["LID-UPDATE-003"] },
+        { "text": "CLAUDE.md has the LID directives block appended (contains 'linked-intent-dev' or 'Linked-Intent Development')", "spec_ids": ["LID-UPDATE-003", "LID-UPDATE-022"] },
+        { "text": "CLAUDE.md contains a '## LID' block with a '- Mode:' bullet", "spec_ids": ["LID-UPDATE-009"] },
+        { "text": "The agent's response explicitly summarizes which sections were added to CLAUDE.md", "spec_ids": ["LID-UPDATE-027"] }
       ]
     },
     {
@@ -35,14 +35,14 @@
       "eval_name": "idempotent-on-configured-project",
       "prompt": "Please set up LID in this project.",
       "files": [
-        { "path": "CLAUDE.md", "content": "# My Project\n\n## LID Mode: Full\n\n## Linked-Intent Development (MANDATORY)\n\n**Consult the `linked-intent-dev` skill for ALL code changes.** All changes flow through the arrow of intent in one direction:\n\n```\nHLD \u2192 LLDs \u2192 EARS \u2192 Tests \u2192 Code\n```\n" },
+        { "path": "CLAUDE.md", "content": "# My Project\n\n## LID\n- Mode: Full\n- Version: 1.2.0\n\n## Linked-Intent Development (MANDATORY)\n\n**Consult the `linked-intent-dev` skill for ALL code changes.** All changes flow through the arrow of intent in one direction:\n\n```\nHLD \u2192 LLDs \u2192 EARS \u2192 Tests \u2192 Code\n```\n" },
         { "path": "docs/high-level-design.md", "content": "# High-Level Design\n\n## Problem\n\n*(not yet specified)*\n" },
         { "path": "docs/llds/.gitkeep", "content": "" },
         { "path": "docs/specs/.gitkeep", "content": "" }
       ],
       "assertions": [
-        { "text": "No file changes were made (CLAUDE.md and existing docs are unmodified)", "spec_ids": ["UPDATE-LID-020"] },
-        { "text": "The agent's response informs the user what was detected (mode, directory status) rather than silently doing nothing", "spec_ids": ["UPDATE-LID-021", "UPDATE-LID-028"] }
+        { "text": "No file changes were made (CLAUDE.md and existing docs are unmodified)", "spec_ids": ["LID-UPDATE-020"] },
+        { "text": "The agent's response informs the user what was detected (mode, directory status) rather than silently doing nothing", "spec_ids": ["LID-UPDATE-021", "LID-UPDATE-028"] }
       ]
     }
   ]

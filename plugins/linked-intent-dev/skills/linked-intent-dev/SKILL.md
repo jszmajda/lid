@@ -19,20 +19,20 @@ This skill guides a structured linked-intent development workflow. LID's goal is
 
 If drift is detected, fix the docs first, then implement. A resumption check prevents one session's drift from being compounded into the next session's change.
 
-**Write docs as their fresh author.** Every HLD, LLD, and EARS spec produced by these phases must read as if authored fresh today, by someone who knew only the current intent and nothing of this conversation. As you draft or revise a doc, run the test on each line — would that fresh author put it on the page? Three residues fail it: narration of how the intent changed; meaning that only resolves for someone who was in this conversation; and answers or rebuttals that exist only because we discussed the question here. The keep-side is load-bearing too — rationale, considered alternatives, and constraints a fresh author would independently write stay; they are present intent, not residue. Record rejected alternatives and why in the LLD's Decisions & Alternatives table, not as asides in body prose. This is the *docs carry current intent* tenet.
+**Write docs as their fresh author.** Every HLD, LLD, and EARS spec produced by these phases must read as if authored fresh today, by someone who knew only the current intent and nothing of this conversation. As you draft or revise a doc, run the test on each line — would that fresh author put it on the page? Three residues fail it: narration of how the intent changed; meaning that only resolves for someone who was in this conversation; and answers or rebuttals that exist only because we discussed the question here. The keep-side is load-bearing too — rationale, considered alternatives, and constraints a fresh author would independently write stay; they are present intent, not residue. Record rejected alternatives and why in the LLD's Decisions & Alternatives table, not as asides in body prose. This is the *docs carry current intent* tenet. Write in the project's own domain language — name components, segments, and specs with the words the user and the codebase already use, not generic or LID-imposed labels. This is the *Speak the project's language* tenet.
 
 ## Mode-aware triggering
 
-Every LID project declares its mode in `CLAUDE.md` under a `## LID Mode:` heading. Defaults to Full if missing or malformed (surface a one-line warning).
+Every LID project declares its mode in `CLAUDE.md` under the `## LID` block's `- Mode:` bullet. Defaults to Full if the block or bullet is missing or malformed (surface a one-line warning).
 
 - **Full LID**: the skill triggers broadly — any prompt that could result in a code change is in scope.
-- **Scoped LID**: additionally checks whether the files or subsystems the prompt touches fall within the declared scope. Scope is declared in `CLAUDE.md` under a `## LID Scope` section (see `docs/llds/linked-intent-dev.md § Scope declaration format`) with include/exclude glob patterns. If every file the prompt touches is outside scope (in the exclude list, or not in the include list), the skill does not trigger. If any touched path is in scope, the skill triggers. For prompts that reference no specific paths, default to triggering and ask the user to confirm when ambiguous. When the `## LID Scope` section is missing or empty in a Scoped-mode project (misconfiguration), fall back to treating all prompts as in-scope and surface a warning suggesting `/update-lid` to declare scope.
+- **Scoped LID**: additionally checks whether the files or subsystems the prompt touches fall within the declared scope. Scope is declared in `CLAUDE.md` under a `## LID Scope` section (see `docs/intent/linked-intent-dev/core/core-design.md § Scope declaration format`) with include/exclude glob patterns. If every file the prompt touches is outside scope (in the exclude list, or not in the include list), the skill does not trigger. If any touched path is in scope, the skill triggers. For prompts that reference no specific paths, default to triggering and ask the user to confirm when ambiguous. When the `## LID Scope` section is missing or empty in a Scoped-mode project (misconfiguration), fall back to treating all prompts as in-scope and surface a warning suggesting `/update-lid` to declare scope.
 
 ## The six phases
 
 ### Phase 1 — HLD check (with bootstrap when needed)
 
-**First, check whether the project is LID-configured.** If CLAUDE.md has no LID directives AND no LID-shaped artifacts exist (no `docs/llds/` content, no `docs/specs/` content, no `docs/high-level-design.md`, no `docs/arrows/index.yaml`), this is a fresh project — the user invoked `/linked-intent-dev` with a description of what they want to build. Apply the `update-lid` skill's bootstrap branch as a sub-step: create `docs/llds/` and `docs/specs/`, create or append-to CLAUDE.md with LID directives, add `## LID Mode:` (default Full unless the user indicates Scoped). Read the `update-lid` skill's SKILL.md if you need details on the bootstrap behavior; the bootstrap is the same skill called inline, not a separate workflow.
+**First, check whether the project is LID-configured.** If CLAUDE.md has no LID directives AND no LID-shaped artifacts exist (no `docs/intent/` content, no `docs/high-level-design.md`, no `docs/arrows/index.yaml`), this is a fresh project — the user invoked `/linked-intent-dev` with a description of what they want to build. Apply the `update-lid` skill's bootstrap branch as a sub-step: create `docs/intent/`, create or append-to CLAUDE.md with LID directives, add the `## LID` block (`- Mode:` default Full unless the user indicates Scoped, `- Version:` set to the installed `linked-intent-dev` version). Read the `update-lid` skill's SKILL.md if you need details on the bootstrap behavior; the bootstrap is the same skill called inline, not a separate workflow.
 
 Once configured, proceed with the HLD check: does a top-level HLD exist at `docs/high-level-design.md`? Does it cover the domain of the change? If the change alters the project's architecture, update the HLD first. If no HLD exists (fresh project), draft one from the user's description.
 
@@ -48,13 +48,15 @@ See `references/hld-template.md` for standard HLD sections.
 
 ### Phase 2 — LLD check or draft
 
-Does an LLD exist for the intent component being changed?
+Does a leaf LLD exist for the intent component being changed?
 
 If not, draft one using the template at `references/lld-templates.md`.
 
-In complex projects multiple LLDs may look semantically relevant. Do not silently pick — surface the candidate LLDs with their scopes and ask the user which applies.
+The design layer is a recursive tree, and "HLD" and "LLD" are **roles by position**: the root is the HLD, the leaves are the LLDs that own EARS, and a component with enough internal depth to outgrow one doc is promoted to a **sub-HLD** — HLD-shaped for its subtree, owning no EARS of its own — with child components beneath it. Depth-2 (one HLD over a flat set of leaf LLDs) is the default; nesting is a triggered exception. So a single large LLD is a candidate for promotion to a sub-HLD, not automatically a smell — weigh promotion when a leaf outgrows itself rather than splitting reflexively.
 
-If an LLD exists, confirm coherence with the change and update as needed.
+In complex projects multiple LLDs may look semantically relevant. Do not silently pick — surface the candidate leaf LLDs with their scopes and ask the user which applies.
+
+If a leaf LLD exists, confirm coherence with the change and update as needed.
 
 After drafting or substantially revising an LLD, run an **LLD-level edge-case probe**: a list of "what happens when..." questions pointed at *this LLD's own gaps* — missing state transitions, unstated invariants, unspecified API error shapes, ordering assumptions inside the component. (Cross-component and cross-spec interactions come later in Phase 4, not here.) When a subagent is available, delegate the probe to the subagent for cleaner, less-biased coverage. Present the gap list; the user triages which gaps to fix in the LLD vs. defer as open questions.
 
@@ -124,7 +126,7 @@ Two layers at the end of Phase 6.
 
 *Soft-block* means the skill will not consider the change complete until these pass, and surfaces failures clearly. The user can override per the user-is-always-right tenet — LID is not a linter or CI gate. The skill makes the cost visible; the user decides.
 
-When the project declares a coherence-check script under `## LID Tooling` in `CLAUDE.md`, structural checks may be delegated to that script. Without a declaration, perform checks in-prompt. See `docs/llds/arrow-maintenance.md § Reference tooling` for the delegation rule.
+When the project declares a coherence-check script under `## LID Tooling` in `CLAUDE.md`, structural checks may be delegated to that script. Without a declaration, perform checks in-prompt. See `docs/intent/arrow-maintenance/arrow-maintenance-design.md § Reference tooling` for the delegation rule.
 
 **Semantic checks (agent judgment; surfaced, do not block):**
 
@@ -132,6 +134,14 @@ When the project declares a coherence-check script under `## LID Tooling` in `CL
 2. Does the updated LLD match the HLD's architecture?
 
 Re-read each adjacent level of the arrow for the changed segment and produce a short report: for each spec/LLD/HLD pair, either "consistent" with a one-line justification or "needs review" with a specific point of tension. Semantic findings are surfaced for user review but do not block — "match" at the prose level is judgment, not a theorem.
+
+## Decision docs
+
+Most design decisions are recorded as a row in the relevant LLD's Decisions & Alternatives table. A few earn a full **decision doc** — a standalone artifact laying out a decision's context, criteria, options, and selection at enough resolution that a future cold reader can re-run the judgment.
+
+Apply the test from the **landed** state, not the deliberation: *would a cold reader of the result find the choice non-obvious — question it, or be tempted to reverse it?* — not *was it hard to decide?* A decision that was contested while you worked but reads as obvious or native once it lands needs **neither a doc nor a row**; the structure documents itself, and recording a settled-obvious choice is the residue the *docs carry current intent* tenet strips. Add a **table row** when a cold reader would wonder "why this?" and a line settles it. Write a **full decision doc** only when the choice stays genuinely live — a reader would re-litigate it without the competing options and criteria. Decision docs are rare; a directory full of them is a smell.
+
+A decision doc lives in the owning node's `decisions/` directory (`docs/intent/<segment>/decisions/` for a segment-level decision, `docs/decisions/` for a project-level one), is owned by that node, and carries no EARS IDs. See `references/decision-doc-template.md` for structure, the earns-its-place heuristic, and the fit-verdict format.
 
 ## Cascade discipline
 
@@ -141,7 +151,9 @@ Re-read each adjacent level of the arrow for the changed segment and produce a s
 
 **Across segment boundaries, pause.** A change whose effect crosses into another LLD's territory is flagged; ask before propagating into the adjacent segment. Real LLDs are uneven; aggressive cross-boundary cascade propagates incoherence from under-specified regions into well-specified ones.
 
-Arrow segment boundaries are defined by the EARS spec ID prefix: specs sharing a `{FEATURE}` prefix are in the same segment. When two unrelated features would collide on a prefix, ask the user for a disambiguating namespace rather than silently coalescing.
+**A decision belongs where its substance lives.** When a decision's substance sits in one segment but implementing it cascades an obligation into a sibling segment, record the decision in the segment that owns its substance and note the sibling obligation as a cascade — not co-ownership. Only a decision whose *substance* genuinely spans siblings rises to their shared parent. (Example: a component's internal subprocess-split decision lives in that component's LLD even though it creates a contract a sibling component consumes — the sibling gets a cascade note, not co-ownership. Contrast: a decision that rewrites the EARS ID format the HLD itself defines has HLD-spanning substance and belongs at the root.)
+
+An arrow segment is the territory owned by one **leaf** LLD, and its boundary is the **leaf prefix** — the full root-to-leaf path that identifies the segment. Because EARS IDs are path-concatenated, the boundary check is a prefix comparison: specs sharing the leaf prefix are in the same segment; specs whose path diverges at any earlier point belong to a different segment. When two unrelated leaves would collide on a path prefix, ask the user to disambiguate the position rather than silently coalescing them.
 
 **HLD-originating cascade** fans out across every segment. Walk the affected LLDs in turn, pausing at each segment to confirm the change lands cleanly before cascading to that segment's specs, tests, and code.
 
@@ -149,7 +161,7 @@ Arrow segment boundaries are defined by the EARS spec ID prefix: specs sharing a
 
 **Cascade and inconsistent arrows.** Arrows are often inconsistent — mid-transition aborts, overlapping scoped arrows, partial cascades from prior sessions. When you notice, surface it; do not auto-repair.
 
-**Lifecycle events.** When cascade implies a split, merge, or rename of a segment, defer to the mechanics in `docs/llds/arrow-maintenance.md § Lifecycle Events`.
+**Lifecycle events.** When cascade implies a split, merge, or rename of a segment, defer to the mechanics in `docs/intent/arrow-maintenance/arrow-maintenance-design.md § Lifecycle Events`.
 
 ## Bug fixes
 
@@ -187,10 +199,11 @@ it('validates email format before submission', () => { ... });
 
 ## LID-on-LID exception
 
-Inside LID's own repository (when editing LID itself), `@spec` annotation direction inverts — `SKILL.md` bodies cannot host `@spec` without bending runtime behavior. Spec files carry the artifact pointer in their header; SKILL.md stays clean. This applies only inside the LID repo. See `docs/llds/linked-intent-dev.md § Spec-File Header Format` for the schema.
+Inside LID's own repository (when editing LID itself), `@spec` annotation direction inverts — `SKILL.md` bodies cannot host `@spec` without bending runtime behavior. Spec files carry the artifact pointer in their header; SKILL.md stays clean. This applies only inside the LID repo. See `docs/intent/linked-intent-dev/linked-intent-dev-design.md § Spec-File Header Format` for the schema.
 
 ## Reference files
 
 - `references/ears-syntax.md` — EARS syntax, spec ID format, scope disambiguation.
 - `references/lld-templates.md` — LLD structure template.
 - `references/hld-template.md` — HLD standard sections template.
+- `references/decision-doc-template.md` — decision-doc structure, the earns-its-place heuristic, and the fit-verdict format.

@@ -261,13 +261,13 @@ Create the formal traceability chain: specs → code → tests → arrow docs �
 
 **Step 5a: Write EARS specs per cluster.**
 
-For each cluster, create a spec file in `docs/specs/`. **Before writing the first spec file**, read the EARS syntax reference from the linked-intent-dev skill (`references/ears-syntax.md` in the linked-intent-dev plugin).
+For each cluster, create a `{segment-name}-specs.md` beside the segment's design doc in its node folder under `docs/intent/`. **Before writing the first spec file**, read the EARS syntax reference from the linked-intent-dev skill (`references/ears-syntax.md` in the linked-intent-dev plugin).
 
 Brownfield-specific guidance:
 - Most specs will be `[x]` (implemented) — the code already exists
 - Mark things that are broken or incomplete as `[ ]` (active gap)
 - Mark things the team explicitly doesn't want yet as `[D]` (deferred)
-- Use the cluster name as the spec ID prefix (e.g., `AUTH-CORE-001`)
+- Use the segment's **root-to-leaf path** as the spec ID prefix (path-concatenated IDs). At depth-2 this is just the segment name (e.g., `AUTH-001`); a leaf nested under a grouping node concatenates the path (e.g., a `runner` leaf under `prompt-eval` → `PEVAL-RUN-001`). The prefix *is* the segment's position in the design tree.
 - Write specs that describe what the code DOES, not what it SHOULD do
 
 **Step 5b: Add `@spec` annotations to code.**
@@ -276,7 +276,7 @@ For each spec, add `// @spec ID` comments to the implementing code and test file
 
 **Step 5c: Create arrow docs.**
 
-For each cluster, create `docs/arrows/{cluster-name}.md` using the arrow-doc-template from the arrow-maintenance skill. Populate:
+For each leaf segment, create an arrow doc at its **tree-mirrored path** under `docs/arrows/` — the path mirrors the segment's position in the design tree under `docs/intent/`. At depth-2 (the common flat case) this is `docs/arrows/{segment-name}.md`; a leaf nested under a grouping node lives at `docs/arrows/{group}/{leaf}.md`. Grouping (sub-HLD) nodes are directories, not arrow docs. Use the arrow-doc-template from the arrow-maintenance skill. Populate:
 - References: link to the LLD, spec file, test files, and code directories
 - EARS Coverage table: summarize spec counts and status
 - Key Findings: the most important things discovered during mapping
@@ -284,20 +284,42 @@ For each cluster, create `docs/arrows/{cluster-name}.md` using the arrow-doc-tem
 
 **Step 5d: Create `docs/arrows/index.yaml`.**
 
+Follow the schema in [index-schema.md](../../arrow-maintenance/references/index-schema.md). Each leaf segment gets an entry carrying `parent` (its grouping node, or null at the root level), `detail` pointing at its tree-mirrored arrow-doc path, status, and timestamps. Each grouping (sub-HLD) node gets an entry carrying its `children` list and no `detail`. A flat depth-2 mapping has every segment at the root level with `parent: null` and no children.
+
 ```yaml
 schema_version: 1
 last_updated: YYYY-MM-DD
 
 arrows:
-  cluster-name:
-    status: AUDITED  # or MAPPED if specs weren't verified against code
+  segment-name:               # a root-level leaf
+    status: AUDITED           # or MAPPED if specs weren't verified against code
+    parent: null              # null/omitted at the root level
     sampled: YYYY-MM-DD
-    audited: YYYY-MM-DD  # null if only MAPPED
+    audited: YYYY-MM-DD        # null if only MAPPED
+    audited_sha: <git-sha>     # git HEAD SHA at last audit; null if only MAPPED
     blocks: []
     blockedBy: []
-    detail: cluster-name.md
+    detail: segment-name.md    # tree-mirrored arrow-doc path
     next: "next action description"
-    drift: null  # or description of known divergence
+    drift: null               # or description of known divergence
+
+  # Only when a fine slicing nests leaves under a grouping node:
+  group-name:                  # a sub-HLD node — groups children, owns no segment
+    status: MAPPED
+    parent: null
+    children: [leaf-a, leaf-b]
+    detail: ../intent/group-name.md  # sub-HLD: detail is its design doc (it has no arrow doc)
+  leaf-a:
+    status: AUDITED
+    parent: group-name
+    sampled: YYYY-MM-DD
+    audited: YYYY-MM-DD
+    audited_sha: <git-sha>
+    blocks: []
+    blockedBy: []
+    detail: group-name/leaf-a.md   # tree-mirrored path under the group directory
+    next: "next action description"
+    drift: null
 ```
 
 ---

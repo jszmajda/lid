@@ -42,14 +42,14 @@ Users describe what they want audited in natural terms — "the login flow", "th
 
 For each scoped EARS, execute the six-step protocol in `references/audit-protocol.md`. Summary:
 
-1. **Resolve inputs**. EARS text from `docs/specs/`; implementing code from regions annotated with `@spec {EARS-ID}`. If no `@spec` points at the EARS, surface a coverage-gap entry and skip this EARS.
+1. **Resolve inputs**. EARS text resolved by grepping the ID across the project's `*-specs.md` files; implementing code from regions annotated with `@spec {EARS-ID}`. If no `@spec` points at the EARS, surface a coverage-gap entry and skip this EARS.
 2. **Strip leaky identifiers** from the code before the B-direction receives it — `@spec` annotations, EARS ID mentions, vocabulary-echoing identifiers, comments paraphrasing the EARS, test describe/it strings that echo EARS phrasing. See `references/audit-protocol.md §Stripping rules`. The B-direction session must not be able to reconstruct the EARS by reading it back out of the code.
 3. **Spawn N A-direction sessions** in parallel via `claude -p`. Each gets only the EARS text + a one-line codebase description. Task: produce naive implementation.
 4. **Spawn N B-direction sessions** in parallel via `claude -p`, concurrent with A-direction. Each gets only the stripped code + a one-line EARS-syntax reminder. Task: reconstruct the EARS.
 5. **Compare and classify**. Within-direction variance first (do A-runs agree with each other; do B-runs agree with each other); between-direction alignment second (does A's diff against real code correspond to B's diff against real EARS). Pick one of the six codes:
    - `BD-COHERENT`, `A-ONLY-DRIFT`, `B-ONLY-DRIFT`, `BIDIRECTIONAL-DRIFT`, `INCONSISTENT-BLIND` — see `references/classification-codes.md` for decision rules and worked examples.
    - `UNANNOTATABLE` — signpost for negative requirements with no production sink (see §Unwanted below).
-6. **Write the per-EARS audit record** to `docs/arrows/experiments/bidirectional-differential/{segment-name}/{EARS-ID}.md` using the template in `references/audit-report-template.md`. Re-running replaces the file (mutation, not accumulation — commit the old audit before re-running if before/after comparison matters).
+6. **Write the per-EARS audit record** to `docs/arrows/_experiments/bidirectional-differential/{segment-name}/{EARS-ID}.md` using the template in `references/audit-report-template.md`. Re-running replaces the file (mutation, not accumulation — commit the old audit before re-running if before/after comparison matters).
 
 **Default N=3.** If within-direction runs split 2-vs-1 on the classification-relevant dimension, re-run the affected direction at N=5 and classify on the majority. If the 5-run result still splits or the split shape changes between runs, classify `INCONSISTENT-BLIND` — don't force a code.
 
@@ -60,10 +60,10 @@ After per-EARS records are written, produce a **user summary** with per-arrow cl
 Audit records live in a reserved sibling subtree under arrow-maintenance's root:
 
 ```
-docs/arrows/experiments/bidirectional-differential/{segment-name}/{EARS-ID}.md
+docs/arrows/_experiments/bidirectional-differential/{segment-name}/{EARS-ID}.md
 ```
 
-**Do not mutate existing per-arrow overlay files** (`docs/arrows/{segment}.md`, `docs/arrows/index.yaml`). Experiment artifacts stay in the reserved subtree so arrow-maintenance's audit loop can ignore them. Retirement of this experiment is `rm -rf docs/arrows/experiments/bidirectional-differential/`; promotion is a single move to a core namespace.
+**Do not mutate existing per-arrow overlay files** (`docs/arrows/{segment}.md`, `docs/arrows/index.yaml`). Experiment artifacts stay in the reserved subtree so arrow-maintenance's audit loop can ignore them. Retirement of this experiment is `rm -rf docs/arrows/_experiments/bidirectional-differential/`; promotion is a single move to a core namespace.
 
 ## Repair path — cascade through the arrow
 
@@ -104,7 +104,7 @@ Absent keys use skill defaults. `--runs=N` on the command line overrides both pe
 | Arrow overlay presence, per-segment arrow docs, `index.yaml` | arrow-maintenance |
 | EARS authoring, `@spec` annotation placement, phase cascade | linked-intent-dev |
 | Phase 6 ambient trigger surface (this skill emits the prompt; linked-intent-dev sets the phase boundary) | bidirectional-differential (this skill) |
-| Audit record files under `docs/arrows/experiments/bidirectional-differential/` | bidirectional-differential (this skill) |
+| Audit record files under `docs/arrows/_experiments/bidirectional-differential/` | bidirectional-differential (this skill) |
 | Reconciliation cascade (validate → LLD → EARS → Tests → Code) | linked-intent-dev's phase workflow, triggered by the user after reviewing audit records |
 
 ## Subprocess invocation pattern

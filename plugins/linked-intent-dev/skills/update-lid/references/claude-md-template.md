@@ -2,14 +2,16 @@
 
 Append this block to the project's `CLAUDE.md` during bootstrap. Conditional-include rules (applied before writing to the user's file):
 
-- The `## LID Mode: {Full|Scoped}` heading is mandatory — substitute the user's chosen mode.
-- The `## LID Scope` section is **included only** when mode is Scoped. When mode is Full, omit the section entirely — its absence means "entire project in scope." For Scoped mode, substitute the user's declared include/exclude patterns into the bulleted lists below.
+- The `## LID` block is mandatory. Substitute the user's chosen mode into `- Mode:` and the `linked-intent-dev` plugin version the project's docs conform to into `- Version:`.
+- The `## LID Scope` section is **included only** when mode is Scoped, and follows the `## LID` block. When mode is Full, omit the section entirely — its absence means "entire project in scope." For Scoped mode, substitute the user's declared include/exclude patterns into the bulleted lists below.
 - The "Arrow of intent overlay" row in the navigation table is **included only** when `docs/arrows/` exists in the project root at invocation time. When absent, omit that row entirely — do not write the parenthetical note to the user's file.
 - The `## LID Tooling` section is **included only** when the project has tooling to declare (most commonly a coherence-check script). Omit entirely when there is nothing to declare; the skill falls back to in-prompt audit when the section is missing or empty.
 
 ---
 
-## LID Mode: {Full|Scoped}
+## LID
+- Mode: {Full|Scoped}
+- Version: {linked-intent-dev plugin version}
 
 ## LID Scope
 
@@ -41,17 +43,18 @@ Stop after each phase for user review. **Docs carry current intent, written to b
 | What you need | Where to look |
 |---|---|
 | High-level design | `docs/high-level-design.md` |
-| Low-level designs | `docs/llds/` |
-| EARS specs | `docs/specs/` |
+| Design tree (sub-HLDs, LLDs, their specs) | `docs/intent/` — one folder per node |
+| EARS specs | beside each design doc as `{node}-specs.md` in the node's folder under `docs/intent/` |
+| Decision docs | `docs/decisions/` (project-level) and `docs/intent/<segment>/decisions/` |
 | Arrow of intent overlay | `docs/arrows/index.yaml` and per-segment docs in `docs/arrows/` |
 
 ### Terminology
 
 - **HLD**: High-Level Design — single project-level doc at `docs/high-level-design.md`.
-- **LLD**: Low-Level Design — detailed component design doc in `docs/llds/`. One per intent component.
-- **EARS**: Easy Approach to Requirements Syntax — structured one-line requirements with globally unique IDs in `docs/specs/`. Markers: `[x]` implemented, `[ ]` active gap, `[D]` deferred.
+- **LLD**: Low-Level Design — detailed component design doc in `docs/intent/`. The design layer is a recursive tree: the root is the HLD, leaf LLDs own EARS, and a component deep enough to outgrow one doc becomes a sub-HLD (HLD-shaped, owns no EARS) with children beneath it. "HLD" and "LLD" are roles by position; depth-2 (one HLD over flat leaf LLDs) is the default.
+- **EARS**: Easy Approach to Requirements Syntax — structured one-line requirements beside each design doc as `{node}-specs.md` in the node's folder under `docs/intent/`. IDs are path-concatenated — the root-to-leaf path of the owning segment plus a number — so a prefix grep gathers a subtree. Markers: `[x]` implemented, `[ ]` active gap, `[D]` deferred.
 - **Arrow**: the unidirectional chain from vision to code (HLD → LLDs → EARS → Tests → Code). Strictly a DAG of intent.
-- **Arrow segment**: the territory owned by one LLD — the LLD itself plus the specs, tests, and code that cite its EARS IDs. Within-segment cascade is free; across-segment cascade pauses.
+- **Arrow segment**: the territory owned by one leaf LLD — the LLD itself plus the specs, tests, and code that cite its EARS IDs. The boundary is the leaf prefix. Within-segment cascade is free; across-segment cascade pauses.
 - **Cascade**: propagating a change downstream through the arrow so adjacent levels stay coherent.
 
 ### Code annotations

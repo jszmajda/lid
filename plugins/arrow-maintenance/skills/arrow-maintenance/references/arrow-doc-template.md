@@ -17,10 +17,10 @@ One-line description of what this domain covers.
 - docs/high-level-design.md (relevant section)
 
 ### LLD
-- docs/llds/{name}.md
+- docs/intent/{name}.md
 
 ### EARS
-- docs/specs/{name}-specs.md (spec count)
+- docs/intent/<segment-path>/{name}-specs.md (spec count)
 
 ### Tests
 - path/to/test/files
