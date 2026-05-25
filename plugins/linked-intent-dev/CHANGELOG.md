@@ -28,3 +28,47 @@ The recursive-intent-tree release: the design layer becomes a tree, EARS IDs bec
 
 ### Plugin versions
 `linked-intent-dev` 1.2.0 · `arrow-maintenance` 1.2.0 · `lid-experimental` 0.2.0
+
+## [1.1.0] — 2026-05-18
+
+The tool-agnostic release: LID stops being a Claude Code plugin and becomes a methodology any agentic coding tool can run, gets tenets as a first-class design element, and splits its core plugin into purpose-built skills.
+
+### Added
+- **Tenets as a first-class HLD element.** The HLD now carries explicit, named tenets — durable design principles that cascade downward and that the new `lid-coach` skill reviews a project against. (`b228892`, `7b51ff6`)
+- **`lid-coach` skill** (in `linked-intent-dev`) — a principle-review coach that checks a project's LID usage against its tenets, separate from the build workflow.
+- **Tool-agnostic positioning.** LID is reframed from "Claude Code plugin" to a methodology that runs on any agent reading per-project instructions. `docs/setup.md` ships per-tool adapter instructions for Cursor, Windsurf, GitHub Copilot, Aider, Continue, JetBrains Junie, Zed, Codex, Amp, Jules, Cline, and Pi, anchored on the cross-tool `AGENTS.md` convention. (`e268813`, `0caaaa0`, `b16049b`)
+- **`lid-experimental` plugin** (0.1.0) with the **`bidirectional-differential`** skill — round-trip EARS↔code coherence auditing via parallel fresh sessions; the home for more formal coherence-check research. (`b64c439`, `c1944e7`)
+- **`CONTRIBUTING.md`** and a `project-structure` arrow segment documenting the repo's own layout. (`ee7bd51`)
+- **Marketing site "How It Works"** — a five-panel trace of the arrow (HLD → LLD → EARS → Tests → Code) plus a tool chip row on the home quickstart. (`3958dcd`, `4696491`, `9e714f8`)
+
+### Changed
+- **`linked-intent-dev` plugin restructured into three skills** — the monolithic workflow split into `/linked-intent-dev` (build), `/update-lid` (reconcile drift / change modes, absorbing the former `lid-setup`), and `/lid-coach` (principle review). (`1eedf56`, `34ce002`)
+- **Truth tenet refined** — the fresh-author test, three residues, and a locality convention for where rationale lives. (`a2a1558`)
+- `arrow-maintenance` overlay bootstrapped on LID's own docs, reconciling `BIDIFF` markers. (`e2abcfc`)
+
+### Fixed
+- **Firefox Android DAG/hero paint bugs** on the marketing site — soft-reload rects failing to fill, traced to an SVG size threshold and nested-opacity compositing; resolved with uniform 70×30 rects and an attribute-only fill pattern. (`3c129a2`, and the `2382044`→`2aa4f33` diagnostic series)
+- Mobile overflow and hero SVG dark-mode rendering. (`66c25db`, `bf92642`)
+
+### Migration (v1.0 → v1.1)
+- **No doc or spec format changes.** Existing HLD, LLD, EARS, `@spec` annotations, and status markers stay valid — this release is additive at the methodology level.
+- **Re-install the plugins** to pick up the three-skill split. The former `lid-setup` command is gone; **bootstrapping and reconciliation now both run through `/update-lid`**. `/linked-intent-dev` (build) and the new `/lid-coach` (principle review) round out the set.
+- **Tenets are opt-in.** Existing projects gain nothing automatically; add a tenets section to your HLD when you want `/lid-coach` to review against it.
+- **Other agentic tools (new):** non-Claude-Code users follow `docs/setup.md` to ship an `AGENTS.md` (and any tool-specific adapter). Existing Claude Code users need no change.
+
+### Plugin versions
+`linked-intent-dev` 1.1.0 · `arrow-maintenance` 1.1.0 · `lid-experimental` 0.1.0
+
+## [1.0.0] — 2026-04-18
+
+First public release — LID as two installable Claude Code plugins, dogfooded on its own docs.
+
+### Added
+- **`linked-intent-dev` plugin** — the core design-before-code workflow (HLD → LLD → EARS → tests → code) as an auto-invoking skill, plus a `lid-setup` skill/command for bootstrapping LID into a project and an `update-lid` command for reconciling it.
+- **`arrow-maintenance` plugin** — the scaling overlay that tracks spec-to-code coherence across large projects via a `docs/arrows/` index, plus **`/map-codebase`** for brownfield bootstrap (mapping an existing codebase into LID).
+- **EARS specifications** with `@spec` code annotations and status markers (`[x]` implemented, `[ ]` gap, `[D]` deferred) for HLD→code traceability.
+- **LID-on-LID dogfooding** — the repo's own `docs/` tree authored as LID applied to LID, serving as the canonical reference.
+- **Marketing site** and the source-language positioning of the methodology.
+
+### Migration
+- First public release — nothing to migrate. Install with `/plugin marketplace add jszmajda/lid`, then `/plugin install linked-intent-dev@jszmajda-lid` and `/plugin install arrow-maintenance@jszmajda-lid`.
