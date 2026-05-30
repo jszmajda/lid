@@ -54,6 +54,8 @@ If not, draft one using the template at `references/lld-templates.md`.
 
 The design layer is a recursive tree, and "HLD" and "LLD" are **roles by position**: the root is the HLD, the leaves are the LLDs that own EARS, and a component with enough internal depth to outgrow one doc is promoted to a **sub-HLD** — HLD-shaped for its subtree, owning no EARS of its own — with child components beneath it. Depth-2 (one HLD over a flat set of leaf LLDs) is the default; nesting is a triggered exception. So a single large LLD is a candidate for promotion to a sub-HLD, not automatically a smell — weigh promotion when a leaf outgrows itself rather than splitting reflexively.
 
+When a node looks like it holds more than one thing, three shapes are possible, and which fits turns on the intent, not the size of the doc: if the parts share parent intent a parent doc should hold, **promote** to a sub-HLD over child leaves; if they are distinct intents with no shared parent, they are **sibling leaves**, each owning its own prefix; if they are merely categories of one intent — cross-cutting concerns (errors, security, performance, monitoring) or requirement *types* — keep one leaf and fold them into within-leaf `<LEAF>-<TYPE>` facets. The deciding test for promotion is whether the parent doc would carry real intent or just a table of contents: a categorical grouping is a taxonomy label, not a sub-HLD.
+
 In complex projects multiple LLDs may look semantically relevant. Do not silently pick — surface the candidate leaf LLDs with their scopes and ask the user which applies.
 
 If a leaf LLD exists, confirm coherence with the change and update as needed.

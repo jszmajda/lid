@@ -35,7 +35,7 @@ The `linked-intent-dev` workflow skill is pure prose — its `SKILL.md` is the a
 
 - `[x]` **LID-CORE-013**: When no leaf LLD exists for the intent component being changed, the system SHALL draft one before downstream work.
 - `[x]` **LID-CORE-014**: When more than one existing LLD is semantically relevant to a change, the system SHALL surface the candidate leaf LLDs with their scopes and ask the user which applies rather than silently selecting one.
-- `[x]` **LID-CORE-015**: When a leaf LLD outgrows a single document, the system SHALL weigh promoting it to a sub-HLD (HLD-shaped, owning no EARS) with child components, rather than treating its size as automatically a defect.
+- `[x]` **LID-CORE-015**: When a node appears to hold more than one intent, the system SHALL choose its shape by the kind of multiplicity rather than by document size — promoting to a sub-HLD (HLD-shaped, owning no EARS) when the parts share parent intent a parent doc should hold, keeping them as sibling leaf LLDs when they are distinct intents with no shared parent, and folding them into within-leaf type/area facets of one leaf when they are merely categories or requirement types of a single intent.
 - `[x]` **LID-CORE-016**: After drafting or substantially revising an LLD, the system SHALL run an LLD-level edge-case probe targeting that LLD's own internal gaps and present the gap list for the user to triage.
 
 ## Phase 3 — EARS Spec Draft or Update
