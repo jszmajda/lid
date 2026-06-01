@@ -1,0 +1,39 @@
+{
+  "eval_id": 4,
+  "eval_name": "reconcile-surfaces-structural-markers-at-current-version",
+  "config": "without_skill",
+  "score": "4/5",
+  "expectations": [
+    {
+      "text": "The agent surfaces that docs/intent/orders/ holds more than its <node>-design.md + <node>-specs.md pair (the extra orders-refund-design.md / orders-refund-specs.md files), flagging it as an LLD not yet relocated into its own node folder",
+      "passed": true,
+      "evidence": "Baseline AUTO-APPLIED: payments prefix collapsed to \"PAY\", orders/ promoted into refund/ + lifecycle/ subfolders, IDs renamed (ORDER-001→ORDER-LIFECYCLE-001 etc.). It identified the markers (assertions 1-4 ok) but FAILED assertion 5 — it silently rewrote files instead of surfacing proposals for confirmation. This is the one clean skill discriminator: the skill enforces propose-don’t-auto-resolve."
+    },
+    {
+      "text": "For the overloaded orders folder, the agent recommends a concrete resolution (e.g. promote the refund LLD into its own child folder docs/intent/orders/order-refund/, making orders a sub-HLD)",
+      "passed": true,
+      "evidence": "Baseline AUTO-APPLIED: payments prefix collapsed to \"PAY\", orders/ promoted into refund/ + lifecycle/ subfolders, IDs renamed (ORDER-001→ORDER-LIFECYCLE-001 etc.). It identified the markers (assertions 1-4 ok) but FAILED assertion 5 — it silently rewrote files instead of surfacing proposals for confirmation. This is the one clean skill discriminator: the skill enforces propose-don’t-auto-resolve."
+    },
+    {
+      "text": "The agent also surfaces that docs/intent/payments/payments-design.md carries a 'prefix:' array ([PAY, FEE]) as an unresolved marker, and recommends a resolution (collapse into <LEAF>-<TYPE> facets, promote, or split)",
+      "passed": true,
+      "evidence": "Baseline AUTO-APPLIED: payments prefix collapsed to \"PAY\", orders/ promoted into refund/ + lifecycle/ subfolders, IDs renamed (ORDER-001→ORDER-LIFECYCLE-001 etc.). It identified the markers (assertions 1-4 ok) but FAILED assertion 5 — it silently rewrote files instead of surfacing proposals for confirmation. This is the one clean skill discriminator: the skill enforces propose-don’t-auto-resolve."
+    },
+    {
+      "text": "The agent surfaces both markers even though the project's '- Version:' already equals the installed version (drift detected independently of version lag)",
+      "passed": true,
+      "evidence": "Baseline AUTO-APPLIED: payments prefix collapsed to \"PAY\", orders/ promoted into refund/ + lifecycle/ subfolders, IDs renamed (ORDER-001→ORDER-LIFECYCLE-001 etc.). It identified the markers (assertions 1-4 ok) but FAILED assertion 5 — it silently rewrote files instead of surfacing proposals for confirmation. This is the one clean skill discriminator: the skill enforces propose-don’t-auto-resolve."
+    },
+    {
+      "text": "The agent surfaces these as proposed updates requiring confirmation rather than silently rewriting the files or silently leaving the markers unmentioned",
+      "passed": false,
+      "evidence": "Baseline AUTO-APPLIED: payments prefix collapsed to \"PAY\", orders/ promoted into refund/ + lifecycle/ subfolders, IDs renamed (ORDER-001→ORDER-LIFECYCLE-001 etc.). It identified the markers (assertions 1-4 ok) but FAILED assertion 5 — it silently rewrote files instead of surfacing proposals for confirmation. This is the one clean skill discriminator: the skill enforces propose-don’t-auto-resolve."
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 1,
+    "total": 5,
+    "pass_rate": 0.8
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "eval_id": 5,
+  "eval_name": "version-walk-advances-on-deferred-judgment-step",
+  "config": "with_skill",
+  "score": "4/4",
+  "expectations": [
+    {
+      "text": "CLAUDE.md's '- Version:' bullet has been advanced to 1.2.0 even though a structural judgment step was deferred (the version is NOT left pinned at 1.1.0)",
+      "passed": true,
+      "evidence": "CLAUDE.md \"- Version:\" advanced to 1.2.0 (not pinned at 1.1.0) despite deferral; billing-design.md still \"prefix: [BILL, INVOICE]\" (deferred marker kept); report names the deferred array + recommends a resolution + notes re-surface on next /update-lid. KEY LID-UPDATE-043/044 check."
+    },
+    {
+      "text": "The agent's report explicitly names the deferred/outstanding item — the 'prefix:' array ([BILL, INVOICE]) on docs/intent/billing/billing-design.md — as a persisting marker still to resolve",
+      "passed": true,
+      "evidence": "CLAUDE.md \"- Version:\" advanced to 1.2.0 (not pinned at 1.1.0) despite deferral; billing-design.md still \"prefix: [BILL, INVOICE]\" (deferred marker kept); report names the deferred array + recommends a resolution + notes re-surface on next /update-lid. KEY LID-UPDATE-043/044 check."
+    },
+    {
+      "text": "The agent recommended a resolution for the deferred prefix array (collapse into <LEAF>-<TYPE> facets, promote, or split) rather than leaving it unmentioned",
+      "passed": true,
+      "evidence": "CLAUDE.md \"- Version:\" advanced to 1.2.0 (not pinned at 1.1.0) despite deferral; billing-design.md still \"prefix: [BILL, INVOICE]\" (deferred marker kept); report names the deferred array + recommends a resolution + notes re-surface on next /update-lid. KEY LID-UPDATE-043/044 check."
+    },
+    {
+      "text": "The agent did NOT silently rewrite or auto-resolve the prefix array — docs/intent/billing/billing-design.md still contains 'prefix: [BILL, INVOICE]'",
+      "passed": true,
+      "evidence": "CLAUDE.md \"- Version:\" advanced to 1.2.0 (not pinned at 1.1.0) despite deferral; billing-design.md still \"prefix: [BILL, INVOICE]\" (deferred marker kept); report names the deferred array + recommends a resolution + notes re-surface on next /update-lid. KEY LID-UPDATE-043/044 check."
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "total": 4,
+    "pass_rate": 1
+  }
+}

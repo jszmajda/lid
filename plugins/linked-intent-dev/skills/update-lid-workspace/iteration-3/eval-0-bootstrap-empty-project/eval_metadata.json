@@ -1,0 +1,54 @@
+{
+  "eval_id": 0,
+  "eval_name": "bootstrap-empty-project",
+  "prompt": "I have an empty project directory and want to start using linked-intent development on it. Please set it up. Use Full LID.",
+  "assertions": [
+    {
+      "text": "docs/intent/ directory exists in the project",
+      "spec_ids": [
+        "LID-UPDATE-002",
+        "LID-UPDATE-015"
+      ]
+    },
+    {
+      "text": "docs/specs/ directory was NOT created (specs live inside node folders under docs/intent/, not in a separate top-level directory)",
+      "spec_ids": [
+        "LID-UPDATE-015"
+      ]
+    },
+    {
+      "text": "docs/high-level-design.md exists, populated from the HLD template (not empty)",
+      "spec_ids": [
+        "LID-UPDATE-015",
+        "LID-UPDATE-016"
+      ]
+    },
+    {
+      "text": "docs/planning/ directory was NOT created",
+      "spec_ids": [
+        "LID-UPDATE-017"
+      ]
+    },
+    {
+      "text": "CLAUDE.md contains a bare '## LID' heading followed by a '- Mode: Full' bullet (mode is a bullet, not merged into the heading)",
+      "spec_ids": [
+        "LID-UPDATE-008",
+        "LID-UPDATE-009"
+      ]
+    },
+    {
+      "text": "CLAUDE.md contains the LID directives block referencing 'linked-intent-dev'",
+      "spec_ids": [
+        "LID-UPDATE-002",
+        "LID-UPDATE-022"
+      ]
+    },
+    {
+      "text": "The agent's response summarizes what files were created or modified",
+      "spec_ids": [
+        "LID-UPDATE-027",
+        "LID-UPDATE-028"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,49 @@
+{
+  "eval_id": 0,
+  "eval_name": "bootstrap-empty-project",
+  "config": "without_skill",
+  "score": "7/7",
+  "expectations": [
+    {
+      "text": "docs/intent/ directory exists in the project",
+      "passed": true,
+      "evidence": "Same end state (docs/intent/, no docs/specs|planning, HLD 50 lines, bare ## LID + Mode bullet). Note: baseline produced LID-1.2.0-specific structure — sandbox sits inside the LID repo, so conventions were readable (contamination)."
+    },
+    {
+      "text": "docs/specs/ directory was NOT created (specs live inside node folders under docs/intent/, not in a separate top-level directory)",
+      "passed": true,
+      "evidence": "Same end state (docs/intent/, no docs/specs|planning, HLD 50 lines, bare ## LID + Mode bullet). Note: baseline produced LID-1.2.0-specific structure — sandbox sits inside the LID repo, so conventions were readable (contamination)."
+    },
+    {
+      "text": "docs/high-level-design.md exists, populated from the HLD template (not empty)",
+      "passed": true,
+      "evidence": "Same end state (docs/intent/, no docs/specs|planning, HLD 50 lines, bare ## LID + Mode bullet). Note: baseline produced LID-1.2.0-specific structure — sandbox sits inside the LID repo, so conventions were readable (contamination)."
+    },
+    {
+      "text": "docs/planning/ directory was NOT created",
+      "passed": true,
+      "evidence": "Same end state (docs/intent/, no docs/specs|planning, HLD 50 lines, bare ## LID + Mode bullet). Note: baseline produced LID-1.2.0-specific structure — sandbox sits inside the LID repo, so conventions were readable (contamination)."
+    },
+    {
+      "text": "CLAUDE.md contains a bare '## LID' heading followed by a '- Mode: Full' bullet (mode is a bullet, not merged into the heading)",
+      "passed": true,
+      "evidence": "Same end state (docs/intent/, no docs/specs|planning, HLD 50 lines, bare ## LID + Mode bullet). Note: baseline produced LID-1.2.0-specific structure — sandbox sits inside the LID repo, so conventions were readable (contamination)."
+    },
+    {
+      "text": "CLAUDE.md contains the LID directives block referencing 'linked-intent-dev'",
+      "passed": true,
+      "evidence": "Same end state (docs/intent/, no docs/specs|planning, HLD 50 lines, bare ## LID + Mode bullet). Note: baseline produced LID-1.2.0-specific structure — sandbox sits inside the LID repo, so conventions were readable (contamination)."
+    },
+    {
+      "text": "The agent's response summarizes what files were created or modified",
+      "passed": true,
+      "evidence": "Same end state (docs/intent/, no docs/specs|planning, HLD 50 lines, bare ## LID + Mode bullet). Note: baseline produced LID-1.2.0-specific structure — sandbox sits inside the LID repo, so conventions were readable (contamination)."
+    }
+  ],
+  "summary": {
+    "passed": 7,
+    "failed": 0,
+    "total": 7,
+    "pass_rate": 1
+  }
+}

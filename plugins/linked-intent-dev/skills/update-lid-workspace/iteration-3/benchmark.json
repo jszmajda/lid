@@ -1,0 +1,544 @@
+{
+  "metadata": {
+    "skill_name": "update-lid",
+    "skill_path": "<path/to/skill>",
+    "executor_model": "<model-name>",
+    "analyzer_model": "<model-name>",
+    "timestamp": "2026-06-01T00:22:09Z",
+    "evals_run": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "runs_per_configuration": 3
+  },
+  "runs": [
+    {
+      "eval_id": 0,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 7,
+        "failed": 0,
+        "total": 7,
+        "time_seconds": 102.8,
+        "tokens": 35594,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "docs/intent/ directory exists in the project",
+          "passed": true,
+          "evidence": "docs/intent/ created; docs/specs/ & docs/planning/ absent; HLD populated (47 lines); CLAUDE.md has bare \"## LID\" + \"- Mode: Full\" + linked-intent-dev directives."
+        },
+        {
+          "text": "docs/specs/ directory was NOT created (specs live inside node folders under docs/intent/, not in a separate top-level directory)",
+          "passed": true,
+          "evidence": "docs/intent/ created; docs/specs/ & docs/planning/ absent; HLD populated (47 lines); CLAUDE.md has bare \"## LID\" + \"- Mode: Full\" + linked-intent-dev directives."
+        },
+        {
+          "text": "docs/high-level-design.md exists, populated from the HLD template (not empty)",
+          "passed": true,
+          "evidence": "docs/intent/ created; docs/specs/ & docs/planning/ absent; HLD populated (47 lines); CLAUDE.md has bare \"## LID\" + \"- Mode: Full\" + linked-intent-dev directives."
+        },
+        {
+          "text": "docs/planning/ directory was NOT created",
+          "passed": true,
+          "evidence": "docs/intent/ created; docs/specs/ & docs/planning/ absent; HLD populated (47 lines); CLAUDE.md has bare \"## LID\" + \"- Mode: Full\" + linked-intent-dev directives."
+        },
+        {
+          "text": "CLAUDE.md contains a bare '## LID' heading followed by a '- Mode: Full' bullet (mode is a bullet, not merged into the heading)",
+          "passed": true,
+          "evidence": "docs/intent/ created; docs/specs/ & docs/planning/ absent; HLD populated (47 lines); CLAUDE.md has bare \"## LID\" + \"- Mode: Full\" + linked-intent-dev directives."
+        },
+        {
+          "text": "CLAUDE.md contains the LID directives block referencing 'linked-intent-dev'",
+          "passed": true,
+          "evidence": "docs/intent/ created; docs/specs/ & docs/planning/ absent; HLD populated (47 lines); CLAUDE.md has bare \"## LID\" + \"- Mode: Full\" + linked-intent-dev directives."
+        },
+        {
+          "text": "The agent's response summarizes what files were created or modified",
+          "passed": true,
+          "evidence": "docs/intent/ created; docs/specs/ & docs/planning/ absent; HLD populated (47 lines); CLAUDE.md has bare \"## LID\" + \"- Mode: Full\" + linked-intent-dev directives."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 113.9,
+        "tokens": 37929,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "CLAUDE.md still contains all of the original content ('# My Project', '## Conventions', and the three bullet points) unmodified",
+          "passed": true,
+          "evidence": "Original \"# My Project\"/\"## Conventions\"/\"functional style\" all preserved; LID directives appended; \"- Mode:\" bullet present."
+        },
+        {
+          "text": "CLAUDE.md has the LID directives block appended (contains 'linked-intent-dev' or 'Linked-Intent Development')",
+          "passed": true,
+          "evidence": "Original \"# My Project\"/\"## Conventions\"/\"functional style\" all preserved; LID directives appended; \"- Mode:\" bullet present."
+        },
+        {
+          "text": "CLAUDE.md contains a '## LID' block with a '- Mode:' bullet",
+          "passed": true,
+          "evidence": "Original \"# My Project\"/\"## Conventions\"/\"functional style\" all preserved; LID directives appended; \"- Mode:\" bullet present."
+        },
+        {
+          "text": "The agent's response explicitly summarizes which sections were added to CLAUDE.md",
+          "passed": true,
+          "evidence": "Original \"# My Project\"/\"## Conventions\"/\"functional style\" all preserved; LID directives appended; \"- Mode:\" bullet present."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 2,
+        "failed": 0,
+        "total": 2,
+        "time_seconds": 85.9,
+        "tokens": 30484,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "No file changes were made (CLAUDE.md and existing docs are unmodified)",
+          "passed": true,
+          "evidence": "CLAUDE.md sha unchanged from seed (eb59995a07); only 2 files, no modifications; report informs what was detected. (Surfaced directives-truncation as drift but correctly did not apply.)"
+        },
+        {
+          "text": "The agent's response informs the user what was detected (mode, version, directory status) rather than silently doing nothing",
+          "passed": true,
+          "evidence": "CLAUDE.md sha unchanged from seed (eb59995a07); only 2 files, no modifications; report informs what was detected. (Surfaced directives-truncation as drift but correctly did not apply.)"
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 66.4,
+        "tokens": 29053,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "CLAUDE.md now contains a bare '## LID' heading on its own line (the heading is no longer the malformed '## LID Mode: Full')",
+          "passed": true,
+          "evidence": "CLAUDE.md normalized in place: bare \"## LID\" (1), \"- Mode: Full\" (1), \"- Version: 1.2.0\" retained, exactly ONE LID block (no duplicate). Report describes the in-place normalization. KEY LID-UPDATE-004 check."
+        },
+        {
+          "text": "CLAUDE.md now contains a standalone '- Mode: Full' bullet under the '## LID' heading",
+          "passed": true,
+          "evidence": "CLAUDE.md normalized in place: bare \"## LID\" (1), \"- Mode: Full\" (1), \"- Version: 1.2.0\" retained, exactly ONE LID block (no duplicate). Report describes the in-place normalization. KEY LID-UPDATE-004 check."
+        },
+        {
+          "text": "CLAUDE.md still has the '- Version: 1.2.0' bullet and exactly ONE LID block (no duplicate '## LID' block was appended below the malformed one)",
+          "passed": true,
+          "evidence": "CLAUDE.md normalized in place: bare \"## LID\" (1), \"- Mode: Full\" (1), \"- Version: 1.2.0\" retained, exactly ONE LID block (no duplicate). Report describes the in-place normalization. KEY LID-UPDATE-004 check."
+        },
+        {
+          "text": "The agent's response reports that it normalized the malformed LID block in place",
+          "passed": true,
+          "evidence": "CLAUDE.md normalized in place: bare \"## LID\" (1), \"- Mode: Full\" (1), \"- Version: 1.2.0\" retained, exactly ONE LID block (no duplicate). Report describes the in-place normalization. KEY LID-UPDATE-004 check."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 4,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 5,
+        "failed": 0,
+        "total": 5,
+        "time_seconds": 99.9,
+        "tokens": 34064,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "The agent surfaces that docs/intent/orders/ holds more than its <node>-design.md + <node>-specs.md pair (the extra orders-refund-design.md / orders-refund-specs.md files), flagging it as an LLD not yet relocated into its own node folder",
+          "passed": true,
+          "evidence": "payments-design.md still \"prefix: [PAY, FEE]\" (array intact); orders/ still holds orders-refund-design.md + orders-refund-specs.md (refund NOT relocated). Report surfaced BOTH markers with recommendations (collapse/split; promote refund to child folder) at current version, as proposals \u2014 did not rewrite. All 5 pass."
+        },
+        {
+          "text": "For the overloaded orders folder, the agent recommends a concrete resolution (e.g. promote the refund LLD into its own child folder docs/intent/orders/order-refund/, making orders a sub-HLD)",
+          "passed": true,
+          "evidence": "payments-design.md still \"prefix: [PAY, FEE]\" (array intact); orders/ still holds orders-refund-design.md + orders-refund-specs.md (refund NOT relocated). Report surfaced BOTH markers with recommendations (collapse/split; promote refund to child folder) at current version, as proposals \u2014 did not rewrite. All 5 pass."
+        },
+        {
+          "text": "The agent also surfaces that docs/intent/payments/payments-design.md carries a 'prefix:' array ([PAY, FEE]) as an unresolved marker, and recommends a resolution (collapse into <LEAF>-<TYPE> facets, promote, or split)",
+          "passed": true,
+          "evidence": "payments-design.md still \"prefix: [PAY, FEE]\" (array intact); orders/ still holds orders-refund-design.md + orders-refund-specs.md (refund NOT relocated). Report surfaced BOTH markers with recommendations (collapse/split; promote refund to child folder) at current version, as proposals \u2014 did not rewrite. All 5 pass."
+        },
+        {
+          "text": "The agent surfaces both markers even though the project's '- Version:' already equals the installed version (drift detected independently of version lag)",
+          "passed": true,
+          "evidence": "payments-design.md still \"prefix: [PAY, FEE]\" (array intact); orders/ still holds orders-refund-design.md + orders-refund-specs.md (refund NOT relocated). Report surfaced BOTH markers with recommendations (collapse/split; promote refund to child folder) at current version, as proposals \u2014 did not rewrite. All 5 pass."
+        },
+        {
+          "text": "The agent surfaces these as proposed updates requiring confirmation rather than silently rewriting the files or silently leaving the markers unmentioned",
+          "passed": true,
+          "evidence": "payments-design.md still \"prefix: [PAY, FEE]\" (array intact); orders/ still holds orders-refund-design.md + orders-refund-specs.md (refund NOT relocated). Report surfaced BOTH markers with recommendations (collapse/split; promote refund to child folder) at current version, as proposals \u2014 did not rewrite. All 5 pass."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 5,
+      "configuration": "with_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 71.2,
+        "tokens": 28133,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "CLAUDE.md's '- Version:' bullet has been advanced to 1.2.0 even though a structural judgment step was deferred (the version is NOT left pinned at 1.1.0)",
+          "passed": true,
+          "evidence": "CLAUDE.md \"- Version:\" advanced to 1.2.0 (not pinned at 1.1.0) despite deferral; billing-design.md still \"prefix: [BILL, INVOICE]\" (deferred marker kept); report names the deferred array + recommends a resolution + notes re-surface on next /update-lid. KEY LID-UPDATE-043/044 check."
+        },
+        {
+          "text": "The agent's report explicitly names the deferred/outstanding item \u2014 the 'prefix:' array ([BILL, INVOICE]) on docs/intent/billing/billing-design.md \u2014 as a persisting marker still to resolve",
+          "passed": true,
+          "evidence": "CLAUDE.md \"- Version:\" advanced to 1.2.0 (not pinned at 1.1.0) despite deferral; billing-design.md still \"prefix: [BILL, INVOICE]\" (deferred marker kept); report names the deferred array + recommends a resolution + notes re-surface on next /update-lid. KEY LID-UPDATE-043/044 check."
+        },
+        {
+          "text": "The agent recommended a resolution for the deferred prefix array (collapse into <LEAF>-<TYPE> facets, promote, or split) rather than leaving it unmentioned",
+          "passed": true,
+          "evidence": "CLAUDE.md \"- Version:\" advanced to 1.2.0 (not pinned at 1.1.0) despite deferral; billing-design.md still \"prefix: [BILL, INVOICE]\" (deferred marker kept); report names the deferred array + recommends a resolution + notes re-surface on next /update-lid. KEY LID-UPDATE-043/044 check."
+        },
+        {
+          "text": "The agent did NOT silently rewrite or auto-resolve the prefix array \u2014 docs/intent/billing/billing-design.md still contains 'prefix: [BILL, INVOICE]'",
+          "passed": true,
+          "evidence": "CLAUDE.md \"- Version:\" advanced to 1.2.0 (not pinned at 1.1.0) despite deferral; billing-design.md still \"prefix: [BILL, INVOICE]\" (deferred marker kept); report names the deferred array + recommends a resolution + notes re-surface on next /update-lid. KEY LID-UPDATE-043/044 check."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 0,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 7,
+        "failed": 0,
+        "total": 7,
+        "time_seconds": 108.3,
+        "tokens": 45144,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "docs/intent/ directory exists in the project",
+          "passed": true,
+          "evidence": "Same end state (docs/intent/, no docs/specs|planning, HLD 50 lines, bare ## LID + Mode bullet). Note: baseline produced LID-1.2.0-specific structure \u2014 sandbox sits inside the LID repo, so conventions were readable (contamination)."
+        },
+        {
+          "text": "docs/specs/ directory was NOT created (specs live inside node folders under docs/intent/, not in a separate top-level directory)",
+          "passed": true,
+          "evidence": "Same end state (docs/intent/, no docs/specs|planning, HLD 50 lines, bare ## LID + Mode bullet). Note: baseline produced LID-1.2.0-specific structure \u2014 sandbox sits inside the LID repo, so conventions were readable (contamination)."
+        },
+        {
+          "text": "docs/high-level-design.md exists, populated from the HLD template (not empty)",
+          "passed": true,
+          "evidence": "Same end state (docs/intent/, no docs/specs|planning, HLD 50 lines, bare ## LID + Mode bullet). Note: baseline produced LID-1.2.0-specific structure \u2014 sandbox sits inside the LID repo, so conventions were readable (contamination)."
+        },
+        {
+          "text": "docs/planning/ directory was NOT created",
+          "passed": true,
+          "evidence": "Same end state (docs/intent/, no docs/specs|planning, HLD 50 lines, bare ## LID + Mode bullet). Note: baseline produced LID-1.2.0-specific structure \u2014 sandbox sits inside the LID repo, so conventions were readable (contamination)."
+        },
+        {
+          "text": "CLAUDE.md contains a bare '## LID' heading followed by a '- Mode: Full' bullet (mode is a bullet, not merged into the heading)",
+          "passed": true,
+          "evidence": "Same end state (docs/intent/, no docs/specs|planning, HLD 50 lines, bare ## LID + Mode bullet). Note: baseline produced LID-1.2.0-specific structure \u2014 sandbox sits inside the LID repo, so conventions were readable (contamination)."
+        },
+        {
+          "text": "CLAUDE.md contains the LID directives block referencing 'linked-intent-dev'",
+          "passed": true,
+          "evidence": "Same end state (docs/intent/, no docs/specs|planning, HLD 50 lines, bare ## LID + Mode bullet). Note: baseline produced LID-1.2.0-specific structure \u2014 sandbox sits inside the LID repo, so conventions were readable (contamination)."
+        },
+        {
+          "text": "The agent's response summarizes what files were created or modified",
+          "passed": true,
+          "evidence": "Same end state (docs/intent/, no docs/specs|planning, HLD 50 lines, bare ## LID + Mode bullet). Note: baseline produced LID-1.2.0-specific structure \u2014 sandbox sits inside the LID repo, so conventions were readable (contamination)."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 1,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 113.7,
+        "tokens": 51753,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "CLAUDE.md still contains all of the original content ('# My Project', '## Conventions', and the three bullet points) unmodified",
+          "passed": true,
+          "evidence": "Same: original content preserved, LID appended, Mode bullet present (baseline contamination applies)."
+        },
+        {
+          "text": "CLAUDE.md has the LID directives block appended (contains 'linked-intent-dev' or 'Linked-Intent Development')",
+          "passed": true,
+          "evidence": "Same: original content preserved, LID appended, Mode bullet present (baseline contamination applies)."
+        },
+        {
+          "text": "CLAUDE.md contains a '## LID' block with a '- Mode:' bullet",
+          "passed": true,
+          "evidence": "Same: original content preserved, LID appended, Mode bullet present (baseline contamination applies)."
+        },
+        {
+          "text": "The agent's response explicitly summarizes which sections were added to CLAUDE.md",
+          "passed": true,
+          "evidence": "Same: original content preserved, LID appended, Mode bullet present (baseline contamination applies)."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 2,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 2,
+        "failed": 0,
+        "total": 2,
+        "time_seconds": 74.3,
+        "tokens": 32712,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "No file changes were made (CLAUDE.md and existing docs are unmodified)",
+          "passed": true,
+          "evidence": "CLAUDE.md sha unchanged; informed user it was already configured. Idempotent."
+        },
+        {
+          "text": "The agent's response informs the user what was detected (mode, version, directory status) rather than silently doing nothing",
+          "passed": true,
+          "evidence": "CLAUDE.md sha unchanged; informed user it was already configured. Idempotent."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 3,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 90.9,
+        "tokens": 35824,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "CLAUDE.md now contains a bare '## LID' heading on its own line (the heading is no longer the malformed '## LID Mode: Full')",
+          "passed": true,
+          "evidence": "Baseline report also normalized to canonical block + restored directives. A capable agent tidied the obviously-malformed heading without the skill (and could read repo conventions). Non-discriminating here."
+        },
+        {
+          "text": "CLAUDE.md now contains a standalone '- Mode: Full' bullet under the '## LID' heading",
+          "passed": true,
+          "evidence": "Baseline report also normalized to canonical block + restored directives. A capable agent tidied the obviously-malformed heading without the skill (and could read repo conventions). Non-discriminating here."
+        },
+        {
+          "text": "CLAUDE.md still has the '- Version: 1.2.0' bullet and exactly ONE LID block (no duplicate '## LID' block was appended below the malformed one)",
+          "passed": true,
+          "evidence": "Baseline report also normalized to canonical block + restored directives. A capable agent tidied the obviously-malformed heading without the skill (and could read repo conventions). Non-discriminating here."
+        },
+        {
+          "text": "The agent's response reports that it normalized the malformed LID block in place",
+          "passed": true,
+          "evidence": "Baseline report also normalized to canonical block + restored directives. A capable agent tidied the obviously-malformed heading without the skill (and could read repo conventions). Non-discriminating here."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 4,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 0.8,
+        "passed": 4,
+        "failed": 1,
+        "total": 5,
+        "time_seconds": 153.2,
+        "tokens": 48170,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "The agent surfaces that docs/intent/orders/ holds more than its <node>-design.md + <node>-specs.md pair (the extra orders-refund-design.md / orders-refund-specs.md files), flagging it as an LLD not yet relocated into its own node folder",
+          "passed": true,
+          "evidence": "Baseline AUTO-APPLIED: payments prefix collapsed to \"PAY\", orders/ promoted into refund/ + lifecycle/ subfolders, IDs renamed (ORDER-001\u2192ORDER-LIFECYCLE-001 etc.). It identified the markers (assertions 1-4 ok) but FAILED assertion 5 \u2014 it silently rewrote files instead of surfacing proposals for confirmation. This is the one clean skill discriminator: the skill enforces propose-don\u2019t-auto-resolve."
+        },
+        {
+          "text": "For the overloaded orders folder, the agent recommends a concrete resolution (e.g. promote the refund LLD into its own child folder docs/intent/orders/order-refund/, making orders a sub-HLD)",
+          "passed": true,
+          "evidence": "Baseline AUTO-APPLIED: payments prefix collapsed to \"PAY\", orders/ promoted into refund/ + lifecycle/ subfolders, IDs renamed (ORDER-001\u2192ORDER-LIFECYCLE-001 etc.). It identified the markers (assertions 1-4 ok) but FAILED assertion 5 \u2014 it silently rewrote files instead of surfacing proposals for confirmation. This is the one clean skill discriminator: the skill enforces propose-don\u2019t-auto-resolve."
+        },
+        {
+          "text": "The agent also surfaces that docs/intent/payments/payments-design.md carries a 'prefix:' array ([PAY, FEE]) as an unresolved marker, and recommends a resolution (collapse into <LEAF>-<TYPE> facets, promote, or split)",
+          "passed": true,
+          "evidence": "Baseline AUTO-APPLIED: payments prefix collapsed to \"PAY\", orders/ promoted into refund/ + lifecycle/ subfolders, IDs renamed (ORDER-001\u2192ORDER-LIFECYCLE-001 etc.). It identified the markers (assertions 1-4 ok) but FAILED assertion 5 \u2014 it silently rewrote files instead of surfacing proposals for confirmation. This is the one clean skill discriminator: the skill enforces propose-don\u2019t-auto-resolve."
+        },
+        {
+          "text": "The agent surfaces both markers even though the project's '- Version:' already equals the installed version (drift detected independently of version lag)",
+          "passed": true,
+          "evidence": "Baseline AUTO-APPLIED: payments prefix collapsed to \"PAY\", orders/ promoted into refund/ + lifecycle/ subfolders, IDs renamed (ORDER-001\u2192ORDER-LIFECYCLE-001 etc.). It identified the markers (assertions 1-4 ok) but FAILED assertion 5 \u2014 it silently rewrote files instead of surfacing proposals for confirmation. This is the one clean skill discriminator: the skill enforces propose-don\u2019t-auto-resolve."
+        },
+        {
+          "text": "The agent surfaces these as proposed updates requiring confirmation rather than silently rewriting the files or silently leaving the markers unmentioned",
+          "passed": false,
+          "evidence": "Baseline AUTO-APPLIED: payments prefix collapsed to \"PAY\", orders/ promoted into refund/ + lifecycle/ subfolders, IDs renamed (ORDER-001\u2192ORDER-LIFECYCLE-001 etc.). It identified the markers (assertions 1-4 ok) but FAILED assertion 5 \u2014 it silently rewrote files instead of surfacing proposals for confirmation. This is the one clean skill discriminator: the skill enforces propose-don\u2019t-auto-resolve."
+        }
+      ],
+      "notes": []
+    },
+    {
+      "eval_id": 5,
+      "configuration": "without_skill",
+      "run_number": 1,
+      "result": {
+        "pass_rate": 1,
+        "passed": 4,
+        "failed": 0,
+        "total": 4,
+        "time_seconds": 96.7,
+        "tokens": 30115,
+        "tool_calls": 0,
+        "errors": 0
+      },
+      "expectations": [
+        {
+          "text": "CLAUDE.md's '- Version:' bullet has been advanced to 1.2.0 even though a structural judgment step was deferred (the version is NOT left pinned at 1.1.0)",
+          "passed": true,
+          "evidence": "Baseline also bumped to 1.2.0, kept the array, recommended a resolution. Note: the prompt itself instructs defer-and-proceed, and the sandbox-in-repo lets baseline read conventions \u2014 so this is largely non-discriminating."
+        },
+        {
+          "text": "The agent's report explicitly names the deferred/outstanding item \u2014 the 'prefix:' array ([BILL, INVOICE]) on docs/intent/billing/billing-design.md \u2014 as a persisting marker still to resolve",
+          "passed": true,
+          "evidence": "Baseline also bumped to 1.2.0, kept the array, recommended a resolution. Note: the prompt itself instructs defer-and-proceed, and the sandbox-in-repo lets baseline read conventions \u2014 so this is largely non-discriminating."
+        },
+        {
+          "text": "The agent recommended a resolution for the deferred prefix array (collapse into <LEAF>-<TYPE> facets, promote, or split) rather than leaving it unmentioned",
+          "passed": true,
+          "evidence": "Baseline also bumped to 1.2.0, kept the array, recommended a resolution. Note: the prompt itself instructs defer-and-proceed, and the sandbox-in-repo lets baseline read conventions \u2014 so this is largely non-discriminating."
+        },
+        {
+          "text": "The agent did NOT silently rewrite or auto-resolve the prefix array \u2014 docs/intent/billing/billing-design.md still contains 'prefix: [BILL, INVOICE]'",
+          "passed": true,
+          "evidence": "Baseline also bumped to 1.2.0, kept the array, recommended a resolution. Note: the prompt itself instructs defer-and-proceed, and the sandbox-in-repo lets baseline read conventions \u2014 so this is largely non-discriminating."
+        }
+      ],
+      "notes": []
+    }
+  ],
+  "run_summary": {
+    "with_skill": {
+      "pass_rate": {
+        "mean": 1.0,
+        "stddev": 0.0,
+        "min": 1,
+        "max": 1
+      },
+      "time_seconds": {
+        "mean": 90.0167,
+        "stddev": 18.7631,
+        "min": 66.4,
+        "max": 113.9
+      },
+      "tokens": {
+        "mean": 32542.8333,
+        "stddev": 3911.4887,
+        "min": 28133,
+        "max": 37929
+      }
+    },
+    "without_skill": {
+      "pass_rate": {
+        "mean": 0.9667,
+        "stddev": 0.0816,
+        "min": 0.8,
+        "max": 1
+      },
+      "time_seconds": {
+        "mean": 106.1833,
+        "stddev": 26.876,
+        "min": 74.3,
+        "max": 153.2
+      },
+      "tokens": {
+        "mean": 40619.6667,
+        "stddev": 8914.0997,
+        "min": 30115,
+        "max": 51753
+      }
+    },
+    "delta": {
+      "pass_rate": "+0.03",
+      "time_seconds": "-16.2",
+      "tokens": "-8077"
+    }
+  },
+  "notes": []
+}
