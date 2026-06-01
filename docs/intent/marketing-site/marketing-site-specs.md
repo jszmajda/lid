@@ -13,7 +13,7 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 ## Home: Pitch and Framing
 
 - `[x]` **MKT-SITE-001**: When a user loads the home page, the site SHALL present a single-sentence pitch synchronized with the opening of the repository README.
-- `[x]` **MKT-SITE-002**: When a user loads the home page, the site SHALL present the three-line framing: "LID is the language. Claude is the compiler. Code is the output."
+- `[x]` **MKT-SITE-002**: When a user loads the home page, the site SHALL present the three-line framing: "LID is the language. Your agent is the compiler. Code is the output." The compiler SHALL be named generically rather than as a specific tool, matching LID's tool-agnostic positioning.
 - `[x]` **MKT-SITE-003**: When a user loads the home page, the site SHALL embed an asciinema recording whose scenario is a cascade demonstration — an HLD or LLD edit in a live LID project, propagating through specs, tests, and code.
 - `[x]` **MKT-SITE-004**: When a user loads the home page, the site SHALL link to the GitHub repository as its single primary call-to-action.
 - `[x]` **MKT-SITE-005**: When a user loads the home page, the site SHALL present four audience-path links (evaluating, greenfield, brownfield, scoped), each linking to the corresponding section on the Start page.
@@ -47,6 +47,7 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 - `[x]` **MKT-SITE-010**: When a user loads the Start page, the site SHALL present four audience sections matching the home-page path links — evaluating, greenfield, brownfield, scoped.
 - `[x]` **MKT-SITE-011**: Each Start-page section SHALL contain a short description, the relevant plugin command(s) a user would run, and a link to the README for depth.
 - `[ ]` **MKT-SITE-012**: Start-page section descriptions SHALL be approximately 150 words each; depth beyond that SHALL link to the README rather than expand inline.
+- `[x]` **MKT-SITE-052**: The Start page SHALL surface `/lid-coach` — the core `linked-intent-dev` plugin's principle-review skill — within the audience-path narratives (at minimum the Evaluating path), framed as a tool for reviewing an already-running LID project against the methodology's principles, with a link to the skill's source in the repository. The site SHALL NOT add `/lid-coach` to the Home Quickstart command list or give it its own audience-path section, since it is neither an install step nor an audience path.
 
 ## Examples Page
 
