@@ -12,10 +12,10 @@ The repo-meta segment — owns the artifacts that describe the project itself ra
 - `docs/high-level-design.md` § Goal 2 (minimum-system); § Goal 4 (dogfooding); § Architecture / Methodology; § Architecture / Distribution; § Key Design Decisions / *The arrow for LID itself*; § Key Design Decisions / *Minimum-system discipline — the why*
 
 ### LLD
-- `docs/llds/project-structure.md`
+- `docs/intent/project-structure/project-structure-design.md`
 
 ### EARS
-- `docs/specs/project-structure-specs.md` (42 specs, prefix `PROJ-STRUCT-*`)
+- `docs/intent/project-structure/project-structure-specs.md` (42 specs, prefix `PROJ-STRUCT-*`)
 
 ### Tests / Build checks
 - Build-time structural checks (link-check on `CONTRIBUTING.md` and `docs/setup.md`, JSON validity on `marketplace.json`, symlink integrity on `CLAUDE.md`, plugin-source-path validity in `marketplace.json`) — declared in the LLD § *Component Variant*; CI workflow scope deferred (see `PROJ-STRUCT-039` through `PROJ-STRUCT-041`).

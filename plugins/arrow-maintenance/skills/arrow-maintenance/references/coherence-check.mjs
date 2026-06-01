@@ -28,7 +28,7 @@ import { join, resolve } from 'path';
 import { execSync } from 'child_process';
 
 const ROOT = resolve(process.cwd());
-const SPECS_DIR = join(ROOT, 'docs', 'specs');
+const INTENT_DIR = join(ROOT, 'docs', 'intent');
 const ARROWS_DIR = join(ROOT, 'docs', 'arrows');
 const ARROWS_INDEX = join(ARROWS_DIR, 'index.yaml');
 
@@ -90,15 +90,27 @@ function collectSpecIdsFromCode() {
   return codeRefs;
 }
 
+// Node-as-folder: spec files live beside their design doc as `*-specs.md`
+// anywhere in the docs/intent/ tree. Walk it recursively.
+function walkSpecFiles(dir) {
+  const out = [];
+  for (const ent of readdirSync(dir, { withFileTypes: true })) {
+    const p = join(dir, ent.name);
+    if (ent.isDirectory()) out.push(...walkSpecFiles(p));
+    else if (ent.name.endsWith('-specs.md')) out.push(p);
+  }
+  return out;
+}
+
 function collectSpecIdsFromSpecs() {
   const specDefs = new Map();
 
-  if (!existsSync(SPECS_DIR)) return specDefs;
+  if (!existsSync(INTENT_DIR)) return specDefs;
 
-  const files = readdirSync(SPECS_DIR).filter(f => f.endsWith('.md'));
+  const files = walkSpecFiles(INTENT_DIR);
 
   for (const file of files) {
-    const content = readFile(join(SPECS_DIR, file));
+    const content = readFile(file);
     if (!content) continue;
 
     for (const line of content.split('\n')) {
@@ -280,7 +292,7 @@ function run() {
   section('@spec Integrity');
   const { codeRefs, specDefs, reverseOrphans, uncovered } = checkSpecIntegrity();
   console.log(`  @spec annotations in code: ${codeRefs.size} unique IDs`);
-  console.log(`  Spec definitions: ${specDefs.size} across docs/specs/`);
+  console.log(`  Spec definitions: ${specDefs.size} across docs/intent/`);
 
   if (reverseOrphans.length) {
     console.log(`\n  Reverse orphans (${reverseOrphans.length}) — @spec cites a spec that doesn't exist:`);

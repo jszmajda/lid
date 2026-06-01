@@ -29,9 +29,9 @@ All three skills pass every testable assertion with_skill (100% × 3). Baseline-
 
 **Observed real-world quality beyond assertions.** Several runs surfaced *actual* useful findings the assertions didn't explicitly check for:
 
-- arrow-maintenance eval-0 caught a real coherence gap (AUTH-001 marked `[x]` with no implementation) and surfaced it for user decision — exactly the ARROW-MAINT-013 behavior.
+- arrow-maintenance eval-0 caught a real coherence gap (AUTH-001 marked `[x]` with no implementation) and surfaced it for user decision — exactly the SCALE-MAINT-013 behavior.
 - arrow-maintenance eval-1 created `docs/arrows/README.md` from the template on its own — closing cold-read finding #15 without being told to.
-- map-codebase eval-0's lens proposals explicitly excluded anti-pattern lenses (frontend/backend, deploys-together, team ownership, generic utils) — MAP-CODE-008's constraint enforced.
+- map-codebase eval-0's lens proposals explicitly excluded anti-pattern lenses (frontend/backend, deploys-together, team ownership, generic utils) — SCALE-MAP-008's constraint enforced.
 - map-codebase eval-0 simulated the STOP discipline correctly — halted at the first real user decision point without fabricating answers.
 
 ## Limitations of this iteration
@@ -43,7 +43,7 @@ All three skills pass every testable assertion with_skill (100% × 3). Baseline-
 ## Next steps (candidates, not commitments)
 
 1. **Iteration 2 evals with user-in-loop** for `/map-codebase` Phases 3–6, so the richer assertions (STOP discipline, lens + slicing two-step, artifact generation, brownfield EARS status semantics) can be graded.
-2. **Expand coverage**: rename lifecycle atomicity (ARROW-MAINT-017), incremental audit (ARROW-MAINT-007), drift reconciliation (LID-SETUP-005 and -029), spec-ID prefix collision prompt (MAP-CODE-019), coherence-script delegation (ARROW-MAINT-025).
+2. **Expand coverage**: rename lifecycle atomicity (SCALE-MAINT-017), incremental audit (SCALE-MAINT-007), drift reconciliation (LID-SETUP-005 and -029), spec-ID prefix collision prompt (SCALE-MAP-019), coherence-script delegation (SCALE-MAINT-025).
 3. **Description optimization** on the three behavioral skills' frontmatter via `skill-creator`'s `run_loop.py` once iteration 2 is done — validates trigger accuracy, not just behavior.
 4. **Bootstrap this repo's own `docs/arrows/` overlay**, then run `/arrow-maintenance` against itself as a dogfooding demonstration.
 

@@ -55,28 +55,28 @@ The skill produces the specified behavior across all three test cases. The basel
 | **Total** | **2/2** | **1/2** |
 
 **Observations**:
-- with_skill correctly detected convention drift (truncated directives in CLAUDE.md) and **surfaced it for user decision rather than auto-applying** — UPDATE-LID-005 behavior.
+- with_skill correctly detected convention drift (truncated directives in CLAUDE.md) and **surfaced it for user decision rather than auto-applying** — LID-UPDATE-005 behavior.
 - without_skill misread the state and created `docs/planning/` because its mental model still includes Plan as a required artifact. This is exactly the kind of drift the cascade was designed to fix.
 
 ## Spec coverage exercised
 
 Across the three evals, the assertions cited these UPDATE-LID spec IDs:
 
-- UPDATE-LID-002, UPDATE-LID-003, UPDATE-LID-008, UPDATE-LID-009, UPDATE-LID-015, UPDATE-LID-016, UPDATE-LID-017, UPDATE-LID-020, UPDATE-LID-021, UPDATE-LID-022, UPDATE-LID-027, UPDATE-LID-028.
+- LID-UPDATE-002, LID-UPDATE-003, LID-UPDATE-008, LID-UPDATE-009, LID-UPDATE-015, LID-UPDATE-016, LID-UPDATE-017, LID-UPDATE-020, LID-UPDATE-021, LID-UPDATE-022, LID-UPDATE-027, LID-UPDATE-028.
 
 Specs not yet exercised by evals (candidates for iteration 2):
-- UPDATE-LID-001 (sub-step reachability from `/linked-intent-dev` Phase 1 and from `/map-codebase` terminal verification).
-- UPDATE-LID-004 (add mode marker when directives present but no marker).
-- UPDATE-LID-005, UPDATE-LID-029 (drift reconciliation + decline path).
-- UPDATE-LID-006, UPDATE-LID-011, UPDATE-LID-012, UPDATE-LID-013, UPDATE-LID-014 (mode transitions).
-- UPDATE-LID-007, UPDATE-LID-010 (mode prompting + uncertainty).
-- UPDATE-LID-018, UPDATE-LID-019 (legacy docs/planning/ handling).
-- UPDATE-LID-023 (mode marker detection regex).
-- UPDATE-LID-024, UPDATE-LID-025, UPDATE-LID-026 (arrow-maintenance coordination).
+- LID-UPDATE-001 (sub-step reachability from `/linked-intent-dev` Phase 1 and from `/map-codebase` terminal verification).
+- LID-UPDATE-004 (add mode marker when directives present but no marker).
+- LID-UPDATE-005, LID-UPDATE-029 (drift reconciliation + decline path).
+- LID-UPDATE-006, LID-UPDATE-011, LID-UPDATE-012, LID-UPDATE-013, LID-UPDATE-014 (mode transitions).
+- LID-UPDATE-007, LID-UPDATE-010 (mode prompting + uncertainty).
+- LID-UPDATE-018, LID-UPDATE-019 (legacy docs/planning/ handling).
+- LID-UPDATE-023 (mode marker detection regex).
+- LID-UPDATE-024, LID-UPDATE-025, LID-UPDATE-026 (arrow-maintenance coordination).
 
 ## Verdict
 
-**Cascade validated**. The skill prose, as shipped, produces the specified behaviors. The delta vs. baseline (+38% pass rate) confirms the skill is adding measurable value. The one subtle observation — with_skill eval-2 surfaced drift rather than silently idempotent-no-op — is per UPDATE-LID-005 and is the intended behavior; the grader's "no file changes" assertion passed because surfacing does not modify files.
+**Cascade validated**. The skill prose, as shipped, produces the specified behaviors. The delta vs. baseline (+38% pass rate) confirms the skill is adding measurable value. The one subtle observation — with_skill eval-2 surfaced drift rather than silently idempotent-no-op — is per LID-UPDATE-005 and is the intended behavior; the grader's "no file changes" assertion passed because surfacing does not modify files.
 
 **Iteration plan**:
 - No skill-prose iteration needed in this pass — all assertions passed.

@@ -6,7 +6,7 @@
       "eval_name": "audit-existing-overlay",
       "prompt": "/arrow-maintenance",
       "files": [
-        { "path": "CLAUDE.md", "content": "## LID Mode: Full\n\n## Linked-Intent Development (MANDATORY)\n\nConsult the linked-intent-dev skill for ALL code changes.\n" },
+        { "path": "CLAUDE.md", "content": "## LID\n- Mode: Full\n- Version: 1.2.0\n\n## Linked-Intent Development (MANDATORY)\n\nConsult the linked-intent-dev skill for ALL code changes.\n" },
         { "path": "docs/high-level-design.md", "content": "# HLD\n" },
         { "path": "docs/llds/auth.md", "content": "# LLD: auth\n\n## Context\n\nAuthentication system.\n" },
         { "path": "docs/specs/auth-specs.md", "content": "# auth specs\n\n- [x] **AUTH-001**: The system SHALL authenticate users.\n" },
@@ -14,10 +14,10 @@
         { "path": "docs/arrows/auth.md", "content": "# Arrow: auth\n\nAuthentication.\n\n## Status\n\nMAPPED\n\n## References\n\n### LLD\n- docs/llds/auth.md\n\n### EARS\n- docs/specs/auth-specs.md\n" }
       ],
       "assertions": [
-        { "text": "docs/arrows/index.yaml has its auth entry's 'audited' field updated to today's date", "spec_ids": ["ARROW-MAINT-024"] },
-        { "text": "docs/arrows/index.yaml has its auth entry's 'audited_sha' field populated (non-null)", "spec_ids": ["ARROW-MAINT-024"] },
-        { "text": "The agent's response is a structured report of findings (at minimum distinguishing resolved from pending)", "spec_ids": ["ARROW-MAINT-021", "ARROW-MAINT-022"] },
-        { "text": "The audit checks the five classes (reference coherence, coverage, staleness, drift signals, orphan artifacts) either explicitly in prose or via findings listed", "spec_ids": ["ARROW-MAINT-004", "ARROW-MAINT-005", "ARROW-MAINT-006", "ARROW-MAINT-008", "ARROW-MAINT-010"] }
+        { "text": "docs/arrows/index.yaml has its auth entry's 'audited' field updated to today's date", "spec_ids": ["SCALE-MAINT-024"] },
+        { "text": "docs/arrows/index.yaml has its auth entry's 'audited_sha' field populated (non-null)", "spec_ids": ["SCALE-MAINT-024"] },
+        { "text": "The agent's response is a structured report of findings (at minimum distinguishing resolved from pending)", "spec_ids": ["SCALE-MAINT-021", "SCALE-MAINT-022"] },
+        { "text": "The audit checks the five classes (reference coherence, coverage, staleness, drift signals, orphan artifacts) either explicitly in prose or via findings listed", "spec_ids": ["SCALE-MAINT-004", "SCALE-MAINT-005", "SCALE-MAINT-006", "SCALE-MAINT-008", "SCALE-MAINT-010"] }
       ]
     },
     {
@@ -25,17 +25,17 @@
       "eval_name": "bootstrap-overlay-from-lid-docs",
       "prompt": "/arrow-maintenance",
       "files": [
-        { "path": "CLAUDE.md", "content": "## LID Mode: Full\n\n## Linked-Intent Development (MANDATORY)\n\nConsult the linked-intent-dev skill for ALL code changes.\n" },
+        { "path": "CLAUDE.md", "content": "## LID\n- Mode: Full\n- Version: 1.2.0\n\n## Linked-Intent Development (MANDATORY)\n\nConsult the linked-intent-dev skill for ALL code changes.\n" },
         { "path": "docs/high-level-design.md", "content": "# High-Level Design\n\nOur system.\n" },
         { "path": "docs/llds/auth.md", "content": "# LLD: auth\n" },
         { "path": "docs/llds/billing.md", "content": "# LLD: billing\n" }
       ],
       "assertions": [
-        { "text": "docs/arrows/index.yaml was created", "spec_ids": ["ARROW-MAINT-002", "ARROW-MAINT-027"] },
-        { "text": "docs/arrows/index.yaml contains entries for both 'auth' and 'billing'", "spec_ids": ["ARROW-MAINT-002"] },
-        { "text": "docs/arrows/auth.md and docs/arrows/billing.md were created as per-segment arrow docs", "spec_ids": ["ARROW-MAINT-002"] },
-        { "text": "No new HLD, LLD, or EARS spec files were created (the existing docs are authoritative)", "spec_ids": ["ARROW-MAINT-002"] },
-        { "text": "Each arrow segment's initial status in index.yaml is 'MAPPED'", "spec_ids": ["ARROW-MAINT-027"] }
+        { "text": "docs/arrows/index.yaml was created", "spec_ids": ["SCALE-MAINT-002", "SCALE-MAINT-027"] },
+        { "text": "docs/arrows/index.yaml contains entries for both 'auth' and 'billing'", "spec_ids": ["SCALE-MAINT-002"] },
+        { "text": "docs/arrows/auth.md and docs/arrows/billing.md were created as per-segment arrow docs", "spec_ids": ["SCALE-MAINT-002"] },
+        { "text": "No new HLD, LLD, or EARS spec files were created (the existing docs are authoritative)", "spec_ids": ["SCALE-MAINT-002"] },
+        { "text": "Each arrow segment's initial status in index.yaml is 'MAPPED'", "spec_ids": ["SCALE-MAINT-027"] }
       ]
     },
     {
@@ -46,8 +46,8 @@
         { "path": "README.md", "content": "# My Project\n\nA codebase with no LID installed.\n" }
       ],
       "assertions": [
-        { "text": "No changes were made to the project (no docs/ directory created, no CLAUDE.md created, no index.yaml)", "spec_ids": ["ARROW-MAINT-003"] },
-        { "text": "The agent's response explicitly recommends the user try /map-codebase (brownfield) or /linked-intent-dev (greenfield) instead", "spec_ids": ["ARROW-MAINT-003"] }
+        { "text": "No changes were made to the project (no docs/ directory created, no CLAUDE.md created, no index.yaml)", "spec_ids": ["SCALE-MAINT-003"] },
+        { "text": "The agent's response explicitly recommends the user try /map-codebase (brownfield) or /linked-intent-dev (greenfield) instead", "spec_ids": ["SCALE-MAINT-003"] }
       ]
     }
   ]

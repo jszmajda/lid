@@ -44,12 +44,12 @@ Project prep in `lid-example/`:
 
 **What to demo**: add a 2048-character cap on incoming URLs at the API layer — reject longer ones with HTTP 400 and a clean error body. Additive, not breaking. One LLD, one new EARS spec, one new test, a handful of lines in the handler.
 
-**Why this scenario fits**: the change stays inside one arrow segment (`api.md` / `api-specs.md` / `internal/api/`). No cross-boundary pause needed, so the cascade runs clean in a single ~2-minute pass. The motivation is also legible to a cold viewer — "don't let abusive clients send MB-scale URLs" — so there's no setup needed.
+**Why this scenario fits**: the change stays inside one arrow segment (`api/api-design.md` / `api/api-specs.md` / `internal/api/`). No cross-boundary pause needed, so the cascade runs clean in a single ~2-minute pass. The motivation is also legible to a cold viewer — "don't let abusive clients send MB-scale URLs" — so there's no setup needed.
 
 **Real files the demo will touch** (verified against `/Users/jess/src/lid-example/`):
 
-- `docs/llds/api.md` — LLD for the HTTP surface
-- `docs/specs/api-specs.md` — EARS specs, prefix `USH-API-NNN`
+- `docs/intent/api/api-design.md` — LLD for the HTTP surface
+- `docs/intent/api/api-specs.md` — EARS specs, prefix `USH-API-NNN`
 - `src/api.rs` — axum handlers + inline `#[cfg(test)]` tests in the same file
 
 The project's other arrow segments (`shortener-core`, `storage`) stay untouched in this demo — on purpose, so the viewer sees a *bounded* cascade, not a sprawling one.
@@ -75,8 +75,8 @@ asciinema rec ~/Desktop/cascade-demo.cast \
 
 ```bash
 clear
-ls docs/llds/
-head -30 docs/llds/api.md
+ls docs/intent/
+head -30 docs/intent/api/api-design.md
 ```
 
 Viewer sees: a real project, an LLD that describes the HTTP API in prose.
@@ -106,7 +106,7 @@ Press enter.
 
 The `linked-intent-dev` skill takes over. Roughly:
 
-1. Agent reads `docs/llds/api.md` and `docs/specs/api-specs.md` to orient.
+1. Agent reads `docs/intent/api/api-design.md` and `docs/intent/api/api-specs.md` to orient.
 2. Proposes an LLD edit (new paragraph on length-cap behavior). Pauses for your approval. **Approve.**
 3. Proposes a new EARS spec — the next available `USH-API-NNN` — codifying the 400 response. Pauses. **Approve.**
 4. Reports an intent-narrowing edge audit: "one new spec, no cross-segment bleed, no sibling-spec collisions."
@@ -176,7 +176,7 @@ Paste into `site/src/index.njk`, replacing the `.demo-placeholder` block:
 </section>
 ```
 
-Then mark `MKT-SITE-003` in `docs/specs/marketing-site-specs.md` as `[x]`, and this planning doc can move to `docs/planning/old/`.
+Then mark `MKT-SITE-003` in `docs/intent/marketing-site/marketing-site-specs.md` as `[x]`, and this planning doc can move to `docs/planning/old/`.
 
 ---
 
@@ -185,7 +185,7 @@ Then mark `MKT-SITE-003` in `docs/specs/marketing-site-specs.md` as `[x]`, and t
 Same flow, different prompt. All grounded in the real `lid-example` code:
 
 - **Unknown-code 404 body** — `USH-API-007` currently specifies a plain-text "Short code not found." body on unknown codes. Switch to a JSON error body (`{ "error": "not_found", "code": "<the code>" }`). One spec revision, one test update, one handler tweak in `src/api.rs`. **Smallest cascade** — good if you want to keep the demo especially tight.
-- **Response field rename** — rename the response field `short_url` → `share_url` (response-only; request shape unchanged). Touches `docs/llds/api.md`, `USH-API-001` and `USH-API-011` in `api-specs.md`, the `serde` rename attribute on the response struct in `src/api.rs`, and the inline tests. **Scoped to the API layer**, a bit more to watch than the primary scenario.
+- **Response field rename** — rename the response field `short_url` → `share_url` (response-only; request shape unchanged). Touches `docs/intent/api/api-design.md`, `USH-API-001` and `USH-API-011` in `api-specs.md`, the `serde` rename attribute on the response struct in `src/api.rs`, and the inline tests. **Scoped to the API layer**, a bit more to watch than the primary scenario.
 - **Case-normalized short codes** — currently case-sensitive (`USH-API-009`). Switch to uppercase-canonical with case-insensitive lookup. Touches `api-specs.md`, `shortener-core-specs.md`, and both `src/api.rs` and `src/core.rs`. **Largest cascade** — crosses arrow boundaries, so the skill will pause at the `api ↔ shortener-core` seam. Demonstrates the pause-at-boundary discipline if you want the extra beat.
 
 Same recording flow, different prompt. The primary scenario (max URL length) is the recommended starting point; these are available if you record once and want a second take at a different scope.

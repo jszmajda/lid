@@ -1,0 +1,39 @@
+{
+  "eval_id": 4,
+  "eval_name": "reconcile-surfaces-structural-markers-at-current-version",
+  "config": "with_skill",
+  "score": "5/5",
+  "expectations": [
+    {
+      "text": "The agent surfaces that docs/intent/orders/ holds more than its <node>-design.md + <node>-specs.md pair (the extra orders-refund-design.md / orders-refund-specs.md files), flagging it as an LLD not yet relocated into its own node folder",
+      "passed": true,
+      "evidence": "payments-design.md still \"prefix: [PAY, FEE]\" (array intact); orders/ still holds orders-refund-design.md + orders-refund-specs.md (refund NOT relocated). Report surfaced BOTH markers with recommendations (collapse/split; promote refund to child folder) at current version, as proposals — did not rewrite. All 5 pass."
+    },
+    {
+      "text": "For the overloaded orders folder, the agent recommends a concrete resolution (e.g. promote the refund LLD into its own child folder docs/intent/orders/order-refund/, making orders a sub-HLD)",
+      "passed": true,
+      "evidence": "payments-design.md still \"prefix: [PAY, FEE]\" (array intact); orders/ still holds orders-refund-design.md + orders-refund-specs.md (refund NOT relocated). Report surfaced BOTH markers with recommendations (collapse/split; promote refund to child folder) at current version, as proposals — did not rewrite. All 5 pass."
+    },
+    {
+      "text": "The agent also surfaces that docs/intent/payments/payments-design.md carries a 'prefix:' array ([PAY, FEE]) as an unresolved marker, and recommends a resolution (collapse into <LEAF>-<TYPE> facets, promote, or split)",
+      "passed": true,
+      "evidence": "payments-design.md still \"prefix: [PAY, FEE]\" (array intact); orders/ still holds orders-refund-design.md + orders-refund-specs.md (refund NOT relocated). Report surfaced BOTH markers with recommendations (collapse/split; promote refund to child folder) at current version, as proposals — did not rewrite. All 5 pass."
+    },
+    {
+      "text": "The agent surfaces both markers even though the project's '- Version:' already equals the installed version (drift detected independently of version lag)",
+      "passed": true,
+      "evidence": "payments-design.md still \"prefix: [PAY, FEE]\" (array intact); orders/ still holds orders-refund-design.md + orders-refund-specs.md (refund NOT relocated). Report surfaced BOTH markers with recommendations (collapse/split; promote refund to child folder) at current version, as proposals — did not rewrite. All 5 pass."
+    },
+    {
+      "text": "The agent surfaces these as proposed updates requiring confirmation rather than silently rewriting the files or silently leaving the markers unmentioned",
+      "passed": true,
+      "evidence": "payments-design.md still \"prefix: [PAY, FEE]\" (array intact); orders/ still holds orders-refund-design.md + orders-refund-specs.md (refund NOT relocated). Report surfaced BOTH markers with recommendations (collapse/split; promote refund to child folder) at current version, as proposals — did not rewrite. All 5 pass."
+    }
+  ],
+  "summary": {
+    "passed": 5,
+    "failed": 0,
+    "total": 5,
+    "pass_rate": 1
+  }
+}

@@ -8,7 +8,7 @@ EARS (Easy Approach to Requirements Syntax) provides structured patterns for wri
 
 ## Spec File Format
 
-Specs live in `/docs/specs/` files with status markers. Each requirement is one line:
+Specs live beside their design doc as `{node}-specs.md` within the node's folder under `docs/intent/`, with status markers. Each requirement is one line:
 
 ```markdown
 - [x] **{ID}**: {Requirement statement}
@@ -41,18 +41,19 @@ Specs live in `/docs/specs/` files with status markers. Each requirement is one 
 
 ## Semantic ID Format
 
-The default shape is `{FEATURE}-{TYPE}-{NNN}` — e.g., `AUTH-UI-001`, `CART-API-003`.
+**An ID is the root-to-leaf path, an optional within-leaf type/area segment, and a zero-padded number.** The path segments are tree positions; the prefix *is* the position up to the leaf that owns the spec. At depth-2 — one HLD over a flat set of LLDs, the default — the path is a single segment, so an ID is `{LEAF}-{NNN}` (`AUTH-001`, `CART-003`) or, with a within-leaf facet, `{LEAF}-{TYPE}-{NNN}` (`AUTH-UI-001`, `CART-API-012`). As the tree deepens, the path extends one segment at a time: `PEVAL-RUN-014` for the runner under prompt-eval, `PEVAL-PERF-LOAD-003` for load-testing under performance under prompt-eval.
 
-- **FEATURE**: prefix for the feature or segment (commonly 2–4 letters, e.g., `AUTH`, `CART`, `DASH`).
-- **TYPE**: Component type (`UI`, `API`, `DATA`, `NAV`, `BE`, `PROC`).
-- **NNN**: Sequential number, zero-padded.
+- **The path encodes ancestry up to the leaf.** Read left to right, the path names the owning leaf and every ancestor up to the root. The cascade boundary is the *leaf's* path: two specs whose leaf paths differ belong to different segments.
+- **A leaf may append one within-leaf type/area segment.** After the leaf path, a project MAY add a single facet segment that groups specs *inside* that leaf — `AUTH-UI-001` (leaf `AUTH`, UI facet), `ENGINE-LEDGER-001` (leaf `ENGINE`, ledger area). The facet is not a tree node and not a cascade boundary; it is an in-leaf grouping convention. This is the long-standing `{FEATURE}-{TYPE}-{NNN}` shape.
+- **A subtree greps by construction.** Because the path *is* the position, `grep PEVAL-PERF` gathers the whole performance subtree and `grep PEVAL-RUN` gathers the runner leaf, facet and all. Prefix-grep gathers specs and code regardless of where the path/facet split falls.
+- **The leaf's `prefix:` frontmatter is authoritative for where the path ends.** The path/facet boundary is not always parseable from the ID string alone (`AUTH-UI-001` could be leaf `AUTH` + facet `UI`, or a leaf at path `AUTH-UI`). The owning leaf declares its EARS prefix in `prefix:` frontmatter; that frontmatter, with `index.yaml` when the overlay is present, is the bridge from an ID to its design doc. Prefix-grep still gathers specs and code without it.
 
-**Extensible namespacing.** The format is flexible: longer IDs with additional segments are permitted when namespacing matters. `AUTH-LOGIN-UI-001` distinguishes login-UI specs from login-API specs. `BILLING-INVOICE-RENDERING-004` disambiguates nested features. Constraints:
+Constraints:
 
-- **Global uniqueness across the project.** Two specs cannot share an ID, even across different LLDs.
-- **Grep-friendliness.** IDs use uppercase letters, digits, and hyphens only. No other characters. `grep "FEATURE-TYPE-003"` should find every annotation, test, and spec file citation of a given ID.
-- **ID stability.** Once assigned, an ID does not move. Revisions mutate text, not IDs. Deletion is permanent; the number is not recycled.
-- **Namespacing on conflict.** When drafting a new spec whose natural prefix already exists for an unrelated feature, surface the collision and ask the user for a disambiguating namespace segment rather than silently picking.
+- **Global uniqueness across the project.** Two specs cannot share an ID. Path concatenation enforces this by construction — two leaves in different parts of the tree have different paths.
+- **Grep-friendliness.** IDs use uppercase letters, digits, and hyphens only. No other characters. `grep "PEVAL-RUN-014"` should find every annotation, test, and spec-file citation of a given ID, and a prefix grep should gather a subtree or a leaf.
+- **ID stability.** Ordinary growth — adding or refining specs within a segment — never renames an ID. IDs are stable **except under a deliberate, tooled re-parent or rename**, which rewrites the affected paths across spec files, docs, and `@spec` annotations together as one atomic operation (owned by the arrow-maintenance plugin). Revisions mutate text, not IDs. Deletion is permanent; the number is not recycled.
+- **Numbering on conflict.** When drafting a new spec whose path already exists, surface the collision rather than silently picking — most often the new spec belongs at a deeper segment, which extends the path and resolves the conflict.
 
 Keep IDs stable — don't renumber when inserting requirements.
 

@@ -1,6 +1,8 @@
 # urlshort example
 
-## LID Mode: Full
+## LID
+- Mode: Full
+- Version: 1.2.0
 
 ## Linked-Intent Development (MANDATORY)
 

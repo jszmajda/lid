@@ -3,7 +3,7 @@
 One file per audit, at:
 
 ```
-docs/arrows/experiments/bidirectional-differential/{segment-name}/{EARS_ID}.md
+docs/arrows/_experiments/bidirectional-differential/{segment-name}/{EARS_ID}.md
 ```
 
 Re-running an audit for the same EARS replaces this file. Commit the prior audit before re-running if before/after comparison matters.
@@ -25,7 +25,7 @@ Re-running an audit for the same EARS replaces this file. Commit the prior audit
 
 ## EARS (verbatim)
 
-{one-line quote of the EARS as it appears in `docs/specs/`}
+{one-line quote of the EARS as it appears in its `*-specs.md` file}
 
 ## Code locations
 

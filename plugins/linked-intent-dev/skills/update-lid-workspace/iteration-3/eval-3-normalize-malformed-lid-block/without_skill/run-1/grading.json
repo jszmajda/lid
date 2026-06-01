@@ -1,0 +1,34 @@
+{
+  "eval_id": 3,
+  "eval_name": "normalize-malformed-lid-block",
+  "config": "without_skill",
+  "score": "4/4",
+  "expectations": [
+    {
+      "text": "CLAUDE.md now contains a bare '## LID' heading on its own line (the heading is no longer the malformed '## LID Mode: Full')",
+      "passed": true,
+      "evidence": "Baseline report also normalized to canonical block + restored directives. A capable agent tidied the obviously-malformed heading without the skill (and could read repo conventions). Non-discriminating here."
+    },
+    {
+      "text": "CLAUDE.md now contains a standalone '- Mode: Full' bullet under the '## LID' heading",
+      "passed": true,
+      "evidence": "Baseline report also normalized to canonical block + restored directives. A capable agent tidied the obviously-malformed heading without the skill (and could read repo conventions). Non-discriminating here."
+    },
+    {
+      "text": "CLAUDE.md still has the '- Version: 1.2.0' bullet and exactly ONE LID block (no duplicate '## LID' block was appended below the malformed one)",
+      "passed": true,
+      "evidence": "Baseline report also normalized to canonical block + restored directives. A capable agent tidied the obviously-malformed heading without the skill (and could read repo conventions). Non-discriminating here."
+    },
+    {
+      "text": "The agent's response reports that it normalized the malformed LID block in place",
+      "passed": true,
+      "evidence": "Baseline report also normalized to canonical block + restored directives. A capable agent tidied the obviously-malformed heading without the skill (and could read repo conventions). Non-discriminating here."
+    }
+  ],
+  "summary": {
+    "passed": 4,
+    "failed": 0,
+    "total": 4,
+    "pass_rate": 1
+  }
+}

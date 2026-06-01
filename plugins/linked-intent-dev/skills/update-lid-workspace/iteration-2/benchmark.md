@@ -50,7 +50,7 @@
 | Response informs user what was detected | ✓ |
 | **Total** | **2/2** |
 
-**Observations**: Skill correctly entered the **Reconcile conventions** branch (not the **Inform and skip** branch — the directives in `CLAUDE.md` are truncated relative to the current template, which is convention drift). Drift was surfaced for user decision rather than auto-applied, matching iteration 1's behavior (UPDATE-LID-005, formerly LID-SETUP-005). Starting fixture preserved byte-for-byte. The "no auto-apply" eval constraint was honored.
+**Observations**: Skill correctly entered the **Reconcile conventions** branch (not the **Inform and skip** branch — the directives in `CLAUDE.md` are truncated relative to the current template, which is convention drift). Drift was surfaced for user decision rather than auto-applied, matching iteration 1's behavior (LID-UPDATE-005, formerly LID-SETUP-005). Starting fixture preserved byte-for-byte. The "no auto-apply" eval constraint was honored.
 
 ## Timing
 
@@ -73,6 +73,6 @@
 - Skill body header `# LID Project Setup` → `# update-lid`.
 - First two intro paragraphs rephrased to remove `/lid-setup` alias references.
 - `commands/` directory removed entirely; skill is invoked directly as `/update-lid` per Claude Code's skills model.
-- Spec IDs renamed: `LID-SETUP-NNN` → `UPDATE-LID-NNN` (specs file path: `docs/specs/lid-setup-specs.md` → `docs/specs/update-lid-specs.md`).
+- Spec IDs renamed: `LID-SETUP-NNN` → `LID-UPDATE-NNN` (specs file path: `docs/specs/lid-setup-specs.md` → `docs/llds/linked-intent-dev/update-lid/update-lid-specs.md`).
 
 All other lines in `SKILL.md` are byte-identical to the previous `lid-setup/SKILL.md`.

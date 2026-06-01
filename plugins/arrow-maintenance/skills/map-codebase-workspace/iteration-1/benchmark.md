@@ -27,9 +27,9 @@ Note: `/map-codebase` is a multi-phase workflow with user-in-the-loop STOPs at e
 **Deferred (Phase 3+, needs user-in-loop)**: slicing granularity, artifact generation, flesh-out prompt, terminal CLAUDE.md verification. Mark these as pending iteration 2.
 
 **Observations**:
-- with_skill explicitly excluded anti-pattern lenses (frontend/backend, deploys-together, team ownership, generic utils) in its proposal framing — ARROW-MAINT-008 behavior nailed.
-- The Phase 1 sweep produced structured per-file reports matching MAP-CODE-026 exactly: purpose, exports, dependencies, data shapes, side effects, role, observations.
-- with_skill correctly held back all file writes until Phase 2 lens selection (user approval required) — ARROW-MAINT-027 (STOPs) and MAP-CODE-012 (no generation until approval) upheld.
+- with_skill explicitly excluded anti-pattern lenses (frontend/backend, deploys-together, team ownership, generic utils) in its proposal framing — SCALE-MAINT-008 behavior nailed.
+- The Phase 1 sweep produced structured per-file reports matching SCALE-MAP-026 exactly: purpose, exports, dependencies, data shapes, side effects, role, observations.
+- with_skill correctly held back all file writes until Phase 2 lens selection (user approval required) — SCALE-MAINT-027 (STOPs) and SCALE-MAP-012 (no generation until approval) upheld.
 - without_skill jumped to proposing an arrow structure without multi-lens exploration; it missed the edge-detection value of surfacing alternatives for the user to choose.
 
 ## Eval 1: partial-lid-dispatch
@@ -41,8 +41,8 @@ Note: `/map-codebase` is a multi-phase workflow with user-in-the-loop STOPs at e
 | **Subtotal** | **2/2** | **1/2** |
 
 **Observations**:
-- with_skill posed the exact choice MAP-CODE-003 specifies: "Treat existing docs as authoritative (skeletons only for uncovered segments) or supersede them?"
-- without_skill saw the problem but reached for "dispatch to the arrow-maintenance skill" as its mental model — which isn't wrong in this case but doesn't frame the choice the way MAP-CODE-003 specifies.
+- with_skill posed the exact choice SCALE-MAP-003 specifies: "Treat existing docs as authoritative (skeletons only for uncovered segments) or supersede them?"
+- without_skill saw the problem but reached for "dispatch to the arrow-maintenance skill" as its mental model — which isn't wrong in this case but doesn't frame the choice the way SCALE-MAP-003 specifies.
 
 ## Eval 2: redirect-on-fully-lid-no-overlay
 
@@ -54,34 +54,34 @@ Note: `/map-codebase` is a multi-phase workflow with user-in-the-loop STOPs at e
 | **Subtotal** | **3/3** | **1.5/3** |
 
 **Observations**:
-- with_skill produced the clean redirect specified in MAP-CODE-004: "`/map-codebase` is for brownfield bootstrap — wasted work here. Run `/arrow-maintenance` instead." One recommendation, clear.
+- with_skill produced the clean redirect specified in SCALE-MAP-004: "`/map-codebase` is for brownfield bootstrap — wasted work here. Run `/arrow-maintenance` instead." One recommendation, clear.
 - without_skill offered three options (add overlay / audit / re-map), which is technically reasonable but adds decision fatigue. The redirect's value is in decisiveness.
 
 ## Spec coverage exercised (testable portion)
 
-- MAP-CODE-001 (scope question at invocation, mode-implied)
-- MAP-CODE-002 (subagent parallelism offer)
-- MAP-CODE-003 (partial-LID dispatch)
-- MAP-CODE-004 (fully-LID redirect to /arrow-maintenance)
-- MAP-CODE-005, -006 (sweep extraction, no segmentation)
-- MAP-CODE-008 (lens-based multi-clustering with anti-patterns excluded)
-- MAP-CODE-012 (no generation until approval)
-- MAP-CODE-024 (token-intensity warning)
-- MAP-CODE-025, -026 (read every file + structured reporting)
-- MAP-CODE-028 (Five Critical Rules discipline visible in behavior)
+- SCALE-MAP-001 (scope question at invocation, mode-implied)
+- SCALE-MAP-002 (subagent parallelism offer)
+- SCALE-MAP-003 (partial-LID dispatch)
+- SCALE-MAP-004 (fully-LID redirect to /arrow-maintenance)
+- SCALE-MAP-005, -006 (sweep extraction, no segmentation)
+- SCALE-MAP-008 (lens-based multi-clustering with anti-patterns excluded)
+- SCALE-MAP-012 (no generation until approval)
+- SCALE-MAP-024 (token-intensity warning)
+- SCALE-MAP-025, -026 (read every file + structured reporting)
+- SCALE-MAP-028 (Five Critical Rules discipline visible in behavior)
 
 Specs deferred to iteration 2 (require multi-turn user-in-loop):
-- MAP-CODE-007 (sweep overflow + per-subagent files)
-- MAP-CODE-009 (subagent conflict flagging)
-- MAP-CODE-010, -011, -012 (reconciliation interaction)
-- MAP-CODE-013 through -020 (artifact generation with STOPs)
-- MAP-CODE-019 (spec-ID prefix collision → ask for namespacing)
-- MAP-CODE-021, -022 (flesh-out prompt)
-- MAP-CODE-023 (slicing granularity)
-- MAP-CODE-027 (STOP after each artifact sub-step)
-- MAP-CODE-029, -030 (brownfield EARS status semantics, `[inferred]` markers)
-- MAP-CODE-031 (terminal verification via lid-setup with caller-provided mode)
-- MAP-CODE-032, -033 (capacity-constraint override)
+- SCALE-MAP-007 (sweep overflow + per-subagent files)
+- SCALE-MAP-009 (subagent conflict flagging)
+- SCALE-MAP-010, -011, -012 (reconciliation interaction)
+- SCALE-MAP-013 through -020 (artifact generation with STOPs)
+- SCALE-MAP-019 (spec-ID prefix collision → ask for namespacing)
+- SCALE-MAP-021, -022 (flesh-out prompt)
+- SCALE-MAP-023 (slicing granularity)
+- SCALE-MAP-027 (STOP after each artifact sub-step)
+- SCALE-MAP-029, -030 (brownfield EARS status semantics, `[inferred]` markers)
+- SCALE-MAP-031 (terminal verification via lid-setup with caller-provided mode)
+- SCALE-MAP-032, -033 (capacity-constraint override)
 
 ## Verdict
 
@@ -89,4 +89,4 @@ Specs deferred to iteration 2 (require multi-turn user-in-loop):
 
 **Iteration plan**:
 - Iteration 2 runs should exercise the full multi-phase flow with a human reviewer in the loop, using the eval-viewer for per-phase qualitative review.
-- Candidate additions: capacity-constraint override path (MAP-CODE-032/033), spec-ID prefix collision prompt (MAP-CODE-019), STOP discipline after each artifact sub-step (MAP-CODE-027).
+- Candidate additions: capacity-constraint override path (SCALE-MAP-032/033), spec-ID prefix collision prompt (SCALE-MAP-019), STOP discipline after each artifact sub-step (SCALE-MAP-027).

@@ -1,0 +1,32 @@
+{
+  "eval_id": 3,
+  "eval_name": "normalize-malformed-lid-block",
+  "prompt": "Please reconcile this project's LID setup.",
+  "assertions": [
+    {
+      "text": "CLAUDE.md now contains a bare '## LID' heading on its own line (the heading is no longer the malformed '## LID Mode: Full')",
+      "spec_ids": [
+        "LID-UPDATE-004"
+      ]
+    },
+    {
+      "text": "CLAUDE.md now contains a standalone '- Mode: Full' bullet under the '## LID' heading",
+      "spec_ids": [
+        "LID-UPDATE-004",
+        "LID-UPDATE-009"
+      ]
+    },
+    {
+      "text": "CLAUDE.md still has the '- Version: 1.2.0' bullet and exactly ONE LID block (no duplicate '## LID' block was appended below the malformed one)",
+      "spec_ids": [
+        "LID-UPDATE-004"
+      ]
+    },
+    {
+      "text": "The agent's response reports that it normalized the malformed LID block in place",
+      "spec_ids": [
+        "LID-UPDATE-027"
+      ]
+    }
+  ]
+}

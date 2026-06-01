@@ -1,14 +1,12 @@
-schema_version: 1
-last_updated: 2026-05-18
+schema_version: 2
+last_updated: 2026-05-26
 
 taxonomy:
   core:
     - linked-intent-dev
-    - lid-coach
     - arrow-maintenance
   experimental:
     - lid-experimental
-    - bidirectional-differential
   onboarding:
     - marketing-site
     - project-structure
@@ -16,58 +14,111 @@ taxonomy:
 arrows:
   linked-intent-dev:
     status: MAPPED
-    sampled: 2026-05-05
+    children: [core, update-lid, lid-coach]   # LID sub-HLD; no arrow doc — detail points to its design doc
+    sampled: 2026-05-25
     audited: null
     audited_sha: null
-    blocks: [lid-coach, arrow-maintenance, lid-experimental, bidirectional-differential, marketing-site]
+    blocks: [arrow-maintenance, lid-experimental, bidirectional-differential, marketing-site]
     blockedBy: []
-    detail: linked-intent-dev.md
+    detail: ../intent/linked-intent-dev/linked-intent-dev-design.md     # the doc to open on this node (sub-HLD design doc)
+    next: null
+    drift: null
+
+  core:
+    status: MAPPED
+    parent: linked-intent-dev
+    sampled: 2026-05-25
+    audited: null
+    audited_sha: null
+    blocks: []
+    blockedBy: []
+    detail: linked-intent-dev/core.md
+    next: null
+    drift: null
+
+  update-lid:
+    status: MAPPED
+    parent: linked-intent-dev
+    sampled: 2026-05-25
+    audited: null
+    audited_sha: null
+    blocks: []
+    blockedBy: []
+    detail: linked-intent-dev/update-lid.md
     next: null
     drift: null
 
   lid-coach:
     status: MAPPED
+    parent: linked-intent-dev
     sampled: 2026-05-15
     audited: null
     audited_sha: null
     blocks: []
-    blockedBy: [linked-intent-dev]
-    detail: lid-coach.md
-    next: "Author iteration-2 fixtures covering the 35 unexercised LID-COACH specs (invocation 001-002, inputs 008-012, principle-body 014-015, review dims 016-032 less 019/023, 036/038/041/042/047/048/051, 053 tenet-quality); 048 needs a >15-LLD fixture project; 053 needs a fixture with a tenet-less HLD and one with platitude tenets."
-    drift: "18 of 53 LID-COACH specs [x] (skill-creator iteration-1, 2026-05-15, 38/38 with-skill assertions). 35 remain [ ] — unexercised by the current 8 fixtures, not skill-body gaps. LID-COACH-053 (tenet quality) added 2026-05-18 from the HLD tenets cascade; spec + principle body in place, eval fixture pending."
+    blockedBy: []
+    detail: linked-intent-dev/lid-coach.md
+    next: "Author iteration-2 fixtures covering the 35 unexercised LID-COACH specs (invocation 001-002, inputs 008-012, principle-body 014-015, review dims 016-032 less 019/023, 036/038/041/042/047/048/051, 053 tenet-quality) plus the 3 new tenet-cascade specs (054 verticalize-intent, 055 granularity-as-tree, 056 nested-arrow-validity); 048 needs a >15-LLD fixture project; 053 needs a fixture with a tenet-less HLD and one with platitude tenets; 054 needs a fixture carrying a cross-cutting index/tag registry beside the tree; 055 needs a fixture with an outgrown leaf LLD (promotion candidate) and one bundling several share-design separable-behavior concerns (sub-HLD candidate); 056 needs a fixture whose design layer nests sub-HLDs with a subtree-gathering intermediate prefix (must NOT be flagged) alongside a genuine phase deviation (must be flagged)."
+    drift: "21 of 56 LID-COACH specs [x] (skill-creator iteration-1, 2026-05-15, 38/38 with-skill assertions, covering 18). 35 remain [ ] — unexercised by the current 8 fixtures, not skill-body gaps. LID-COACH-053 (tenet quality) added 2026-05-18 from the HLD tenets cascade; spec + principle body in place, eval fixture pending. LID-COACH-054/055/056 added from the verticalize-intent + refocused-cascade + recursive-design-tree HLD cascade; spec + principle body in place, marked [x] for body coverage, eval fixtures pending. LID-COACH-026 (cascade health) reworded to the lowest-node-that-dominates framing — body and spec match; fixture status unchanged."
 
   arrow-maintenance:
     status: MAPPED
+    children: [maintenance, map-codebase]   # sub-HLD; no arrow doc — detail points to its design doc
     sampled: 2026-04-25
     audited: null
     audited_sha: null
     blocks: [marketing-site]
     blockedBy: [linked-intent-dev]
-    detail: arrow-maintenance.md
-    next: "Run first /arrow-maintenance audit pass (this is it) and refresh audited / audited_sha across all segments."
+    detail: ../intent/arrow-maintenance/arrow-maintenance-design.md     # the doc to open on this node (sub-HLD design doc)
+    next: "Run first /arrow-maintenance audit pass and refresh audited / audited_sha across the subtree."
     drift: null
 
-  lid-experimental:
+  maintenance:
     status: MAPPED
-    sampled: 2026-04-25
-    audited: null
-    audited_sha: null
-    blocks: [bidirectional-differential]
-    blockedBy: [linked-intent-dev]
-    detail: lid-experimental.md
-    next: "Container only — no behavioral surface. Add per-experiment segments under taxonomy.experimental as new experiments land."
-    drift: null
-
-  bidirectional-differential:
-    status: MAPPED
+    parent: arrow-maintenance
     sampled: 2026-04-25
     audited: null
     audited_sha: null
     blocks: []
-    blockedBy: [lid-experimental, arrow-maintenance]
-    detail: bidirectional-differential.md
-    next: "Reword BIDIFF-007's reference pointer (currently names non-existent stripping-rules.md; behavior lives in audit-protocol.md §Stripping rule categories). After that, run skill-creator evals against the three baseline fixtures."
-    drift: "BIDIFF-007 spec text references a reference file (`stripping-rules.md`) that was consolidated into `audit-protocol.md`. Behavior is implemented; spec prose is stale."
+    blockedBy: []
+    detail: arrow-maintenance/maintenance.md
+    next: null
+    drift: null
+
+  map-codebase:
+    status: MAPPED
+    parent: arrow-maintenance
+    sampled: 2026-04-25
+    audited: null
+    audited_sha: null
+    blocks: []
+    blockedBy: []
+    detail: arrow-maintenance/map-codebase.md
+    next: null
+    drift: null
+
+  lid-experimental:
+    status: MAPPED
+    children: [bidirectional-differential]   # sub-HLD; no arrow doc, no EARS — detail points to its design doc
+    sampled: 2026-04-25
+    audited: null
+    audited_sha: null
+    blocks: []
+    blockedBy: [linked-intent-dev]
+    detail: ../intent/lid-experimental/lid-experimental-design.md      # the doc to open on this node (sub-HLD design doc)
+    next: "Container sub-HLD — no behavioral surface of its own. Add child segments as new experiments land."
+    drift: null
+
+  bidirectional-differential:
+    status: MAPPED
+    parent: lid-experimental
+    sampled: 2026-04-25
+    audited: null
+    audited_sha: null
+    blocks: []
+    blockedBy: [arrow-maintenance]
+    detail: lid-experimental/bidirectional-differential.md
+    next: "Reword EXP-BIDIFF-007's reference pointer (currently names non-existent stripping-rules.md; behavior lives in audit-protocol.md §Stripping rule categories). After that, run skill-creator evals against the three baseline fixtures."
+    drift: "EXP-BIDIFF-007 spec text references a reference file (`stripping-rules.md`) that was consolidated into `audit-protocol.md`. Behavior is implemented; spec prose is stale."
 
   marketing-site:
     status: MAPPED
@@ -93,5 +144,4 @@ arrows:
 
 unmapped:
   docs:
-    llds: []
-    specs: []
+    intent: []

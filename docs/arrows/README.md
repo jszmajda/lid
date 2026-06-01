@@ -10,7 +10,7 @@ HLD → LLDs → EARS → Tests → Code
 
 - **`index.yaml`** — The dependency graph. Load this first to understand what's available, what's blocked, and what needs work. Schema in `plugins/arrow-maintenance/skills/arrow-maintenance/references/index-schema.md`.
 - **`{segment-name}.md`** — One file per arrow segment. Orientation page with References, Spec Coverage, and Key Findings. Template in `plugins/arrow-maintenance/skills/arrow-maintenance/references/arrow-doc-template.md`.
-- **`experiments/`** — Reserved subtree for `lid-experimental` plugin artifacts. Each experiment owns a subdirectory (e.g., `experiments/bidirectional-differential/`); audit ignores this subtree.
+- **`_experiments/`** — Reserved subtree for `lid-experimental` plugin artifacts. Each experiment owns a subdirectory (e.g., `_experiments/bidirectional-differential/`); audit ignores this subtree.
 
 ## Starting a session
 

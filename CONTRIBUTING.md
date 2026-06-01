@@ -82,3 +82,15 @@ Branch from `main`. The PR description should include:
 - For cross-segment cascade: the pause points and what was verified at each.
 
 These are conventions, not a template to copy-paste.
+
+## Release / versioning
+
+LID is versioned with semver per plugin, and `linked-intent-dev`'s version is the canonical "LID conventions" version. There is no CI gate keeping the version strings in sync — this release step is the conventional discipline that substitutes for one, in keeping with LID's stance that it is not a linter or validator.
+
+When cutting a release:
+
+- Bump the `version` field in each plugin's `.claude-plugin/plugin.json` and the matching entry in [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json) together — six version strings, kept equal per plugin.
+- Add a [`CHANGELOG.md`](CHANGELOG.md) entry for the release (Keep a Changelog format), including a `### Migration (vX → vY)` section whenever conventions changed so `update-lid` can walk downstream projects through the upgrade.
+- Keep the `CHANGELOG.md` top version equal to `linked-intent-dev`'s `plugin.json` version — that is the canonical LID version.
+
+The changelog is canonical at `plugins/linked-intent-dev/CHANGELOG.md` and aliased by the repo-root symlink, so it ships inside the plugin. Reviewers confirm the versions and changelog match before merging the release.

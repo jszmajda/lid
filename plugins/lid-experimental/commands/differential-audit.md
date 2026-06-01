@@ -6,6 +6,6 @@ description: Audit EARS↔code coherence via a bidirectional differential. With 
 Invoke the `bidirectional-differential` skill in command mode.
 
 - `/differential-audit` — opens the scoping conversation (interprets the user's description, maps to arrows, captures scope and runs-per-direction, confirms with a cost estimate).
-- `/differential-audit BIDIFF-001 KWP-UE-004` — audits the listed EARS IDs directly using defaults from `CLAUDE.md`'s `## LID Experimental` section (default N=3).
+- `/differential-audit EXP-BIDIFF-001 KWP-UE-004` — audits the listed EARS IDs directly using defaults from `CLAUDE.md`'s `## LID Experimental` section (default N=3).
 
 See `plugins/lid-experimental/skills/bidirectional-differential/SKILL.md` for the full behavior.

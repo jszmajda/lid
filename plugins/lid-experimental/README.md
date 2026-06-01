@@ -74,7 +74,7 @@ With no arguments, the skill opens a scoping conversation:
 2. It maps your description to one or more arrows in your overlay and confirms the alignment.
 3. It shows you the EARS inventory for each chosen arrow and asks which to audit.
 4. It captures the runs-per-direction (default 3) and shows a cost estimate.
-5. After your explicit confirmation, it spawns the blind sessions in parallel and writes per-EARS audit records under `docs/arrows/experiments/bidirectional-differential/`.
+5. After your explicit confirmation, it spawns the blind sessions in parallel and writes per-EARS audit records under `docs/arrows/_experiments/bidirectional-differential/`.
 
 You can also pass EARS IDs directly to skip the conversation:
 
@@ -96,22 +96,22 @@ bidirectional-differential:
 #### Where audit records land
 
 ```
-docs/arrows/experiments/bidirectional-differential/{segment-name}/{EARS-ID}.md
+docs/arrows/_experiments/bidirectional-differential/{segment-name}/{EARS-ID}.md
 ```
 
 Each record is a per-EARS markdown file with the classification, the per-direction summaries, the drift findings, and a cascade-shaped recommendation list (validate → LLD → EARS → tests → code). New audits replace the file in place — `git diff` is how you compare two audits across time.
 
-The reserved subtree under `docs/arrows/experiments/` keeps `arrow-maintenance` from touching these records during its own audits. If this experiment is ever retired, deleting the subtree is the cleanup; if it's promoted, the records and protocol move into core in one mechanical step.
+The reserved subtree under `docs/arrows/_experiments/` keeps `arrow-maintenance` from touching these records during its own audits. If this experiment is ever retired, deleting the subtree is the cleanup; if it's promoted, the records and protocol move into core in one mechanical step.
 
 #### Design rationale
 
-For the design decisions behind this skill — why the audit is bidirectional rather than one-shot, why the user picks scope explicitly rather than the skill recommending it, why the repair path walks the full LID arrow rather than just editing the layer the audit found drift on — see the LLD: [`docs/llds/lid-experimental/bidirectional-differential.md`](../../docs/llds/lid-experimental/bidirectional-differential.md).
+For the design decisions behind this skill — why the audit is bidirectional rather than one-shot, why the user picks scope explicitly rather than the skill recommending it, why the repair path walks the full LID arrow rather than just editing the layer the audit found drift on — see the LLD: [`docs/intent/lid-experimental/bidirectional-differential/bidirectional-differential-design.md`](../../docs/intent/lid-experimental/bidirectional-differential/bidirectional-differential-design.md).
 
 ---
 
 ## Lifecycle and stability
 
-Experimental skills follow the LID-experimental framework documented in [`docs/llds/lid-experimental.md`](../../docs/llds/lid-experimental.md). The short version:
+Experimental skills follow the LID-experimental framework documented in [`docs/intent/lid-experimental/lid-experimental-design.md`](../../docs/intent/lid-experimental/lid-experimental-design.md). The short version:
 
 - **A skill earns promotion** when adoption signals say "this should be core" — users report real wins, the design has stabilized, the implementation isn't churning. On promotion, the skill moves into `linked-intent-dev` or `arrow-maintenance` and the experimental version is deleted from this plugin.
 - **A skill is retired** when it stops earning its keep — chronically low signal, the underlying tooling absorbs what it does, or the design fails to converge. Retirement is `rm -rf`; you uninstall the plugin (or just the skill, once the plugin supports skill-level granularity) and move on.

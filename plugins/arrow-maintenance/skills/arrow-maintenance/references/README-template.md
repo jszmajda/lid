@@ -12,8 +12,8 @@ Copy this template into your project's `docs/arrows/README.md` when the overlay 
 
 ## Files in this directory
 
-- **`index.yaml`** — The dependency graph. Load this first to understand what's available, what's blocked, and what needs work. Schema in `plugins/arrow-maintenance/skills/arrow-maintenance/references/index-schema.md`.
-- **`{segment-name}.md`** — One file per arrow segment. Orientation page with References, Spec Coverage, and Key Findings. Template in `plugins/arrow-maintenance/skills/arrow-maintenance/references/arrow-doc-template.md`.
+- **`index.yaml`** — The design tree and dependency graph. Load this first to understand what's available, what's blocked, and what needs work. Where the tree nests, `parent`/`children` links let you walk a subtree rather than scanning the flat list. Schema in `plugins/arrow-maintenance/skills/arrow-maintenance/references/index-schema.md`.
+- **`{segment-name}.md`** — One file per arrow segment (leaf node). Orientation page with References, Spec Coverage, and Key Findings. Template in `plugins/arrow-maintenance/skills/arrow-maintenance/references/arrow-doc-template.md`.
 
 ## Starting a session
 
@@ -70,9 +70,22 @@ Normal progression: `UNMAPPED → MAPPED → AUDITED → OK`. `AUDITED` means "w
 
 ### Renaming a segment
 
-1. Rename the arrow-doc filename.
-2. Update the `index.yaml` entry key.
-3. Walk every cross-reference: `blocks`, `blockedBy`, `merged_into`, `taxonomy`, other arrow docs' References. Update all in the same session.
+A leaf segment's name is the leaf prefix of its path-concatenated EARS IDs, so a rename is a tooled, atomic operation — not just a file move.
+
+1. Rewrite every EARS ID under the segment (e.g., `AUTH-UI-001` → `IDENTITY-UI-001`) in the spec files.
+2. Rewrite every `@spec` annotation in code and tests that cites those IDs.
+3. Rename the arrow-doc filename.
+4. Update the `index.yaml` entry key.
+5. Walk every cross-reference: `parent`/`children` links, `blocks`, `blockedBy`, `merged_into`, `taxonomy`, other arrow docs' References. Update all in the same session — all of the above land together or not at all.
+
+### Re-parenting a subtree
+
+Moving a node to a new parent changes the tree path, so it rewrites the moved subtree's path-concatenated IDs. Like rename, it is atomic.
+
+1. Rewrite the path-concatenated EARS IDs of every spec in the moved subtree (e.g., `PEVAL-RUN-014` → `ORCH-RUN-014`) in the spec files.
+2. Rewrite every `@spec` annotation in code and tests citing those IDs.
+3. Update `parent`/`children` links in `index.yaml` for the moved node and both the old and new parents.
+4. Update any cross-references (`blocks`, `blockedBy`, `taxonomy`, other docs' References) in the same session.
 
 ## Optional: coherence-check script
 

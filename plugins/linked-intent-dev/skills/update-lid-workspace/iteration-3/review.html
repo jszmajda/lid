@@ -1,0 +1,1325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eval Review</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Lora:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js" integrity="sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT" crossorigin="anonymous"></script>
+  <style>
+    :root {
+      --bg: #faf9f5;
+      --surface: #ffffff;
+      --border: #e8e6dc;
+      --text: #141413;
+      --text-muted: #b0aea5;
+      --accent: #d97757;
+      --accent-hover: #c4613f;
+      --green: #788c5d;
+      --green-bg: #eef2e8;
+      --red: #c44;
+      --red-bg: #fceaea;
+      --header-bg: #141413;
+      --header-text: #faf9f5;
+      --radius: 6px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Lora', Georgia, serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ---- Header ---- */
+    .header {
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+    .header h1 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    .header .instructions {
+      font-size: 0.8rem;
+      opacity: 0.7;
+      margin-top: 0.25rem;
+    }
+    .header .progress {
+      font-size: 0.875rem;
+      opacity: 0.8;
+      text-align: right;
+    }
+
+    /* ---- Main content ---- */
+    .main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    /* ---- Sections ---- */
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      flex-shrink: 0;
+    }
+    .section-header {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.75rem 1rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      background: var(--bg);
+    }
+    .section-body {
+      padding: 1rem;
+    }
+
+    /* ---- Config badge ---- */
+    .config-badge {
+      display: inline-block;
+      padding: 0.2rem 0.625rem;
+      border-radius: 9999px;
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      margin-left: 0.75rem;
+      vertical-align: middle;
+    }
+    .config-badge.config-primary {
+      background: rgba(33, 150, 243, 0.12);
+      color: #1976d2;
+    }
+    .config-badge.config-baseline {
+      background: rgba(255, 193, 7, 0.15);
+      color: #f57f17;
+    }
+
+    /* ---- Prompt ---- */
+    .prompt-text {
+      white-space: pre-wrap;
+      font-size: 0.9375rem;
+      line-height: 1.6;
+    }
+
+    /* ---- Outputs ---- */
+    .output-file {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    .output-file + .output-file {
+      margin-top: 1rem;
+    }
+    .output-file-header {
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .output-file-header .dl-btn {
+      font-size: 0.7rem;
+      color: var(--accent);
+      text-decoration: none;
+      cursor: pointer;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-weight: 500;
+      opacity: 0.8;
+    }
+    .output-file-header .dl-btn:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+    .output-file-content {
+      padding: 0.75rem;
+      overflow-x: auto;
+    }
+    .output-file-content pre {
+      font-size: 0.8125rem;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+      font-family: 'SF Mono', SFMono-Regular, Consolas, 'Liberation Mono', Menlo, monospace;
+    }
+    .output-file-content img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+    }
+    .output-file-content iframe {
+      width: 100%;
+      height: 600px;
+      border: none;
+    }
+    .output-file-content table {
+      border-collapse: collapse;
+      font-size: 0.8125rem;
+      width: 100%;
+    }
+    .output-file-content table td,
+    .output-file-content table th {
+      border: 1px solid var(--border);
+      padding: 0.375rem 0.5rem;
+      text-align: left;
+    }
+    .output-file-content table th {
+      background: var(--bg);
+      font-weight: 600;
+    }
+    .output-file-content .download-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 0.875rem;
+      cursor: pointer;
+    }
+    .output-file-content .download-link:hover {
+      background: var(--border);
+    }
+    .empty-state {
+      color: var(--text-muted);
+      font-style: italic;
+      padding: 2rem;
+      text-align: center;
+    }
+
+    /* ---- Feedback ---- */
+    .prev-feedback {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.625rem 0.75rem;
+      margin-top: 0.75rem;
+      font-size: 0.8125rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    .prev-feedback-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.25rem;
+      color: var(--text-muted);
+    }
+    .feedback-textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 0.75rem;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      font-family: inherit;
+      font-size: 0.9375rem;
+      line-height: 1.5;
+      resize: vertical;
+      color: var(--text);
+    }
+    .feedback-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+    }
+    .feedback-status {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+      min-height: 1.1em;
+    }
+
+    /* ---- Grades (collapsible) ---- */
+    .grades-toggle {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+      user-select: none;
+    }
+    .grades-toggle:hover {
+      color: var(--accent);
+    }
+    .grades-toggle .arrow {
+      margin-right: 0.5rem;
+      transition: transform 0.15s;
+      font-size: 0.75rem;
+    }
+    .grades-toggle .arrow.open {
+      transform: rotate(90deg);
+    }
+    .grades-content {
+      display: none;
+      margin-top: 0.75rem;
+    }
+    .grades-content.open {
+      display: block;
+    }
+    .grades-summary {
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .grade-badge {
+      display: inline-block;
+      padding: 0.125rem 0.5rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .grade-pass { background: var(--green-bg); color: var(--green); }
+    .grade-fail { background: var(--red-bg); color: var(--red); }
+    .assertion-list {
+      list-style: none;
+    }
+    .assertion-item {
+      padding: 0.625rem 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.8125rem;
+    }
+    .assertion-item:last-child { border-bottom: none; }
+    .assertion-status {
+      font-weight: 600;
+      margin-right: 0.5rem;
+    }
+    .assertion-status.pass { color: var(--green); }
+    .assertion-status.fail { color: var(--red); }
+    .assertion-evidence {
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      margin-top: 0.25rem;
+      padding-left: 1.5rem;
+    }
+
+    /* ---- View tabs ---- */
+    .view-tabs {
+      display: flex;
+      gap: 0;
+      padding: 0 2rem;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .view-tab {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.625rem 1.25rem;
+      font-size: 0.8125rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .view-tab:hover { color: var(--text); }
+    .view-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+    .view-panel { display: none; }
+    .view-panel.active { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+
+    /* ---- Benchmark view ---- */
+    .benchmark-view {
+      padding: 1.5rem 2rem;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .benchmark-table {
+      border-collapse: collapse;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-size: 0.8125rem;
+      width: 100%;
+      margin-bottom: 1.5rem;
+    }
+    .benchmark-table th, .benchmark-table td {
+      padding: 0.625rem 0.75rem;
+      text-align: left;
+      border: 1px solid var(--border);
+    }
+    .benchmark-table th {
+      font-family: 'Poppins', sans-serif;
+      background: var(--header-bg);
+      color: var(--header-text);
+      font-weight: 500;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .benchmark-table tr:hover { background: var(--bg); }
+    .benchmark-table tr.benchmark-row-with { background: rgba(33, 150, 243, 0.06); }
+    .benchmark-table tr.benchmark-row-without { background: rgba(255, 193, 7, 0.06); }
+    .benchmark-table tr.benchmark-row-with:hover { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-without:hover { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-table tr.benchmark-row-avg { font-weight: 600; border-top: 2px solid var(--border); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-with { background: rgba(33, 150, 243, 0.12); }
+    .benchmark-table tr.benchmark-row-avg.benchmark-row-without { background: rgba(255, 193, 7, 0.12); }
+    .benchmark-delta-positive { color: var(--green); font-weight: 600; }
+    .benchmark-delta-negative { color: var(--red); font-weight: 600; }
+    .benchmark-notes {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+    }
+    .benchmark-notes h3 {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.875rem;
+      margin-bottom: 0.75rem;
+    }
+    .benchmark-notes ul {
+      list-style: disc;
+      padding-left: 1.25rem;
+    }
+    .benchmark-notes li {
+      font-size: 0.8125rem;
+      line-height: 1.6;
+      margin-bottom: 0.375rem;
+    }
+    .benchmark-empty {
+      color: var(--text-muted);
+      font-style: italic;
+      text-align: center;
+      padding: 3rem;
+    }
+
+    /* ---- Navigation ---- */
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 2rem;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    .nav-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text);
+      transition: all 0.15s;
+    }
+    .nav-btn:hover:not(:disabled) {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .nav-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+    .done-btn {
+      font-family: 'Poppins', sans-serif;
+      padding: 0.5rem 1.5rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+    .done-btn:hover {
+      background: var(--bg);
+      border-color: var(--text-muted);
+    }
+    .done-btn.ready {
+      border: none;
+      background: var(--accent);
+      color: white;
+      font-weight: 600;
+    }
+    .done-btn.ready:hover {
+      background: var(--accent-hover);
+    }
+    /* ---- Done overlay ---- */
+    .done-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+    .done-overlay.visible {
+      display: flex;
+    }
+    .done-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 2rem 3rem;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+    }
+    .done-card h2 {
+      font-size: 1.5rem;
+      margin-bottom: 0.5rem;
+    }
+    .done-card p {
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      line-height: 1.5;
+    }
+    .done-card .btn-row {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+    }
+    .done-card button {
+      padding: 0.5rem 1.25rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      cursor: pointer;
+      font-size: 0.875rem;
+    }
+    .done-card button:hover {
+      background: var(--bg);
+    }
+    /* ---- Toast ---- */
+    .toast {
+      position: fixed;
+      bottom: 5rem;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--header-bg);
+      color: var(--header-text);
+      padding: 0.625rem 1.25rem;
+      border-radius: var(--radius);
+      font-size: 0.875rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 200;
+    }
+    .toast.visible {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div id="app" style="height:100vh; display:flex; flex-direction:column;">
+    <div class="header">
+      <div>
+        <h1>Eval Review: <span id="skill-name"></span></h1>
+        <div class="instructions">Review each output and leave feedback below. Navigate with arrow keys or buttons. When done, copy feedback and paste into Claude Code.</div>
+      </div>
+      <div class="progress" id="progress"></div>
+    </div>
+
+    <!-- View tabs (only shown when benchmark data exists) -->
+    <div class="view-tabs" id="view-tabs" style="display:none;">
+      <button class="view-tab active" onclick="switchView('outputs')">Outputs</button>
+      <button class="view-tab" onclick="switchView('benchmark')">Benchmark</button>
+    </div>
+
+    <!-- Outputs panel (qualitative review) -->
+    <div class="view-panel active" id="panel-outputs">
+    <div class="main">
+      <!-- Prompt -->
+      <div class="section">
+        <div class="section-header">Prompt <span class="config-badge" id="config-badge" style="display:none;"></span></div>
+        <div class="section-body">
+          <div class="prompt-text" id="prompt-text"></div>
+        </div>
+      </div>
+
+      <!-- Outputs -->
+      <div class="section">
+        <div class="section-header">Output</div>
+        <div class="section-body" id="outputs-body">
+          <div class="empty-state">No output files found</div>
+        </div>
+      </div>
+
+      <!-- Previous Output (collapsible) -->
+      <div class="section" id="prev-outputs-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="togglePrevOutputs()">
+            <span class="arrow" id="prev-outputs-arrow">&#9654;</span>
+            Previous Output
+          </div>
+        </div>
+        <div class="grades-content" id="prev-outputs-content"></div>
+      </div>
+
+      <!-- Grades (collapsible) -->
+      <div class="section" id="grades-section" style="display:none;">
+        <div class="section-header">
+          <div class="grades-toggle" onclick="toggleGrades()">
+            <span class="arrow" id="grades-arrow">&#9654;</span>
+            Formal Grades
+          </div>
+        </div>
+        <div class="grades-content" id="grades-content"></div>
+      </div>
+
+      <!-- Feedback -->
+      <div class="section">
+        <div class="section-header">Your Feedback</div>
+        <div class="section-body">
+          <textarea
+            class="feedback-textarea"
+            id="feedback"
+            placeholder="What do you think of this output? Any issues, suggestions, or things that look great?"
+          ></textarea>
+          <div class="feedback-status" id="feedback-status"></div>
+          <div class="prev-feedback" id="prev-feedback" style="display:none;">
+            <div class="prev-feedback-label">Previous feedback</div>
+            <div id="prev-feedback-text"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav" id="outputs-nav">
+      <button class="nav-btn" id="prev-btn" onclick="navigate(-1)">&#8592; Previous</button>
+      <button class="done-btn" id="done-btn" onclick="showDoneDialog()">Submit All Reviews</button>
+      <button class="nav-btn" id="next-btn" onclick="navigate(1)">Next &#8594;</button>
+    </div>
+    </div><!-- end panel-outputs -->
+
+    <!-- Benchmark panel (quantitative stats) -->
+    <div class="view-panel" id="panel-benchmark">
+      <div class="benchmark-view" id="benchmark-content">
+        <div class="benchmark-empty">No benchmark data available. Run a benchmark to see quantitative results here.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Done overlay -->
+  <div class="done-overlay" id="done-overlay">
+    <div class="done-card">
+      <h2>Review Complete</h2>
+      <p>Your feedback has been saved. Go back to your Claude Code session and tell Claude you're done reviewing.</p>
+      <div class="btn-row">
+        <button onclick="closeDoneDialog()">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ---- Embedded data (injected by generate_review.py) ----
+    const EMBEDDED_DATA = {"skill_name": "update-lid", "runs": [{"id": "eval-0-bootstrap-empty-project-with_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "report.md", "type": "text", "content": "# /update-lid report \u2014 Full bootstrap of an empty project\n\n## What I detected\n\n- The project directory was empty (only a `.empty` placeholder, no `CLAUDE.md`, no `docs/`).\n- Per the skill's state-dispatch table this matches **Full bootstrap** \u2014 the \"No `CLAUDE.md`, no `docs/`\" row.\n- Installed `linked-intent-dev` conventions version: **1.2.0** (from `plugins/linked-intent-dev/.claude-plugin/plugin.json`). A freshly bootstrapped project is stamped at the installed version, so no version-walk applies.\n- You explicitly requested **Full LID**, so I used Full and did not prompt for a mode.\n- No `docs/arrows/` overlay present \u2192 arrow-maintenance navigation row omitted.\n- No project tooling to declare \u2192 `## LID Tooling` section omitted.\n- No CHANGELOG in the sandbox project, and none needed (bootstrap is already at the current version).\n\n## What I changed (all mechanical / clearly-correct bootstrap steps \u2014 applied)\n\n1. Removed the `.empty` placeholder.\n2. Created the required directory layout:\n   - `docs/` and `docs/intent/`\n   - (`docs/decisions/` deliberately NOT created \u2014 the skill creates decision-doc dirs lazily, only when the first decision doc is written.)\n   - (`docs/planning/` deliberately NOT created \u2014 plans are agent-native; LID does not require it.)\n3. Created `CLAUDE.md` from `references/claude-md-template.md`, applying the Full-mode conditional-include rules:\n   - `## LID` block with `- Mode: Full` and `- Version: 1.2.0`.\n   - `## LID Scope` section omitted (Full mode \u2192 entire project in scope).\n   - Arrow-overlay navigation row omitted (no `docs/arrows/`).\n   - `## LID Tooling` section omitted (nothing to declare).\n   - Full `## Linked-Intent Development (MANDATORY)` directives block: arrow diagram, per-change-type workflow, Navigation table, Terminology, and Code-annotation guidance.\n4. Created `docs/high-level-design.md` from the HLD template (`plugins/linked-intent-dev/skills/linked-intent-dev/references/hld-template.md`) as a section skeleton (Problem, Approach, Target Users, Goals, Non-Goals, Tenets, System Design, Key Design Decisions, Success Metrics, References), with a bootstrap note at the top.\n\n## Final layout\n\n```\nproject/\n\u251c\u2500\u2500 CLAUDE.md\n\u2514\u2500\u2500 docs/\n    \u251c\u2500\u2500 high-level-design.md\n    \u2514\u2500\u2500 intent/\n```\n\nVerified: `CLAUDE.md` contains exactly one bare `## LID` heading, the `- Mode: Full` and `- Version: 1.2.0` bullets, the MANDATORY directives block, and none of the three conditionally-omitted sections (Scope, Tooling, arrow nav row).\n\n## Surfaced / deferred\n\n- **Nothing deferred.** Every step in this bootstrap was mechanical or clearly-correct (create dirs, write the LID block, write the directives, populate the HLD skeleton), so all were applied. No judgment steps (multi-prefix node, overloaded node folder, version migration) arose \u2014 those only apply to existing/lagging projects, not a clean bootstrap at the current version.\n- **Note for the user:** `docs/high-level-design.md` is a template skeleton because no project description was provided. In Full LID every HLD section should be authored. Next step: run `/linked-intent-dev` with a description of what you're building to fill in the HLD and walk the first arrow (HLD \u2192 LLD \u2192 EARS \u2192 Tests \u2192 Code). The first LLD will live at `docs/intent/<node>/<node>-design.md` with its EARS at `docs/intent/<node>/<node>-specs.md`.\n"}], "grading": {"eval_id": 0, "eval_name": "bootstrap-empty-project", "config": "with_skill", "score": "7/7", "expectations": [{"text": "docs/intent/ directory exists in the project", "passed": true, "evidence": "docs/intent/ created; docs/specs/ & docs/planning/ absent; HLD populated (47 lines); CLAUDE.md has bare \"## LID\" + \"- Mode: Full\" + linked-intent-dev directives."}, {"text": "docs/specs/ directory was NOT created (specs live inside node folders under docs/intent/, not in a separate top-level directory)", "passed": true, "evidence": "docs/intent/ created; docs/specs/ & docs/planning/ absent; HLD populated (47 lines); CLAUDE.md has bare \"## LID\" + \"- Mode: Full\" + linked-intent-dev directives."}, {"text": "docs/high-level-design.md exists, populated from the HLD template (not empty)", "passed": true, "evidence": "docs/intent/ created; docs/specs/ & docs/planning/ absent; HLD populated (47 lines); CLAUDE.md has bare \"## LID\" + \"- Mode: Full\" + linked-intent-dev directives."}, {"text": "docs/planning/ directory was NOT created", "passed": true, "evidence": "docs/intent/ created; docs/specs/ & docs/planning/ absent; HLD populated (47 lines); CLAUDE.md has bare \"## LID\" + \"- Mode: Full\" + linked-intent-dev directives."}, {"text": "CLAUDE.md contains a bare '## LID' heading followed by a '- Mode: Full' bullet (mode is a bullet, not merged into the heading)", "passed": true, "evidence": "docs/intent/ created; docs/specs/ & docs/planning/ absent; HLD populated (47 lines); CLAUDE.md has bare \"## LID\" + \"- Mode: Full\" + linked-intent-dev directives."}, {"text": "CLAUDE.md contains the LID directives block referencing 'linked-intent-dev'", "passed": true, "evidence": "docs/intent/ created; docs/specs/ & docs/planning/ absent; HLD populated (47 lines); CLAUDE.md has bare \"## LID\" + \"- Mode: Full\" + linked-intent-dev directives."}, {"text": "The agent's response summarizes what files were created or modified", "passed": true, "evidence": "docs/intent/ created; docs/specs/ & docs/planning/ absent; HLD populated (47 lines); CLAUDE.md has bare \"## LID\" + \"- Mode: Full\" + linked-intent-dev directives."}], "summary": {"passed": 7, "failed": 0, "total": 7, "pass_rate": 1}}}, {"id": "eval-0-bootstrap-empty-project-without_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "report.md", "type": "text", "content": "# LID Bootstrap \u2014 Full Mode (baseline, no skill)\n\nBootstrapped Full LID on the empty project: created `CLAUDE.md` (with `## LID` block \u2014 Mode: Full, Version: 1.2.0 \u2014 plus workflow directives), `docs/high-level-design.md`, and `docs/intent/`. The HLD was left as a labeled scaffold rather than fabricated, since the request configured LID but gave no project description.\n\n## Files created\n- `CLAUDE.md` \u2014 `## LID` config block (Mode: Full, Version: 1.2.0) plus LID workflow directives, navigation table, terminology, `@spec` rules.\n- `docs/high-level-design.md` \u2014 HLD scaffold with standard sections, each marked *(not yet specified)*.\n- `docs/intent/` \u2014 design-tree root (`.gitkeep`).\n\nIntentionally not created: `## LID Scope` (Full = whole project), `docs/decisions/` (lazy), `docs/arrows/`, `docs/planning/`.\n"}], "grading": {"eval_id": 0, "eval_name": "bootstrap-empty-project", "config": "without_skill", "score": "7/7", "expectations": [{"text": "docs/intent/ directory exists in the project", "passed": true, "evidence": "Same end state (docs/intent/, no docs/specs|planning, HLD 50 lines, bare ## LID + Mode bullet). Note: baseline produced LID-1.2.0-specific structure \u2014 sandbox sits inside the LID repo, so conventions were readable (contamination)."}, {"text": "docs/specs/ directory was NOT created (specs live inside node folders under docs/intent/, not in a separate top-level directory)", "passed": true, "evidence": "Same end state (docs/intent/, no docs/specs|planning, HLD 50 lines, bare ## LID + Mode bullet). Note: baseline produced LID-1.2.0-specific structure \u2014 sandbox sits inside the LID repo, so conventions were readable (contamination)."}, {"text": "docs/high-level-design.md exists, populated from the HLD template (not empty)", "passed": true, "evidence": "Same end state (docs/intent/, no docs/specs|planning, HLD 50 lines, bare ## LID + Mode bullet). Note: baseline produced LID-1.2.0-specific structure \u2014 sandbox sits inside the LID repo, so conventions were readable (contamination)."}, {"text": "docs/planning/ directory was NOT created", "passed": true, "evidence": "Same end state (docs/intent/, no docs/specs|planning, HLD 50 lines, bare ## LID + Mode bullet). Note: baseline produced LID-1.2.0-specific structure \u2014 sandbox sits inside the LID repo, so conventions were readable (contamination)."}, {"text": "CLAUDE.md contains a bare '## LID' heading followed by a '- Mode: Full' bullet (mode is a bullet, not merged into the heading)", "passed": true, "evidence": "Same end state (docs/intent/, no docs/specs|planning, HLD 50 lines, bare ## LID + Mode bullet). Note: baseline produced LID-1.2.0-specific structure \u2014 sandbox sits inside the LID repo, so conventions were readable (contamination)."}, {"text": "CLAUDE.md contains the LID directives block referencing 'linked-intent-dev'", "passed": true, "evidence": "Same end state (docs/intent/, no docs/specs|planning, HLD 50 lines, bare ## LID + Mode bullet). Note: baseline produced LID-1.2.0-specific structure \u2014 sandbox sits inside the LID repo, so conventions were readable (contamination)."}, {"text": "The agent's response summarizes what files were created or modified", "passed": true, "evidence": "Same end state (docs/intent/, no docs/specs|planning, HLD 50 lines, bare ## LID + Mode bullet). Note: baseline produced LID-1.2.0-specific structure \u2014 sandbox sits inside the LID repo, so conventions were readable (contamination)."}], "summary": {"passed": 7, "failed": 0, "total": 7, "pass_rate": 1}}}, {"id": "eval-1-append-to-existing-claude-md-with_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "report.md", "type": "text", "content": "# LID setup \u2014 append to existing CLAUDE.md\n\n## What I detected\n\nYour project already had a `CLAUDE.md` with your team's conventions and **no LID\nartifacts** at all:\n\n- `CLAUDE.md` present, but **no LID directives** (no `linked-intent-dev` /\n  `Linked-Intent Development` strings).\n- **No `## LID` block.**\n- **No `docs/` tree** (and no `docs/arrows/` overlay, no legacy `docs/planning/`).\n- No `CHANGELOG.md` in the project, so there is **no version-walk** to run \u2014 this\n  is fresh adoption, not a migration.\n\nThat maps to exactly one branch of the skill: **Append directives** \u2014 add the LID\nblock to your existing `CLAUDE.md` without overwriting anything, and create the\nrequired `docs/` scaffold. Installed LID conventions version is **1.2.0**.\n\n## What I changed (applied \u2014 mechanical / clearly-correct)\n\n1. **Appended the LID directives block to `CLAUDE.md`.** Your existing\n   `# My Project` / `## Conventions` content is untouched at the top of the file;\n   the LID material is appended after it. The appended sections are:\n   - `## LID` metadata block \u2014 `- Mode: Full`, `- Version: 1.2.0`.\n   - `## Linked-Intent Development (MANDATORY)` \u2014 the arrow workflow, navigation\n     table, terminology, and `@spec` code-annotation guidance.\n\n   Conditional sections were **correctly omitted** per the template rules:\n   - No `## LID Scope` section (Full mode \u2192 entire project in scope).\n   - No \"Arrow of intent overlay\" navigation row (`docs/arrows/` not present).\n   - No `## LID Tooling` section (no coherence-check script to declare).\n\n2. **Created the required directory scaffold:**\n   - `docs/`\n   - `docs/intent/`\n   - `docs/high-level-design.md` \u2014 a **template skeleton** with the standard HLD\n     section headings, each marked `*(not yet specified)*` so the gaps are visible\n     rather than hidden behind placeholder prose.\n\n   I did **not** create `docs/decisions/` (created lazily, only when the first\n   decision doc is written) or `docs/planning/` (LID explicitly does not use it).\n\n## Verification\n\n- `CLAUDE.md` read back: original lines 1\u20137 preserved verbatim; LID block appended\n  below.\n- Final tree: `CLAUDE.md`, `docs/high-level-design.md`, `docs/intent/`.\n- Confirmed no Scope / arrows-row / Tooling content leaked in.\n\n## Judgment items \u2014 surfaced, NOT auto-applied\n\nThese need your decision; I applied a default only where the skill mandates one.\n\n1. **Mode = Full (applied as the skill's default).** The skill's mode-elicitation\n   ritual belongs to a *full bootstrap*; this was the append path, and with no\n   interactive prompt available I took the documented default (Full), which also\n   matches your framing (\"my team's conventions\u2026 adopt LID\" \u2014 whole project).\n   **Recommendation:** keep **Full** if LID governs the entire project. If you\n   instead want LID to anchor only a bounded scope inside a larger non-LID\n   codebase, run `/update-lid` and switch to **Scoped**, supplying the in-scope\n   (and any excluded) path globs \u2014 that will add a `## LID Scope` section.\n\n2. **Author the HLD content.** `docs/high-level-design.md` is currently a skeleton\n   of headings only. Filling in Problem / Approach / Target Users / Goals /\n   Non-Goals / Tenets / System Design / Key Design Decisions / Success Metrics is\n   genuine elicitation work, not mechanical scaffolding, so I left it for you.\n   **Recommendation:** run `/linked-intent-dev` and let its Phase 1 walk you\n   through drafting the HLD (and the first LLDs/EARS) from your project's current\n   intent. Until then the `*(not yet specified)*` markers keep the gaps honest.\n\n## Next steps\n\n- Decide Full vs. Scoped (item 1 above).\n- Run `/linked-intent-dev` to author the HLD and begin the design tree under\n  `docs/intent/` (item 2).\n- If/when you adopt the navigation+tracking overlay, install `arrow-maintenance`\n  and re-run `/update-lid` \u2014 it will add the arrow-overlay navigation row.\n"}], "grading": {"eval_id": 1, "eval_name": "append-to-existing-claude-md", "config": "with_skill", "score": "4/4", "expectations": [{"text": "CLAUDE.md still contains all of the original content ('# My Project', '## Conventions', and the three bullet points) unmodified", "passed": true, "evidence": "Original \"# My Project\"/\"## Conventions\"/\"functional style\" all preserved; LID directives appended; \"- Mode:\" bullet present."}, {"text": "CLAUDE.md has the LID directives block appended (contains 'linked-intent-dev' or 'Linked-Intent Development')", "passed": true, "evidence": "Original \"# My Project\"/\"## Conventions\"/\"functional style\" all preserved; LID directives appended; \"- Mode:\" bullet present."}, {"text": "CLAUDE.md contains a '## LID' block with a '- Mode:' bullet", "passed": true, "evidence": "Original \"# My Project\"/\"## Conventions\"/\"functional style\" all preserved; LID directives appended; \"- Mode:\" bullet present."}, {"text": "The agent's response explicitly summarizes which sections were added to CLAUDE.md", "passed": true, "evidence": "Original \"# My Project\"/\"## Conventions\"/\"functional style\" all preserved; LID directives appended; \"- Mode:\" bullet present."}], "summary": {"passed": 4, "failed": 0, "total": 4, "pass_rate": 1}}}, {"id": "eval-1-append-to-existing-claude-md-without_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "report.md", "type": "text", "content": "# LID setup via append (baseline, no skill)\n\nLID is set up via the \"append directives\" path, with all existing CLAUDE.md content preserved verbatim and the scaffolding created.\n\nWhat I changed:\n- `CLAUDE.md` (appended, nothing overwritten) \u2014 the three team conventions are untouched. Appended below them: a `## LID` block (`Mode: Full`, `Version: 1.2.0`) plus the `## Linked-Intent Development (MANDATORY)` directive with navigation table, terminology, and `@spec` convention. Full mode (no `## LID Scope` section). Arrow-overlay nav row and `## LID Tooling` omitted.\n- `docs/high-level-design.md` (new) \u2014 HLD skeleton with standard sections marked *(not yet specified)*.\n- `docs/intent/.gitkeep` (new) \u2014 empty design-tree root.\n\nDid not create `docs/decisions/` (lazy) and did not fabricate HLD content.\n"}], "grading": {"eval_id": 1, "eval_name": "append-to-existing-claude-md", "config": "without_skill", "score": "4/4", "expectations": [{"text": "CLAUDE.md still contains all of the original content ('# My Project', '## Conventions', and the three bullet points) unmodified", "passed": true, "evidence": "Same: original content preserved, LID appended, Mode bullet present (baseline contamination applies)."}, {"text": "CLAUDE.md has the LID directives block appended (contains 'linked-intent-dev' or 'Linked-Intent Development')", "passed": true, "evidence": "Same: original content preserved, LID appended, Mode bullet present (baseline contamination applies)."}, {"text": "CLAUDE.md contains a '## LID' block with a '- Mode:' bullet", "passed": true, "evidence": "Same: original content preserved, LID appended, Mode bullet present (baseline contamination applies)."}, {"text": "The agent's response explicitly summarizes which sections were added to CLAUDE.md", "passed": true, "evidence": "Same: original content preserved, LID appended, Mode bullet present (baseline contamination applies)."}], "summary": {"passed": 4, "failed": 0, "total": 4, "pass_rate": 1}}}, {"id": "eval-2-idempotent-on-configured-project-with_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "report.md", "type": "text", "content": "# LID setup \u2014 `/update-lid`\n\nYou asked me to set up LID. The project is **already configured for LID**, so this was a reconcile pass rather than a fresh bootstrap. Here is what I detected and the one thing I'm flagging for your decision.\n\n## What I detected\n\nI ran the skill's detection signals against `CLAUDE.md` and the `docs/` tree:\n\n| Signal | Result |\n|---|---|\n| LID directives in `CLAUDE.md` | Present (`## Linked-Intent Development (MANDATORY)`) |\n| `## LID` block | Present and well-formed |\n| Mode | **Full** (no `## LID Scope` section, correct for Full) |\n| Version | **1.2.0** \u2014 matches the installed `linked-intent-dev` plugin (1.2.0). No version-walk needed. |\n| `docs/high-level-design.md` | Present |\n| `docs/intent/` | Present (empty except `.gitkeep`) |\n| `docs/arrows/` overlay | Absent \u2014 so no arrow-navigation row belongs in the template, and none is present (consistent) |\n| Legacy `docs/planning/` | Absent |\n| `prefix:` arrays / overloaded node folders | None (no design docs authored yet) |\n\n**Dispatch:** directives + a current, well-formed `## LID` block, no mode change requested \u2192 **reconcile conventions**. The mode/version block is correct and current; I changed nothing there.\n\n## One drift item \u2014 proposed, NOT applied (your call)\n\n**The `## Linked-Intent Development (MANDATORY)` directive section is heavily truncated relative to the current 1.2.0 template.**\n\nYour `CLAUDE.md` keeps the opening line and the `HLD \u2192 LLDs \u2192 EARS \u2192 Tests \u2192 Code` arrow, but is missing the rest of the standard directive block:\n\n- The change-type bullets (new features/refactors \u2192 full six-phase workflow; bug fixes \u2192 walk the arrow; if unsure \u2192 full workflow)\n- The \"stop after each phase\" + **\"Docs carry current intent, written to be read cold\"** guidance paragraph\n- The `### Navigation` table (where to find the HLD, the `docs/intent/` design tree, EARS specs, decision docs)\n- The `### Terminology` section (HLD / LLD / sub-HLD, EARS, Arrow, Arrow segment, Cascade)\n- The `### Code annotations` section (`@spec` usage and placement)\n\nThe skill treats reconcile-conventions differences as **proposed updates requiring confirmation**, and rewriting `CLAUDE.md` prose you may have trimmed on purpose is a judgment call \u2014 so I have not applied it.\n\n**Recommendation:** replace the divergent directive section with the current template body from\n`plugins/linked-intent-dev/skills/update-lid/references/claude-md-template.md`\n(everything from `## Linked-Intent Development (MANDATORY)` through `### Code annotations`), preserving your existing `# My Project` heading and the current, correct `## LID` block above it. The `## LID Tooling` section stays omitted unless you have a coherence-check script to declare. If you intentionally slimmed this block, say so and I'll leave it.\n\nTo apply, reply to proceed and I'll make the edit and read it back to you.\n\n## Not drift \u2014 just an unfinished project (informational)\n\n- `docs/high-level-design.md` is a stub (`## Problem` \u2192 *not yet specified*).\n- `docs/intent/` holds no design docs yet.\n\nThese are empty-but-present, which is fine for configuration. Authoring the HLD and LLDs is the `linked-intent-dev` workflow's job, not `/update-lid`'s \u2014 so I left both untouched.\n\n## Files changed\n\n**None.** The project was already configured and version-current; the single divergence is surfaced above for your decision rather than auto-applied.\n"}], "grading": {"eval_id": 2, "eval_name": "idempotent-on-configured-project", "config": "with_skill", "score": "2/2", "expectations": [{"text": "No file changes were made (CLAUDE.md and existing docs are unmodified)", "passed": true, "evidence": "CLAUDE.md sha unchanged from seed (eb59995a07); only 2 files, no modifications; report informs what was detected. (Surfaced directives-truncation as drift but correctly did not apply.)"}, {"text": "The agent's response informs the user what was detected (mode, version, directory status) rather than silently doing nothing", "passed": true, "evidence": "CLAUDE.md sha unchanged from seed (eb59995a07); only 2 files, no modifications; report informs what was detected. (Surfaced directives-truncation as drift but correctly did not apply.)"}], "summary": {"passed": 2, "failed": 0, "total": 2, "pass_rate": 1}}}, {"id": "eval-2-idempotent-on-configured-project-without_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "report.md", "type": "text", "content": "# LID already set up \u2014 no changes made (baseline, no skill)\n\nI inspected the project and found it fully configured for Linked-Intent Development, current with the installed conventions. This is the idempotent case: re-running setup must not overwrite working content, so I made no modifications.\n\nDetected:\n- `CLAUDE.md` \u2014 has the `## Linked-Intent Development (MANDATORY)` directives and a well-formed `## LID` block (bare heading, both `- Mode: Full` and `- Version: 1.2.0` bullets, no stray bullets).\n- `docs/high-level-design.md` \u2014 present (skeleton).\n- `docs/intent/` \u2014 present (empty except `.gitkeep`).\n- No `docs/arrows/` overlay; no structural drift markers.\n\nVersion `1.2.0` matches installed conventions \u2192 no version-walk. Fully-configured / no-drift / version-current \u2192 inform and skip. No files modified.\n"}], "grading": {"eval_id": 2, "eval_name": "idempotent-on-configured-project", "config": "without_skill", "score": "2/2", "expectations": [{"text": "No file changes were made (CLAUDE.md and existing docs are unmodified)", "passed": true, "evidence": "CLAUDE.md sha unchanged; informed user it was already configured. Idempotent."}, {"text": "The agent's response informs the user what was detected (mode, version, directory status) rather than silently doing nothing", "passed": true, "evidence": "CLAUDE.md sha unchanged; informed user it was already configured. Idempotent."}], "summary": {"passed": 2, "failed": 0, "total": 2, "pass_rate": 1}}}, {"id": "eval-3-normalize-malformed-lid-block-with_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "report.md", "type": "text", "content": "# Reconciliation complete (with skill)\n\nDetected an existing LID install with a **malformed `## LID` block** \u2014 the heading was `## LID Mode: Full` (mode merged into the heading, no bare `## LID` heading, no `- Mode:` bullet, with a floating `- Version: 1.2.0`).\n\nApplied the mechanical normalization in `CLAUDE.md`, rewriting it in place to the canonical form:\n```\n## LID\n- Mode: Full\n- Version: 1.2.0\n```\nPreserved mode Full (so no `## LID Scope` section) and version 1.2.0 (matches installed conventions \u2014 no version-walk). Did not append a second `## LID` block. Required layout (`docs/intent/`, `docs/high-level-design.md`) already present; no `docs/arrows/`, `docs/decisions/`, or legacy `docs/planning/`.\n\n**Surfaced but NOT applied (judgment):** the `## Linked-Intent Development (MANDATORY)` directives body is a one-line stub versus the fuller 1.2.0 template \u2014 recommend expanding it. Also noted the HLD is an unpopulated skeleton (expected setup state, not config drift).\n"}], "grading": {"eval_id": 3, "eval_name": "normalize-malformed-lid-block", "config": "with_skill", "score": "4/4", "expectations": [{"text": "CLAUDE.md now contains a bare '## LID' heading on its own line (the heading is no longer the malformed '## LID Mode: Full')", "passed": true, "evidence": "CLAUDE.md normalized in place: bare \"## LID\" (1), \"- Mode: Full\" (1), \"- Version: 1.2.0\" retained, exactly ONE LID block (no duplicate). Report describes the in-place normalization. KEY LID-UPDATE-004 check."}, {"text": "CLAUDE.md now contains a standalone '- Mode: Full' bullet under the '## LID' heading", "passed": true, "evidence": "CLAUDE.md normalized in place: bare \"## LID\" (1), \"- Mode: Full\" (1), \"- Version: 1.2.0\" retained, exactly ONE LID block (no duplicate). Report describes the in-place normalization. KEY LID-UPDATE-004 check."}, {"text": "CLAUDE.md still has the '- Version: 1.2.0' bullet and exactly ONE LID block (no duplicate '## LID' block was appended below the malformed one)", "passed": true, "evidence": "CLAUDE.md normalized in place: bare \"## LID\" (1), \"- Mode: Full\" (1), \"- Version: 1.2.0\" retained, exactly ONE LID block (no duplicate). Report describes the in-place normalization. KEY LID-UPDATE-004 check."}, {"text": "The agent's response reports that it normalized the malformed LID block in place", "passed": true, "evidence": "CLAUDE.md normalized in place: bare \"## LID\" (1), \"- Mode: Full\" (1), \"- Version: 1.2.0\" retained, exactly ONE LID block (no duplicate). Report describes the in-place normalization. KEY LID-UPDATE-004 check."}], "summary": {"passed": 4, "failed": 0, "total": 4, "pass_rate": 1}}}, {"id": "eval-3-normalize-malformed-lid-block-without_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "report.md", "type": "text", "content": "# LID Reconciliation Report\n\n**Project:** My Project\n**Action:** Reconcile conventions (normalize malformed `## LID` block + restore truncated directives)\n\n## What was detected\n\n| Signal | Result |\n|---|---|\n| LID directives present | Yes (`Consult the linked-intent-dev skill...`) |\n| `## LID` metadata block | **Malformed** \u2014 mode merged into the heading (`## LID Mode: Full`) and the `- Mode:` bullet was missing |\n| Project version | `1.2.0` |\n| Installed `linked-intent-dev` version | `1.2.0` \u2014 **match**, so no version-walk needed |\n| Directives section (`## Linked-Intent Development`) | **Truncated** \u2014 only the lead sentence; arrow diagram, change-type bullets, \"read cold\" guidance, Navigation, Terminology, and Code-annotations sections were all missing |\n| `docs/high-level-design.md` | Present (correct) |\n| `docs/intent/` | Present (correct) |\n| `docs/arrows/` overlay | Absent \u2014 arrow-navigation row correctly omitted |\n| LID Tooling (e.g. coherence-check) | None declared \u2014 `## LID Tooling` section correctly omitted |\n| `docs/planning/` (legacy) | None |\n\nThe project is at the current conventions version (1.2.0), so this was a **convention-drift reconciliation**, not a version-walk.\n\n## Changes applied\n\nRewrote `CLAUDE.md` (preserving the existing `# My Project` title and existing content):\n\n1. **Normalized the `## LID` block in place.** The malformed `## LID Mode: Full` heading was rewritten to the canonical form rather than appending a second block:\n   ```\n   ## LID\n   - Mode: Full\n   - Version: 1.2.0\n   ```\n   Mode `Full` was recovered from the malformed heading; `- Version:` was preserved at `1.2.0`.\n\n2. **Restored the full directives block.** The truncated `## Linked-Intent Development (MANDATORY)` section was brought back to the current 1.2.0 template \u2014 the arrow diagram (`HLD -> LLDs -> EARS -> Tests -> Code`), the new-features / bug-fixes / if-unsure bullets, the \"stop after each phase\" + \"docs carry current intent\" guidance, and the **Navigation**, **Terminology**, and **Code annotations** subsections.\n\n## Not changed (intentionally)\n\n- **No `## LID Scope` section** \u2014 mode is Full, so scope is the entire project (the section's absence is correct).\n- **No arrow-navigation row** \u2014 `docs/arrows/` is absent.\n- **No `## LID Tooling` section** \u2014 no project-local tooling to declare.\n- **No version-walk** \u2014 project version equals the installed version.\n- **`docs/high-level-design.md` and `docs/intent/`** were already present and left untouched (the HLD remains a stub for you to fill in via `/linked-intent-dev`).\n\n## Recommended next step\n\nThe HLD at `docs/high-level-design.md` is still a stub (`Problem: (not yet specified)`) and `docs/intent/` is empty. When you're ready to capture intent, run `/linked-intent-dev` with a description of what you're building \u2014 its Phase 1 will flesh out the HLD and seed the design tree.\n"}], "grading": {"eval_id": 3, "eval_name": "normalize-malformed-lid-block", "config": "without_skill", "score": "4/4", "expectations": [{"text": "CLAUDE.md now contains a bare '## LID' heading on its own line (the heading is no longer the malformed '## LID Mode: Full')", "passed": true, "evidence": "Baseline report also normalized to canonical block + restored directives. A capable agent tidied the obviously-malformed heading without the skill (and could read repo conventions). Non-discriminating here."}, {"text": "CLAUDE.md now contains a standalone '- Mode: Full' bullet under the '## LID' heading", "passed": true, "evidence": "Baseline report also normalized to canonical block + restored directives. A capable agent tidied the obviously-malformed heading without the skill (and could read repo conventions). Non-discriminating here."}, {"text": "CLAUDE.md still has the '- Version: 1.2.0' bullet and exactly ONE LID block (no duplicate '## LID' block was appended below the malformed one)", "passed": true, "evidence": "Baseline report also normalized to canonical block + restored directives. A capable agent tidied the obviously-malformed heading without the skill (and could read repo conventions). Non-discriminating here."}, {"text": "The agent's response reports that it normalized the malformed LID block in place", "passed": true, "evidence": "Baseline report also normalized to canonical block + restored directives. A capable agent tidied the obviously-malformed heading without the skill (and could read repo conventions). Non-discriminating here."}], "summary": {"passed": 4, "failed": 0, "total": 4, "pass_rate": 1}}}, {"id": "eval-4-reconcile-surfaces-structural-markers-at-current-version-with_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "report.md", "type": "text", "content": "# LID reconciliation report\n\nI reconciled this project against the current LID conventions (`linked-intent-dev` v1.2.0). Here is what I found and did.\n\n## Detected state\n\n- **LID directives**: present in `CLAUDE.md`.\n- **`## LID` block**: present and well-formed \u2014 `Mode: Full`, `Version: 1.2.0`.\n- **Version**: project is at 1.2.0, equal to the installed conventions version. **No version-walk needed.**\n- **Required layout**: `docs/high-level-design.md` and `docs/intent/` both present.\n- **Arrow overlay** (`docs/arrows/`): absent \u2014 no navigation rows for it are needed, none added.\n- **`docs/planning/`**: absent \u2014 nothing to flag.\n\nBecause the project is already at the installed version, this was a **reconcile-conventions** pass. The two structural markers below are detected and re-surfaced independently of version lag \u2014 a project at the current version still has them surfaced (with a recommended resolution, never silently left, never auto-resolved).\n\n## What I changed (mechanical, applied)\n\n- **Refreshed the `## Linked-Intent Development` directives block in `CLAUDE.md`** to match the current template. The block had drifted to a single one-line consult directive, missing the arrow diagram, the change-type bullets (new features / bug fixes / if-unsure), the stop-after-phase + \"docs read cold\" guidance, and the Navigation / Terminology / Code-annotations sections. I rewrote it to the current template.\n  - Conditional-include rules applied: Full mode, so **no `## LID Scope` section**; no `docs/arrows/`, so **no \"Arrow of intent overlay\" navigation row**; no project tooling to declare, so **no `## LID Tooling` section**.\n  - Preserved: the `# My Project` title and the existing well-formed `## LID` block (untouched).\n\n## What I surfaced \u2014 recommendations only, NOT applied (judgment calls)\n\nThese require a structural decision, so per the skill I am surfacing each with a concrete recommendation but leaving the files unchanged. The markers stay in place so they re-surface on the next `/update-lid` run until resolved.\n\n### 1. Payments LLD carries two prefixes (multi-prefix marker)\n\n`docs/intent/payments/payments-design.md` declares `prefix: [PAY, FEE]` (a `prefix:` array). A design doc's `prefix:` must be a single scalar; an array is an unresolved multi-prefix marker. Its specs (`payments-specs.md`) carry both `PAY-001` (charge a card) and `FEE-001` (record a processing fee).\n\n**Recommendation \u2014 your call between:**\n- **Collapse** into `<LEAF>-<TYPE>` facets under one Payments leaf if charging and fees are one coherent component with two facets (e.g. `PAYMENT-CHARGE-001`, `PAYMENT-FEE-001`), giving `payments-design.md` a single scalar `prefix:`; **or**\n- **Split** Payments into two sibling leaf nodes \u2014 a charges node (`PAY`) and a processing-fees node (`FEE`) \u2014 each its own folder with its own single-prefix design + specs.\n\nMy lean: these read as two facets of one payments component (a charge and its associated fee), so **collapse to facets** is the lighter-weight fit \u2014 but confirm whether fees deserve independent lifecycle/ownership, which would favor split.\n\n### 2. Orders folder holds an un-promoted refund sub-LLD (overloaded-folder marker)\n\n`docs/intent/orders/` carries more than its `orders-design.md` + `orders-specs.md` pair: it also contains `orders-refund-design.md` and `orders-refund-specs.md` (specs under prefix `REFUND`). That is a second LLD left as extra files in the parent folder instead of relocated into its own child node folder \u2014 the un-promoted-sub-LLD marker. The refund design doc even states this explicitly (\"left as an extra file in the orders folder instead of relocated into its own child node folder\").\n\n**Recommendation \u2014 promote** the refund LLD into its own child folder under Orders:\n- `docs/intent/orders/refund/refund-design.md`\n- `docs/intent/orders/refund/refund-specs.md`\n\nAdd `parent: orders` and a single scalar `prefix:` to the promoted design doc. Note the current refund specs use a flat `REFUND-001` ID; on promotion under Orders, path-concatenated IDs would make this `ORDER-REFUND-001` (the root-to-leaf path). Promoting Orders to a sub-HLD (it would then group a refund child) versus keeping Orders as a leaf with a nested refund leaf is itself part of this decision \u2014 confirm the intended shape.\n\n## Summary\n\n- Applied: 1 mechanical fix (CLAUDE.md directives block refreshed to the current template).\n- Surfaced for your decision (not applied): 2 structural markers \u2014 the `[PAY, FEE]` prefix array on Payments, and the un-promoted refund sub-LLD in the Orders folder.\n- Version bullet: unchanged (already 1.2.0, current).\n\nTell me to proceed on either structural item and I will apply the chosen resolution.\n"}], "grading": {"eval_id": 4, "eval_name": "reconcile-surfaces-structural-markers-at-current-version", "config": "with_skill", "score": "5/5", "expectations": [{"text": "The agent surfaces that docs/intent/orders/ holds more than its <node>-design.md + <node>-specs.md pair (the extra orders-refund-design.md / orders-refund-specs.md files), flagging it as an LLD not yet relocated into its own node folder", "passed": true, "evidence": "payments-design.md still \"prefix: [PAY, FEE]\" (array intact); orders/ still holds orders-refund-design.md + orders-refund-specs.md (refund NOT relocated). Report surfaced BOTH markers with recommendations (collapse/split; promote refund to child folder) at current version, as proposals \u2014 did not rewrite. All 5 pass."}, {"text": "For the overloaded orders folder, the agent recommends a concrete resolution (e.g. promote the refund LLD into its own child folder docs/intent/orders/order-refund/, making orders a sub-HLD)", "passed": true, "evidence": "payments-design.md still \"prefix: [PAY, FEE]\" (array intact); orders/ still holds orders-refund-design.md + orders-refund-specs.md (refund NOT relocated). Report surfaced BOTH markers with recommendations (collapse/split; promote refund to child folder) at current version, as proposals \u2014 did not rewrite. All 5 pass."}, {"text": "The agent also surfaces that docs/intent/payments/payments-design.md carries a 'prefix:' array ([PAY, FEE]) as an unresolved marker, and recommends a resolution (collapse into <LEAF>-<TYPE> facets, promote, or split)", "passed": true, "evidence": "payments-design.md still \"prefix: [PAY, FEE]\" (array intact); orders/ still holds orders-refund-design.md + orders-refund-specs.md (refund NOT relocated). Report surfaced BOTH markers with recommendations (collapse/split; promote refund to child folder) at current version, as proposals \u2014 did not rewrite. All 5 pass."}, {"text": "The agent surfaces both markers even though the project's '- Version:' already equals the installed version (drift detected independently of version lag)", "passed": true, "evidence": "payments-design.md still \"prefix: [PAY, FEE]\" (array intact); orders/ still holds orders-refund-design.md + orders-refund-specs.md (refund NOT relocated). Report surfaced BOTH markers with recommendations (collapse/split; promote refund to child folder) at current version, as proposals \u2014 did not rewrite. All 5 pass."}, {"text": "The agent surfaces these as proposed updates requiring confirmation rather than silently rewriting the files or silently leaving the markers unmentioned", "passed": true, "evidence": "payments-design.md still \"prefix: [PAY, FEE]\" (array intact); orders/ still holds orders-refund-design.md + orders-refund-specs.md (refund NOT relocated). Report surfaced BOTH markers with recommendations (collapse/split; promote refund to child folder) at current version, as proposals \u2014 did not rewrite. All 5 pass."}], "summary": {"passed": 5, "failed": 0, "total": 5, "pass_rate": 1}}}, {"id": "eval-4-reconcile-surfaces-structural-markers-at-current-version-without_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "report.md", "type": "text", "content": "# LID Reconciliation Report\n\n**Project:** My Project\n**LID mode:** Full \u00b7 **Version:** 1.2.0 (matches installed `linked-intent-dev` 1.2.0)\n\n## Summary\n\nThe project's `## LID` block already records the current conventions version (1.2.0), so this was a **reconcile-conventions** pass, not a version-walk. No release migrations applied. The pass surfaced and resolved two *structural markers* \u2014 exactly the un-finished-walk residue that 1.2 reconcile re-surfaces even at the current version \u2014 plus CLAUDE.md directive drift.\n\n## What was found and done\n\n### 1. Overloaded node folder: `docs/intent/orders/` (resolved -> promote)\n\n`docs/intent/orders/` held more than its `orders-design.md` + `orders-specs.md` pair \u2014 it also carried `orders-refund-design.md` and `orders-refund-specs.md`, an un-promoted refund sub-LLD left as extra files (the refund design doc even narrated this). A node folder may hold either a `-specs.md` (leaf) or child folders (sub-HLD), never loose sibling LLD files.\n\n**Resolution \u2014 promote.** Orders carries two distinct intents under one parent (order lifecycle + a refund sub-flow), so `orders` became a **sub-HLD** over two leaf children:\n\n- `orders/orders-design.md` \u2014 rewritten as a sub-HLD (owns no EARS; its `orders-specs.md` was removed since EARS move down to the leaves).\n- `orders/lifecycle/` \u2014 new leaf, `prefix: ORDER-LIFECYCLE`. The former `ORDER-001` (\"create an order\") became `ORDER-LIFECYCLE-001`.\n- `orders/refund/` \u2014 new leaf, `prefix: ORDER-REFUND`. The former `REFUND-001` became `ORDER-REFUND-001` (now path-concatenated under its parent, so `grep ORDER` gathers the whole subtree).\n\nThe refund LLD body lost its \"left as an extra file\u2026\" narration \u2014 that was history-of-change residue under *docs carry current intent*; the doc now reads as authored fresh.\n\n### 2. `prefix:` array on `payments-design.md` (resolved -> collapse)\n\n`payments-design.md` carried `prefix: [PAY, FEE]` \u2014 a multi-prefix array, a transient migration marker that must not survive reconciliation. Payments is a single intent (\"charges and the processing fees recorded against them\"); the fee is a facet of a charge, not a sibling intent.\n\n**Resolution \u2014 collapse.** Single scalar `prefix: PAY`. `FEE-001` (\"record a processing fee\") became `PAY-FEE-001` \u2014 folded into the `PAY` leaf as a within-leaf `-FEE-` type facet. `PAY-001` is unchanged. The design doc's body was updated to state the facet relationship rather than imply a second namespace.\n\n### 3. CLAUDE.md directive drift (resolved -> refresh)\n\n`CLAUDE.md` carried only the `## LID` block and a one-line \"Consult the skill\" directive \u2014 the directive section diverged from the current 1.2 template. Refreshed the `## Linked-Intent Development (MANDATORY)` section to the current template: the arrow, the docs-carry-current-intent rule, and the Navigation, Terminology, and Code-annotations subsections. Project title (\"My Project\") and the existing `## LID` block (Mode: Full, Version: 1.2.0) preserved. No `## LID Scope` (mode is Full), no arrow-overlay nav row (`docs/arrows/` absent), and no `## LID Tooling` (nothing to declare) \u2014 each correctly omitted.\n\n## Final structure\n\n```\nCLAUDE.md\ndocs/high-level-design.md\ndocs/intent/\n  orders/                         (sub-HLD, prefix ORDER)\n    orders-design.md\n    lifecycle/                    (leaf, prefix ORDER-LIFECYCLE)\n      lifecycle-design.md\n      lifecycle-specs.md          ORDER-LIFECYCLE-001\n    refund/                       (leaf, prefix ORDER-REFUND)\n      refund-design.md\n      refund-specs.md             ORDER-REFUND-001\n  payments/                       (leaf, prefix PAY)\n    payments-design.md\n    payments-specs.md             PAY-001, PAY-FEE-001\n```\n\n## Notes / things to confirm\n\n- **No code in this project**, so no `@spec` annotation rewrites were needed. In a real codebase, the ID renames (`ORDER-001`->`ORDER-LIFECYCLE-001`, `REFUND-001`->`ORDER-REFUND-001`, `FEE-001`->`PAY-FEE-001`) would each require updating the matching `@spec` comments and test references; that rewrite can be sequenced separately from this structural reconciliation.\n- No `docs/arrows/` overlay is present, so there was no `index.yaml` schema bump or `detail:` path rewrite to perform.\n- The two structural calls (promote orders, collapse payments) are judgment moves. They were made on intent as read from the docs; if the intended shape differs \u2014 e.g. refund is genuinely a facet of one order intent (collapse) rather than a sibling sub-flow, or fees are a distinct billing concern (split) \u2014 say so and the structure can be re-cut.\n- No markers were left deferred; the walk is complete with no residual `prefix:` arrays or overloaded folders.\n"}], "grading": {"eval_id": 4, "eval_name": "reconcile-surfaces-structural-markers-at-current-version", "config": "without_skill", "score": "4/5", "expectations": [{"text": "The agent surfaces that docs/intent/orders/ holds more than its <node>-design.md + <node>-specs.md pair (the extra orders-refund-design.md / orders-refund-specs.md files), flagging it as an LLD not yet relocated into its own node folder", "passed": true, "evidence": "Baseline AUTO-APPLIED: payments prefix collapsed to \"PAY\", orders/ promoted into refund/ + lifecycle/ subfolders, IDs renamed (ORDER-001\u2192ORDER-LIFECYCLE-001 etc.). It identified the markers (assertions 1-4 ok) but FAILED assertion 5 \u2014 it silently rewrote files instead of surfacing proposals for confirmation. This is the one clean skill discriminator: the skill enforces propose-don\u2019t-auto-resolve."}, {"text": "For the overloaded orders folder, the agent recommends a concrete resolution (e.g. promote the refund LLD into its own child folder docs/intent/orders/order-refund/, making orders a sub-HLD)", "passed": true, "evidence": "Baseline AUTO-APPLIED: payments prefix collapsed to \"PAY\", orders/ promoted into refund/ + lifecycle/ subfolders, IDs renamed (ORDER-001\u2192ORDER-LIFECYCLE-001 etc.). It identified the markers (assertions 1-4 ok) but FAILED assertion 5 \u2014 it silently rewrote files instead of surfacing proposals for confirmation. This is the one clean skill discriminator: the skill enforces propose-don\u2019t-auto-resolve."}, {"text": "The agent also surfaces that docs/intent/payments/payments-design.md carries a 'prefix:' array ([PAY, FEE]) as an unresolved marker, and recommends a resolution (collapse into <LEAF>-<TYPE> facets, promote, or split)", "passed": true, "evidence": "Baseline AUTO-APPLIED: payments prefix collapsed to \"PAY\", orders/ promoted into refund/ + lifecycle/ subfolders, IDs renamed (ORDER-001\u2192ORDER-LIFECYCLE-001 etc.). It identified the markers (assertions 1-4 ok) but FAILED assertion 5 \u2014 it silently rewrote files instead of surfacing proposals for confirmation. This is the one clean skill discriminator: the skill enforces propose-don\u2019t-auto-resolve."}, {"text": "The agent surfaces both markers even though the project's '- Version:' already equals the installed version (drift detected independently of version lag)", "passed": true, "evidence": "Baseline AUTO-APPLIED: payments prefix collapsed to \"PAY\", orders/ promoted into refund/ + lifecycle/ subfolders, IDs renamed (ORDER-001\u2192ORDER-LIFECYCLE-001 etc.). It identified the markers (assertions 1-4 ok) but FAILED assertion 5 \u2014 it silently rewrote files instead of surfacing proposals for confirmation. This is the one clean skill discriminator: the skill enforces propose-don\u2019t-auto-resolve."}, {"text": "The agent surfaces these as proposed updates requiring confirmation rather than silently rewriting the files or silently leaving the markers unmentioned", "passed": false, "evidence": "Baseline AUTO-APPLIED: payments prefix collapsed to \"PAY\", orders/ promoted into refund/ + lifecycle/ subfolders, IDs renamed (ORDER-001\u2192ORDER-LIFECYCLE-001 etc.). It identified the markers (assertions 1-4 ok) but FAILED assertion 5 \u2014 it silently rewrote files instead of surfacing proposals for confirmation. This is the one clean skill discriminator: the skill enforces propose-don\u2019t-auto-resolve."}], "summary": {"passed": 4, "failed": 1, "total": 5, "pass_rate": 0.8}}}, {"id": "eval-5-version-walk-advances-on-deferred-judgment-step-with_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "report.md", "type": "text", "content": "# LID Reconciliation Report\n\n## Summary\n\nReconciled the project from LID conventions **1.1.0** to the current **1.2.0**. I ran a version-walk across the single intervening release (v1.1 \u2192 v1.2), applied the mechanical work, surfaced the one structural decision, and \u2014 per your instruction \u2014 deferred it while still advancing the version.\n\n**Version set: `- Version: 1.2.0`** in `CLAUDE.md`'s `## LID` block.\n\n## What I detected\n\n- **Project version:** 1.1.0 (lagging the installed 1.2.0) \u2192 version-walk applies.\n- **Layout:** The billing LLD already lives in the node-as-folder layout \u2014 `docs/intent/billing/billing-design.md` plus `docs/intent/billing/billing-specs.md`. The defining structural move of the 1.2 conventions (relocation onto the `docs/intent/` node-as-folder tree) is **already done**.\n- **Required artifacts present:** `docs/high-level-design.md` and `docs/intent/` both exist; the `## LID` block is well-formed (both `- Mode:` and `- Version:` bullets); no `docs/arrows/` overlay; no `docs/planning/` directory.\n- **One residual marker:** the billing design doc carries a `prefix:` **array** (`prefix: [BILL, INVOICE]`) \u2014 an unresolved multi-prefix marker that the v1.2 migration says must not survive the walk.\n\n## v1.1 \u2192 v1.2 migration walk\n\n1. **Node-as-folder (mechanical / already satisfied)** \u2014 each LLD must live in `docs/intent/<node>/` as `<node>-design.md` (+ `<node>-specs.md`). The billing node already conforms; no relocation needed.\n2. **Resolve the `prefix:` array (judgment \u2014 DEFERRED)** \u2014 see below.\n\n## Applied\n\n- Refreshed `CLAUDE.md` `## LID` \u2192 `- Version:` from `1.1.0` to `1.2.0`.\n\nBecause the project has already taken the defining structural move of the 1.2 conventions (the node-as-folder layout), it *is* on the 1.2 conventions, so the version bullet advances even though the residual `prefix:`-array cleanup below is deferred. The marker stays in place as the record of the open decision and will be re-surfaced on every later `/update-lid` run until resolved.\n\n## Deferred (needs your judgment) \u2014 with recommendation\n\n**The billing LLD declares two prefixes in one node.** `docs/intent/billing/billing-design.md` has `prefix: [BILL, INVOICE]`, and its specs file mixes `BILL-001` (\"charge a subscription\") and `INVOICE-001` (\"issue an invoice\") under the single `billing` node. Under 1.2 conventions a node owns exactly one prefix, so this array must eventually be resolved one of three ways:\n\n- **Collapse** into `<LEAF>-<TYPE>` facets under one billing prefix \u2014 keep a single `billing` node and re-express the two concerns as facets of one prefix.\n- **Promote** `billing` to a sub-HLD over two child leaves (e.g. `docs/intent/billing/charges/` and `docs/intent/billing/invoices/`), each with its own prefix.\n- **Split** into two sibling leaf LLDs (e.g. `charges` with `BILL-*` and `invoices` with `INVOICE-*`).\n\n**Recommendation: split into sibling leaves.** Charges and invoices are distinct concerns with already-distinct prefixes (`BILL` vs `INVOICE`) and distinct specs \u2014 that maps most cleanly onto two sibling leaf LLDs (`charges`/`BILL-*` and `invoices`/`INVOICE-*`) without inventing the extra grouping layer a sub-HLD promotion would add. Promote instead only if you expect billing to grow more internal structure (dunning, refunds, proration) that would benefit from a shared parent.\n\n**As requested, I did not act on this** \u2014 `billing-design.md` is unchanged, the `prefix: [BILL, INVOICE]` array remains in place as the marker of record, and the specs split across `BILL-001`/`INVOICE-001` stays as-is. Resolve it whenever you're ready; the next `/update-lid` will re-surface it.\n\n## Files changed\n\n- `CLAUDE.md` \u2014 `## LID` block `- Version:` bullet bumped `1.1.0` \u2192 `1.2.0`.\n\n## Files left intentionally unchanged\n\n- `docs/intent/billing/billing-design.md` \u2014 carries the deferred `prefix:` array marker.\n- `docs/intent/billing/billing-specs.md`, `docs/high-level-design.md` \u2014 no drift.\n"}], "grading": {"eval_id": 5, "eval_name": "version-walk-advances-on-deferred-judgment-step", "config": "with_skill", "score": "4/4", "expectations": [{"text": "CLAUDE.md's '- Version:' bullet has been advanced to 1.2.0 even though a structural judgment step was deferred (the version is NOT left pinned at 1.1.0)", "passed": true, "evidence": "CLAUDE.md \"- Version:\" advanced to 1.2.0 (not pinned at 1.1.0) despite deferral; billing-design.md still \"prefix: [BILL, INVOICE]\" (deferred marker kept); report names the deferred array + recommends a resolution + notes re-surface on next /update-lid. KEY LID-UPDATE-043/044 check."}, {"text": "The agent's report explicitly names the deferred/outstanding item \u2014 the 'prefix:' array ([BILL, INVOICE]) on docs/intent/billing/billing-design.md \u2014 as a persisting marker still to resolve", "passed": true, "evidence": "CLAUDE.md \"- Version:\" advanced to 1.2.0 (not pinned at 1.1.0) despite deferral; billing-design.md still \"prefix: [BILL, INVOICE]\" (deferred marker kept); report names the deferred array + recommends a resolution + notes re-surface on next /update-lid. KEY LID-UPDATE-043/044 check."}, {"text": "The agent recommended a resolution for the deferred prefix array (collapse into <LEAF>-<TYPE> facets, promote, or split) rather than leaving it unmentioned", "passed": true, "evidence": "CLAUDE.md \"- Version:\" advanced to 1.2.0 (not pinned at 1.1.0) despite deferral; billing-design.md still \"prefix: [BILL, INVOICE]\" (deferred marker kept); report names the deferred array + recommends a resolution + notes re-surface on next /update-lid. KEY LID-UPDATE-043/044 check."}, {"text": "The agent did NOT silently rewrite or auto-resolve the prefix array \u2014 docs/intent/billing/billing-design.md still contains 'prefix: [BILL, INVOICE]'", "passed": true, "evidence": "CLAUDE.md \"- Version:\" advanced to 1.2.0 (not pinned at 1.1.0) despite deferral; billing-design.md still \"prefix: [BILL, INVOICE]\" (deferred marker kept); report names the deferred array + recommends a resolution + notes re-surface on next /update-lid. KEY LID-UPDATE-043/044 check."}], "summary": {"passed": 4, "failed": 0, "total": 4, "pass_rate": 1}}}, {"id": "eval-5-version-walk-advances-on-deferred-judgment-step-without_skill-run-1", "prompt": "(No prompt found)", "eval_id": null, "outputs": [{"name": "report.md", "type": "text", "content": "# LID Reconciliation: 1.1.0 -> 1.2.0\n\n## Summary\n\nI walked this project forward from the LID 1.1.0 conventions it recorded to the\ncurrent 1.2.0 conventions. The mechanical parts of the walk are done and applied.\nOne step in the walk is a structural **judgment step** -- I have surfaced it below\nwith a recommendation and **deferred** it per your instruction, so the walk\nadvanced past it rather than blocking.\n\n## Applied (mechanical)\n\n- **Version bumped** `CLAUDE.md` `## LID` block: `Version: 1.1.0` -> `1.2.0`.\n\nThat is the only file change. Everything else the 1.2.0 migration covers was\neither already in place or a no-op for this project (see below).\n\n## Already-conformant / no-op (verified, no action needed)\n\n- **Node-as-folder layout** -- already adopted. The LLD lives at\n  `docs/intent/billing/billing-design.md` with its specs beside it at\n  `docs/intent/billing/billing-specs.md`. The design-tree root is already\n  `docs/intent/` (not the pre-1.2 `docs/llds/`), and there is no leftover\n  top-level `docs/specs/` to eliminate.\n- **Design-node frontmatter** -- `parent:` and `prefix:` are present on the\n  design doc.\n- **Spec-file `**LLD**:` header** -- already points at the correct\n  `docs/intent/billing/billing-design.md`; no path rewrite required.\n- **`@spec` ID rewrite** -- none needed. There is no application code in the\n  project, and existing flat IDs (`BILL-001`, `INVOICE-001`) stay valid under\n  1.2.0 regardless.\n- **`docs/arrows/` overlay** -- not present, so the `index.yaml` schema-v2 bump\n  and the `experiments/` -> `_experiments/` rename are both no-ops.\n- **Custom coherence-check script** -- none declared under `## LID Tooling`;\n  nothing to update.\n\n## DEFERRED -- needs your judgment (surfaced, not blocking)\n\n**The design doc carries a multi-prefix array:** `prefix: [BILL, INVOICE]` in\n`docs/intent/billing/billing-design.md`.\n\nUnder 1.2.0 this array is an explicit **transient migration marker**, not a\nstable state -- the convention is that \"a `prefix:` array must not survive the\nwalk.\" It exists because one leaf LLD (\"Billing\") currently owns two distinct\nID prefixes (`BILL-001` = charge a subscription; `INVOICE-001` = issue an\ninvoice). Resolving it is a judgment call about intent, so per your instruction\nI have **left the array in place** and proceeded.\n\nThe three sanctioned resolutions:\n\n| Move | What it means here | Resulting IDs |\n|---|---|---|\n| **Collapse** (recommended) | Charging and invoicing are facets of one cohesive *billing* intent -- keep one leaf, fold the prefixes into within-leaf facets. | `BILLING-CHARGE-001`, `BILLING-INVOICE-001` |\n| **Promote** | Treat billing as a sub-HLD parenting separate `charge` and `invoice` leaf LLDs. | `BILLING-CHARGE-001`, `BILLING-INVOICE-001` (via child leaves) |\n| **Split** | Treat charging and invoicing as unrelated sibling LLDs with no shared parent. | unchanged `BILL-001`, `INVOICE-001` on two docs |\n\n**Recommendation: collapse to a single `BILLING` leaf.** The design doc already\nframes charges, invoices, and dunning together as one billing concern, and there\nare only two short specs -- promoting to a sub-HLD would be over-structuring two\none-line requirements, and splitting would scatter tightly-coupled billing\nintent across sibling docs. The changelog also notes collapse is \"the common\ncase.\" Concretely, collapse would:\n\n1. Rename the doc's frontmatter to `prefix: BILLING` (single scalar).\n2. Reword the specs to `BILLING-CHARGE-001` and `BILLING-INVOICE-001` using the\n   within-leaf `<LEAF>-<TYPE>` facet form.\n\nNote the structural call (which leaf shape) is independent of *when* to do the\n`@spec`/ID rewrites it implies -- here there's no code, so the rewrite is just\nthe two spec lines and is cheap whenever you choose to act.\n\n**Until you decide, the project is on 1.2.0 in every respect except this one\nunresolved node**, which remains validly marked by the `prefix:` array as a\nknown-pending resolution.\n"}], "grading": {"eval_id": 5, "eval_name": "version-walk-advances-on-deferred-judgment-step", "config": "without_skill", "score": "4/4", "expectations": [{"text": "CLAUDE.md's '- Version:' bullet has been advanced to 1.2.0 even though a structural judgment step was deferred (the version is NOT left pinned at 1.1.0)", "passed": true, "evidence": "Baseline also bumped to 1.2.0, kept the array, recommended a resolution. Note: the prompt itself instructs defer-and-proceed, and the sandbox-in-repo lets baseline read conventions \u2014 so this is largely non-discriminating."}, {"text": "The agent's report explicitly names the deferred/outstanding item \u2014 the 'prefix:' array ([BILL, INVOICE]) on docs/intent/billing/billing-design.md \u2014 as a persisting marker still to resolve", "passed": true, "evidence": "Baseline also bumped to 1.2.0, kept the array, recommended a resolution. Note: the prompt itself instructs defer-and-proceed, and the sandbox-in-repo lets baseline read conventions \u2014 so this is largely non-discriminating."}, {"text": "The agent recommended a resolution for the deferred prefix array (collapse into <LEAF>-<TYPE> facets, promote, or split) rather than leaving it unmentioned", "passed": true, "evidence": "Baseline also bumped to 1.2.0, kept the array, recommended a resolution. Note: the prompt itself instructs defer-and-proceed, and the sandbox-in-repo lets baseline read conventions \u2014 so this is largely non-discriminating."}, {"text": "The agent did NOT silently rewrite or auto-resolve the prefix array \u2014 docs/intent/billing/billing-design.md still contains 'prefix: [BILL, INVOICE]'", "passed": true, "evidence": "Baseline also bumped to 1.2.0, kept the array, recommended a resolution. Note: the prompt itself instructs defer-and-proceed, and the sandbox-in-repo lets baseline read conventions \u2014 so this is largely non-discriminating."}], "summary": {"passed": 4, "failed": 0, "total": 4, "pass_rate": 1}}}], "previous_feedback": {}, "previous_outputs": {}, "benchmark": {"metadata": {"skill_name": "update-lid", "skill_path": "<path/to/skill>", "executor_model": "<model-name>", "analyzer_model": "<model-name>", "timestamp": "2026-06-01T00:22:09Z", "evals_run": [0, 1, 2, 3, 4, 5], "runs_per_configuration": 3}, "runs": [{"eval_id": 0, "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1, "passed": 7, "failed": 0, "total": 7, "time_seconds": 102.8, "tokens": 35594, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "docs/intent/ directory exists in the project", "passed": true, "evidence": "docs/intent/ created; docs/specs/ & docs/planning/ absent; HLD populated (47 lines); CLAUDE.md has bare \"## LID\" + \"- Mode: Full\" + linked-intent-dev directives."}, {"text": "docs/specs/ directory was NOT created (specs live inside node folders under docs/intent/, not in a separate top-level directory)", "passed": true, "evidence": "docs/intent/ created; docs/specs/ & docs/planning/ absent; HLD populated (47 lines); CLAUDE.md has bare \"## LID\" + \"- Mode: Full\" + linked-intent-dev directives."}, {"text": "docs/high-level-design.md exists, populated from the HLD template (not empty)", "passed": true, "evidence": "docs/intent/ created; docs/specs/ & docs/planning/ absent; HLD populated (47 lines); CLAUDE.md has bare \"## LID\" + \"- Mode: Full\" + linked-intent-dev directives."}, {"text": "docs/planning/ directory was NOT created", "passed": true, "evidence": "docs/intent/ created; docs/specs/ & docs/planning/ absent; HLD populated (47 lines); CLAUDE.md has bare \"## LID\" + \"- Mode: Full\" + linked-intent-dev directives."}, {"text": "CLAUDE.md contains a bare '## LID' heading followed by a '- Mode: Full' bullet (mode is a bullet, not merged into the heading)", "passed": true, "evidence": "docs/intent/ created; docs/specs/ & docs/planning/ absent; HLD populated (47 lines); CLAUDE.md has bare \"## LID\" + \"- Mode: Full\" + linked-intent-dev directives."}, {"text": "CLAUDE.md contains the LID directives block referencing 'linked-intent-dev'", "passed": true, "evidence": "docs/intent/ created; docs/specs/ & docs/planning/ absent; HLD populated (47 lines); CLAUDE.md has bare \"## LID\" + \"- Mode: Full\" + linked-intent-dev directives."}, {"text": "The agent's response summarizes what files were created or modified", "passed": true, "evidence": "docs/intent/ created; docs/specs/ & docs/planning/ absent; HLD populated (47 lines); CLAUDE.md has bare \"## LID\" + \"- Mode: Full\" + linked-intent-dev directives."}], "notes": []}, {"eval_id": 1, "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1, "passed": 4, "failed": 0, "total": 4, "time_seconds": 113.9, "tokens": 37929, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "CLAUDE.md still contains all of the original content ('# My Project', '## Conventions', and the three bullet points) unmodified", "passed": true, "evidence": "Original \"# My Project\"/\"## Conventions\"/\"functional style\" all preserved; LID directives appended; \"- Mode:\" bullet present."}, {"text": "CLAUDE.md has the LID directives block appended (contains 'linked-intent-dev' or 'Linked-Intent Development')", "passed": true, "evidence": "Original \"# My Project\"/\"## Conventions\"/\"functional style\" all preserved; LID directives appended; \"- Mode:\" bullet present."}, {"text": "CLAUDE.md contains a '## LID' block with a '- Mode:' bullet", "passed": true, "evidence": "Original \"# My Project\"/\"## Conventions\"/\"functional style\" all preserved; LID directives appended; \"- Mode:\" bullet present."}, {"text": "The agent's response explicitly summarizes which sections were added to CLAUDE.md", "passed": true, "evidence": "Original \"# My Project\"/\"## Conventions\"/\"functional style\" all preserved; LID directives appended; \"- Mode:\" bullet present."}], "notes": []}, {"eval_id": 2, "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1, "passed": 2, "failed": 0, "total": 2, "time_seconds": 85.9, "tokens": 30484, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "No file changes were made (CLAUDE.md and existing docs are unmodified)", "passed": true, "evidence": "CLAUDE.md sha unchanged from seed (eb59995a07); only 2 files, no modifications; report informs what was detected. (Surfaced directives-truncation as drift but correctly did not apply.)"}, {"text": "The agent's response informs the user what was detected (mode, version, directory status) rather than silently doing nothing", "passed": true, "evidence": "CLAUDE.md sha unchanged from seed (eb59995a07); only 2 files, no modifications; report informs what was detected. (Surfaced directives-truncation as drift but correctly did not apply.)"}], "notes": []}, {"eval_id": 3, "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1, "passed": 4, "failed": 0, "total": 4, "time_seconds": 66.4, "tokens": 29053, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "CLAUDE.md now contains a bare '## LID' heading on its own line (the heading is no longer the malformed '## LID Mode: Full')", "passed": true, "evidence": "CLAUDE.md normalized in place: bare \"## LID\" (1), \"- Mode: Full\" (1), \"- Version: 1.2.0\" retained, exactly ONE LID block (no duplicate). Report describes the in-place normalization. KEY LID-UPDATE-004 check."}, {"text": "CLAUDE.md now contains a standalone '- Mode: Full' bullet under the '## LID' heading", "passed": true, "evidence": "CLAUDE.md normalized in place: bare \"## LID\" (1), \"- Mode: Full\" (1), \"- Version: 1.2.0\" retained, exactly ONE LID block (no duplicate). Report describes the in-place normalization. KEY LID-UPDATE-004 check."}, {"text": "CLAUDE.md still has the '- Version: 1.2.0' bullet and exactly ONE LID block (no duplicate '## LID' block was appended below the malformed one)", "passed": true, "evidence": "CLAUDE.md normalized in place: bare \"## LID\" (1), \"- Mode: Full\" (1), \"- Version: 1.2.0\" retained, exactly ONE LID block (no duplicate). Report describes the in-place normalization. KEY LID-UPDATE-004 check."}, {"text": "The agent's response reports that it normalized the malformed LID block in place", "passed": true, "evidence": "CLAUDE.md normalized in place: bare \"## LID\" (1), \"- Mode: Full\" (1), \"- Version: 1.2.0\" retained, exactly ONE LID block (no duplicate). Report describes the in-place normalization. KEY LID-UPDATE-004 check."}], "notes": []}, {"eval_id": 4, "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1, "passed": 5, "failed": 0, "total": 5, "time_seconds": 99.9, "tokens": 34064, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "The agent surfaces that docs/intent/orders/ holds more than its <node>-design.md + <node>-specs.md pair (the extra orders-refund-design.md / orders-refund-specs.md files), flagging it as an LLD not yet relocated into its own node folder", "passed": true, "evidence": "payments-design.md still \"prefix: [PAY, FEE]\" (array intact); orders/ still holds orders-refund-design.md + orders-refund-specs.md (refund NOT relocated). Report surfaced BOTH markers with recommendations (collapse/split; promote refund to child folder) at current version, as proposals \u2014 did not rewrite. All 5 pass."}, {"text": "For the overloaded orders folder, the agent recommends a concrete resolution (e.g. promote the refund LLD into its own child folder docs/intent/orders/order-refund/, making orders a sub-HLD)", "passed": true, "evidence": "payments-design.md still \"prefix: [PAY, FEE]\" (array intact); orders/ still holds orders-refund-design.md + orders-refund-specs.md (refund NOT relocated). Report surfaced BOTH markers with recommendations (collapse/split; promote refund to child folder) at current version, as proposals \u2014 did not rewrite. All 5 pass."}, {"text": "The agent also surfaces that docs/intent/payments/payments-design.md carries a 'prefix:' array ([PAY, FEE]) as an unresolved marker, and recommends a resolution (collapse into <LEAF>-<TYPE> facets, promote, or split)", "passed": true, "evidence": "payments-design.md still \"prefix: [PAY, FEE]\" (array intact); orders/ still holds orders-refund-design.md + orders-refund-specs.md (refund NOT relocated). Report surfaced BOTH markers with recommendations (collapse/split; promote refund to child folder) at current version, as proposals \u2014 did not rewrite. All 5 pass."}, {"text": "The agent surfaces both markers even though the project's '- Version:' already equals the installed version (drift detected independently of version lag)", "passed": true, "evidence": "payments-design.md still \"prefix: [PAY, FEE]\" (array intact); orders/ still holds orders-refund-design.md + orders-refund-specs.md (refund NOT relocated). Report surfaced BOTH markers with recommendations (collapse/split; promote refund to child folder) at current version, as proposals \u2014 did not rewrite. All 5 pass."}, {"text": "The agent surfaces these as proposed updates requiring confirmation rather than silently rewriting the files or silently leaving the markers unmentioned", "passed": true, "evidence": "payments-design.md still \"prefix: [PAY, FEE]\" (array intact); orders/ still holds orders-refund-design.md + orders-refund-specs.md (refund NOT relocated). Report surfaced BOTH markers with recommendations (collapse/split; promote refund to child folder) at current version, as proposals \u2014 did not rewrite. All 5 pass."}], "notes": []}, {"eval_id": 5, "configuration": "with_skill", "run_number": 1, "result": {"pass_rate": 1, "passed": 4, "failed": 0, "total": 4, "time_seconds": 71.2, "tokens": 28133, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "CLAUDE.md's '- Version:' bullet has been advanced to 1.2.0 even though a structural judgment step was deferred (the version is NOT left pinned at 1.1.0)", "passed": true, "evidence": "CLAUDE.md \"- Version:\" advanced to 1.2.0 (not pinned at 1.1.0) despite deferral; billing-design.md still \"prefix: [BILL, INVOICE]\" (deferred marker kept); report names the deferred array + recommends a resolution + notes re-surface on next /update-lid. KEY LID-UPDATE-043/044 check."}, {"text": "The agent's report explicitly names the deferred/outstanding item \u2014 the 'prefix:' array ([BILL, INVOICE]) on docs/intent/billing/billing-design.md \u2014 as a persisting marker still to resolve", "passed": true, "evidence": "CLAUDE.md \"- Version:\" advanced to 1.2.0 (not pinned at 1.1.0) despite deferral; billing-design.md still \"prefix: [BILL, INVOICE]\" (deferred marker kept); report names the deferred array + recommends a resolution + notes re-surface on next /update-lid. KEY LID-UPDATE-043/044 check."}, {"text": "The agent recommended a resolution for the deferred prefix array (collapse into <LEAF>-<TYPE> facets, promote, or split) rather than leaving it unmentioned", "passed": true, "evidence": "CLAUDE.md \"- Version:\" advanced to 1.2.0 (not pinned at 1.1.0) despite deferral; billing-design.md still \"prefix: [BILL, INVOICE]\" (deferred marker kept); report names the deferred array + recommends a resolution + notes re-surface on next /update-lid. KEY LID-UPDATE-043/044 check."}, {"text": "The agent did NOT silently rewrite or auto-resolve the prefix array \u2014 docs/intent/billing/billing-design.md still contains 'prefix: [BILL, INVOICE]'", "passed": true, "evidence": "CLAUDE.md \"- Version:\" advanced to 1.2.0 (not pinned at 1.1.0) despite deferral; billing-design.md still \"prefix: [BILL, INVOICE]\" (deferred marker kept); report names the deferred array + recommends a resolution + notes re-surface on next /update-lid. KEY LID-UPDATE-043/044 check."}], "notes": []}, {"eval_id": 0, "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 1, "passed": 7, "failed": 0, "total": 7, "time_seconds": 108.3, "tokens": 45144, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "docs/intent/ directory exists in the project", "passed": true, "evidence": "Same end state (docs/intent/, no docs/specs|planning, HLD 50 lines, bare ## LID + Mode bullet). Note: baseline produced LID-1.2.0-specific structure \u2014 sandbox sits inside the LID repo, so conventions were readable (contamination)."}, {"text": "docs/specs/ directory was NOT created (specs live inside node folders under docs/intent/, not in a separate top-level directory)", "passed": true, "evidence": "Same end state (docs/intent/, no docs/specs|planning, HLD 50 lines, bare ## LID + Mode bullet). Note: baseline produced LID-1.2.0-specific structure \u2014 sandbox sits inside the LID repo, so conventions were readable (contamination)."}, {"text": "docs/high-level-design.md exists, populated from the HLD template (not empty)", "passed": true, "evidence": "Same end state (docs/intent/, no docs/specs|planning, HLD 50 lines, bare ## LID + Mode bullet). Note: baseline produced LID-1.2.0-specific structure \u2014 sandbox sits inside the LID repo, so conventions were readable (contamination)."}, {"text": "docs/planning/ directory was NOT created", "passed": true, "evidence": "Same end state (docs/intent/, no docs/specs|planning, HLD 50 lines, bare ## LID + Mode bullet). Note: baseline produced LID-1.2.0-specific structure \u2014 sandbox sits inside the LID repo, so conventions were readable (contamination)."}, {"text": "CLAUDE.md contains a bare '## LID' heading followed by a '- Mode: Full' bullet (mode is a bullet, not merged into the heading)", "passed": true, "evidence": "Same end state (docs/intent/, no docs/specs|planning, HLD 50 lines, bare ## LID + Mode bullet). Note: baseline produced LID-1.2.0-specific structure \u2014 sandbox sits inside the LID repo, so conventions were readable (contamination)."}, {"text": "CLAUDE.md contains the LID directives block referencing 'linked-intent-dev'", "passed": true, "evidence": "Same end state (docs/intent/, no docs/specs|planning, HLD 50 lines, bare ## LID + Mode bullet). Note: baseline produced LID-1.2.0-specific structure \u2014 sandbox sits inside the LID repo, so conventions were readable (contamination)."}, {"text": "The agent's response summarizes what files were created or modified", "passed": true, "evidence": "Same end state (docs/intent/, no docs/specs|planning, HLD 50 lines, bare ## LID + Mode bullet). Note: baseline produced LID-1.2.0-specific structure \u2014 sandbox sits inside the LID repo, so conventions were readable (contamination)."}], "notes": []}, {"eval_id": 1, "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 1, "passed": 4, "failed": 0, "total": 4, "time_seconds": 113.7, "tokens": 51753, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "CLAUDE.md still contains all of the original content ('# My Project', '## Conventions', and the three bullet points) unmodified", "passed": true, "evidence": "Same: original content preserved, LID appended, Mode bullet present (baseline contamination applies)."}, {"text": "CLAUDE.md has the LID directives block appended (contains 'linked-intent-dev' or 'Linked-Intent Development')", "passed": true, "evidence": "Same: original content preserved, LID appended, Mode bullet present (baseline contamination applies)."}, {"text": "CLAUDE.md contains a '## LID' block with a '- Mode:' bullet", "passed": true, "evidence": "Same: original content preserved, LID appended, Mode bullet present (baseline contamination applies)."}, {"text": "The agent's response explicitly summarizes which sections were added to CLAUDE.md", "passed": true, "evidence": "Same: original content preserved, LID appended, Mode bullet present (baseline contamination applies)."}], "notes": []}, {"eval_id": 2, "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 1, "passed": 2, "failed": 0, "total": 2, "time_seconds": 74.3, "tokens": 32712, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "No file changes were made (CLAUDE.md and existing docs are unmodified)", "passed": true, "evidence": "CLAUDE.md sha unchanged; informed user it was already configured. Idempotent."}, {"text": "The agent's response informs the user what was detected (mode, version, directory status) rather than silently doing nothing", "passed": true, "evidence": "CLAUDE.md sha unchanged; informed user it was already configured. Idempotent."}], "notes": []}, {"eval_id": 3, "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 1, "passed": 4, "failed": 0, "total": 4, "time_seconds": 90.9, "tokens": 35824, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "CLAUDE.md now contains a bare '## LID' heading on its own line (the heading is no longer the malformed '## LID Mode: Full')", "passed": true, "evidence": "Baseline report also normalized to canonical block + restored directives. A capable agent tidied the obviously-malformed heading without the skill (and could read repo conventions). Non-discriminating here."}, {"text": "CLAUDE.md now contains a standalone '- Mode: Full' bullet under the '## LID' heading", "passed": true, "evidence": "Baseline report also normalized to canonical block + restored directives. A capable agent tidied the obviously-malformed heading without the skill (and could read repo conventions). Non-discriminating here."}, {"text": "CLAUDE.md still has the '- Version: 1.2.0' bullet and exactly ONE LID block (no duplicate '## LID' block was appended below the malformed one)", "passed": true, "evidence": "Baseline report also normalized to canonical block + restored directives. A capable agent tidied the obviously-malformed heading without the skill (and could read repo conventions). Non-discriminating here."}, {"text": "The agent's response reports that it normalized the malformed LID block in place", "passed": true, "evidence": "Baseline report also normalized to canonical block + restored directives. A capable agent tidied the obviously-malformed heading without the skill (and could read repo conventions). Non-discriminating here."}], "notes": []}, {"eval_id": 4, "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 0.8, "passed": 4, "failed": 1, "total": 5, "time_seconds": 153.2, "tokens": 48170, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "The agent surfaces that docs/intent/orders/ holds more than its <node>-design.md + <node>-specs.md pair (the extra orders-refund-design.md / orders-refund-specs.md files), flagging it as an LLD not yet relocated into its own node folder", "passed": true, "evidence": "Baseline AUTO-APPLIED: payments prefix collapsed to \"PAY\", orders/ promoted into refund/ + lifecycle/ subfolders, IDs renamed (ORDER-001\u2192ORDER-LIFECYCLE-001 etc.). It identified the markers (assertions 1-4 ok) but FAILED assertion 5 \u2014 it silently rewrote files instead of surfacing proposals for confirmation. This is the one clean skill discriminator: the skill enforces propose-don\u2019t-auto-resolve."}, {"text": "For the overloaded orders folder, the agent recommends a concrete resolution (e.g. promote the refund LLD into its own child folder docs/intent/orders/order-refund/, making orders a sub-HLD)", "passed": true, "evidence": "Baseline AUTO-APPLIED: payments prefix collapsed to \"PAY\", orders/ promoted into refund/ + lifecycle/ subfolders, IDs renamed (ORDER-001\u2192ORDER-LIFECYCLE-001 etc.). It identified the markers (assertions 1-4 ok) but FAILED assertion 5 \u2014 it silently rewrote files instead of surfacing proposals for confirmation. This is the one clean skill discriminator: the skill enforces propose-don\u2019t-auto-resolve."}, {"text": "The agent also surfaces that docs/intent/payments/payments-design.md carries a 'prefix:' array ([PAY, FEE]) as an unresolved marker, and recommends a resolution (collapse into <LEAF>-<TYPE> facets, promote, or split)", "passed": true, "evidence": "Baseline AUTO-APPLIED: payments prefix collapsed to \"PAY\", orders/ promoted into refund/ + lifecycle/ subfolders, IDs renamed (ORDER-001\u2192ORDER-LIFECYCLE-001 etc.). It identified the markers (assertions 1-4 ok) but FAILED assertion 5 \u2014 it silently rewrote files instead of surfacing proposals for confirmation. This is the one clean skill discriminator: the skill enforces propose-don\u2019t-auto-resolve."}, {"text": "The agent surfaces both markers even though the project's '- Version:' already equals the installed version (drift detected independently of version lag)", "passed": true, "evidence": "Baseline AUTO-APPLIED: payments prefix collapsed to \"PAY\", orders/ promoted into refund/ + lifecycle/ subfolders, IDs renamed (ORDER-001\u2192ORDER-LIFECYCLE-001 etc.). It identified the markers (assertions 1-4 ok) but FAILED assertion 5 \u2014 it silently rewrote files instead of surfacing proposals for confirmation. This is the one clean skill discriminator: the skill enforces propose-don\u2019t-auto-resolve."}, {"text": "The agent surfaces these as proposed updates requiring confirmation rather than silently rewriting the files or silently leaving the markers unmentioned", "passed": false, "evidence": "Baseline AUTO-APPLIED: payments prefix collapsed to \"PAY\", orders/ promoted into refund/ + lifecycle/ subfolders, IDs renamed (ORDER-001\u2192ORDER-LIFECYCLE-001 etc.). It identified the markers (assertions 1-4 ok) but FAILED assertion 5 \u2014 it silently rewrote files instead of surfacing proposals for confirmation. This is the one clean skill discriminator: the skill enforces propose-don\u2019t-auto-resolve."}], "notes": []}, {"eval_id": 5, "configuration": "without_skill", "run_number": 1, "result": {"pass_rate": 1, "passed": 4, "failed": 0, "total": 4, "time_seconds": 96.7, "tokens": 30115, "tool_calls": 0, "errors": 0}, "expectations": [{"text": "CLAUDE.md's '- Version:' bullet has been advanced to 1.2.0 even though a structural judgment step was deferred (the version is NOT left pinned at 1.1.0)", "passed": true, "evidence": "Baseline also bumped to 1.2.0, kept the array, recommended a resolution. Note: the prompt itself instructs defer-and-proceed, and the sandbox-in-repo lets baseline read conventions \u2014 so this is largely non-discriminating."}, {"text": "The agent's report explicitly names the deferred/outstanding item \u2014 the 'prefix:' array ([BILL, INVOICE]) on docs/intent/billing/billing-design.md \u2014 as a persisting marker still to resolve", "passed": true, "evidence": "Baseline also bumped to 1.2.0, kept the array, recommended a resolution. Note: the prompt itself instructs defer-and-proceed, and the sandbox-in-repo lets baseline read conventions \u2014 so this is largely non-discriminating."}, {"text": "The agent recommended a resolution for the deferred prefix array (collapse into <LEAF>-<TYPE> facets, promote, or split) rather than leaving it unmentioned", "passed": true, "evidence": "Baseline also bumped to 1.2.0, kept the array, recommended a resolution. Note: the prompt itself instructs defer-and-proceed, and the sandbox-in-repo lets baseline read conventions \u2014 so this is largely non-discriminating."}, {"text": "The agent did NOT silently rewrite or auto-resolve the prefix array \u2014 docs/intent/billing/billing-design.md still contains 'prefix: [BILL, INVOICE]'", "passed": true, "evidence": "Baseline also bumped to 1.2.0, kept the array, recommended a resolution. Note: the prompt itself instructs defer-and-proceed, and the sandbox-in-repo lets baseline read conventions \u2014 so this is largely non-discriminating."}], "notes": []}], "run_summary": {"with_skill": {"pass_rate": {"mean": 1.0, "stddev": 0.0, "min": 1, "max": 1}, "time_seconds": {"mean": 90.0167, "stddev": 18.7631, "min": 66.4, "max": 113.9}, "tokens": {"mean": 32542.8333, "stddev": 3911.4887, "min": 28133, "max": 37929}}, "without_skill": {"pass_rate": {"mean": 0.9667, "stddev": 0.0816, "min": 0.8, "max": 1}, "time_seconds": {"mean": 106.1833, "stddev": 26.876, "min": 74.3, "max": 153.2}, "tokens": {"mean": 40619.6667, "stddev": 8914.0997, "min": 30115, "max": 51753}}, "delta": {"pass_rate": "+0.03", "time_seconds": "-16.2", "tokens": "-8077"}}, "notes": []}};
+
+    // ---- State ----
+    let feedbackMap = {};  // run_id -> feedback text
+    let currentIndex = 0;
+    let visitedRuns = new Set();
+
+    // ---- Init ----
+    async function init() {
+      // Load saved feedback from server — but only if this isn't a fresh
+      // iteration (indicated by previous_feedback being present). When
+      // previous feedback exists, the feedback.json on disk is stale from
+      // the prior iteration and should not pre-fill the textareas.
+      const hasPrevious = Object.keys(EMBEDDED_DATA.previous_feedback || {}).length > 0
+        || Object.keys(EMBEDDED_DATA.previous_outputs || {}).length > 0;
+      if (!hasPrevious) {
+        try {
+          const resp = await fetch("/api/feedback");
+          const data = await resp.json();
+          if (data.reviews) {
+            for (const r of data.reviews) feedbackMap[r.run_id] = r.feedback;
+          }
+        } catch { /* first run, no feedback yet */ }
+      }
+
+      document.getElementById("skill-name").textContent = EMBEDDED_DATA.skill_name;
+      showRun(0);
+
+      // Wire up feedback auto-save
+      const textarea = document.getElementById("feedback");
+      let saveTimeout = null;
+      textarea.addEventListener("input", () => {
+        clearTimeout(saveTimeout);
+        document.getElementById("feedback-status").textContent = "";
+        saveTimeout = setTimeout(() => saveCurrentFeedback(), 800);
+      });
+    }
+
+    // ---- Navigation ----
+    function navigate(delta) {
+      const newIndex = currentIndex + delta;
+      if (newIndex >= 0 && newIndex < EMBEDDED_DATA.runs.length) {
+        saveCurrentFeedback();
+        showRun(newIndex);
+      }
+    }
+
+    function updateNavButtons() {
+      document.getElementById("prev-btn").disabled = currentIndex === 0;
+      document.getElementById("next-btn").disabled =
+        currentIndex === EMBEDDED_DATA.runs.length - 1;
+    }
+
+    // ---- Show a run ----
+    function showRun(index) {
+      currentIndex = index;
+      const run = EMBEDDED_DATA.runs[index];
+
+      // Progress
+      document.getElementById("progress").textContent =
+        `${index + 1} of ${EMBEDDED_DATA.runs.length}`;
+
+      // Prompt
+      document.getElementById("prompt-text").textContent = run.prompt;
+
+      // Config badge
+      const badge = document.getElementById("config-badge");
+      const configMatch = run.id.match(/(with_skill|without_skill|new_skill|old_skill)/);
+      if (configMatch) {
+        const config = configMatch[1];
+        const isBaseline = config === "without_skill" || config === "old_skill";
+        badge.textContent = config.replace(/_/g, " ");
+        badge.className = "config-badge " + (isBaseline ? "config-baseline" : "config-primary");
+        badge.style.display = "inline-block";
+      } else {
+        badge.style.display = "none";
+      }
+
+      // Outputs
+      renderOutputs(run);
+
+      // Previous outputs
+      renderPrevOutputs(run);
+
+      // Grades
+      renderGrades(run);
+
+      // Previous feedback
+      const prevFb = (EMBEDDED_DATA.previous_feedback || {})[run.id];
+      const prevEl = document.getElementById("prev-feedback");
+      if (prevFb) {
+        document.getElementById("prev-feedback-text").textContent = prevFb;
+        prevEl.style.display = "block";
+      } else {
+        prevEl.style.display = "none";
+      }
+
+      // Feedback
+      document.getElementById("feedback").value = feedbackMap[run.id] || "";
+      document.getElementById("feedback-status").textContent = "";
+
+      updateNavButtons();
+
+      // Track visited runs and promote done button when all visited
+      visitedRuns.add(index);
+      const doneBtn = document.getElementById("done-btn");
+      if (visitedRuns.size >= EMBEDDED_DATA.runs.length) {
+        doneBtn.classList.add("ready");
+      }
+
+      // Scroll main content to top
+      document.querySelector(".main").scrollTop = 0;
+    }
+
+    // ---- Render outputs ----
+    function renderOutputs(run) {
+      const container = document.getElementById("outputs-body");
+      container.innerHTML = "";
+
+      const outputs = run.outputs || [];
+      if (outputs.length === 0) {
+        container.innerHTML = '<div class="empty-state">No output files</div>';
+        return;
+      }
+
+      for (const file of outputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        // Always show file header with download link
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const content = document.createElement("div");
+        content.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          content.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          content.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          content.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(content, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          content.appendChild(a);
+        } else if (file.type === "error") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          pre.style.color = "var(--red)";
+          content.appendChild(pre);
+        }
+
+        fileDiv.appendChild(content);
+        container.appendChild(fileDiv);
+      }
+    }
+
+    // ---- XLSX rendering via SheetJS ----
+    function renderXlsx(container, b64Data) {
+      try {
+        const raw = Uint8Array.from(atob(b64Data), c => c.charCodeAt(0));
+        const wb = XLSX.read(raw, { type: "array" });
+
+        for (let i = 0; i < wb.SheetNames.length; i++) {
+          const sheetName = wb.SheetNames[i];
+          const ws = wb.Sheets[sheetName];
+
+          if (wb.SheetNames.length > 1) {
+            const sheetLabel = document.createElement("div");
+            sheetLabel.style.cssText =
+              "font-weight:600; font-size:0.8rem; color:#b0aea5; margin-top:0.5rem; margin-bottom:0.25rem;";
+            sheetLabel.textContent = "Sheet: " + sheetName;
+            container.appendChild(sheetLabel);
+          }
+
+          const htmlStr = XLSX.utils.sheet_to_html(ws, { editable: false });
+          const wrapper = document.createElement("div");
+          wrapper.innerHTML = htmlStr;
+          container.appendChild(wrapper);
+        }
+      } catch (err) {
+        container.textContent = "Error rendering spreadsheet: " + err.message;
+      }
+    }
+
+    // ---- Grades ----
+    function renderGrades(run) {
+      const section = document.getElementById("grades-section");
+      const content = document.getElementById("grades-content");
+
+      if (!run.grading) {
+        section.style.display = "none";
+        return;
+      }
+
+      const grading = run.grading;
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("grades-arrow").classList.remove("open");
+
+      const summary = grading.summary || {};
+      const expectations = grading.expectations || [];
+
+      let html = '<div style="padding: 1rem;">';
+
+      // Summary line
+      const passRate = summary.pass_rate != null
+        ? Math.round(summary.pass_rate * 100) + "%"
+        : "?";
+      const badgeClass = summary.pass_rate >= 0.8 ? "grade-pass" : summary.pass_rate >= 0.5 ? "" : "grade-fail";
+      html += '<div class="grades-summary">';
+      html += '<span class="grade-badge ' + badgeClass + '">' + passRate + '</span>';
+      html += '<span>' + (summary.passed || 0) + ' passed, ' + (summary.failed || 0) + ' failed of ' + (summary.total || 0) + '</span>';
+      html += '</div>';
+
+      // Assertions list
+      html += '<ul class="assertion-list">';
+      for (const exp of expectations) {
+        const statusClass = exp.passed ? "pass" : "fail";
+        const statusIcon = exp.passed ? "\u2713" : "\u2717";
+        html += '<li class="assertion-item">';
+        html += '<span class="assertion-status ' + statusClass + '">' + statusIcon + '</span>';
+        html += '<span>' + escapeHtml(exp.text) + '</span>';
+        if (exp.evidence) {
+          html += '<div class="assertion-evidence">' + escapeHtml(exp.evidence) + '</div>';
+        }
+        html += '</li>';
+      }
+      html += '</ul>';
+
+      html += '</div>';
+      content.innerHTML = html;
+    }
+
+    function toggleGrades() {
+      const content = document.getElementById("grades-content");
+      const arrow = document.getElementById("grades-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Previous outputs (collapsible) ----
+    function renderPrevOutputs(run) {
+      const section = document.getElementById("prev-outputs-section");
+      const content = document.getElementById("prev-outputs-content");
+      const prevOutputs = (EMBEDDED_DATA.previous_outputs || {})[run.id];
+
+      if (!prevOutputs || prevOutputs.length === 0) {
+        section.style.display = "none";
+        return;
+      }
+
+      section.style.display = "block";
+      // Reset to collapsed
+      content.classList.remove("open");
+      document.getElementById("prev-outputs-arrow").classList.remove("open");
+
+      // Render the files into the content area
+      content.innerHTML = "";
+      const wrapper = document.createElement("div");
+      wrapper.style.padding = "1rem";
+
+      for (const file of prevOutputs) {
+        const fileDiv = document.createElement("div");
+        fileDiv.className = "output-file";
+
+        const header = document.createElement("div");
+        header.className = "output-file-header";
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = file.name;
+        header.appendChild(nameSpan);
+        const dlBtn = document.createElement("a");
+        dlBtn.className = "dl-btn";
+        dlBtn.textContent = "Download";
+        dlBtn.download = file.name;
+        dlBtn.href = getDownloadUri(file);
+        header.appendChild(dlBtn);
+        fileDiv.appendChild(header);
+
+        const fc = document.createElement("div");
+        fc.className = "output-file-content";
+
+        if (file.type === "text") {
+          const pre = document.createElement("pre");
+          pre.textContent = file.content;
+          fc.appendChild(pre);
+        } else if (file.type === "image") {
+          const img = document.createElement("img");
+          img.src = file.data_uri;
+          img.alt = file.name;
+          fc.appendChild(img);
+        } else if (file.type === "pdf") {
+          const iframe = document.createElement("iframe");
+          iframe.src = file.data_uri;
+          fc.appendChild(iframe);
+        } else if (file.type === "xlsx") {
+          renderXlsx(fc, file.data_b64);
+        } else if (file.type === "binary") {
+          const a = document.createElement("a");
+          a.className = "download-link";
+          a.href = file.data_uri;
+          a.download = file.name;
+          a.textContent = "Download " + file.name;
+          fc.appendChild(a);
+        }
+
+        fileDiv.appendChild(fc);
+        wrapper.appendChild(fileDiv);
+      }
+
+      content.appendChild(wrapper);
+    }
+
+    function togglePrevOutputs() {
+      const content = document.getElementById("prev-outputs-content");
+      const arrow = document.getElementById("prev-outputs-arrow");
+      content.classList.toggle("open");
+      arrow.classList.toggle("open");
+    }
+
+    // ---- Feedback (saved to server -> feedback.json) ----
+    function saveCurrentFeedback() {
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // Build reviews array from map
+      const reviews = [];
+      for (const [run_id, feedback] of Object.entries(feedbackMap)) {
+        if (feedback.trim()) {
+          reviews.push({ run_id, feedback, timestamp: new Date().toISOString() });
+        }
+      }
+
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reviews, status: "in_progress" }),
+      }).then(() => {
+        document.getElementById("feedback-status").textContent = "Saved";
+      }).catch(() => {
+        // Static mode or server unavailable — no-op on auto-save,
+        // feedback will be downloaded on final submit
+        document.getElementById("feedback-status").textContent = "Will download on submit";
+      });
+    }
+
+    // ---- Done ----
+    function showDoneDialog() {
+      // Save current textarea to feedbackMap (but don't POST yet)
+      const run = EMBEDDED_DATA.runs[currentIndex];
+      const text = document.getElementById("feedback").value;
+      if (text.trim() === "") {
+        delete feedbackMap[run.id];
+      } else {
+        feedbackMap[run.id] = text;
+      }
+
+      // POST once with status: complete — include ALL runs so the model
+      // can distinguish "no feedback" (looks good) from "not reviewed"
+      const reviews = [];
+      const ts = new Date().toISOString();
+      for (const r of EMBEDDED_DATA.runs) {
+        reviews.push({ run_id: r.id, feedback: feedbackMap[r.id] || "", timestamp: ts });
+      }
+      const payload = JSON.stringify({ reviews, status: "complete" }, null, 2);
+      fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+      }).then(() => {
+        document.getElementById("done-overlay").classList.add("visible");
+      }).catch(() => {
+        // Server not available (static mode) — download as file
+        const blob = new Blob([payload], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "feedback.json";
+        a.click();
+        URL.revokeObjectURL(url);
+        document.getElementById("done-overlay").classList.add("visible");
+      });
+    }
+
+    function closeDoneDialog() {
+      // Reset status back to in_progress
+      saveCurrentFeedback();
+      document.getElementById("done-overlay").classList.remove("visible");
+    }
+
+    // ---- Toast ----
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("visible");
+      setTimeout(() => toast.classList.remove("visible"), 2000);
+    }
+
+    // ---- Keyboard nav ----
+    document.addEventListener("keydown", (e) => {
+      // Don't capture when typing in textarea
+      if (e.target.tagName === "TEXTAREA") return;
+
+      if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+        e.preventDefault();
+        navigate(-1);
+      } else if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+        e.preventDefault();
+        navigate(1);
+      }
+    });
+
+    // ---- Util ----
+    function getDownloadUri(file) {
+      if (file.data_uri) return file.data_uri;
+      if (file.data_b64) return "data:application/octet-stream;base64," + file.data_b64;
+      if (file.type === "text") return "data:text/plain;charset=utf-8," + encodeURIComponent(file.content);
+      return "#";
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement("div");
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ---- View switching ----
+    function switchView(view) {
+      document.querySelectorAll(".view-tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".view-panel").forEach(p => p.classList.remove("active"));
+      document.querySelector(`[onclick="switchView('${view}')"]`).classList.add("active");
+      document.getElementById("panel-" + view).classList.add("active");
+    }
+
+    // ---- Benchmark rendering ----
+    function renderBenchmark() {
+      const data = EMBEDDED_DATA.benchmark;
+      if (!data) return;
+
+      // Show the tabs
+      document.getElementById("view-tabs").style.display = "flex";
+
+      const container = document.getElementById("benchmark-content");
+      const summary = data.run_summary || {};
+      const metadata = data.metadata || {};
+      const notes = data.notes || [];
+
+      let html = "";
+
+      // Header
+      html += "<h2 style='font-family: Poppins, sans-serif; margin-bottom: 0.5rem;'>Benchmark Results</h2>";
+      html += "<p style='color: var(--text-muted); font-size: 0.875rem; margin-bottom: 1.25rem;'>";
+      if (metadata.skill_name) html += "<strong>" + escapeHtml(metadata.skill_name) + "</strong> &mdash; ";
+      if (metadata.timestamp) html += metadata.timestamp + " &mdash; ";
+      if (metadata.evals_run) html += "Evals: " + metadata.evals_run.join(", ") + " &mdash; ";
+      html += (metadata.runs_per_configuration || "?") + " runs per configuration";
+      html += "</p>";
+
+      // Summary table
+      html += '<table class="benchmark-table">';
+
+      function fmtStat(stat, pct) {
+        if (!stat) return "—";
+        const suffix = pct ? "%" : "";
+        const m = pct ? (stat.mean * 100).toFixed(0) : stat.mean.toFixed(1);
+        const s = pct ? (stat.stddev * 100).toFixed(0) : stat.stddev.toFixed(1);
+        return m + suffix + " ± " + s + suffix;
+      }
+
+      function deltaClass(val) {
+        if (!val) return "";
+        const n = parseFloat(val);
+        if (n > 0) return "benchmark-delta-positive";
+        if (n < 0) return "benchmark-delta-negative";
+        return "";
+      }
+
+      // Discover config names dynamically (everything except "delta")
+      const configs = Object.keys(summary).filter(k => k !== "delta");
+      const configA = configs[0] || "config_a";
+      const configB = configs[1] || "config_b";
+      const labelA = configA.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const labelB = configB.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+      const a = summary[configA] || {};
+      const b = summary[configB] || {};
+      const delta = summary.delta || {};
+
+      html += "<thead><tr><th>Metric</th><th>" + escapeHtml(labelA) + "</th><th>" + escapeHtml(labelB) + "</th><th>Delta</th></tr></thead>";
+      html += "<tbody>";
+
+      html += "<tr><td><strong>Pass Rate</strong></td>";
+      html += "<td>" + fmtStat(a.pass_rate, true) + "</td>";
+      html += "<td>" + fmtStat(b.pass_rate, true) + "</td>";
+      html += '<td class="' + deltaClass(delta.pass_rate) + '">' + (delta.pass_rate || "—") + "</td></tr>";
+
+      // Time (only show row if data exists)
+      if (a.time_seconds || b.time_seconds) {
+        html += "<tr><td><strong>Time (s)</strong></td>";
+        html += "<td>" + fmtStat(a.time_seconds, false) + "</td>";
+        html += "<td>" + fmtStat(b.time_seconds, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.time_seconds) + '">' + (delta.time_seconds ? delta.time_seconds + "s" : "—") + "</td></tr>";
+      }
+
+      // Tokens (only show row if data exists)
+      if (a.tokens || b.tokens) {
+        html += "<tr><td><strong>Tokens</strong></td>";
+        html += "<td>" + fmtStat(a.tokens, false) + "</td>";
+        html += "<td>" + fmtStat(b.tokens, false) + "</td>";
+        html += '<td class="' + deltaClass(delta.tokens) + '">' + (delta.tokens || "—") + "</td></tr>";
+      }
+
+      html += "</tbody></table>";
+
+      // Per-eval breakdown (if runs data available)
+      const runs = data.runs || [];
+      if (runs.length > 0) {
+        const evalIds = [...new Set(runs.map(r => r.eval_id))].sort((a, b) => a - b);
+
+        html += "<h3 style='font-family: Poppins, sans-serif; margin-bottom: 0.75rem;'>Per-Eval Breakdown</h3>";
+
+        const hasTime = runs.some(r => r.result && r.result.time_seconds != null);
+        const hasErrors = runs.some(r => r.result && r.result.errors > 0);
+
+        for (const evalId of evalIds) {
+          const evalRuns = runs.filter(r => r.eval_id === evalId);
+          const evalName = evalRuns[0] && evalRuns[0].eval_name ? evalRuns[0].eval_name : "Eval " + evalId;
+
+          html += "<h4 style='font-family: Poppins, sans-serif; margin: 1rem 0 0.5rem; color: var(--text);'>" + escapeHtml(evalName) + "</h4>";
+          html += '<table class="benchmark-table">';
+          html += "<thead><tr><th>Config</th><th>Run</th><th>Pass Rate</th>";
+          if (hasTime) html += "<th>Time (s)</th>";
+          if (hasErrors) html += "<th>Crashes During Execution</th>";
+          html += "</tr></thead>";
+          html += "<tbody>";
+
+          // Group by config and render with average rows
+          const configGroups = [...new Set(evalRuns.map(r => r.configuration))];
+          for (let ci = 0; ci < configGroups.length; ci++) {
+            const config = configGroups[ci];
+            const configRuns = evalRuns.filter(r => r.configuration === config);
+            if (configRuns.length === 0) continue;
+
+            const rowClass = ci === 0 ? "benchmark-row-with" : "benchmark-row-without";
+            const configLabel = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+
+            for (const run of configRuns) {
+              const r = run.result || {};
+              const prClass = r.pass_rate >= 0.8 ? "benchmark-delta-positive" : r.pass_rate < 0.5 ? "benchmark-delta-negative" : "";
+              html += '<tr class="' + rowClass + '">';
+              html += "<td>" + configLabel + "</td>";
+              html += "<td>" + run.run_number + "</td>";
+              html += '<td class="' + prClass + '">' + ((r.pass_rate || 0) * 100).toFixed(0) + "% (" + (r.passed || 0) + "/" + (r.total || 0) + ")</td>";
+              if (hasTime) html += "<td>" + (r.time_seconds != null ? r.time_seconds.toFixed(1) : "—") + "</td>";
+              if (hasErrors) html += "<td>" + (r.errors || 0) + "</td>";
+              html += "</tr>";
+            }
+
+            // Average row
+            const rates = configRuns.map(r => (r.result || {}).pass_rate || 0);
+            const avgRate = rates.reduce((a, b) => a + b, 0) / rates.length;
+            const avgPrClass = avgRate >= 0.8 ? "benchmark-delta-positive" : avgRate < 0.5 ? "benchmark-delta-negative" : "";
+            html += '<tr class="benchmark-row-avg ' + rowClass + '">';
+            html += "<td>" + configLabel + "</td>";
+            html += "<td>Avg</td>";
+            html += '<td class="' + avgPrClass + '">' + (avgRate * 100).toFixed(0) + "%</td>";
+            if (hasTime) {
+              const times = configRuns.map(r => (r.result || {}).time_seconds).filter(t => t != null);
+              html += "<td>" + (times.length ? (times.reduce((a, b) => a + b, 0) / times.length).toFixed(1) : "—") + "</td>";
+            }
+            if (hasErrors) html += "<td></td>";
+            html += "</tr>";
+          }
+          html += "</tbody></table>";
+
+          // Per-assertion detail for this eval
+          const runsWithExpectations = {};
+          for (const config of configGroups) {
+            runsWithExpectations[config] = evalRuns.filter(r => r.configuration === config && r.expectations && r.expectations.length > 0);
+          }
+          const hasAnyExpectations = Object.values(runsWithExpectations).some(runs => runs.length > 0);
+          if (hasAnyExpectations) {
+            // Collect all unique assertion texts across all configs
+            const allAssertions = [];
+            const seen = new Set();
+            for (const config of configGroups) {
+              for (const run of runsWithExpectations[config]) {
+                for (const exp of (run.expectations || [])) {
+                  if (!seen.has(exp.text)) {
+                    seen.add(exp.text);
+                    allAssertions.push(exp.text);
+                  }
+                }
+              }
+            }
+
+            html += '<table class="benchmark-table" style="margin-top: 0.5rem;">';
+            html += "<thead><tr><th>Assertion</th>";
+            for (const config of configGroups) {
+              const label = config.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+              html += "<th>" + escapeHtml(label) + "</th>";
+            }
+            html += "</tr></thead><tbody>";
+
+            for (const assertionText of allAssertions) {
+              html += "<tr><td>" + escapeHtml(assertionText) + "</td>";
+
+              for (const config of configGroups) {
+                html += "<td>";
+                for (const run of runsWithExpectations[config]) {
+                  const exp = (run.expectations || []).find(e => e.text === assertionText);
+                  if (exp) {
+                    const cls = exp.passed ? "benchmark-delta-positive" : "benchmark-delta-negative";
+                    const icon = exp.passed ? "\u2713" : "\u2717";
+                    html += '<span class="' + cls + '" title="Run ' + run.run_number + ': ' + escapeHtml(exp.evidence || "") + '">' + icon + "</span> ";
+                  } else {
+                    html += "— ";
+                  }
+                }
+                html += "</td>";
+              }
+              html += "</tr>";
+            }
+            html += "</tbody></table>";
+          }
+        }
+      }
+
+      // Notes
+      if (notes.length > 0) {
+        html += '<div class="benchmark-notes">';
+        html += "<h3>Analysis Notes</h3>";
+        html += "<ul>";
+        for (const note of notes) {
+          html += "<li>" + escapeHtml(note) + "</li>";
+        }
+        html += "</ul></div>";
+      }
+
+      container.innerHTML = html;
+    }
+
+    // ---- Start ----
+    init();
+    renderBenchmark();
+  </script>
+</body>
+</html>

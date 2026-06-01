@@ -4,19 +4,19 @@ Full six-step protocol for a single EARS audit. The SKILL.md body has a summary;
 
 ## Inputs
 
-- `EARS_ID` — the spec ID to audit (e.g., `KWP-UE-004`, `BIDIFF-007`).
+- `EARS_ID` — the spec ID to audit (e.g., `KWP-UE-004`, `EXP-BIDIFF-007`).
 - `N` — runs per direction. Default 3. Configurable via `--runs=N` or `bidirectional-differential.default-runs` in `CLAUDE.md`.
 - `arrow_overlay_root` — `docs/arrows/` (verified present before this protocol runs).
 
 ## Step 1 — Resolve inputs
 
-1. Find `EARS_ID` in `docs/specs/`. Each spec file is markdown; EARS appear as bullets in this format:
+1. Find `EARS_ID` by grepping it across the project's `*-specs.md` files (in the `docs/intent/` tree). Each spec file is markdown; EARS appear as bullets in this format:
    ```
    - [{marker}] **{EARS_ID}**: {EARS text spanning to end of line}
    ```
    where `{marker}` is `x`, ` ` (space), or `D`. A regex like `^- \[[xD ]\] \*\*{EARS_ID}\*\*:` finds the bullet; the EARS text runs from the first character after the colon-space to end of line. Read the verbatim text.
 2. Record the EARS's current status marker (`[x]` / `[ ]` / `[D]`).
-3. Determine the segment the EARS belongs to from the arrow overlay — specifically, which segment in `docs/arrows/index.yaml` owns the spec file the EARS lives in. Don't try to derive segment names from the EARS ID's prefix shape; ID structure is project-flexible (LID supports `{FEATURE}-{TYPE}-{NNN}` and longer namespaced forms), so trust the arrow overlay's mapping rather than parsing the ID.
+3. Determine the segment the EARS belongs to. The EARS ID is path-concatenated — its prefix is the path from root to the owning segment (`PEVAL-RUN-014` sits under `PEVAL-RUN`, `PEVAL-PERF-LOAD-003` under `PEVAL-PERF-LOAD`), so the prefix reliably locates the segment. Use it to find the segment, then read segment metadata (name, status, owned spec file) from `docs/arrows/index.yaml`, which remains the authoritative source for segment mapping. The prefix is a locator; the overlay is the source of truth.
 4. Find all `@spec {EARS_ID}` annotations in the codebase (`git grep -l "@spec.*{EARS_ID}"`). Collect each annotated region (the function, class, component, or block the annotation sits above).
 5. Optionally collect co-located test regions that carry `@spec {EARS_ID}` — these provide extra context for the A-direction but are treated as separate input.
 
@@ -150,7 +150,7 @@ See `classification-codes.md` for decision rules with worked examples.
 Output path:
 
 ```
-docs/arrows/experiments/bidirectional-differential/{segment-name}/{EARS_ID}.md
+docs/arrows/_experiments/bidirectional-differential/{segment-name}/{EARS_ID}.md
 ```
 
 Use the template in `audit-report-template.md`. Include:
