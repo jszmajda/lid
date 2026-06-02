@@ -2,6 +2,16 @@
 
 All notable changes to LID (Linked-Intent Development) are recorded here. The format follows [Keep a Changelog](https://keepachangelog.com/); LID uses [Semantic Versioning](https://semver.org/). This file is the single human-readable record of the current release — the plugin manifests carry the matching version, and `linked-intent-dev`'s version is the canonical "LID conventions" version a project records as the `- Version:` bullet in the `## LID` block.
 
+## [No Version Update Required]
+
+*Changes merged since the latest numbered version that did not require a version bump (per the policy in `docs/high-level-design.md` § Architecture / Distribution / What warrants a version change). These fold into the next numbered version's entry when one is cut.*
+
+### Added
+- **Cursor as a first-class plugin host.** The repository ships `.cursor-plugin/` marketplace and per-plugin manifests that reuse the same `skills/`/`commands/` source Claude Code reads, so Cursor installs the LID plugins with auto-invoking skills — not just the rule-file adapter. `docs/setup.md`'s Cursor section now leads with the plugin install; the `.cursor/rules/lid.mdc` adapter stays as the lighter no-plugin alternative. The Cursor manifests carry no `version`. (HLD § Key Design Decisions / *Cursor as a first-class plugin host*)
+
+### Changed
+- **Bootstrap defaults to `AGENTS.md` — by preference, not mandate.** `/update-lid` (and the `/linked-intent-dev` Phase-1 bootstrap) now create `AGENTS.md` as the instruction file with a `CLAUDE.md` symlink alias (or a one-line `@AGENTS.md` import where symlinks are unavailable, e.g. Windows without Developer Mode) so Cursor and other `AGENTS.md`-native agents read the `## LID` block too. The skills read whichever instruction file a project presents — `AGENTS.md` or `CLAUDE.md` — and an existing `CLAUDE.md` project is kept in place, never migrated. No host detection, and no required change for any existing project.
+
 ## [1.2.0] — 2026-05-25
 
 The recursive-intent-tree release: the design layer becomes a tree, EARS IDs become path-concatenated, and decisions get a first-class artifact.

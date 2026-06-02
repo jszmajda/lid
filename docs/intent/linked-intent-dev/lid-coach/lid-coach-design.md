@@ -34,7 +34,7 @@ The skill is directly invokable as `/lid-coach` — no command stub is needed. P
 
 Review a project's current LID usage against LID's principles and produce a prioritized report of recommendations for getting more out of the methodology. The posture is advisory, not corrective: the project works; the coach identifies where usage is drifting from principle or leaving value on the table. The coach is distinct from both sibling skills:
 
-- `update-lid` reconciles *configuration* (directory layout, CLAUDE.md directives, mode marker) against a template. Its judgments are deterministic.
+- `update-lid` reconciles *configuration* (directory layout, the instruction file's directives, mode marker) against a template. Its judgments are deterministic.
 - `arrow-maintenance` (when the overlay is installed) performs deterministic *structural* audit — orphans, reverse orphans, coherence between adjacent arrow levels, `index.yaml` drift.
 - `lid-coach` performs interpretive *principle-level* review — "is the LLD at the right granularity?", "are EARS specs phrased universally when they should be scoped?", "are `@spec` annotations at implementation-graph entry points or scattered through helpers?"
 
@@ -50,8 +50,8 @@ On invocation, the skill inspects the project and selects one of these actions:
 
 | Detected state | Action |
 |---|---|
-| No `CLAUDE.md` AND no LID-shaped artifacts in the project (no `docs/high-level-design.md`, no LLD or spec files in `docs/intent/`, no `docs/arrows/index.yaml`) | Inform the user the project is not LID-configured and recommend `/update-lid`. Do not proceed with coaching. |
-| `CLAUDE.md` missing LID directives **but** the project has at least one LID-shaped artifact present | Proceed with review anchored on the existing artifacts (default Full mode). Surface the missing directives as a high-priority finding and recommend `/update-lid` to reconcile. Do **not** refuse — a project with a populated arrow is LID-shaped regardless of whether CLAUDE.md has caught up with the directive naming. |
+| No instruction file AND no LID-shaped artifacts in the project (no `docs/high-level-design.md`, no LLD or spec files in `docs/intent/`, no `docs/arrows/index.yaml`) | Inform the user the project is not LID-configured and recommend `/update-lid`. Do not proceed with coaching. |
+| The instruction file missing LID directives **but** the project has at least one LID-shaped artifact present | Proceed with review anchored on the existing artifacts (default Full mode). Surface the missing directives as a high-priority finding and recommend `/update-lid` to reconcile. Do **not** refuse — a project with a populated arrow is LID-shaped regardless of whether the instruction file has caught up with the directive naming. |
 | LID directives present, required directories missing | Proceed with a reduced review of what does exist; surface the missing pieces as high-priority findings and recommend `/update-lid` to reconcile. |
 | Scoped mode with missing or empty `## LID Scope` | Surface as a high-priority finding; perform a conservative project-wide review (matching the `linked-intent-dev` skill's misconfiguration fallback). |
 | `docs/arrows/index.yaml` present but malformed / unparseable | Flag to the user before any principle review, since the overlay is a primary signal source; offer to proceed with a reduced review that treats the overlay as absent, or pause for the user to repair the overlay. |
@@ -64,9 +64,9 @@ On invocation, the skill inspects the project and selects one of these actions:
 - a `*-specs.md` file exists somewhere in the `docs/intent/` tree.
 - `docs/arrows/index.yaml` exists.
 
-The threshold is deliberately lenient. A richly-populated arrow overlay is the strongest possible signal a project is "doing LID" — if the directive block in `CLAUDE.md` is missing or uses a precursor name, that is *drift to be surfaced*, not a reason to refuse coaching. Refusing to coach a visibly LID-shaped project is a false negative the coach was specifically designed to avoid.
+The threshold is deliberately lenient. A richly-populated arrow overlay is the strongest possible signal a project is "doing LID" — if the directive block in the instruction file is missing or uses a precursor name, that is *drift to be surfaced*, not a reason to refuse coaching. Refusing to coach a visibly LID-shaped project is a false negative the coach was specifically designed to avoid.
 
-**"Fully configured"** for the last dispatch row means: LID directives present in `CLAUDE.md`, a valid `## LID` block with a `- Mode:` bullet, and the standard locations (`docs/intent/`, `docs/high-level-design.md`) all exist. Content completeness (how much has been authored) is a *review dimension*, not a dispatch condition — an empty-but-present HLD or LLD directory does not block coaching; it becomes a finding.
+**"Fully configured"** for the last dispatch row means: LID directives present in the instruction file, a valid `## LID` block with a `- Mode:` bullet, and the standard locations (`docs/intent/`, `docs/high-level-design.md`) all exist. Content completeness (how much has been authored) is a *review dimension*, not a dispatch condition — an empty-but-present HLD or LLD directory does not block coaching; it becomes a finding.
 
 Dispatching to `/update-lid` rather than silently bootstrapping preserves the invocation boundary between skills — `lid-coach` reads and reasons, it does not configure.
 
@@ -74,7 +74,7 @@ Dispatching to `/update-lid` rather than silently bootstrapping preserves the in
 
 The skill reads the project's LID artifacts to build its review:
 
-- `CLAUDE.md` — mode marker, scope declaration (if Scoped), directive-block coherence with the current template.
+- the instruction file — mode marker, scope declaration (if Scoped), directive-block coherence with the current template.
 - `docs/high-level-design.md` — presence, section coverage against the HLD template, evidence of active intent versus boilerplate prose.
 - `docs/intent/*.md` — count and granularity relative to the project's structure (does each design node match its intent component — leaf LLDs at the fringe, sub-HLDs grouping children where intent has depth?), alignment with the design tree's architecture.
 - the `*-specs.md` files in the `docs/intent/` tree — EARS format compliance, scope-disambiguation hygiene, ID uniqueness and namespacing, status-marker usage.
@@ -144,7 +144,7 @@ When a question doesn't fit any FAQ topic, the coach reasons from the principle 
 
 ## Mode interaction
 
-Mode detection mechanics (CLAUDE.md `## LID` block's `- Mode:` bullet, fallback behavior, multiple-CLAUDE.md handling) are specified in `docs/intent/linked-intent-dev/linked-intent-dev-design.md § Mode Detection Mechanics`. The coach uses those mechanics directly.
+Mode detection mechanics (the instruction file's `## LID` block's `- Mode:` bullet, fallback behavior, multiple-instruction-file handling) are specified in `docs/intent/linked-intent-dev/linked-intent-dev-design.md § Mode Detection Mechanics`. The coach uses those mechanics directly.
 
 - **Full LID** — review spans the whole project.
 - **Scoped LID** — review covers paths declared in-scope only; out-of-scope areas are explicitly listed in the report as excluded, not silently skipped. A misconfigured Scoped project (missing `## LID Scope`) surfaces that misconfiguration as a high-priority finding before any other review content.
@@ -196,7 +196,7 @@ Teaching the "why" requires the coach to have a theory of what each principle pr
 
 ### Recommended-action targets
 
-When a finding implies a configuration change, the recommended action is **`/update-lid`** — the single command for both initial bootstrap and ongoing reconciliation. The skill state-dispatches: unconfigured projects get bootstrap; already-configured projects get reconciliation. Use it for precursor directive naming, missing scope declaration, drifted CLAUDE.md template, missing standard directories, mode transitions, or any other case where LID configuration needs bringing into alignment.
+When a finding implies a configuration change, the recommended action is **`/update-lid`** — the single command for both initial bootstrap and ongoing reconciliation. The skill state-dispatches: unconfigured projects get bootstrap; already-configured projects get reconciliation. Use it for precursor directive naming, missing scope declaration, drifted instruction-file template, missing standard directories, mode transitions, or any other case where LID configuration needs bringing into alignment.
 
 The coach refers users who want to *start a code change at the same time as bootstrap* to `/linked-intent-dev` instead — the workflow skill's Phase 1 calls `update-lid`'s bootstrap branch as a sub-step before drafting the HLD. That is a code-change entry point, not a configuration one, so it does not displace `/update-lid` as the configuration recommendation; it is the right pointer when the user's framing is "I want to build X on a fresh project," not "configure my project for LID."
 
@@ -224,7 +224,7 @@ The coach is a behavioral skill; its arrow is `HLD → LLD → EARS → evals + 
 | Coach posture | Advisory (no file changes) | Corrective (applies fixes); hybrid (propose diffs to approve) | Principle-based judgments are interpretive; silent edits would bypass user review on exactly the decisions where review matters most. Approve-diffs UX is reasonable but adds a second interaction mode for marginal gain over "user sees recommendations and applies manually." |
 | Coach auto-invocation | Disabled (command only) | Auto-triggered periodically; auto-triggered on specific signals | Review is broad-sample and expensive; opportunistic triggering would burn tokens across unrelated tasks. The user opts in when they want a review. |
 | Coach dispatch on unconfigured project | Recommend `/update-lid`, do not coach | Silently bootstrap, then coach; refuse and exit | Preserves invocation boundary — the coach reads and reasons, it does not configure. Silent bootstrap would violate advisory posture. A flat refusal loses the handoff signal. |
-| Coach dispatch on LID-shaped-but-no-directives project | Proceed with full review; surface CLAUDE.md gap as a high-priority finding | Refuse on strict literal directive grep; recognize a hardcoded list of precursor names | Strict literal grep is a false-negative trap (real example: a project with a 30-segment arrow overlay calling its directives "design-driven-dev"). The structural arrow is the authoritative signal that a project is doing LID; the directive string is communication, not gating. Hardcoded precursor names would not generalize and would rot over time. |
+| Coach dispatch on LID-shaped-but-no-directives project | Proceed with full review; surface the instruction-file gap as a high-priority finding | Refuse on strict literal directive grep; recognize a hardcoded list of precursor names | Strict literal grep is a false-negative trap (real example: a project with a 30-segment arrow overlay calling its directives "design-driven-dev"). The structural arrow is the authoritative signal that a project is doing LID; the directive string is communication, not gating. Hardcoded precursor names would not generalize and would rot over time. |
 | Coach overall summary form | Categorical posture + ✓/⚠/✗ scorecard | Numeric score (0–100); letter grade (A–F); pass/fail | Numeric and letter forms are gameable, demoralizing, and imply false precision. Categorical posture conveys overall health without baggage; the scorecard adds dimensional specificity in a "health dashboard" presentation that reads naturally to users new to LID. The user-facing name is "Scorecard" so the section reads as a score; "dimensional strip" was earlier internal vocabulary and was retired before user exposure. |
 | Coach voice | Coach (forward-looking, encouraging) | Auditor (clinical, neutral); grader (evaluative) | The voice is load-bearing for whether users act on findings. A grader-toned report delivers the same information but reduces follow-through; an auditor-toned report misses the teaching opportunity. Coach voice — "consider," "try," lead with what is working — keeps the user moving forward. |
 | Findings: paragraph form vs. labeled sub-bullets | Paragraph form weaving observation, principle, *why it matters*, and action — but only when detailed findings are rendered in user-driven turns; the report itself uses one-line inventory entries | Sub-bullet form with explicit Observation/Principle/Action fields | The labeled-sub-bullet form reads like a compliance report and clusters around the labels rather than the prose. Paragraph form forces the four elements to flow naturally and makes the *why-it-matters* layer integrate rather than slot in awkwardly. |

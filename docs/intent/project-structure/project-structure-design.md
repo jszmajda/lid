@@ -13,9 +13,10 @@ Repo-meta artifacts:
 
 - `CONTRIBUTING.md` — contributor onboarding
 - `AGENTS.md` (canonical) and `CLAUDE.md` (symlink alias) — agent bootstrap entry point
-- `docs/setup.md` — per-tool integration setup for non-Claude-Code agents
-- `.claude-plugin/marketplace.json` — Claude Code plugin marketplace manifest
+- `docs/setup.md` — per-tool integration setup across the agentic-tool ecosystem
+- `.claude-plugin/marketplace.json` and `.cursor-plugin/marketplace.json` — plugin marketplace manifests, one per first-class plugin host (Claude Code, Cursor)
 - `CHANGELOG.md` — release history and per-version migration notes (canonical inside `plugins/linked-intent-dev/`, repo-root symlink alias)
+- `.gitignore` — repository ignore rules, including the exclusion of regenerable eval run-output trees from version control
 - `LICENSE` — MIT license
 
 Community-health artifacts:
@@ -56,24 +57,36 @@ Per-repo invocation of the LID workflow. Names the repository's purpose, the plu
 
 ### `docs/setup.md`
 
-Per-tool setup guide for non-Claude-Code agents. Two layers:
+Per-tool setup guide spanning the agentic-tool ecosystem. Three layers:
 
-1. **The simple path** — a table of tools that honor a repo-root `AGENTS.md` natively without an adapter (Codex CLI, Amp, Jules, Pi, Zed, Cline, JetBrains Junie, Copilot in supported surfaces, Windsurf, and the broader `agents.md`-spec-compliant set).
-2. **Per-tool sections** — explicit adapter snippets for tools that need or benefit from a separate rule file (Cursor's `.cursor/rules/lid.mdc`, Copilot's `.github/copilot-instructions.md`, etc.).
+1. **First-class plugin hosts** — Claude Code and Cursor, each installing the LID plugins from its own marketplace (the richest path: auto-invoking skills, slash commands). Cursor's section frames the plugin install as the primary path and the rule-file adapter below as the lighter alternative for users who want the methodology without installing a plugin.
+2. **The simple path** — a table of tools that honor a repo-root `AGENTS.md` natively without an adapter (Codex CLI, Amp, Jules, Pi, Zed, Cline, JetBrains Junie, Copilot in supported surfaces, Windsurf, and the broader `agents.md`-spec-compliant set).
+3. **Per-tool adapter sections** — explicit rule-file snippets for tools that need or benefit from a separate file (Cursor's `.cursor/rules/lid.mdc` as the no-plugin alternative, Copilot's `.github/copilot-instructions.md`, etc.).
 
-The repository does not ship adapter files. Users drop the appropriate adapter into their own LID project per `docs/setup.md`. This keeps LID one source of truth (`AGENTS.md`) with N thin adapter pointers across the ecosystem.
+The repository does not ship *adapter* files — users drop the appropriate adapter into their own LID project. (It does ship plugin *manifests*; the two are different, per the marketplace-manifest section below.) This keeps LID one source of truth (`AGENTS.md`) with N thin adapter pointers across the ecosystem.
 
-### `.claude-plugin/marketplace.json`
+### Plugin marketplace manifests (`.claude-plugin/`, `.cursor-plugin/`)
 
-Claude Code marketplace manifest. Declares the three first-party plugins shipped from this repository — `linked-intent-dev`, `arrow-maintenance`, `lid-experimental` — with their source paths, versions, categories, and licenses. Each plugin entry's `source` field resolves to a directory under `plugins/`. Install commands shown in `README.md` and `docs/setup.md` resolve through this manifest.
+The two first-class plugin hosts each read their own marketplace manifest at the repository root, both declaring the same three first-party plugins (`linked-intent-dev`, `arrow-maintenance`, `lid-experimental`) against the same `plugins/` source tree:
+
+- **`.claude-plugin/marketplace.json`** — Claude Code manifest. Each plugin entry carries `name`, `description`, `source`, `version`, `category`, and `license`; `source` resolves to a directory under `plugins/`. Install commands in `README.md` and `docs/setup.md` resolve through it. Each plugin additionally carries a `.claude-plugin/plugin.json` inside its directory.
+- **`.cursor-plugin/marketplace.json`** — Cursor manifest. Required marketplace-level fields `name`, `owner`, and `plugins`; each plugin entry carries the required `name` and `source` plus `description`, `category`, and `license`. Each plugin additionally carries a thin `.cursor-plugin/plugin.json` (Cursor requires only `name`; LID's also carry `description` and `license`). Cursor discovers each plugin's `skills/<name>/SKILL.md` and `commands/` natively from the same source tree Claude Code reads.
+
+**The Cursor manifests deliberately omit `version`.** Cursor's schema makes it optional, and `update-lid`'s version-walk reads the project's `## LID` block and the CHANGELOG — never a marketplace manifest — so the canonical LID version stays single-sourced in `plugins/linked-intent-dev/.claude-plugin/plugin.json` and the CHANGELOG, and the Cursor manifests stay out of the release-step version-sync set. (If Cursor's marketplace submission later requires a version, it is added then and folded into the release step.)
+
+These are **plugin manifests, not rule-file adapters** — the repository ships them because they register first-party plugins for a host's marketplace, distinct from the per-tool *adapter* files (`.cursor/rules/lid.mdc` and the like) it does **not** ship (see `docs/setup.md` above).
 
 ### `CHANGELOG.md`
 
 Release history and per-version migration notes for LID. The canonical file lives inside the core plugin at `plugins/linked-intent-dev/CHANGELOG.md`; the repository root `CHANGELOG.md` is a symlink alias resolving to it — the same canonical-plus-symlink pattern as `AGENTS.md`/`CLAUDE.md`. Shipping the changelog inside the plugin means it travels with the plugin into any project that installs `linked-intent-dev`, so the `update-lid` skill can read it wherever it runs.
 
-The file follows [Keep a Changelog](https://keepachangelog.com) format and semantic versioning. LID is versioned with semver per plugin — each plugin's `version` lives in its `.claude-plugin/plugin.json` — and `linked-intent-dev`'s `plugin.json` version is the canonical "LID conventions" version that the changelog's top entry tracks. Each release entry carries a `### Migration (vX → vY)` section describing what a downstream LID project must reconcile when conventions change; `update-lid`'s version-walk reads these sections to drive a guided upgrade. When a release is cut, that entry is also the source for the published GitHub Release notes (see the *Release publication* decision below).
+The file follows [Keep a Changelog](https://keepachangelog.com) format and semantic versioning. LID is versioned with semver per plugin — each plugin's `version` lives in its `.claude-plugin/plugin.json` — and `linked-intent-dev`'s `plugin.json` version is the canonical "LID conventions" version that the changelog's top *versioned* entry tracks. Each release entry carries a `### Migration (vX → vY)` section describing what a downstream LID project must reconcile when conventions change; `update-lid`'s version-walk reads these sections to drive a guided upgrade. When a release is cut, that entry is also the source for the published GitHub Release notes (see the *Release publication* decision below). Changes that warrant no version bump — additive host/platform support, internal refactors, docs (the bump policy lives in HLD § Architecture / Distribution / *What warrants a version change*) — are held under a `## [No Version Update Required]` section above the most recent versioned entry, folding into the next numbered version's entry when one is cut; that section is not itself a version, so it does not advance the canonical version or trigger a `/update-lid` walk.
 
 `index.yaml`'s `schema_version` is a separate integer describing the arrow-overlay format, unrelated to the LID semver tracked here.
+
+### `.gitignore`
+
+Repository ignore rules. Beyond conventional ignores, it excludes the per-skill eval run-output trees (`plugins/*/skills/*-workspace/`) from version control: these are regenerable skill-creator outputs, not plugin content or intent, so committing them would only bloat the repository and both hosts' plugin bundles. The intent-bearing eval *definitions* (`plugins/*/skills/*/evals/evals.json`) are not ignored and travel with their skills.
 
 ### `LICENSE`
 
@@ -104,9 +117,9 @@ GitHub-native templates that meet a contributor at the moment of filing, complem
 - **HLD Goal 4** (dogfooding signals) → review `CONTRIBUTING.md`'s *Tests, or justify* framing.
 - **HLD § Key Design Decisions / *The arrow for LID itself*** — when the variant set changes (new variant added, existing one revised) → `CONTRIBUTING.md`'s arrow-variant decision tree absorbs the change.
 - **HLD § Architecture / Methodology** — when the workflow itself changes (rare; itself an HLD-level edit) → `AGENTS.md` updates.
-- **Plugin added under `plugins/`, removed, or renamed** → `.claude-plugin/marketplace.json` adds or updates the entry; `README.md` and `docs/setup.md` install commands cascade.
-- **New supported coding tool** → `docs/setup.md` gains either a row in the simple-path table or a per-tool section with an adapter snippet.
-- **Plugin version bumped / release cut** → `CHANGELOG.md` entry added; all three `plugin.json` versions and their `.claude-plugin/marketplace.json` entries bumped together; a matching git tag and GitHub Release are published from the new `CHANGELOG.md` entry, and the Release posts an announcement to the Discussions *Announcements* category (release-step in `CONTRIBUTING.md`).
+- **Plugin added under `plugins/`, removed, or renamed** → both marketplace manifests (`.claude-plugin/marketplace.json`, `.cursor-plugin/marketplace.json`) and both per-plugin manifests (`.claude-plugin/plugin.json`, `.cursor-plugin/plugin.json`) add or update the entry; `README.md` and `docs/setup.md` install commands cascade.
+- **New supported coding tool** → if it is a first-class plugin host, add its marketplace manifest, its per-plugin manifests, and a `docs/setup.md` plugin-host section; if it is rule-file-only, add either a simple-path table row (native `AGENTS.md`) or a per-tool adapter section in `docs/setup.md`.
+- **Plugin version bumped / release cut** → `CHANGELOG.md` entry added; the three `.claude-plugin/plugin.json` versions and their `.claude-plugin/marketplace.json` entries bumped together; a matching git tag and GitHub Release are published from the new `CHANGELOG.md` entry, and the Release posts an announcement to the Discussions *Announcements* category (release-step in `CONTRIBUTING.md`). The Cursor manifests carry no `version` and are not part of this sync.
 - **HLD Non-Goal *Not adversarial security review* changes** → `SECURITY.md`'s scope and out-of-scope boundary are reviewed for drift.
 - **`CONTRIBUTING.md`'s arrow-variant decision tree changes** → `.github/PULL_REQUEST_TEMPLATE.md`'s arrow-walk checklist is reviewed so the two stay aligned.
 - **Project authorship, title, or canonical URLs change** → `CITATION.cff` is updated to match.
@@ -134,6 +147,9 @@ The component is a leaf in the arrow graph — nothing downstream depends on it 
 | `CITATION.cff` version fields | Omit `version`/`date-released` | Carry the current version and release date | Including them adds another place the release step must keep synchronized; the version contract already lives across the `plugin.json` files, `marketplace.json`, and the CHANGELOG top, and a citation does not require a version. |
 | Contribution-template format | Two YAML issue forms (rich intent-proposal + light bug/drift) plus a Markdown PR template | Markdown issue templates; a single form; no templates | Issue forms collect the LID-specific fields (intent-tree touchpoints) as structured input; two forms match the repository's real traffic (substantive proposals plus the occasional quick report); the PR template stays prose for flexibility. |
 | PR-description shape | Motivation/impact-first with a lightweight arrow-touched line; heavier gate items included only when the change involves them | A fixed every-PR checklist of arrow segments + variant + minimum-surface answers + dogfooding + pause points | Grounded in the repository's own merged PRs: the consistently useful sections are why / what / how-tested plus a light segments-and-IDs line; the full compliance grid is rarely all-applicable and reads as ceremony. `PROJ-STRUCT-018` is revised to match. |
+| Cursor as a first-class plugin host | Ship `.cursor-plugin/` marketplace + per-plugin manifests from this repo, reusing the same `plugins/` skill/command source | Rule-file adapter only (status quo); a separate Cursor-only fork/repo | Cursor's native marketplace reads the same `SKILL.md`/`skills/`/`commands/` layout, so one shared source serves both hosts with only a thin extra manifest. Adapter-only leaves Cursor users without auto-invoking skills; a fork doubles the maintenance surface and drifts. See HLD § Key Design Decisions / *Cursor as a first-class plugin host*. |
+| Cursor manifest `version` field | Omitted | Include and sync with the Claude manifests / CHANGELOG | `version` is optional in Cursor's schema, and `update-lid`'s version-walk reads the `## LID` block + CHANGELOG, not a marketplace manifest. Including it would add strings to the release-step sync for no functional gain. Added at submission only if Cursor requires it. |
+| Eval run-output fixtures (`skills/*-workspace/`) | Gitignored — excluded from the repo and therefore from both hosts' bundles | Keep committed; move to a top-level `eval-runs/` outside `plugins/` | The `*-workspace` trees are regenerable skill-creator run outputs (`iteration-N/eval-K/`), referenced by no `evals.json`, `SKILL.md`, or spec — pure accumulation, ~92% of plugin files. Gitignoring excludes them from both bundles with zero eval-runner breakage; the intent-bearing `evals/evals.json` definitions stay with each skill. Moving rather than removing preserves run history but keeps ~1.4 MB of scratch in the repo for no consumer. |
 
 ## Open Questions & Future Decisions
 
@@ -150,10 +166,12 @@ The component is a leaf in the arrow graph — nothing downstream depends on it 
 
 1. **CI integration of structural checks.** Wiring the link-check, JSON validity, plugin-source-path resolution, and symlink-integrity checks into a CI workflow — most cheaply by extending the marketing-site CI workflow once it exists — is achievable but not yet wired. Tracked as `PROJ-STRUCT-039` through `PROJ-STRUCT-041`.
 2. **Contributor-licensing (CLA / DCO).** Still out of scope. If the project later adds a contributor-licensing mechanism, it folds into this component rather than spawning a new one unless it grows substantially.
+3. **Cursor marketplace submission.** The `.cursor-plugin/` manifests make the plugins installable locally (`~/.cursor/plugins/local/`) and ready for submission; the actual publish to Cursor's reviewed marketplace (`cursor.com/marketplace/publish`) is a maintainer action taken once the manifests and the anchor-agnostic skill text have landed.
+4. **Anchor-agnostic skill text is a cross-segment cascade.** For the plugins to behave correctly under Cursor, the skill bodies that read or write the instruction file (`update-lid` writing the `## LID` block; the workflow skill detecting mode) must treat `AGENTS.md` as the anchor under Cursor, not only `CLAUDE.md`. That intent lives in the `linked-intent-dev` core and `update-lid` LLD segments, not here; this segment pauses at the boundary and the skill-text cascade is walked separately. The same cascade covers per-skill host portability — all three plugins ship to Cursor, but Claude-orchestration-heavy skills (`map-codebase`, `bidirectional-differential`) carry their host-support limits in their own segments, not in the marketplace manifest.
 
 ## References
 
-- `docs/high-level-design.md` — Goal 2 (minimum-system); Goal 4 (dogfooding); § Architecture / Methodology; § Architecture / Distribution; § Key Design Decisions / *The arrow for LID itself*; § Key Design Decisions / *Minimum-system discipline — the why*.
+- `docs/high-level-design.md` — Goal 2 (minimum-system); Goal 4 (dogfooding); § Architecture / Methodology; § Architecture / Distribution; § Key Design Decisions / *The arrow for LID itself*; § Key Design Decisions / *Minimum-system discipline — the why*; § Key Design Decisions / *Cursor as a first-class plugin host*.
 - `docs/intent/marketing-site/marketing-site-design.md` — sibling component in the onboarding taxonomy bucket; owns `README.md`; defines the content-artifact verification pattern this LLD reuses.
 - `docs/intent/linked-intent-dev/linked-intent-dev-design.md` — defines the workflow `AGENTS.md` instantiates per-repo.
 - `docs/intent/project-structure/project-structure-specs.md` — EARS specs for this component.

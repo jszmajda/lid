@@ -1,3 +1,0 @@
-# HLD
-
-Toy scoring app.

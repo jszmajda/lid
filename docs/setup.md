@@ -35,7 +35,7 @@ Claude Code users get both for free: `/linked-intent-dev` (the workflow skill) b
 | **JetBrains Junie** | Reads repo-root `AGENTS.md` as a fallback. Lookup order: IDE custom path → `.junie/AGENTS.md` → `AGENTS.md` → legacy `.junie/guidelines.md`. [docs](https://junie.jetbrains.com/docs/guidelines-and-memory.html) |
 | **GitHub Copilot** | `AGENTS.md` is read by VS Code Chat, Copilot CLI, and the Copilot coding agent (cloud) across its surfaces, as of [Aug 2025](https://github.blog/changelog/2025-08-28-copilot-coding-agent-now-supports-agents-md-custom-instructions/). IDE inline completions and GitHub.com Chat still need `.github/copilot-instructions.md` — see the [Copilot section below](#github-copilot). |
 | **Windsurf** | Treated as an always-on rule by the Cascade rules engine. [docs](https://docs.windsurf.com/windsurf/cascade/memories) |
-| **Cursor** | `AGENTS.md` is listed as an alternative to `.cursor/rules`; behavior when both exist isn't documented. Safer to also ship a `.cursor/rules/lid.mdc` — see the [Cursor section below](#cursor). |
+| **Cursor** | **First-class plugin host** — install the LID plugins from Cursor's marketplace for auto-invoking skills, the same as Claude Code. Cursor also honors repo-root `AGENTS.md` natively (with `.cursor/rules/` taking precedence on conflict). See the [Cursor section below](#cursor). |
 
 **Claude Code is different** — it reads `CLAUDE.md`, not `AGENTS.md`. See the [Claude Code section below](#claude-code) for how to keep a single source of truth across both files.
 
@@ -72,7 +72,24 @@ Claude Code also reads `.claude/CLAUDE.local.md` (local, uncommitted overrides) 
 
 ## Cursor
 
-Cursor recognizes `AGENTS.md` as an alternative to `.cursor/rules`, but behavior when both files exist isn't documented. Ship both for belt-and-suspenders coverage:
+**First-class plugin host.** Cursor's plugin marketplace runs the same LID plugins as Claude Code — the same `SKILL.md` skills and `/`-commands, auto-invoked by the Agent. This is the richest Cursor integration and the recommended path.
+
+Once LID is published to Cursor's reviewed marketplace, install it from the marketplace panel (or `/add-plugin`). Until then, install locally — clone this repo and place (copy or symlink) each plugin directory under `~/.cursor/plugins/local/`, which Cursor discovers on start:
+
+```
+git clone https://github.com/jszmajda/lid
+ln -s "$PWD/lid/plugins/linked-intent-dev"  ~/.cursor/plugins/local/linked-intent-dev
+ln -s "$PWD/lid/plugins/arrow-maintenance"  ~/.cursor/plugins/local/arrow-maintenance
+ln -s "$PWD/lid/plugins/lid-experimental"   ~/.cursor/plugins/local/lid-experimental   # opt-in
+```
+
+Each plugin ships a `.cursor-plugin/plugin.json`; Cursor reads its skills and commands from the same source tree Claude Code uses. With the workflow skill installed, describe what you want to build and it scaffolds `AGENTS.md` + `docs/` and walks the design forward — the same bootstrap Claude Code users get. ([cursor.com/docs/plugins](https://cursor.com/docs/plugins))
+
+**Cursor reads `AGENTS.md` natively**, so the `## LID` block and workflow live in one file across both hosts — a Cursor project needs no `CLAUDE.md`. When both `AGENTS.md` and `.cursor/rules/` are present, `.cursor/rules/` takes precedence on conflict, and nested `AGENTS.md` files merge with the more specific winning.
+
+### Rule-file adapter (lighter alternative)
+
+If you'd rather not install a plugin — or want an always-on reminder alongside it — add a Cursor rule that points at `AGENTS.md`:
 
 **`.cursor/rules/lid.mdc`**
 ```markdown

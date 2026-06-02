@@ -1,6 +1,6 @@
 ---
 name: update-lid
-description: Configure or reconcile a project for linked-intent development (LID). Dispatches on project state — fresh bootstrap, append directives to existing CLAUDE.md, add missing mode marker, reconcile convention drift, or run mode transitions. Invoked as /update-lid. For fresh projects with no LID artifacts, users typically invoke /linked-intent-dev (the workflow skill) instead and the workflow's Phase 1 calls this skill's bootstrap branch.
+description: Configure or reconcile a project for linked-intent development (LID). Dispatches on project state — fresh bootstrap, append directives to an existing agent-instructions file (AGENTS.md or CLAUDE.md), add missing mode marker, reconcile convention drift, or run mode transitions. Invoked as /update-lid. For fresh projects with no LID artifacts, users typically invoke /linked-intent-dev (the workflow skill) instead and the workflow's Phase 1 calls this skill's bootstrap branch.
 disable-model-invocation: true
 ---
 
@@ -10,17 +10,27 @@ Configure or reconcile a project for linked-intent development. Dispatches on pr
 
 Invoked as `/update-lid`. The skill handles both initial bootstrap and ongoing reconciliation; the user's mental model differs ("set me up" vs. "update what we have") but the behavior dispatches on what's detected in the project, not on the user's framing.
 
+## Instruction-file anchor
+
+LID's directives, the `## LID` block, and the navigation table live in the project's **agent-instructions file**. Canonically that is **`AGENTS.md`** (the cross-tool convention Cursor and most agents read), with **`CLAUDE.md` a symlink alias** so Claude Code sees the same content. Never branch on which host you are running under.
+
+- **Read** (detect directives, mode, version, drift): use `AGENTS.md` if it exists, otherwise `CLAUDE.md`. With the symlink the two are one file.
+- **Fresh bootstrap (write)**: create `AGENTS.md` and a `CLAUDE.md` symlink pointing at it (`ln -s AGENTS.md CLAUDE.md`). Where symlinks are unavailable (e.g. Windows without Developer Mode), instead write a `CLAUDE.md` whose only content is `@AGENTS.md`.
+- **Existing project (write)**: update the file that already exists, in place. A project that already uses `CLAUDE.md` keeps it — do not migrate it to `AGENTS.md`.
+
+Below, *the instruction file* means the file chosen by these rules.
+
 ## Detection signals
 
 Use these exact detection rules — do not guess or use fuzzy matching.
 
-- **LID directives present**: `grep` for the literal strings `"linked-intent-dev"` or `"Linked-Intent Development"` in `CLAUDE.md`. Either match indicates LID directives are already installed.
-- **LID metadata block present**: `grep` for a `## LID` heading in `CLAUDE.md`. The block carries two bullets:
+- **LID directives present**: `grep` for the literal strings `"linked-intent-dev"` or `"Linked-Intent Development"` in the instruction file. Either match indicates LID directives are already installed.
+- **LID metadata block present**: `grep` for a `## LID` heading in the instruction file. The block carries two bullets:
   - `- Mode: {Full|Scoped}` — the project's LID mode. Case-insensitive on the mode name; whitespace tolerated.
   - `- Version: {X.Y.Z}` — the `linked-intent-dev` plugin version the project's docs conform to. A project with a `## LID` block but no `- Version:` bullet is treated as **predating versioned conventions (no `- Version:` bullet)** (walk from the start).
 - **Project version vs. installed version**: read `- Version:` from the `## LID` block and compare it to the installed `linked-intent-dev` plugin version (the `version` field in `plugins/linked-intent-dev/.claude-plugin/plugin.json`, the canonical LID conventions version). When the project version is lower, the project lags and version-walk applies.
 - **Arrow-maintenance overlay present**: `docs/arrows/` directory exists at the project root.
-- **Convention drift**: any of the required directories missing (`docs/intent/`, `docs/high-level-design.md`); the CLAUDE.md directive sections diverge from the current template, including a **malformed `## LID` block** (heading other than a bare `## LID`, mode merged into the heading as `## LID Mode: Full`, a missing `- Mode:` or `- Version:` bullet, or stray non-template bullets); a design doc whose `prefix:` frontmatter is an **array** (an unresolved multi-prefix marker — see Version-walk); or a node folder holding **more than its `<node>-design.md` + optional `<node>-specs.md` pair** (an un-promoted sub-LLD left as extra files). The last two are detected independently of version lag — a project already at the installed version still has them re-surfaced by reconcile-conventions, and handled the same way (surfaced with a recommended resolution, never silently left or auto-resolved).
+- **Convention drift**: any of the required directories missing (`docs/intent/`, `docs/high-level-design.md`); the instruction-file directive sections diverge from the current template, including a **malformed `## LID` block** (heading other than a bare `## LID`, mode merged into the heading as `## LID Mode: Full`, a missing `- Mode:` or `- Version:` bullet, or stray non-template bullets); a design doc whose `prefix:` frontmatter is an **array** (an unresolved multi-prefix marker — see Version-walk); or a node folder holding **more than its `<node>-design.md` + optional `<node>-specs.md` pair** (an un-promoted sub-LLD left as extra files). The last two are detected independently of version lag — a project already at the installed version still has them re-surfaced by reconcile-conventions, and handled the same way (surfaced with a recommended resolution, never silently left or auto-resolved).
 
 Re-check all detection signals on every invocation. Installing `arrow-maintenance` after initial setup, for example, should trigger an arrow-navigation-row update on the next `/update-lid` run.
 
@@ -30,11 +40,11 @@ Inspect the project and take exactly one of these actions:
 
 | Detected state | Action |
 |---|---|
-| No `CLAUDE.md`, no `docs/` | **Full bootstrap** — create required directories, create `CLAUDE.md` with LID directives + `## LID` block (`- Mode:` + `- Version:` set to the installed `linked-intent-dev` version). |
-| `CLAUDE.md` exists, no LID directives | **Append directives** — append the LID directives block to existing `CLAUDE.md` without overwriting existing content. Create `docs/` if missing. |
+| No instruction file, no `docs/` | **Full bootstrap** — create required directories, create the instruction file (`AGENTS.md` + `CLAUDE.md` symlink, per *Instruction-file anchor*) with LID directives + `## LID` block (`- Mode:` + `- Version:` set to the installed `linked-intent-dev` version). |
+| Instruction file exists, no LID directives | **Append directives** — append the LID directives block to the existing instruction file without overwriting existing content. Create `docs/` if missing. |
 | LID directives present, no `## LID` block (or no `- Mode:` bullet) | **Add or normalize the LID block** — default mode Full, `- Version:` set to the installed version. If a malformed `## LID` heading already exists (mode merged into the heading, e.g. `## LID Mode: Full`, or stray non-template bullets), rewrite it in place to the canonical `## LID` + `- Mode:` + `- Version:` form rather than appending a second block. |
 | Project `- Version:` lower than the installed version (or `- Version:` absent → predating versioned conventions) | **Version-walk** (see below) — propose the intervening CHANGELOG migrations, confirm, apply mechanical / surface judgment, refresh `- Version:`. |
-| LID directives + `## LID` block at the installed version, no mode change requested | **Reconcile conventions** — check for convention drift (missing directories or files, outdated CLAUDE.md sections) and surface each detected difference as a proposed update requiring user confirmation. |
+| LID directives + `## LID` block at the installed version, no mode change requested | **Reconcile conventions** — check for convention drift (missing directories or files, outdated instruction-file sections) and surface each detected difference as a proposed update requiring user confirmation. |
 | Fully configured, no drift, version current, no mode change requested | **Inform and skip** — tell the user what was detected (mode, version, overlay presence, directory status) and exit without changes. |
 | Mode change requested (Scoped ⇄ Full) | **Run mode transition** (see below). |
 
@@ -70,7 +80,7 @@ During a full bootstrap, prompt the user for the intended mode with **Full LID**
 
 If the user does not specify a mode, select Full.
 
-**When mode is Scoped, prompt for scope patterns** before writing CLAUDE.md. Ask the user:
+**When mode is Scoped, prompt for scope patterns** before writing the instruction file. Ask the user:
 - Which paths (directories, files, glob patterns) are in scope? At minimum one pattern required.
 - Which paths, if any, should be explicitly excluded even within the in-scope roots? (Optional.)
 
@@ -96,12 +106,12 @@ When mode is Full, **do not write a `## LID Scope` section**. Its absence means 
 
 **Caller-provided mode.** When this skill is invoked by another skill (for example, `/map-codebase` at its terminal verification step) that has already determined the mode from its own scope question, the caller passes the mode — and, if Scoped, the scope patterns — through, and this skill honors them without re-prompting. Re-prompting the user for a mode at the end of a long mapping session is a bad UX; the scope question the caller already asked is the mode decision.
 
-Persist the mode and version in `CLAUDE.md`'s `## LID` block — `- Mode: {Full|Scoped}` and `- Version: {X.Y.Z}`. At bootstrap, write `- Version:` set to the installed `linked-intent-dev` plugin version (from `plugins/linked-intent-dev/.claude-plugin/plugin.json`), so a freshly-bootstrapped project starts current and never triggers a spurious version-walk. The `## LID` block is the sole source of truth for mode and version detection by the `linked-intent-dev` skill.
+Persist the mode and version in the instruction file's `## LID` block — `- Mode: {Full|Scoped}` and `- Version: {X.Y.Z}`. At bootstrap, write `- Version:` set to the installed `linked-intent-dev` plugin version (from `plugins/linked-intent-dev/.claude-plugin/plugin.json`), so a freshly-bootstrapped project starts current and never triggers a spurious version-walk. The `## LID` block is the sole source of truth for mode and version detection by the `linked-intent-dev` skill.
 
 ## Mode transitions and scope
 
 - **Full → Scoped.** Prompt for scope patterns and write a new `## LID Scope` section following the format above.
-- **Scoped → Full.** Remove any existing `## LID Scope` section from `CLAUDE.md`.
+- **Scoped → Full.** Remove any existing `## LID Scope` section from the instruction file.
 - **Scoped → Scoped (scope update).** Use `/update-lid` and pass the new scope patterns; the skill rewrites the `## LID Scope` section in place.
 
 ## Mode transitions
@@ -122,7 +132,7 @@ Ensure this layout in the project root, creating any missing:
 
 ## Arrow-maintenance coordination
 
-When `docs/arrows/` is detected, include extra navigation rows in the CLAUDE.md directives template — pointing at `docs/arrows/index.yaml` and per-segment arrow docs — as part of the project's navigation table. When `docs/arrows/` is absent, omit these rows. Re-check this signal on every invocation.
+When `docs/arrows/` is detected, include extra navigation rows in the instruction file's directives template — pointing at `docs/arrows/index.yaml` and per-segment arrow docs — as part of the project's navigation table. When `docs/arrows/` is absent, omit these rows. Re-check this signal on every invocation.
 
 ## Legacy `docs/planning/` handling
 
@@ -145,7 +155,7 @@ Similarly, when convention drift is detected but the user declines every propose
 
 After making any file changes (bootstrap, append directives, mode transition, drift reconciliation):
 
-- Read back the modified files — primarily `CLAUDE.md`.
+- Read back the modified files — primarily the instruction file.
 - Surface a summary naming the files changed and the sections added or modified.
 - Do not elide — short summaries are fine; silent changes are not.
 
@@ -153,8 +163,8 @@ The user should never have to `git diff` the repo to understand what the skill j
 
 ## Do-not-overwrite rule
 
-When appending the LID directives block to an existing `CLAUDE.md`, preserve all existing content. Append, don't overwrite.
+When appending the LID directives block to an existing instruction file, preserve all existing content. Append, don't overwrite.
 
 ## Reference
 
-- `references/claude-md-template.md` — the LID directives block to append to `CLAUDE.md`.
+- `references/agents-md-template.md` — the LID directives block to append to the instruction file.

@@ -15,15 +15,15 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 
 ## State Dispatch
 
-- `[x]` **LID-COACH-003**: When invoked on a project that has no `CLAUDE.md` AND has no LID-shaped artifacts — that is, no `docs/high-level-design.md`, no `.md` files in `docs/intent/` (other than `README.md` or `index.md`), and no `docs/arrows/index.yaml` — the system SHALL inform the user that the project is not LID-configured, recommend running `/update-lid`, and SHALL NOT proceed with coaching.
+- `[x]` **LID-COACH-003**: When invoked on a project that has no instruction file AND has no LID-shaped artifacts — that is, no `docs/high-level-design.md`, no `.md` files in `docs/intent/` (other than `README.md` or `index.md`), and no `docs/arrows/index.yaml` — the system SHALL inform the user that the project is not LID-configured, recommend running `/update-lid`, and SHALL NOT proceed with coaching.
 - `[ ]` **LID-COACH-004**: When invoked on a project that has LID directives but is missing one or more of the required directories (`docs/intent/`) or `docs/high-level-design.md`, the system SHALL proceed with a reduced review of what does exist, surface each missing piece as a high-priority finding, and recommend `/update-lid` to reconcile.
-- `[x]` **LID-COACH-005**: When invoked on a Scoped-mode project that has a missing or empty `## LID Scope` section in `CLAUDE.md`, the system SHALL surface the misconfiguration as a high-priority finding and SHALL perform a conservative project-wide review that treats all paths as in-scope.
+- `[x]` **LID-COACH-005**: When invoked on a Scoped-mode project that has a missing or empty `## LID Scope` section in the instruction file, the system SHALL surface the misconfiguration as a high-priority finding and SHALL perform a conservative project-wide review that treats all paths as in-scope.
 - `[ ]` **LID-COACH-006**: When invoked on a project where `docs/arrows/index.yaml` exists but cannot be parsed, the system SHALL flag the corruption to the user before beginning principle review and SHALL offer either to proceed with a reduced review that treats the overlay as absent or to pause for the user to repair the overlay.
 - `[ ]` **LID-COACH-007**: When invoked on a project that has LID directives, a valid `## LID` block with a `- Mode:` bullet, all standard directories (`docs/intent/`, `docs/high-level-design.md`) present, and — where mode is Scoped — a well-formed `## LID Scope` section, the system SHALL proceed with a full review regardless of whether those files have been populated with content.
 
 ## Inputs
 
-- `[ ]` **LID-COACH-008**: During a review, the system SHALL read `CLAUDE.md` and extract mode, scope declaration (if Scoped), and directive-block coherence with the current template as review inputs.
+- `[ ]` **LID-COACH-008**: During a review, the system SHALL read the instruction file and extract mode, scope declaration (if Scoped), and directive-block coherence with the current template as review inputs.
 - `[ ]` **LID-COACH-009**: During a review, the system SHALL read `docs/high-level-design.md` and assess section coverage against the HLD template and evidence of active intent versus boilerplate.
 - `[ ]` **LID-COACH-010**: During a review, the system SHALL read every file in `docs/intent/` and assess granularity and alignment with the HLD's architecture.
 - `[ ]` **LID-COACH-011**: During a review, the system SHALL read every `*-specs.md` file in the `docs/intent/` tree and assess EARS format compliance, scope-disambiguation hygiene, ID uniqueness and namespacing, and status-marker usage.
@@ -88,8 +88,8 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 
 ## Lenient Dispatch on LID-Shaped Projects
 
-- `[x]` **LID-COACH-045**: When invoked on a project whose `CLAUDE.md` is absent or missing LID directives, and which contains at least one LID-shaped artifact — a `docs/high-level-design.md`, a `.md` file in `docs/intent/` other than `README.md`/`index.md`, or a `docs/arrows/index.yaml` — the system SHALL proceed with a review anchored on the existing artifacts, default to Full mode, and surface the missing (or precursor-named) CLAUDE.md directives as a high-priority finding recommending `/update-lid` to reconcile. The system SHALL NOT refuse coaching in this case.
-- `[x]` **LID-COACH-046**: When dispatching under LID-COACH-045, the system SHALL recognize that the project may be running a precursor or dialect name for LID (e.g., "design-driven-dev") in its CLAUDE.md and SHALL treat the structural arrow (HLD, LLDs, specs, overlay) as the authoritative signal that the project is LID-shaped, not the directive string.
+- `[x]` **LID-COACH-045**: When invoked on a project whose instruction file is absent or missing LID directives, and which contains at least one LID-shaped artifact — a `docs/high-level-design.md`, a `.md` file in `docs/intent/` other than `README.md`/`index.md`, or a `docs/arrows/index.yaml` — the system SHALL proceed with a review anchored on the existing artifacts, default to Full mode, and surface the missing (or precursor-named) instruction-file directives as a high-priority finding recommending `/update-lid` to reconcile. The system SHALL NOT refuse coaching in this case.
+- `[x]` **LID-COACH-046**: When dispatching under LID-COACH-045, the system SHALL recognize that the project may be running a precursor or dialect name for LID (e.g., "design-driven-dev") in its instruction file and SHALL treat the structural arrow (HLD, LLDs, specs, overlay) as the authoritative signal that the project is LID-shaped, not the directive string.
 
 ## Teach While Correcting
 

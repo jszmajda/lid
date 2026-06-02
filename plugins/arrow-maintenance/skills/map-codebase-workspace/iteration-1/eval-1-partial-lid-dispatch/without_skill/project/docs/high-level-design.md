@@ -1,3 +1,0 @@
-# HLD
-
-Some project.
