@@ -2,6 +2,13 @@
   <title id="dag-title">LID arrows across the codebase — DAG</title>
   <desc id="dag-desc">A directed acyclic graph showing one HLD node fanning down through three LLD nodes, six EARS-spec nodes, six failing-first test nodes, and five code-file nodes. Two highlighted edges between tests and code cross or converge, illustrating that one test can cover more than one code file, and one code file can be covered by more than one test.</desc>
 
+  <!-- Firefox Android paint constraint: keep every <rect> at least 70×30 in
+       viewBox units. Below ~60×28, Firefox Android has a soft-reload paint
+       bug where the fill never rasterizes (the cream page background shows
+       through as "white") until a hard reload — no fill / style / opacity /
+       marker workaround helps, only rect size. Encode hierarchy via stroke
+       weight, typography, or node count, not smaller rects. Diagnosed 2026-04. -->
+
   <!-- Arrowhead markers. Same pattern as the hero: path has a dark fill
        attribute, .arr-head class only flips fill in light mode. -->
   <defs>
