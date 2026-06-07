@@ -54,7 +54,7 @@ The methodology is identical across tools — only the invocation differs. Claud
 
 ## LID
 - Mode: Full
-- Version: 1.2.0
+- Version: 1.3.0
 
 ## Linked-Intent Development (MANDATORY)
 
@@ -69,6 +69,8 @@ HLD → LLDs → EARS → Tests → Code
 - **If unsure**: Use the full workflow.
 
 **Docs carry current intent, written to be read cold.** Write each doc as if authored fresh today, from current intent alone — no narration of how it changed, no meaning that needs the conversation that produced it, no rebuttals to questions only a past discussion raised. Rationale, considered alternatives, and constraints a fresh author would independently write stay; record rejected alternatives and why in the LLD's Decisions & Alternatives table, not as asides in body prose.
+
+**Memory vs. intent.** Before saving durable project knowledge to agent or tool memory, test whether it is project *intent* — would a fresh agent, in any tool, next session, need it to build this system correctly? If yes, record it in the arrow (HLD / LLD / EARS / decision doc), which travels and cascades — not in private, per-tool memory, where intent escapes the arrow. Knowledge about the user or how they like to work stays in memory.
 
 ### Navigation
 

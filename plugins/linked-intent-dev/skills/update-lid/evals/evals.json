@@ -116,6 +116,16 @@
         { "text": "No file changes were made (AGENTS.md and existing docs are unmodified; no CLAUDE.md was created)", "spec_ids": ["LID-UPDATE-020", "LID-UPDATE-046"] },
         { "text": "The agent's response informs the user what was detected (mode, version, directory status) rather than silently doing nothing", "spec_ids": ["LID-UPDATE-021", "LID-UPDATE-028"] }
       ]
+    },
+    {
+      "id": 7,
+      "eval_name": "bootstrap-writes-memory-intent-directive",
+      "prompt": "I have an empty project directory and want to start using linked-intent development on it. Please set it up. Use Full LID.",
+      "files": [],
+      "assertions": [
+        { "text": "AGENTS.md contains a tool-agnostic memory-to-intent directive instructing the agent that, before saving durable project knowledge to agent/tool memory, it tests whether the knowledge is project intent and, if so, records it in the arrow rather than memory", "spec_ids": ["LID-UPDATE-047"] },
+        { "text": "The memory-to-intent directive is phrased tool-agnostically (it does not name a specific product's memory feature) and distinguishes project intent (which goes to the arrow) from user/relationship knowledge (which legitimately stays in memory)", "spec_ids": ["LID-UPDATE-047"] }
+      ]
     }
   ]
 }
