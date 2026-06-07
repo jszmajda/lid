@@ -32,6 +32,8 @@ Then just describe what you want to build. The methodology handles the rest. For
 
 > **LID uses LID on itself.** This repo is the canonical mature-project example — its own HLD, LLDs, EARS specs, and evals are in `docs/` and `plugins/*/skills/*/evals/`. If you want to see what LID-at-rest looks like on a real codebase, read the docs here. For a small, intent-only demo (HLD + LLDs + specs, no code — meant to be given to an agent to regenerate), see [`examples/urlshort/`](examples/urlshort/).
 
+**Built on LID.** Editor plugins, CLIs, CI checkers, and more come from a growing third-party ecosystem — the minimal core leaves that tooling to others. Browse what people have built in [`EXTENSIONS.md`](EXTENSIONS.md) or via the [`linked-intent-development`](https://github.com/topics/linked-intent-development) topic; built something? [Add it.](EXTENSIONS.md)
+
 ## The Problem
 
 Modern AI coding agents don't really write bugs anymore. What they write are *intent gaps* — places where the agent assumed you meant something different than you did. The biggest challenge in agentic development isn't getting code to work; it's making sure the agent builds the right thing.

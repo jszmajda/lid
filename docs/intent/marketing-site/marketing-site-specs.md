@@ -96,3 +96,7 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 ## Repository README
 
 - `[x]` **MKT-SITE-053**: The repository `README.md` SHALL open with a badge row that includes, at minimum, badges for the license, the GitHub star count, Claude Code compatibility, the project website, an open-contributions signal, and a built-with-LID signal; each badge SHALL link to the resource it represents and SHALL trace to a fact already owned in the arrow. The README SHALL NOT carry build-status, test-coverage, package-download, or hand-maintained version badges, since the project has no such surface to report on. Badges SHALL be served as proxied static images so that no third-party tracking request is made on the reader's behalf, consistent with `MKT-SITE-031`.
+
+## Ecosystem (social proof)
+
+- `[x]` **MKT-SITE-054**: The onboarding surface SHALL surface the third-party extension ecosystem as a trust signal — at minimum a curated link from the repository `README.md` to `EXTENSIONS.md` and/or the canonical `linked-intent-development` topic, framed as projects building on LID, optionally enriched with a site element. It SHALL be a single curated maintainer link-out, not user-submitted content or an embedded feed, consistent with `MKT-SITE-021` (not a community hub). The ecosystem's substance is owned by the `extensions` segment; this segment owns only the trust-signal framing.
