@@ -4,7 +4,7 @@ The conversion and orientation surface — the four-page Eleventy site at `site/
 
 ## Status
 
-**MAPPED** — bootstrapped on 2026-04-25 (git SHA `b64c439`). 33 of 51 active specs implemented; 18 active gaps focused on the How-it-works five-panel trace block, theme system, build-time link checking, and README/Quickstart cascade behaviors.
+**AUDITED** — last audited 2026-06-07 (git SHA `527cf08c9150`). 36 of 54 active specs implemented; 18 active gaps focused on the How-it-works five-panel trace block, theme system, build-time link checking, and README/Quickstart cascade behaviors. Added this cycle: the README badge row (`MKT-SITE-053`) and the ecosystem social-proof surface (`MKT-SITE-054` — README callout + Home Annex 03B).
 
 ## References
 
@@ -42,11 +42,12 @@ The conversion and orientation surface — the four-page Eleventy site at `site/
 | Category (per LLD groupings) | Implemented | Active gap | Deferred |
 |---|---|---|---|
 | Content / pages / framing | majority `[x]` | a few `[ ]` (notably the five-panel trace details) | 0 |
+| README + ecosystem (badges `-053`, social proof `-054`) | 2 `[x]` | 0 | 0 |
 | Theme & typography | partial — system-aware theme `[x]`; some build-time / a11y checks `[ ]` | | 0 |
 | Build & deploy | partial — GitHub Pages deploy `[x]`; link-check strictness, README/Quickstart cascade `[ ]` | | 0 |
-| **Total** | **33** | **18** | **0** |
+| **Total** | **36** | **18** | **0** |
 
-**Summary:** 33 of 51 active specs implemented; 18 active gaps. The site is live at the chosen domain and serves the core flow; the largest remaining cluster is the How-it-works five-panel trace and its responsive layout (MKT-SITE-039, -041, -045, -047 and adjacent IDs).
+**Summary:** 36 of 54 active specs implemented; 18 active gaps. The site is live and serves the core flow; this cycle added the README badge row (`MKT-SITE-053`) and the ecosystem social-proof surface (`MKT-SITE-054`). The largest remaining cluster is the How-it-works five-panel trace and its responsive layout (MKT-SITE-039, -041, -045, -047 and adjacent IDs).
 
 ## Key Findings
 

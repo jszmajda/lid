@@ -4,7 +4,7 @@ The behavioral `update-lid` skill (invokable as `/update-lid`) — bootstraps a 
 
 ## Status
 
-**MAPPED** — sampled 2026-05-25. `update-lid` complete (43/43 specs `[x]`).
+**AUDITED** — last audited 2026-06-07 (git SHA `65a143750760`). `update-lid` complete (47/47 specs `[x]`).
 
 ## References
 
@@ -16,7 +16,7 @@ The behavioral `update-lid` skill (invokable as `/update-lid`) — bootstraps a 
 - `docs/intent/linked-intent-dev/linked-intent-dev-design.md` — parent `LID` sub-HLD for plugin-level concerns (mode detection, spec ID format, eval-metadata schema).
 
 ### EARS
-- `docs/intent/linked-intent-dev/update-lid/update-lid-specs.md` (43 specs, prefix `LID-UPDATE-*`)
+- `docs/intent/linked-intent-dev/update-lid/update-lid-specs.md` (47 specs, prefix `LID-UPDATE-*`)
 
 ### Tests / Evals
 - `plugins/linked-intent-dev/skills/update-lid/evals/evals.json`

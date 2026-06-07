@@ -4,7 +4,7 @@ The pure-prose `linked-intent-dev` workflow skill (invokable as `/linked-intent-
 
 ## Status
 
-**MAPPED** — sampled 2026-05-25. The workflow skill's behaviors are captured as `LID-CORE-*` specs against the `SKILL.md` artifact. No automated eval suite — the skill is guidance the agent consults, not a deterministic harness run; per the eval-metadata convention the coverage audit does not apply to this leaf.
+**AUDITED** — last audited 2026-06-07 (git SHA `65a143750760`). The workflow skill's behaviors are captured as `LID-CORE-*` specs against the `SKILL.md` artifact. No automated eval suite — the skill is guidance the agent consults, not a deterministic harness run; per the eval-metadata convention the coverage audit does not apply to this leaf.
 
 ## References
 
@@ -16,7 +16,7 @@ The pure-prose `linked-intent-dev` workflow skill (invokable as `/linked-intent-
 - `docs/intent/linked-intent-dev/linked-intent-dev-design.md` — parent `LID` sub-HLD for plugin-level concerns (mode detection, spec ID format, LID-on-LID linkage inversion, eval-metadata schema).
 
 ### EARS
-- `docs/intent/linked-intent-dev/core/core-specs.md` (38 specs, prefix `LID-CORE-*`)
+- `docs/intent/linked-intent-dev/core/core-specs.md` (39 specs, prefix `LID-CORE-*`)
 
 ### Tests / Evals
 - None. The pure-prose workflow skill has no eval suite; its behaviors are verified by dogfooding (the LID repo runs on this skill).

@@ -1,10 +1,10 @@
 # Arrow: project-structure
 
-The repo-meta segment — owns the artifacts that describe the project itself rather than any one piece of it: contributor onboarding (`CONTRIBUTING.md`), agent bootstrap (`AGENTS.md` + `CLAUDE.md` symlink), per-tool integration setup (`docs/setup.md`), the Claude Code marketplace manifest (`.claude-plugin/marketplace.json`), and `LICENSE`.
+The repo-meta segment — owns the artifacts that describe the project itself rather than any one piece of it: contributor onboarding (`CONTRIBUTING.md`), agent bootstrap (`AGENTS.md` + `CLAUDE.md` symlink), per-tool integration setup (`docs/setup.md`), the Claude Code and Cursor marketplace manifests, `CHANGELOG.md`, `.gitignore`, `LICENSE`, the community-health files (`CODE_OF_CONDUCT.md`, `SECURITY.md`, `CITATION.cff`, `.github/` contribution templates), and the `README`/`EXTENSIONS` ownership pointers.
 
 ## Status
 
-**MAPPED** — bootstrapped on 2026-05-05. 39 of 42 active specs implemented; 3 active gaps cluster around build-time structural checks deferred until CI workflow scope is decided. (Git SHA recorded by `/arrow-maintenance` on first audit.)
+**AUDITED** — last audited 2026-06-07 (git SHA `527cf08c9150`). 58 of 61 active specs implemented; the 3 active gaps are build-time structural checks (`PROJ-STRUCT-039`–`041`) deferred until CI scope is decided.
 
 ## References
 
@@ -15,7 +15,7 @@ The repo-meta segment — owns the artifacts that describe the project itself ra
 - `docs/intent/project-structure/project-structure-design.md`
 
 ### EARS
-- `docs/intent/project-structure/project-structure-specs.md` (42 specs, prefix `PROJ-STRUCT-*`)
+- `docs/intent/project-structure/project-structure-specs.md` (61 specs, prefix `PROJ-STRUCT-*`; `-014` retired)
 
 ### Tests / Build checks
 - Build-time structural checks (link-check on `CONTRIBUTING.md` and `docs/setup.md`, JSON validity on `marketplace.json`, symlink integrity on `CLAUDE.md`, plugin-source-path validity in `marketplace.json`) — declared in the LLD § *Component Variant*; CI workflow scope deferred (see `PROJ-STRUCT-039` through `PROJ-STRUCT-041`).
@@ -25,9 +25,15 @@ The repo-meta segment — owns the artifacts that describe the project itself ra
 - `CONTRIBUTING.md` — contributor onboarding
 - `AGENTS.md` — agent bootstrap (canonical)
 - `CLAUDE.md` — symlink to `AGENTS.md`
-- `docs/setup.md` — per-tool adapter setup
-- `.claude-plugin/marketplace.json` — Claude Code plugin marketplace manifest
+- `docs/setup.md` — per-tool adapter + first-class plugin-host setup (Claude Code, Cursor)
+- `.claude-plugin/marketplace.json` + per-plugin `.claude-plugin/plugin.json` — Claude Code manifests
+- `.cursor-plugin/marketplace.json` + per-plugin `.cursor-plugin/plugin.json` — Cursor manifests (no `version`)
+- `CHANGELOG.md` — release history (canonical in `plugins/linked-intent-dev/`, root symlink)
+- `.gitignore` — excludes regenerable eval run-output trees
+- `CODE_OF_CONDUCT.md`, `SECURITY.md`, `CITATION.cff` — community-health artifacts
+- `.github/ISSUE_TEMPLATE/` + `.github/PULL_REQUEST_TEMPLATE.md` — contribution templates
 - `LICENSE` — MIT license
+- (pointers only, owned elsewhere: `README.md` → marketing-site; `EXTENSIONS.md` → extensions)
 
 ## Architecture
 
@@ -44,18 +50,25 @@ The repo-meta segment — owns the artifacts that describe the project itself ra
 
 | Category (per LLD groupings) | Implemented | Active gap | Deferred |
 |---|---|---|---|
-| CONTRIBUTING.md (audience, trivial, out-of-scope, variants, gate, mechanics) | 18 `[x]` | 0 | 0 |
+| CONTRIBUTING.md (audience, trivial, out-of-scope, variants, gate, mechanics) | 17 `[x]` | 0 | 0 |
 | AGENTS.md / CLAUDE.md | 5 `[x]` | 0 | 0 |
-| docs/setup.md | 4 `[x]` | 0 | 0 |
+| docs/setup.md (incl. first-class plugin hosts, `-062`) | 5 `[x]` | 0 | 0 |
 | .claude-plugin/marketplace.json | 3 `[x]` | 0 | 0 |
-| README pointer | 2 `[x]` | 0 | 0 |
+| .cursor-plugin manifests (`-056`–`-058`, `-060`) | 4 `[x]` | 0 | 0 |
+| Repo-root file pointers (README `-031`, EXTENSIONS `-055`, CONTRIBUTING links `-032`) | 3 `[x]` | 0 | 0 |
+| .gitignore (`-059`) | 1 `[x]` | 0 | 0 |
 | LICENSE | 1 `[x]` | 0 | 0 |
+| CODE_OF_CONDUCT.md (`-047`) | 1 `[x]` | 0 | 0 |
+| SECURITY.md (`-048`, `-049`) | 2 `[x]` | 0 | 0 |
+| CITATION.cff (`-050`) | 1 `[x]` | 0 | 0 |
+| .github/ contribution templates (`-051`–`-053`) | 3 `[x]` | 0 | 0 |
+| CHANGELOG.md (incl. release ritual `-054`, No-Version policy `-061`) | 6 `[x]` | 0 | 0 |
 | Cascade obligations | 5 `[x]` | 0 | 0 |
 | Build-time checks | 0 | 3 `[ ]` | 0 |
 | Arrow registration | 1 `[x]` | 0 | 0 |
-| **Total** | **39** | **3** | **0** |
+| **Total** | **58** | **3** | **0** |
 
-**Summary:** 39 of 42 active specs implemented at bootstrap; 3 active gaps. The owned content artifacts are all in place and current. The gap cluster is build-time structural checks (PROJ-STRUCT-039, 040, 041) deferred until a CI workflow extends from `marketing-site`'s scope or stands up alongside it.
+**Summary:** 58 of 61 active specs implemented; 3 active gaps (build-time structural checks `PROJ-STRUCT-039`–`041`, deferred until a CI workflow lands). `PROJ-STRUCT-014` was retired (redundant with the revised `-018`). The segment grew this cycle by three independent bodies of work: community-health artifacts (`047`–`053`), the release-publication ritual + No-Version-Update policy (`054`, `061`), and Cursor first-class plugin-host support (`056`–`060`, `062`) — the Cursor specs were renumbered from `047`–`053` to `056`–`062` to resolve a merge-time ID collision with the community-health specs.
 
 ## Key Findings
 

@@ -1,5 +1,5 @@
 schema_version: 2
-last_updated: 2026-05-26
+last_updated: 2026-06-07
 
 taxonomy:
   core:
@@ -10,6 +10,7 @@ taxonomy:
   onboarding:
     - marketing-site
     - project-structure
+    - extensions
 
 arrows:
   linked-intent-dev:
@@ -25,40 +26,40 @@ arrows:
     drift: null
 
   core:
-    status: MAPPED
+    status: AUDITED
     parent: linked-intent-dev
     sampled: 2026-05-25
-    audited: null
-    audited_sha: null
+    audited: 2026-06-07
+    audited_sha: 65a143750760
     blocks: []
     blockedBy: []
     detail: linked-intent-dev/core.md
     next: null
-    drift: null
+    drift: "39 of 39 LID-CORE specs [x] (workflow skill; pure-prose guidance, no eval harness). 1.3.0 cascade landed: sharpened tenet definition (class-level lean / defensible-opposite) and the intent-narrowing edge-audit framing. No gaps."
 
   update-lid:
-    status: MAPPED
+    status: AUDITED
     parent: linked-intent-dev
     sampled: 2026-05-25
-    audited: null
-    audited_sha: null
+    audited: 2026-06-07
+    audited_sha: 65a143750760
     blocks: []
     blockedBy: []
     detail: linked-intent-dev/update-lid.md
     next: null
-    drift: null
+    drift: "47 of 47 LID-UPDATE specs [x]; no gaps. Grew in 1.3.0: AGENTS.md-canonical instruction file + Windows symlink fallback (045/046) and the tool-agnostic memory->intent directive (047)." 
 
   lid-coach:
-    status: MAPPED
+    status: AUDITED
     parent: linked-intent-dev
     sampled: 2026-05-15
-    audited: null
-    audited_sha: null
+    audited: 2026-06-07
+    audited_sha: 65a143750760
     blocks: []
     blockedBy: []
     detail: linked-intent-dev/lid-coach.md
     next: "Author iteration-2 fixtures covering the 35 unexercised LID-COACH specs (invocation 001-002, inputs 008-012, principle-body 014-015, review dims 016-032 less 019/023, 036/038/041/042/047/048/051, 053 tenet-quality) plus the 3 new tenet-cascade specs (054 verticalize-intent, 055 granularity-as-tree, 056 nested-arrow-validity); 048 needs a >15-LLD fixture project; 053 needs a fixture with a tenet-less HLD and one with platitude tenets; 054 needs a fixture carrying a cross-cutting index/tag registry beside the tree; 055 needs a fixture with an outgrown leaf LLD (promotion candidate) and one bundling several share-design separable-behavior concerns (sub-HLD candidate); 056 needs a fixture whose design layer nests sub-HLDs with a subtree-gathering intermediate prefix (must NOT be flagged) alongside a genuine phase deviation (must be flagged)."
-    drift: "21 of 56 LID-COACH specs [x] (skill-creator iteration-1, 2026-05-15, 38/38 with-skill assertions, covering 18). 35 remain [ ] — unexercised by the current 8 fixtures, not skill-body gaps. LID-COACH-053 (tenet quality) added 2026-05-18 from the HLD tenets cascade; spec + principle body in place, eval fixture pending. LID-COACH-054/055/056 added from the verticalize-intent + refocused-cascade + recursive-design-tree HLD cascade; spec + principle body in place, marked [x] for body coverage, eval fixtures pending. LID-COACH-026 (cascade health) reworded to the lowest-node-that-dominates framing — body and spec match; fixture status unchanged."
+    drift: "22 of 57 LID-COACH specs [x] (skill-creator iteration-1, 2026-05-15, 38/38 with-skill assertions, covering 18). 35 remain [ ] — unexercised by the current 8 fixtures, not skill-body gaps. LID-COACH-053 (tenet quality) added 2026-05-18 from the HLD tenets cascade; spec + principle body in place, eval fixture pending. LID-COACH-054/055/056 added from the verticalize-intent + refocused-cascade + recursive-design-tree HLD cascade; spec + principle body in place, marked [x] for body coverage, eval fixtures pending. LID-COACH-026 (cascade health) reworded to the lowest-node-that-dominates framing — body and spec match; fixture status unchanged."
 
   arrow-maintenance:
     status: MAPPED
@@ -109,11 +110,11 @@ arrows:
     drift: null
 
   bidirectional-differential:
-    status: MAPPED
+    status: AUDITED
     parent: lid-experimental
     sampled: 2026-04-25
-    audited: null
-    audited_sha: null
+    audited: 2026-06-07
+    audited_sha: 65a143750760
     blocks: []
     blockedBy: [arrow-maintenance]
     detail: lid-experimental/bidirectional-differential.md
@@ -121,26 +122,37 @@ arrows:
     drift: "EXP-BIDIFF-007 spec text references a reference file (`stripping-rules.md`) that was consolidated into `audit-protocol.md`. Behavior is implemented; spec prose is stale."
 
   marketing-site:
-    status: MAPPED
+    status: AUDITED
     sampled: 2026-04-25
-    audited: null
-    audited_sha: null
+    audited: 2026-06-07
+    audited_sha: 65a143750760
     blocks: []
-    blockedBy: [linked-intent-dev, arrow-maintenance]
+    blockedBy: [linked-intent-dev, arrow-maintenance, extensions]
     detail: marketing-site.md
-    next: "Close 18 active MKT-SITE gaps (notably MKT-SITE-047 five-panel trace and MKT-SITE-009 README/Quickstart cascade)."
-    drift: "18 of 51 MKT-SITE specs marked [ ] — site is partially built; trace block and quickstart-cascade behaviors are gaps."
+    next: "Close the 18 active MKT-SITE gaps (notably MKT-SITE-047 five-panel trace and MKT-SITE-009 README/Quickstart cascade); optionally enrich the ecosystem social-proof surface (MKT-SITE-054) beyond the README + Home callout."
+    drift: "36 of 54 MKT-SITE specs [x]; 18 [ ] (site partially built — trace block + quickstart-cascade gaps). Added this cycle: MKT-SITE-053 (README badge row) and MKT-SITE-054 (ecosystem social proof — README callout + Home Annex 03B), both [x]."
 
   project-structure:
-    status: MAPPED
+    status: AUDITED
     sampled: 2026-05-05
-    audited: null
-    audited_sha: null
+    audited: 2026-06-07
+    audited_sha: 65a143750760
     blocks: []
     blockedBy: [linked-intent-dev]
     detail: project-structure.md
-    next: "Wire build-time structural checks for the three deferred specs (PROJ-STRUCT-039 link-check, PROJ-STRUCT-040 marketplace.json validity, PROJ-STRUCT-041 CLAUDE.md symlink integrity), most cheaply by extending the marketing-site CI workflow once it exists."
-    drift: null
+    next: "Wire build-time structural checks for the three deferred specs (PROJ-STRUCT-039 link-check, 040 marketplace.json validity, 041 CLAUDE.md symlink integrity), most cheaply via a CI workflow extending marketing-site's."
+    drift: "58 of 61 specs [x]; 3 [ ] (build-time checks 039-041, deferred to CI). Grew substantially this cycle: community-health artifacts (047-053: CODE_OF_CONDUCT/SECURITY/CITATION/.github templates), release-publication ritual (054), EXTENSIONS.md ownership pointer (055), and Cursor first-class plugin-host support (056-062: .cursor-plugin manifests, .gitignore, name-identity, No-Version-Update policy, docs/setup.md hosts). PROJ-STRUCT-014 retired; -018 revised to a motivation-first PR shape. Cursor specs renumbered 047-053 -> 056-062 to resolve a merge-time ID collision with the community-health specs."
+
+  extensions:
+    status: AUDITED
+    sampled: 2026-06-07
+    audited: 2026-06-07
+    audited_sha: 65a143750760
+    blocks: [marketing-site]
+    blockedBy: [linked-intent-dev]
+    detail: extensions.md
+    next: "Wire EXT-007 (broken-link check on EXTENSIONS.md) into CI alongside the PROJ-STRUCT-039-041 build-check backlog; firm up the link-back marker and EXTENSIONS.md inclusion bar as the ecosystem grows."
+    drift: "New leaf segment (PR #34). 6 of 7 specs [x]; EXT-007 (link-check) deferred [ ]. Convention: GitHub topic linked-intent-development + link-back; EXTENSIONS.md curated showcase (currently EtaCassiopeia/lid-tooling)."
 
 unmapped:
   docs:
