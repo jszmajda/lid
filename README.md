@@ -61,7 +61,7 @@ LID is optimized for **the project over time**. The design documents aren't scaf
 | **Tests and code** | The artifact you maintain | Output. Regenerable from intent. |
 | **Scope** | Per-feature or per-change | Per-project, tracked across all components |
 
-LID is also intentionally much simpler than other SDD systems. Where others reach for specialized agents, adversarial reviews, multi-phase orchestration, CI guards, or reconciliation workflows, LID has two skills and a handful of markdown templates. The complexity lives in Claude, not in the tooling — we rely on the model's judgment as much as possible and focus the system on creating durable context that survives across sessions, compactions, and even model changes.
+LID is also intentionally much simpler than other SDD systems. Where others reach for specialized agents, adversarial security reviews, multi-phase orchestration, CI guards, or reconciliation workflows, LID has two skills and a handful of markdown templates. The complexity lives in Claude, not in the tooling — we rely on the model's judgment as much as possible and focus the system on creating durable context that survives across sessions, compactions, and even model changes.
 
 This comes from building products at AWS, where systems live for years and the biggest cost isn't building the wrong thing once — it's *maintaining* a system where nobody can explain why it does what it does. LID treats your coding agent as an English compiler: your design documents are the source, and everything downstream is compiled output.
 
