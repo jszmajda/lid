@@ -1,0 +1,39 @@
+name: Bug / drift report
+description: Something in the methodology, plugins, docs, or site is wrong, broken, or has drifted from intent.
+title: "[bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. For open-ended questions, use [Discussions](https://github.com/jszmajda/lid/discussions) instead.
+  - type: textarea
+    id: what
+    attributes:
+      label: What's wrong
+      description: What did you expect, and what actually happened?
+    validations:
+      required: true
+  - type: input
+    id: where
+    attributes:
+      label: Where (optional)
+      description: The doc, spec ID, skill, or file involved, if you know it.
+    validations:
+      required: false
+  - type: dropdown
+    id: tool
+    attributes:
+      label: Which tool
+      options:
+        - Claude Code (plugins)
+        - Another agent via AGENTS.md adapter
+        - Docs / website
+        - Not tool-specific
+    validations:
+      required: false
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce / context
+    validations:
+      required: false

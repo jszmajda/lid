@@ -167,6 +167,25 @@ Honest list of when LID is the wrong choice. Starting set (to be refined from re
 
 The page frames these as *fit problems*, not deficiencies in LID. A user who recognizes their own project in this list is served better by seeing "LID is not for you" than by adopting and finding out later.
 
+## Repository README
+
+The repository `README.md` is this segment's second orientation surface — the site converts a visitor who has *not yet* found the repo; the README orients the developer who already has. The two share authoritative facts (the one-sentence pitch and the Quickstart commands cascade between them, with the README authoritative for install commands per `MKT-SITE-008`), which is why the README is owned here even though most of this LLD describes the site.
+
+### Badge row
+
+The README opens with a compact badge row — the at-a-glance credibility and orientation signals a developer scans before reading prose. It serves Goal 5 (legibility to those not yet using LID) at the repository surface the same way the hero serves it on the site, in the same *share, not oversell* register: status and orientation, not a wall of vanity metrics.
+
+The badges:
+
+- **License** (MIT) — the terms the project ships under; links to `LICENSE`.
+- **GitHub stars** — modest social proof; links to the stargazers.
+- **Works with Claude Code** — names the richest integration and the primary install path; links to the Quickstart.
+- **Website** — the `linked-intent.dev` on-ramp; links to the site.
+- **PRs welcome** — signals an open contribution posture; links to `CONTRIBUTING.md`.
+- **Built with LID** — the self-referential dogfooding signal (this repository is the canonical LID-on-LID reference); links to the HLD.
+
+Two constraints carry down from the site's posture. Badges are served as images and **must not introduce third-party tracking**; GitHub proxies README images through its own cache, so shields-style badges satisfy the no-tracker posture (`MKT-SITE-031`) without a request path to the badge host on the reader's behalf. And each badge **traces to a fact already owned in the arrow** — the license, the repository's own star count, the marketplace install path, the site domain, the contributor guide, the methodology. A badge that asserts a metric the project does not own or cannot keep true (build status, coverage, package downloads, a hand-kept version) is drift and is not added; LID has no such surface to report on. Badges are a README-only treatment and do not appear on the site.
+
 ## Tech Stack
 
 ### Location
@@ -272,6 +291,7 @@ Once `docs/arrows/` is bootstrapped for this repository, the site appears as a *
 | Link-check strictness | Internal links strict (block build); external links permissive (warnings only) | Strict on both; permissive on both | External sites 404 on their own timelines and should not block deploys. Internal links are ours to guarantee. |
 | Surfacing `/lid-coach` | Mentioned in the Start page's Evaluating and Greenfield narratives as a core principle-review skill | Add it to the Home four-command Quickstart as a fifth command; give it its own audience-path section; omit it entirely | `/lid-coach` is a core, mandatory skill of the `linked-intent-dev` plugin, so omitting it while the site already surfaces `/update-lid` and `/map-codebase` is an unjustified asymmetry that advertises two of three core skills and hides the third. But it is neither an install step nor an audience path — it reviews an already-running LID project — so it does not belong in the Home Quickstart (which stays four commands, preserving the "Four commands" framing) and does not warrant its own section. A mention inside the path narratives matches where the other non-install core commands already live. |
 | Experimental-plugin surface treatment | Peer "Annex 03A / Experimental" section on the Home page between Plate 03 (Quickstart) and Plate 04 (Entry points), and a one-line aside in the Start page's Evaluating section. The Home section uses the standard `.section` major-section pattern (section-head plate + h2 + lede, then a content card) so it inherits the page's vertical rhythm and reads as a peer of Quickstart and Paths rather than a tag-along. The "Annex" plate label and a dashed-rail visual signature signal "supplementary track / opt-in" without diluting the Plate 00–04 main flow. No dedicated /experimental/ page; no fifth Quickstart step in the core install path | Dedicated /experimental/ page; full Quickstart step alongside the core four; aside nested inside the Quickstart shell (initial design, rejected because it lacked breathing room and read as cramped against the install card); silence | Peer-section placement gives the experimental track its own vertical lane in the page's reading rhythm, which is what the section padding system was designed for — siblings under `<main>`, each with `.section`'s `--s-8` top/bottom padding. A dedicated page would imply more weight than the experimental plugin carries today (one skill, opt-in). Silence would hide a real capability evaluators may want to know exists. Nesting inside Quickstart, as the first iteration tried, introduced layout pressure (the annex had to span both Quickstart-shell columns and crowded the install card visually) without earning the structural clarity a peer section gives. README cascades the same treatment as the upstream authoritative document. |
+| README badge row | Six badges (License, GitHub stars, Works-with-Claude-Code, Website, PRs-welcome, Built-with-LID), tracking-free, each tracing to an arrow-owned fact | No badges; a larger row including build / coverage / downloads / version | A small row gives evaluators at-a-glance credibility and orientation (Goal 5) in the README's own *share-not-oversell* register. The larger set was rejected: LID has no build, test, coverage, or package-registry surface, so those badges would assert facts the project does not own — the exact drift this segment exists to prevent — and would read as oversell. |
 
 ## Open Questions & Future Decisions
 
@@ -300,6 +320,7 @@ Once `docs/arrows/` is bootstrapped for this repository, the site appears as a *
 21. ✅ Experimental-plugin treatment: peer "Annex 03A / Experimental" section on the Home page (placed between Plate 03 Quickstart and Plate 04 Paths) using the standard `.section` major-section pattern, plus a one-line aside in the Start page's Evaluating section. No dedicated page, no fifth core Quickstart step. Cascades the README's authoritative treatment.
 22. ✅ `/lid-coach` is surfaced on the Start page (Evaluating and Greenfield narratives), framed as the core principle-review skill that reviews an already-running LID project. It is not added to the Home four-command Quickstart and not given its own audience-path section. Surfacing it is a coherence requirement (a core, mandatory skill the site would otherwise hide while surfacing its two siblings), not a marketing addition.
 23. ✅ The three-line hero framing names the compiler generically ("Your agent is the compiler"), not as a specific tool, matching LID's tool-agnostic positioning.
+24. ✅ The repository README opens with a six-badge row (License, GitHub stars, Works-with-Claude-Code, Website, PRs-welcome, Built-with-LID), tracking-free and each tracing to an arrow-owned fact. No build, coverage, downloads, or version badges, since LID has no such surface to report on.
 
 ### Deferred to implementation
 

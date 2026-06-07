@@ -7,7 +7,9 @@ prefix: PROJ-STRUCT
 
 ## Context and Design Philosophy
 
-Project Structure owns the repository's meta-artifacts — the documents and configuration that describe the project as a whole rather than any one piece of it. Six artifacts are in scope:
+Project Structure owns the repository's meta-artifacts — the documents and configuration that describe the project as a whole rather than any one piece of it. They fall into two groups.
+
+Repo-meta artifacts:
 
 - `CONTRIBUTING.md` — contributor onboarding
 - `AGENTS.md` (canonical) and `CLAUDE.md` (symlink alias) — agent bootstrap entry point
@@ -16,9 +18,16 @@ Project Structure owns the repository's meta-artifacts — the documents and con
 - `CHANGELOG.md` — release history and per-version migration notes (canonical inside `plugins/linked-intent-dev/`, repo-root symlink alias)
 - `LICENSE` — MIT license
 
+Community-health artifacts:
+
+- `CODE_OF_CONDUCT.md` — the behavioral standard for participation, at the repository root
+- `SECURITY.md` — how to report a security concern, and the scope that concern carries against a project that ships no executable application code
+- `CITATION.cff` — machine-readable citation metadata so the methodology can be cited
+- `.github/` contribution templates — issue forms and the pull-request template that operationalize the `CONTRIBUTING.md` arrow-walk at the point of contribution
+
 Three principles shape the component:
 
-- **Single ownership for repo-meta surface.** Each artifact above describes the project as a whole. Distributing them across multiple LLDs would leave individual documents over-scoped (e.g., the marketing-site LLD reasoning about contributor mechanics) or unowned. One LLD covering all of them keeps the cascade coherent and the boundaries clean.
+- **Single ownership for repo-meta surface.** Each artifact above describes the project as a whole. Distributing them across multiple LLDs would leave individual documents over-scoped (e.g., the marketing-site LLD reasoning about contributor mechanics) or unowned. One LLD covering all of them keeps the cascade coherent and the boundaries clean. Community-health files fold in under the same rule rather than spawning a separate governance component: they describe participation in the project as a whole, change rarely, and a dedicated component would be over-scoped for them.
 - **Cross-tool one-source-of-truth.** Coding agents read different per-project rule files (Claude Code reads `CLAUDE.md`; many others read `AGENTS.md`; some need adapter snippets). The component resolves this with a single canonical `AGENTS.md`, `CLAUDE.md` as a zero-drift symlink, and `docs/setup.md` documenting per-tool adapter snippets that users drop into their own projects rather than shipping them from this repository.
 - **Contributor surface as the operational face of HLD principles.** `CONTRIBUTING.md` codifies HLD Goal 2 (minimum-system) as a contributor-facing test (the gate question quoted from § Key Design Decisions / *Minimum-system discipline — the why*) and surfaces the variant arrow shapes from § *The arrow for LID itself* as a decision tree contributors walk by change type.
 
@@ -70,6 +79,25 @@ The file follows [Keep a Changelog](https://keepachangelog.com) format and seman
 
 MIT license at repository root.
 
+### `CODE_OF_CONDUCT.md`
+
+The behavioral standard for participating in the project, at the repository root. Adopts the Contributor Covenant — a widely recognized standard contributors already know — rather than a bespoke code, so the expectations are legible on sight and carry no per-project interpretation burden. Names a private contact for enforcement reports.
+
+### `SECURITY.md`
+
+The security-reporting policy, at the repository root. Its first job is to set scope honestly: LID ships no executable application code — it is a methodology, Markdown skills, prompts, and documentation, plus the static marketing-site build under `site/`. The realistic surface is therefore prompt content that could steer an agent and the build/tooling dependencies of `site/`, not a running service. The file routes reports to a private channel (GitHub's vulnerability-advisory flow or maintainer email) rather than public issues, and states the out-of-scope boundary that ties to the HLD Non-Goal *Not adversarial security review*: a vulnerability in a downstream project that used LID to design itself belongs to that project's own security process, because LID does adversarial *coherence* review, not security review.
+
+### `CITATION.cff`
+
+Machine-readable citation metadata in the Citation File Format, at the repository root, so GitHub renders a "Cite this repository" affordance and a methodology that gets referenced can be cited cleanly. The file carries the title, authorship, repository and site URLs, an abstract, the license, and topic keywords. It deliberately omits a `version`/`date-released` pair: those would add a place the release step must keep in sync on top of the existing version contract (the three `plugin.json` versions, their `marketplace.json` entries, and the CHANGELOG top), and a citation does not require them.
+
+### `.github/` contribution templates
+
+GitHub-native templates that meet a contributor at the moment of filing, complementing the prose in `CONTRIBUTING.md`. Their shape is taken from what this repository's own issues and PRs already do well, not from an idealized checklist.
+
+- **Issue forms** (`.github/ISSUE_TEMPLATE/`) — two forms plus a `config.yml`. An **intent-proposal** form mirrors the structure the repository's substantive issues already converge on — *Context / Problem → Proposed change → Acceptance criteria → Scope & non-goals → Intent touchpoints (LID) → Related* — where *Intent touchpoints* maps the change to the design docs, specs, and prefix it lands in and flags novel intent. A lighter **bug / drift** form lowers the barrier for a quick report (what's wrong, where in the tree if known, which tool, how to reproduce). Neither form auto-applies labels; triage owns labeling. The `config.yml` routes open-ended questions to GitHub Discussions rather than issues.
+- **Pull-request template** (`.github/PULL_REQUEST_TEMPLATE.md`) — oriented to what reviewers of this repository actually find useful: *Why* (motivation and impact), *What changed*, *How it's been tested* (builds, evals, cold-reads, real-project checks), a **lightweight** *Arrow touched* line (segments and EARS IDs, or "trivial"), and optional reviewer notes. It deliberately is not a fixed HLD/LLD/EARS/tests/code compliance grid: in practice the heavier gate items (minimum-surface answers, dogfooding scenarios, cross-segment pause points) belong in a PR only when the change involves them, and leading with motivation and testing matches how the project's strongest PRs are already written.
+
 ## Cascade
 
 - **HLD Goal 2** (minimum-system, surface-growth resistance) → review `CONTRIBUTING.md`'s *Out of scope* and *Minimum-surface gate* sections for claim drift.
@@ -79,6 +107,9 @@ MIT license at repository root.
 - **Plugin added under `plugins/`, removed, or renamed** → `.claude-plugin/marketplace.json` adds or updates the entry; `README.md` and `docs/setup.md` install commands cascade.
 - **New supported coding tool** → `docs/setup.md` gains either a row in the simple-path table or a per-tool section with an adapter snippet.
 - **Plugin version bumped / release cut** → `CHANGELOG.md` entry added; all three `plugin.json` versions and their `.claude-plugin/marketplace.json` entries bumped together (release-step in `CONTRIBUTING.md`).
+- **HLD Non-Goal *Not adversarial security review* changes** → `SECURITY.md`'s scope and out-of-scope boundary are reviewed for drift.
+- **`CONTRIBUTING.md`'s arrow-variant decision tree changes** → `.github/PULL_REQUEST_TEMPLATE.md`'s arrow-walk checklist is reviewed so the two stay aligned.
+- **Project authorship, title, or canonical URLs change** → `CITATION.cff` is updated to match.
 
 The component is a leaf in the arrow graph — nothing downstream depends on it — so its `blocks` list in `docs/arrows/index.yaml` is empty.
 
@@ -96,6 +127,12 @@ The component is a leaf in the arrow graph — nothing downstream depends on it 
 | LICENSE inclusion | Listed as owned by this component | Leave unowned; create a separate licensing LLD | LICENSE is repo-meta and changes rarely; including it costs near-zero LLD prose and closes the unowned gap. A standalone licensing component is overkill for a one-file MIT setup. |
 | Version sync mechanism | Release-step discipline plus conventional review (the `CONTRIBUTING.md` release step keeps the six version strings — three `plugin.json` plus three `marketplace.json` — and the CHANGELOG top version equal) | CI gate that fails on version mismatch; generated `marketplace.json` derived from the `plugin.json` files | A CI gate is new scope and runs against the HLD Non-Goal that LID is not a linter/validator — enforcement is conversational. Generation removes hand-edited `marketplace.json` but adds a build step and tooling LID does not otherwise carry. The release step plus reviewer attention is the minimum-system fit. |
 | CHANGELOG location | Canonical inside the core plugin (`plugins/linked-intent-dev/CHANGELOG.md`) with a repo-root symlink alias | Repo-root canonical with no plugin copy | A repo-root canonical does not travel with the plugin, so `update-lid` cannot read the migration notes when `linked-intent-dev` is installed in a user project. Canonical-in-plugin ships the changelog with the conventions it documents; the root symlink keeps it discoverable at the conventional location. |
+| Community-health inclusion | Fold `CODE_OF_CONDUCT.md`, `SECURITY.md`, `CITATION.cff`, and `.github/` templates into this component | Spawn a separate governance/community component; leave to GitHub's defaults | These files describe participation in the project as a whole — the same single-ownership logic that groups the repo-meta artifacts. They change rarely, so a dedicated component would be over-scoped, and GitHub's defaults (no code of conduct, a generic security stub) miss the project-specific scope `SECURITY.md` needs. |
+| Code of conduct standard | Contributor Covenant | A bespoke code; no code of conduct | A recognized standard contributors already know, legible on sight, with no per-project interpretation burden. |
+| `SECURITY.md` scope framing | State that LID ships no executable application code and bound the real surface (prompt content, `site/` build deps); route reports privately; tie the out-of-scope line to the HLD Non-Goal *Not adversarial security review* | Generic GitHub security stub; omit the file | An honest scope is more useful than a boilerplate stub for a project with no runtime, and tying the out-of-scope line to the HLD Non-Goal keeps the coherence/security boundary consistent across documents. |
+| `CITATION.cff` version fields | Omit `version`/`date-released` | Carry the current version and release date | Including them adds another place the release step must keep synchronized; the version contract already lives across the `plugin.json` files, `marketplace.json`, and the CHANGELOG top, and a citation does not require a version. |
+| Contribution-template format | Two YAML issue forms (rich intent-proposal + light bug/drift) plus a Markdown PR template | Markdown issue templates; a single form; no templates | Issue forms collect the LID-specific fields (intent-tree touchpoints) as structured input; two forms match the repository's real traffic (substantive proposals plus the occasional quick report); the PR template stays prose for flexibility. |
+| PR-description shape | Motivation/impact-first with a lightweight arrow-touched line; heavier gate items included only when the change involves them | A fixed every-PR checklist of arrow segments + variant + minimum-surface answers + dogfooding + pause points | Grounded in the repository's own merged PRs: the consistently useful sections are why / what / how-tested plus a light segments-and-IDs line; the full compliance grid is rarely all-applicable and reads as ceremony. `PROJ-STRUCT-018` is revised to match. |
 
 ## Open Questions & Future Decisions
 
@@ -106,11 +143,12 @@ The component is a leaf in the arrow graph — nothing downstream depends on it 
 3. ✅ Component variant: content artifact (`HLD → LLD → EARS → content + assets`).
 4. ✅ README ownership stays with `marketing-site`; this component references but does not own.
 5. ✅ AGENTS.md is canonical; CLAUDE.md is a symlink to it.
+6. ✅ Community-health files (`CODE_OF_CONDUCT.md`, `SECURITY.md`, `CITATION.cff`, `.github/` contribution templates) are owned by this component, folded in under single-ownership rather than spawned as separate components.
 
 ### Deferred
 
 1. **CI integration of structural checks.** Wiring the link-check, JSON validity, plugin-source-path resolution, and symlink-integrity checks into a CI workflow — most cheaply by extending the marketing-site CI workflow once it exists — is achievable but not yet wired. Tracked as `PROJ-STRUCT-039` through `PROJ-STRUCT-041`.
-2. **CODE_OF_CONDUCT, governance, contributor-licensing.** Out of scope today. If the project later adds any of these, they fold into this component rather than spawning new ones unless they grow substantially.
+2. **Contributor-licensing (CLA / DCO).** Still out of scope. If the project later adds a contributor-licensing mechanism, it folds into this component rather than spawning a new one unless it grows substantially.
 
 ## References
 

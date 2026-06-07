@@ -1,0 +1,22 @@
+cff-version: 1.2.0
+title: "Linked-Intent Development (LID)"
+message: "If you use LID or its plugins, please cite this repository."
+type: software
+authors:
+  - family-names: Szmajda
+    given-names: Jess
+abstract: >-
+  Linked-Intent Development (LID) is a structured design-before-code
+  methodology for agentic coding that keeps intent and code coherent through a
+  traceable arrow: high-level design to low-level design to EARS specifications
+  to tests to code.
+repository-code: "https://github.com/jszmajda/lid"
+url: "https://linked-intent.dev"
+license: MIT
+keywords:
+  - agentic-coding
+  - spec-driven-development
+  - claude-code
+  - linked-intent-development
+  - methodology
+  - ears

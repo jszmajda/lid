@@ -8,6 +8,11 @@
 - .claude-plugin/marketplace.json
 - CHANGELOG.md (canonical at plugins/linked-intent-dev/CHANGELOG.md, root symlink)
 - LICENSE
+- CODE_OF_CONDUCT.md
+- SECURITY.md
+- CITATION.cff
+- .github/ISSUE_TEMPLATE/ (issue forms + config.yml)
+- .github/PULL_REQUEST_TEMPLATE.md
 
 Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 
@@ -40,14 +45,13 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 
 - `[x]` **PROJ-STRUCT-012**: `CONTRIBUTING.md` SHALL include the minimum-surface gate quoted from HLD § Key Design Decisions / *Minimum-system discipline — the why*: *"Can the existing surface absorb this, or is the agent about to absorb it anyway?"*
 - `[x]` **PROJ-STRUCT-013**: `CONTRIBUTING.md` SHALL route novel capabilities that clear the gate at `plugins/lid-experimental/` rather than directly into core plugins, and SHALL state that promotion into core is earned through community adoption and concrete value rather than requested.
-- `[x]` **PROJ-STRUCT-014**: `CONTRIBUTING.md` SHALL require PR descriptions that introduce new surface to answer both gate questions explicitly.
 
 ## CONTRIBUTING.md: Mechanics
 
 - `[x]` **PROJ-STRUCT-015**: `CONTRIBUTING.md` SHALL state the atomic-improvement framing: one PR equals one coherent intent change, walked end-to-end through whichever arrow phases it touches; coherence rather than size is the unit.
 - `[x]` **PROJ-STRUCT-016**: `CONTRIBUTING.md` SHALL provide examples that bound the size dimension on both ends — a tiny-but-coherent example (e.g., a sharpened EARS line plus its eval) and a larger-but-coherent example (e.g., an LLD section rewrite cascaded through specs and skill prose).
 - `[x]` **PROJ-STRUCT-017**: `CONTRIBUTING.md` SHALL state that contributors SHOULD file an issue before walking the arrow on changes that may add new surface, and that changes fitting clearly within existing surface go straight to a PR.
-- `[x]` **PROJ-STRUCT-018**: `CONTRIBUTING.md` SHALL list the items a PR description should include: arrow segments touched (LLD names, EARS IDs); arrow variant applied; minimum-surface gate answers (when introducing new surface); dogfooding scenarios exercised (for pure-prose changes); and pause points with verification (for cross-segment cascade).
+- `[x]` **PROJ-STRUCT-018**: `CONTRIBUTING.md` SHALL describe a PR-description shape oriented to what reviewers find useful in practice: the motivation and impact, what changed, how the change was tested, and a lightweight statement of the arrow segments and EARS IDs touched (or that the change is trivial). It SHALL present the minimum-surface gate answers, cross-segment pause points, and dogfooding scenarios as items to include when the change involves them, rather than as a fixed checklist required of every PR. `.github/PULL_REQUEST_TEMPLATE.md` embodies this shape (`PROJ-STRUCT-053`).
 
 ## AGENTS.md and CLAUDE.md
 
@@ -103,3 +107,22 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 ## Arrow Registration
 
 - `[x]` **PROJ-STRUCT-042**: Where the `docs/arrows/` overlay is present in this repository, this segment SHALL appear as a named segment in `docs/arrows/index.yaml` with the same schema as plugin segments.
+
+## CODE_OF_CONDUCT.md
+
+- `[x]` **PROJ-STRUCT-047**: A `CODE_OF_CONDUCT.md` file SHALL exist at the repository root, SHALL adopt a recognized community standard (the Contributor Covenant), and SHALL name a private contact for enforcement reports.
+
+## SECURITY.md
+
+- `[x]` **PROJ-STRUCT-048**: A `SECURITY.md` file SHALL exist at the repository root that states LID ships no executable application code, identifies the realistic security surface (prompt content in skills and the build/tooling dependencies of `site/`), and routes reports to a private channel (GitHub's vulnerability-advisory flow or maintainer email) rather than to public issues.
+- `[x]` **PROJ-STRUCT-049**: `SECURITY.md` SHALL state that vulnerabilities in a downstream project built using LID are out of scope, tying the boundary to the HLD Non-Goal *Not adversarial security review* — LID performs adversarial *coherence* review, not security review.
+
+## CITATION.cff
+
+- `[x]` **PROJ-STRUCT-050**: A `CITATION.cff` file SHALL exist at the repository root in the Citation File Format, carrying at minimum the project title, authorship, repository and website URLs, an abstract, and the license. It SHALL omit `version` and `date-released` so the file does not join the per-release version-sync surface defined by `PROJ-STRUCT-046`.
+
+## Contribution Templates
+
+- `[x]` **PROJ-STRUCT-051**: `.github/ISSUE_TEMPLATE/` SHALL provide an intent-proposal issue form whose sections are Context/Problem, Proposed change, Acceptance criteria, Scope & non-goals, Intent touchpoints (LID), and Related — where Intent touchpoints maps the change to the design docs, specs, and prefix it lands in and flags novel intent — and a separate, lighter bug/drift report form. Neither form SHALL auto-apply labels.
+- `[x]` **PROJ-STRUCT-052**: `.github/ISSUE_TEMPLATE/config.yml` SHALL route open-ended questions to GitHub Discussions via a contact link rather than to issues.
+- `[x]` **PROJ-STRUCT-053**: A `.github/PULL_REQUEST_TEMPLATE.md` file SHALL exist presenting, in order, the change's motivation and impact, what changed, how it was tested, a lightweight statement of the arrow segments and EARS IDs touched (or that the change is trivial), and optional reviewer notes. It SHALL NOT require the full minimum-surface / dogfooding / pause-point checklist on every PR (see `PROJ-STRUCT-018`).
