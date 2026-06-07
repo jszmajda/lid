@@ -57,8 +57,6 @@ A new command, skill, plugin, or convention is not just cognitive load for users
 
 If existing surface can absorb the change, fold it in. If the agent is about to absorb it, let the agent. Only if both answers are no does new surface get considered, and even then, novel capabilities land in `lid-experimental` first.
 
-When a PR introduces new surface, the description must answer both questions explicitly.
-
 ## Mechanics
 
 **One PR = one coherent intent change, walked end-to-end through whichever arrow phases it touches.**
@@ -73,15 +71,16 @@ The reviewer test: *would I have to context-switch between two unrelated things 
 
 For changes that may add new surface, file an issue before walking the arrow — the minimum-surface gate is better discussed before arrow work that may not survive the conversation. Changes that fit clearly within existing surface (sharpening an existing skill, repairing drift in an LLD, adding an EARS spec to an existing component) go straight to a PR.
 
-Branch from `main`. The PR description should include:
+Branch from `main`. Lead the PR description with what reviewers actually use:
 
-- The arrow segments touched (LLD names, EARS IDs).
-- Which arrow variant applies (behavioral / pure-prose / dual-mode / content).
-- For new surface: explicit answers to the minimum-surface gate questions.
-- For pure-prose changes: the dogfooding scenarios the change was exercised against.
-- For cross-segment cascade: the pause points and what was verified at each.
+- **Why** — the motivation and impact: the problem, who it affects, why it's worth doing.
+- **What changed** — the substance.
+- **How it's been tested** — builds, evals, cold-reads, real-project checks, or the dogfooding scenarios a pure-prose change was exercised against.
+- **Arrow touched** — a lightweight line naming the segments and EARS IDs (or that the change is trivial).
 
-These are conventions, not a template to copy-paste.
+Include the heavier gate items only when the change involves them: the minimum-surface gate answers when introducing new surface, and the cross-segment pause points (with what was verified at each) when a cascade crosses a boundary.
+
+These are conventions, not a template to copy-paste; [`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md) is the starting point.
 
 ## Release / versioning
 

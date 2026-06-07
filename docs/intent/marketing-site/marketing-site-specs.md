@@ -5,6 +5,7 @@
 - site/src/**
 - site/_site/** (build output)
 - .github/workflows/site-build.yml
+- README.md (the segment owns README content; see "Repository README")
 
 Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 
@@ -91,3 +92,7 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 - `[ ]` **MKT-SITE-035**: When skill behavior changes materially, the site owner SHALL re-record the asciinema demo before the next deploy.
 - `[ ]` **MKT-SITE-036**: Where the `docs/arrows/` overlay is present in this repository, the site SHALL appear as a named segment in `docs/arrows/index.yaml` with the same schema as plugin segments.
 - `[x]` **MKT-SITE-037**: The site SHALL NOT claim capabilities or behaviors that are not present in the current plugin LLDs.
+
+## Repository README
+
+- `[x]` **MKT-SITE-053**: The repository `README.md` SHALL open with a badge row that includes, at minimum, badges for the license, the GitHub star count, Claude Code compatibility, the project website, an open-contributions signal, and a built-with-LID signal; each badge SHALL link to the resource it represents and SHALL trace to a fact already owned in the arrow. The README SHALL NOT carry build-status, test-coverage, package-download, or hand-maintained version badges, since the project has no such surface to report on. Badges SHALL be served as proxied static images so that no third-party tracking request is made on the reader's behalf, consistent with `MKT-SITE-031`.

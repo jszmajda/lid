@@ -1,5 +1,12 @@
 # Linked-Intent Development
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Stars](https://img.shields.io/github/stars/jszmajda/lid?logo=github&label=stars)](https://github.com/jszmajda/lid/stargazers)
+[![Works with Claude Code](https://img.shields.io/badge/works%20with-Claude%20Code-d97757?logo=anthropic&logoColor=white)](#quickstart)
+[![Website](https://img.shields.io/badge/site-linked--intent.dev-1f6feb)](https://linked-intent.dev)
+[![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+[![Built with LID](https://img.shields.io/badge/built%20with-LID-8957e5)](docs/high-level-design.md)
+
 A structured design-before-code methodology for agentic coding. Stop building the wrong thing — get alignment on *what* before writing *how*. Works with any coding agent that reads per-project instructions.
 
 ## Quickstart
