@@ -6,11 +6,27 @@ All notable changes to LID (Linked-Intent Development) are recorded here. The fo
 
 *Changes merged since the latest numbered version that did not require a version bump (per the policy in `docs/high-level-design.md` § Architecture / Distribution / What warrants a version change). These fold into the next numbered version's entry when one is cut.*
 
+## [1.3.0] — 2026-06-06
+
+The memory-coherence release: durable project knowledge is redirected from agent memory into the arrow, and the definition of a tenet is sharpened to exclude specs in disguise.
+
 ### Added
+- **Memory→intent directive in the instruction file.** Bootstrap and reconcile-conventions now write a tool-agnostic *Memory vs. intent* directive into the always-loaded instruction file (`AGENTS.md`/`CLAUDE.md`): before saving durable project knowledge to any agent/tool memory, the agent tests whether it is project *intent* (would a fresh agent, in any tool, next session, need it to build the system right?) and, if so, records it in the arrow rather than memory. It lives in the instruction file because that is the only artifact reliably in context at memory-save time — the HLD, where the rationale lives, is not. (`LID-UPDATE-047`)
+- **Tenet-quality coach lens for spec-shaped tenets.** `/lid-coach` now flags a `## Tenets` entry that is a triggered `when X, do Y` rule — a spec masquerading as a tenet — and recommends routing it to EARS. (`LID-COACH-057`)
 - **Cursor as a first-class plugin host.** The repository ships `.cursor-plugin/` marketplace and per-plugin manifests that reuse the same `skills/`/`commands/` source Claude Code reads, so Cursor installs the LID plugins with auto-invoking skills — not just the rule-file adapter. `docs/setup.md`'s Cursor section now leads with the plugin install; the `.cursor/rules/lid.mdc` adapter stays as the lighter no-plugin alternative. The Cursor manifests carry no `version`. (HLD § Key Design Decisions / *Cursor as a first-class plugin host*)
 
 ### Changed
+- **The definition of a tenet is sharpened with a second test.** Beyond the *defensible opposite* (a tenet is not a platitude), a tenet must be a **class-level lean, not a triggered rule**: a candidate phrased as `when X, do Y` with a definite outcome is a spec — routed to EARS — even when its opposite is defensible. *A tenet says which way to lean; a spec says what to do; a Key Design Decision records what was already chosen.* Applied across the HLD, the HLD template, and the `linked-intent-dev` elicit-tenets step. (`LID-CORE-039`)
 - **Bootstrap defaults to `AGENTS.md` — by preference, not mandate.** `/update-lid` (and the `/linked-intent-dev` Phase-1 bootstrap) now create `AGENTS.md` as the instruction file with a `CLAUDE.md` symlink alias (or a one-line `@AGENTS.md` import where symlinks are unavailable, e.g. Windows without Developer Mode) so Cursor and other `AGENTS.md`-native agents read the `## LID` block too. The skills read whichever instruction file a project presents — `AGENTS.md` or `CLAUDE.md` — and an existing `CLAUDE.md` project is kept in place, never migrated. No host detection, and no required change for any existing project.
+
+### Migration (v1.2 → v1.3)
+- **Add the memory→intent directive (mechanical).** Run `/update-lid`; reconcile-conventions detects that the instruction file's directives are missing the *Memory vs. intent* paragraph and adds it. No-op if already present.
+- **Review existing memory for escaped intent (judgment).** As a one-time retroactive application of the new directive, review the project's existing agent/tool memory for durable project knowledge that is really *intent* — anything a fresh agent in any tool would need to build the system right — and extract it into the arrow (HLD/LLD/EARS/decision doc), leaving only user/working-relationship knowledge in memory. `/update-lid` surfaces this as a judgment step; it does not read your memory for you.
+- **Review existing tenets for spec-shaped ones (judgment).** As a one-time retroactive application of the sharpened definition, sweep each `## Tenets` entry for a triggered `when X, do Y` rule masquerading as a tenet and route any you find to EARS (an entry stays a tenet only if its opposite is defensible *and* it is a class-level lean, not a triggered action). `/lid-coach`'s tenet-quality lens now surfaces these on every review; this migration prompts the one-time sweep. Genuine tenets stay valid and need no change.
+- **Cursor / `AGENTS.md` bootstrap: no change required.** Additive — existing projects keep their current instruction file as-is.
+
+### Plugin versions
+`linked-intent-dev` 1.3.0 · `arrow-maintenance` 1.2.0 · `lid-experimental` 0.2.0
 
 ## [1.2.0] — 2026-05-25
 

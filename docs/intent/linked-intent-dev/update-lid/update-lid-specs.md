@@ -68,6 +68,10 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 - `[x]` **LID-UPDATE-025**: When generating or updating the LID directives block in the instruction file, the system SHALL include arrow-navigation rows pointing at `docs/arrows/index.yaml` and per-segment arrow docs if and only if the arrow-maintenance overlay is detected (LID-UPDATE-024).
 - `[x]` **LID-UPDATE-026**: The system SHALL re-check arrow-maintenance presence on every invocation, so that installing the overlay after initial setup triggers an instruction-file update on the next `/update-lid` run.
 
+## Memory→Intent Directive
+
+- `[x]` **LID-UPDATE-047**: When generating or updating the LID directives block in the instruction file, the system SHALL include a tool-agnostic memory→intent directive instructing the agent to test, before persisting durable project knowledge to any memory mechanism, whether the knowledge is project intent (would a fresh agent, in any tool, next session, need it to build the system right?) and, if so, to record it in the arrow rather than memory.
+
 ## Verification / Show-What-Changed
 
 - `[x]` **LID-UPDATE-027**: After making any file changes (bootstrap, append directives, mode transition, drift reconciliation), the system SHALL read back the modified files and surface a summary to the user naming the files changed and the sections added or modified.

@@ -141,6 +141,39 @@
         { "text": "The agent produces a review report but does NOT edit any project files as part of the coach invocation", "spec_ids": ["LID-COACH-039"] },
         { "text": "If the user asked for fixes, the agent explains the advisory posture and points at /update-lid or direct edits rather than applying fixes itself", "spec_ids": ["LID-COACH-039", "LID-COACH-040"] }
       ]
+    },
+    {
+      "id": 8,
+      "eval_name": "spec-shaped-tenet-flagged",
+      "prompt": "Run /lid-coach.",
+      "files": [
+        { "path": "CLAUDE.md", "content": "## LID\n- Mode: Full\n- Version: 1.2.0\n\n## Linked-Intent Development\n\nConsult the linked-intent-dev skill.\n" },
+        { "path": "docs/high-level-design.md", "content": "# High-Level Design: Task Queue\n\n## Problem\n\nBackground jobs must run reliably without blocking request handlers.\n\n## Approach\n\nA durable queue backed by Postgres; workers poll and process jobs with at-least-once delivery.\n\n## Architecture\n\nProducer API, jobs table, worker pool, dead-letter table.\n\n## Tenets\n\n- **Boring over clever.** Prefer well-worn solutions to novel ones unless the novel one is decisively better — a future maintainer should not have to reverse-engineer ingenuity.\n- **When a job fails three times, move it to the dead-letter table and stop retrying.**\n\n## Key Design Decisions\n\nAt-least-once over exactly-once: simpler, and consumers are idempotent.\n\n## Goals\n\nReliable delivery. Observable failures. No lost jobs.\n" },
+        { "path": "docs/llds/.gitkeep", "content": "" },
+        { "path": "docs/specs/.gitkeep", "content": "" }
+      ],
+      "assertions": [
+        { "text": "The report flags the second ## Tenets entry ('When a job fails three times, move it to the dead-letter table and stop retrying') as not a real tenet — it is a triggered when-X-do-Y rule (a spec masquerading as a tenet), not a class-level lean", "spec_ids": ["LID-COACH-057"] },
+        { "text": "The recommended action is to route that entry to EARS as a spec (move it out of ## Tenets into a spec/LLD), not to keep or merely reword it as a tenet", "spec_ids": ["LID-COACH-057"] },
+        { "text": "The report does NOT flag the 'Boring over clever' entry as spec-shaped — it is a genuine class-level lean with a defensible opposite, so the coach distinguishes a real tenet from the triggered rule", "spec_ids": ["LID-COACH-057"] },
+        { "text": "The tenet finding cites the tenet-quality principle by name, paired with a plain-English gloss inline", "spec_ids": ["LID-COACH-035", "LID-COACH-057"] },
+        { "text": "No project files are created or modified", "spec_ids": ["LID-COACH-039"] }
+      ]
+    },
+    {
+      "id": 9,
+      "eval_name": "tenet-ears-line-pressure",
+      "prompt": "Run /lid-coach.",
+      "files": [
+        { "path": "CLAUDE.md", "content": "## LID\n- Mode: Full\n- Version: 1.3.0\n\n## Linked-Intent Development\n\nConsult the linked-intent-dev skill.\n" },
+        { "path": "docs/high-level-design.md", "content": "# High-Level Design: Task Scheduler\n\n## Problem\n\nScheduled and event-driven tasks must run reliably across a worker fleet.\n\n## Approach\n\nA durable task table polled by stateless workers; failures retried with backoff.\n\n## Architecture\n\nScheduler, task table, worker pool, dead-letter queue.\n\n## Tenets\n\n- **Boring over clever.** Prefer well-worn solutions to novel ones unless the novel one is decisively better.\n- **Correctness over speed.** When the two conflict, lean toward the slower, correct behavior.\n- **Retry a failed task up to three times, then move it to the dead-letter queue.**\n\n## Key Design Decisions\n\nAt-least-once delivery with idempotent workers.\n\n## Goals\n\nReliable execution. Visible failures.\n" }
+      ],
+      "assertions": [
+        { "text": "The report flags the third ## Tenets entry ('Retry a failed task up to three times, then move it to the dead-letter queue') as a spec masquerading as a tenet — a triggered rule with a definite action — and recommends routing it to EARS, even though it contains no 'when' keyword (the coach recognizes the triggered-action FORM, not a keyword)", "spec_ids": ["LID-COACH-057"] },
+        { "text": "The report does NOT flag 'Correctness over speed. When the two conflict, lean toward the slower, correct behavior.' as spec-shaped — it is a directional lean across a class of decisions even though it is framed with 'when' (the coach does not keyword-match 'when')", "spec_ids": ["LID-COACH-057"] },
+        { "text": "The report does NOT flag 'Boring over clever' as spec-shaped — it is a clear class-level lean", "spec_ids": ["LID-COACH-057"] },
+        { "text": "No project files are created or modified", "spec_ids": ["LID-COACH-039"] }
+      ]
     }
   ]
 }
