@@ -22,8 +22,8 @@ On invocation, inspect the project and take exactly one of these actions:
 
 | Detected state | Action |
 |---|---|
-| No `CLAUDE.md` **and** no LID-shaped artifacts anywhere in the project (no HLD, no LLDs, no specs, no arrow overlay) | Inform the user the project is not LID-configured; recommend `/update-lid`. **Do not proceed with coaching.** |
-| `CLAUDE.md` absent or missing LID directives **but** the project has LID-shaped artifacts (see threshold below) | **Proceed with a full review** anchored on the existing artifacts (default Full mode). Surface the missing (or precursor-named) CLAUDE.md directives as a high-priority finding recommending `/update-lid` to reconcile. Do **not** refuse — a project with a populated arrow is LID-shaped regardless of whether CLAUDE.md has caught up with the directive naming. |
+| No instruction file (the project's `AGENTS.md`, or `CLAUDE.md` under Claude Code) **and** no LID-shaped artifacts anywhere in the project (no HLD, no LLDs, no specs, no arrow overlay) | Inform the user the project is not LID-configured; recommend `/update-lid`. **Do not proceed with coaching.** |
+| The instruction file absent or missing LID directives **but** the project has LID-shaped artifacts (see threshold below) | **Proceed with a full review** anchored on the existing artifacts (default Full mode). Surface the missing (or precursor-named) instruction-file directives as a high-priority finding recommending `/update-lid` to reconcile. Do **not** refuse — a project with a populated arrow is LID-shaped regardless of whether the instruction file has caught up with the directive naming. |
 | LID directives present, but `docs/intent/` or `docs/high-level-design.md` is missing | Proceed with a **reduced review** of what exists. Surface each missing piece as a high-priority finding and recommend `/update-lid` to reconcile. |
 | Scoped mode with missing or empty `## LID Scope` | Surface the misconfiguration as a high-priority finding. Run a **conservative project-wide review** treating all paths as in-scope. |
 | `docs/arrows/index.yaml` present but cannot be parsed | Flag corruption to the user before any principle review. Offer either to proceed with a reduced review treating the overlay as absent, or to pause for the user to repair. |
@@ -38,7 +38,7 @@ The coach treats a project as LID-shaped when **any one** of these is true:
 - a `*-specs.md` file exists in the `docs/intent/` tree.
 - `docs/arrows/index.yaml` exists.
 
-The threshold is deliberately lenient. A populated arrow overlay is the strongest possible signal that a project is "doing LID"; if CLAUDE.md uses a precursor name (e.g., *design-driven-dev*) or lacks the directive block entirely, that is *drift to surface*, not a reason to refuse coaching. Refusing to coach a visibly LID-shaped project is a false negative the coach was specifically designed to avoid — the user spent the effort to build the arrow; your job is to meet them there.
+The threshold is deliberately lenient. A populated arrow overlay is the strongest possible signal that a project is "doing LID"; if the instruction file uses a precursor name (e.g., *design-driven-dev*) or lacks the directive block entirely, that is *drift to surface*, not a reason to refuse coaching. Refusing to coach a visibly LID-shaped project is a false negative the coach was specifically designed to avoid — the user spent the effort to build the arrow; your job is to meet them there.
 
 "Fully configured" is a *structural* check, not a *content* one. An empty-but-present HLD or LLD directory does not block coaching — content completeness becomes a finding, not a dispatch condition.
 
@@ -46,16 +46,16 @@ The threshold is deliberately lenient. A populated arrow overlay is the stronges
 
 Use these exact signals:
 
-- **LID directives**: `grep` for `"linked-intent-dev"` or `"Linked-Intent Development"` in `CLAUDE.md`.
+- **LID directives**: `grep` for `"linked-intent-dev"` or `"Linked-Intent Development"` in the instruction file.
 - **Mode marker**: `grep` for the `## LID` block's `- Mode:` bullet, with value `Full` or `Scoped` (case-insensitive, whitespace tolerated). Default Full when the block or bullet is absent.
-- **Scope declaration**: the `## LID Scope` section in `CLAUDE.md`, with include and optional exclude bullet lists.
+- **Scope declaration**: the `## LID Scope` section in the instruction file, with include and optional exclude bullet lists.
 - **Arrow-maintenance overlay**: `docs/arrows/` directory exists.
 
 ## Inputs — what to read
 
 Build the review from these sources:
 
-- `CLAUDE.md` — mode marker, scope declaration if Scoped, directive-block coherence.
+- the instruction file — mode marker, scope declaration if Scoped, directive-block coherence.
 - `docs/high-level-design.md` — section coverage, evidence of active intent vs. boilerplate, presence of implementation detail that belongs downstream.
 - `docs/intent/*.md` — count (one per intent component?), granularity, alignment with HLD architecture, presence of history/changelog residue, presence of `[inferred]` markers in Decisions & Alternatives.
 - the `*-specs.md` files in the `docs/intent/` tree — EARS format compliance, ID uniqueness and namespacing, status-marker usage, scope disambiguation hygiene, `{FEATURE}` prefix traceability to LLDs/HLD.
@@ -71,7 +71,7 @@ Build the review from these sources:
 ## How to run the review
 
 1. **Dispatch.** Apply the table above. If coaching cannot proceed, stop and explain.
-2. **Read inputs.** Read `CLAUDE.md`, the HLD, every LLD, every spec file, and a strategic sample of code + tests. When the overlay is installed, read `index.yaml` and arrow docs.
+2. **Read inputs.** Read the instruction file, the HLD, every LLD, every spec file, and a strategic sample of code + tests. When the overlay is installed, read `index.yaml` and arrow docs.
 3. **Reason with principles.** For each review dimension below, compare what you see to the principle's audit signals. Collect findings.
 4. **Cold-read pass through every LID doc.** Beyond the dimension-by-dimension review, do one pass through every LID doc as if you have no conversation context at all — no memory of prior chats, no awareness of what "of course" or "as we discussed" might refer to. Future sessions read these docs cold, so the doc must stand on its own without the conversation that produced it. Surface anything unclear, ambiguous, or evidently dependent on context that isn't on the page. The unclear bits are either lost implicit context (state that lived only in the author's chat session and never got written down) or just writing worth tightening — either way, surface them. Do **not** reduce this to grepping for specific phrases; that misses the deeper pattern.
 5. **Prioritize.** High-priority findings are those that block the arrow from being walkable (missing phases, broken linkage, misconfigured scope) or compound over time (accumulation antipatterns, LLD under-specification, implicit-context leaks in load-bearing docs). Medium-priority findings weaken coherence without breaking it. Low-priority findings are quality-of-life improvements.
@@ -173,13 +173,13 @@ These principles are a downstream artifact of LID's own high-level design. When 
 
 ### Mode
 
-- **Modes are declared, not inferred.** A project is in exactly one mode at a time; the mode lives in `CLAUDE.md`'s `## LID` block as the `- Mode:` bullet. Scoped projects additionally declare scope in a `## LID Scope` section after the `## LID` block. *Why it matters:* an unread mode is a default. If the default is wrong, the rest of LID proceeds on the wrong foundation — cascade rigor, scope triggering, and coach dispatch all key off the declared mode. An explicit declaration makes the foundation visible and correct. *Audit signal:* a missing or malformed `- Mode:` bullet in the `## LID` block; a Scoped project with a missing `## LID Scope` section.
+- **Modes are declared, not inferred.** A project is in exactly one mode at a time; the mode lives in the instruction file's `## LID` block as the `- Mode:` bullet. Scoped projects additionally declare scope in a `## LID Scope` section after the `## LID` block. *Why it matters:* an unread mode is a default. If the default is wrong, the rest of LID proceeds on the wrong foundation — cascade rigor, scope triggering, and coach dispatch all key off the declared mode. An explicit declaration makes the foundation visible and correct. *Audit signal:* a missing or malformed `- Mode:` bullet in the `## LID` block; a Scoped project with a missing `## LID Scope` section.
 
 - **Mode fit.** The declared mode should match project reality. *Why it matters:* a mis-declared mode produces friction in both directions. Scoped rigor applied to a whole-repo adoption means the user sees constant scope-warning nags; Full rigor applied to a tiny active subsystem makes the overhead feel disproportionate to the value. Matching mode to reality keeps the friction where it belongs — on real decisions, not on configuration mismatch. *Audit signal:* Scoped mode with a scope that includes most of the repo; Full mode with most LLDs and specs concentrated in one subsystem and the rest of the repo visibly non-LID.
 
 ### Minimum system
 
-- **Minimum surface, maximum discipline.** The methodology is as thick as the project requires; LID's tooling stays thin. *Why it matters:* custom conventions duplicate what the standard arrow already covers, create learning overhead for newcomers, and tend to drift out of sync with LID's own evolution. Discipline lives in the cascade, not in additional surface. *Audit signal:* custom doc types that duplicate what an LLD or spec file would have done; project-local conventions that silently override LID defaults without being noted in CLAUDE.md.
+- **Minimum surface, maximum discipline.** The methodology is as thick as the project requires; LID's tooling stays thin. *Why it matters:* custom conventions duplicate what the standard arrow already covers, create learning overhead for newcomers, and tend to drift out of sync with LID's own evolution. Discipline lives in the cascade, not in additional surface. *Audit signal:* custom doc types that duplicate what an LLD or spec file would have done; project-local conventions that silently override LID defaults without being noted in the instruction file.
 
 ---
 
@@ -241,7 +241,7 @@ Three elements, in order:
   > - ✓ Linkage — high discipline, dense `@spec` annotation
   > - ✓ Cascade — segments show recent within-segment updates
   > - ⚠ Mutation hygiene — accumulated history in a handful of LLDs
-  > - ⚠ Configuration — CLAUDE.md still uses the precursor naming
+  > - ⚠ Configuration — the instruction file still uses the precursor naming
   > - ✓ Mode fit — Full mode matches the project's breadth
 
   Pick 4–6 dimensions that are most salient for the project you're reviewing; don't mechanically list every principle cluster. The scorecard is composable across runs so users can see improvement over time. **No numeric grades** — visual markers only.
@@ -253,7 +253,7 @@ Three elements, in order:
 A tight list — one line per finding. **No detailed paragraphs.** Format: priority + title + the principle the finding cites (with gloss). The inventory's job is to show the surface area of what the coach noted; details come later if the user asks.
 
 > **Findings (8 total · 3 high · 4 medium · 1 low)**
-> - **F1 (high):** CLAUDE.md uses precursor "design-driven-dev" naming · *modes are declared, not inferred*
+> - **F1 (high):** the instruction file uses precursor "design-driven-dev" naming · *modes are declared, not inferred*
 > - **F2 (medium):** Superseded LLDs accumulating in `docs/intent/` · *mutation, not accumulation*
 > - **F3 (medium):** HLD §5.4 carries DynamoDB schema detail · *HLD discipline*
 > - …
@@ -263,7 +263,7 @@ A tight list — one line per finding. **No detailed paragraphs.** Format: prior
 Files read, areas sampled, depth of sampling. **Quantitative signals belong here** — counts of `@spec` references, LLDs reviewed, arrow segments sampled, files read are useful transparency. They describe scope of inspection, not project quality.
 
 > **What was audited**
-> - Read fully: CLAUDE.md, docs/high-level-design.md, docs/arrows/index.yaml, the design + spec files under docs/intent/
+> - Read fully: the instruction file, docs/high-level-design.md, docs/arrows/index.yaml, the design + spec files under docs/intent/
 > - Enumerated: 37 LLDs, 37 spec files, 30 arrow segments
 > - Arrow-path sampled: 8 segments end-to-end (HLD section → LLD → spec → test → code)
 > - Linkage metric: 5,486 `@spec` references across 671 unique IDs
@@ -334,7 +334,7 @@ If the user asks you to "fix" issues found by the coach in the same prompt, expl
 
 ## Relationship to sibling skills
 
-- `/update-lid` reconciles **configuration**: CLAUDE.md directives, mode marker, directory layout. Deterministic. A coach finding about configuration points here.
+- `/update-lid` reconciles **configuration**: the instruction file's directives, mode marker, directory layout. Deterministic. A coach finding about configuration points here.
 - `/arrow-maintenance` (overlay installed) does **deterministic structural audit**: orphans, reverse orphans, adjacent-level coherence, `index.yaml` drift. A coach finding about structural drift points here.
 - `/lid-coach` (this skill) does **interpretive principle review**: the dimensions above, reasoning from the principle body.
 

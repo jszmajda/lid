@@ -45,7 +45,8 @@ Every contribution walks an arrow, but the arrow shape varies by what is being c
 - **Novel capability not in core** — does not land directly in a core plugin. Lands in [`plugins/lid-experimental/`](plugins/lid-experimental/) first, walking the standard arrow rooted in that plugin's LLD. Promotion into core is earned through community adoption and concrete value stories, not requested.
 - **HLD or methodology change** — cascade through every affected LLD and spec in the same PR. Cross-segment cascade pauses for verification (per the HLD tenet *within-segment cascade is free; across-segment cascade pauses*); call those pauses out in the PR description.
 - **Site, examples, or positioning content** — `HLD → LLD → EARS → content + assets`. Build-time link and structural checks substitute for evals.
-- **New tool adapter** (Cursor, Aider, Continue, etc.) — adapter file plus an entry in [`docs/setup.md`](docs/setup.md). The adapter points the agent at `AGENTS.md`; LID itself stays one source of truth.
+- **New first-class plugin host** (a tool with its own plugin/skill marketplace, e.g. Cursor) — add its marketplace manifest and per-plugin manifests reusing the existing `plugins/` source, plus a plugin-host section in [`docs/setup.md`](docs/setup.md). `HLD → LLD → EARS → content + assets`.
+- **New rule-file tool adapter** (Aider, Continue, etc.) — adapter file plus an entry in [`docs/setup.md`](docs/setup.md). The adapter points the agent at `AGENTS.md`; LID itself stays one source of truth.
 
 The principle behind these variants: **tests when the artifact has a runtime to assert against; dogfooding-or-justify when it does not.** "I could not write a test" is a fine answer for pure-prose skills. It is not a fine answer for behavioral skills or content artifacts — those have established verification modes, and skipping them is breaking the arrow.
 
@@ -86,9 +87,11 @@ These are conventions, not a template to copy-paste; [`.github/PULL_REQUEST_TEMP
 
 LID is versioned with semver per plugin, and `linked-intent-dev`'s version is the canonical "LID conventions" version. There is no CI gate keeping the version strings in sync — this release step is the conventional discipline that substitutes for one, in keeping with LID's stance that it is not a linter or validator.
 
+**When to bump.** The version reflects what a downstream project must or may act on, not every plugin change. *Major* = radically new or breaking behavior; *minor* = an important structural or convention change projects adopt; *patch* = a smaller change a project may act on. A change that requires nothing of existing projects — a new supported host or platform, internal refactors, docs — gets **no version bump**: record it under `## [No Version Update Required]` in the CHANGELOG; it folds into the next numbered version's entry when one is cut. (New experiments are typically a patch; core-skill changes are minor or major by extent.) Withholding the bump when nothing is required keeps `/update-lid` from triggering a no-op version-walk on every project. The steps below apply only when you are actually advancing the version.
+
 When cutting a release:
 
-- Bump the `version` field in each plugin's `.claude-plugin/plugin.json` and the matching entry in [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json) together — six version strings, kept equal per plugin.
+- Bump the `version` field in each plugin's `.claude-plugin/plugin.json` and the matching entry in [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json) together — six version strings, kept equal per plugin. The Cursor manifests (`.cursor-plugin/marketplace.json` and each `.cursor-plugin/plugin.json`) carry no `version` and are not part of this sync.
 - Add a [`CHANGELOG.md`](CHANGELOG.md) entry for the release (Keep a Changelog format), including a `### Migration (vX → vY)` section whenever conventions changed so `update-lid` can walk downstream projects through the upgrade.
 - Keep the `CHANGELOG.md` top version equal to `linked-intent-dev`'s `plugin.json` version — that is the canonical LID version.
 - Publish the release: create the git tag and GitHub Release with notes from the new `CHANGELOG.md` entry, announcing it to the community in one step — `gh release create vX.Y.Z --notes-file <entry> --discussion-category Announcements`. This tag-and-Release step is what keeps published releases from falling behind the manifests, and the `--discussion-category` flag posts the announcement to Discussions automatically.

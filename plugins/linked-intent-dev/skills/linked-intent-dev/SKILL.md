@@ -23,16 +23,16 @@ If drift is detected, fix the docs first, then implement. A resumption check pre
 
 ## Mode-aware triggering
 
-Every LID project declares its mode in `CLAUDE.md` under the `## LID` block's `- Mode:` bullet. Defaults to Full if the block or bullet is missing or malformed (surface a one-line warning).
+Every LID project declares its mode in its instruction file (the project's `AGENTS.md`, or `CLAUDE.md` under Claude Code) under the `## LID` block's `- Mode:` bullet. Defaults to Full if the block or bullet is missing or malformed (surface a one-line warning).
 
 - **Full LID**: the skill triggers broadly — any prompt that could result in a code change is in scope.
-- **Scoped LID**: additionally checks whether the files or subsystems the prompt touches fall within the declared scope. Scope is declared in `CLAUDE.md` under a `## LID Scope` section (see `docs/intent/linked-intent-dev/core/core-design.md § Scope declaration format`) with include/exclude glob patterns. If every file the prompt touches is outside scope (in the exclude list, or not in the include list), the skill does not trigger. If any touched path is in scope, the skill triggers. For prompts that reference no specific paths, default to triggering and ask the user to confirm when ambiguous. When the `## LID Scope` section is missing or empty in a Scoped-mode project (misconfiguration), fall back to treating all prompts as in-scope and surface a warning suggesting `/update-lid` to declare scope.
+- **Scoped LID**: additionally checks whether the files or subsystems the prompt touches fall within the declared scope. Scope is declared in the instruction file under a `## LID Scope` section (see `docs/intent/linked-intent-dev/core/core-design.md § Scope declaration format`) with include/exclude glob patterns. If every file the prompt touches is outside scope (in the exclude list, or not in the include list), the skill does not trigger. If any touched path is in scope, the skill triggers. For prompts that reference no specific paths, default to triggering and ask the user to confirm when ambiguous. When the `## LID Scope` section is missing or empty in a Scoped-mode project (misconfiguration), fall back to treating all prompts as in-scope and surface a warning suggesting `/update-lid` to declare scope.
 
 ## The six phases
 
 ### Phase 1 — HLD check (with bootstrap when needed)
 
-**First, check whether the project is LID-configured.** If CLAUDE.md has no LID directives AND no LID-shaped artifacts exist (no `docs/intent/` content, no `docs/high-level-design.md`, no `docs/arrows/index.yaml`), this is a fresh project — the user invoked `/linked-intent-dev` with a description of what they want to build. Apply the `update-lid` skill's bootstrap branch as a sub-step: create `docs/intent/`, create or append-to CLAUDE.md with LID directives, add the `## LID` block (`- Mode:` default Full unless the user indicates Scoped, `- Version:` set to the installed `linked-intent-dev` version). Read the `update-lid` skill's SKILL.md if you need details on the bootstrap behavior; the bootstrap is the same skill called inline, not a separate workflow.
+**First, check whether the project is LID-configured.** If the instruction file has no LID directives AND no LID-shaped artifacts exist (no `docs/intent/` content, no `docs/high-level-design.md`, no `docs/arrows/index.yaml`), this is a fresh project — the user invoked `/linked-intent-dev` with a description of what they want to build. Apply the `update-lid` skill's bootstrap branch as a sub-step: create `docs/intent/`, create or append-to the instruction file (`AGENTS.md` canonical, with a `CLAUDE.md` alias — see the `update-lid` skill) with LID directives, add the `## LID` block (`- Mode:` default Full unless the user indicates Scoped, `- Version:` set to the installed `linked-intent-dev` version). Read the `update-lid` skill's SKILL.md if you need details on the bootstrap behavior; the bootstrap is the same skill called inline, not a separate workflow.
 
 Once configured, proceed with the HLD check: does a top-level HLD exist at `docs/high-level-design.md`? Does it cover the domain of the change? If the change alters the project's architecture, update the HLD first. If no HLD exists (fresh project), draft one from the user's description.
 
@@ -128,7 +128,7 @@ Two layers at the end of Phase 6.
 
 *Soft-block* means the skill will not consider the change complete until these pass, and surfaces failures clearly. The user can override per the user-is-always-right tenet — LID is not a linter or CI gate. The skill makes the cost visible; the user decides.
 
-When the project declares a coherence-check script under `## LID Tooling` in `CLAUDE.md`, structural checks may be delegated to that script. Without a declaration, perform checks in-prompt. See `docs/intent/arrow-maintenance/arrow-maintenance-design.md § Reference tooling` for the delegation rule.
+When the project declares a coherence-check script under `## LID Tooling` in the instruction file, structural checks may be delegated to that script. Without a declaration, perform checks in-prompt. See `docs/intent/arrow-maintenance/arrow-maintenance-design.md § Reference tooling` for the delegation rule.
 
 **Semantic checks (agent judgment; surfaced, do not block):**
 

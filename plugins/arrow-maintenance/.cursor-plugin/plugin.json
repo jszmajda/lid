@@ -1,0 +1,5 @@
+{
+  "name": "arrow-maintenance",
+  "description": "Scaling layer for linked-intent-dev. Tracks spec-to-code coherence across large projects via docs/arrows/ index. Includes brownfield bootstrap for mapping existing codebases.",
+  "license": "MIT"
+}

@@ -11,8 +11,9 @@
         { "text": "docs/specs/ directory was NOT created (specs live inside node folders under docs/intent/, not in a separate top-level directory)", "spec_ids": ["LID-UPDATE-015"] },
         { "text": "docs/high-level-design.md exists, populated from the HLD template (not empty)", "spec_ids": ["LID-UPDATE-015", "LID-UPDATE-016"] },
         { "text": "docs/planning/ directory was NOT created", "spec_ids": ["LID-UPDATE-017"] },
-        { "text": "CLAUDE.md contains a bare '## LID' heading followed by a '- Mode: Full' bullet (mode is a bullet, not merged into the heading)", "spec_ids": ["LID-UPDATE-008", "LID-UPDATE-009"] },
-        { "text": "CLAUDE.md contains the LID directives block referencing 'linked-intent-dev'", "spec_ids": ["LID-UPDATE-002", "LID-UPDATE-022"] },
+        { "text": "AGENTS.md contains a bare '## LID' heading followed by a '- Mode: Full' bullet (mode is a bullet, not merged into the heading)", "spec_ids": ["LID-UPDATE-008", "LID-UPDATE-009", "LID-UPDATE-045"] },
+        { "text": "AGENTS.md contains the LID directives block referencing 'linked-intent-dev'", "spec_ids": ["LID-UPDATE-002", "LID-UPDATE-022", "LID-UPDATE-045"] },
+        { "text": "A CLAUDE.md alias exists resolving to AGENTS.md's content — either a symlink to AGENTS.md or a CLAUDE.md whose sole content is the line '@AGENTS.md' — so Claude Code reads the same instructions", "spec_ids": ["LID-UPDATE-045"] },
         { "text": "The agent's response summarizes what files were created or modified", "spec_ids": ["LID-UPDATE-027", "LID-UPDATE-028"] }
       ]
     },
@@ -25,8 +26,9 @@
       ],
       "assertions": [
         { "text": "CLAUDE.md still contains all of the original content ('# My Project', '## Conventions', and the three bullet points) unmodified", "spec_ids": ["LID-UPDATE-003"] },
-        { "text": "CLAUDE.md has the LID directives block appended (contains 'linked-intent-dev' or 'Linked-Intent Development')", "spec_ids": ["LID-UPDATE-003", "LID-UPDATE-022"] },
+        { "text": "CLAUDE.md has the LID directives block appended (contains 'linked-intent-dev' or 'Linked-Intent Development')", "spec_ids": ["LID-UPDATE-003", "LID-UPDATE-022", "LID-UPDATE-046"] },
         { "text": "CLAUDE.md contains a '## LID' block with a '- Mode:' bullet", "spec_ids": ["LID-UPDATE-009"] },
+        { "text": "No AGENTS.md was created — the project already centered CLAUDE.md, so it was reconciled in place rather than migrated to AGENTS.md", "spec_ids": ["LID-UPDATE-046"] },
         { "text": "The agent's response explicitly summarizes which sections were added to CLAUDE.md", "spec_ids": ["LID-UPDATE-027"] }
       ]
     },
@@ -40,7 +42,7 @@
         { "path": "docs/intent/.gitkeep", "content": "" }
       ],
       "assertions": [
-        { "text": "No file changes were made (CLAUDE.md and existing docs are unmodified)", "spec_ids": ["LID-UPDATE-020"] },
+        { "text": "No file changes were made (CLAUDE.md and existing docs are unmodified)", "spec_ids": ["LID-UPDATE-020", "LID-UPDATE-046"] },
         { "text": "The agent's response informs the user what was detected (mode, version, directory status) rather than silently doing nothing", "spec_ids": ["LID-UPDATE-021", "LID-UPDATE-028"] }
       ]
     },
@@ -94,10 +96,25 @@
         { "path": "docs/intent/billing/billing-specs.md", "content": "# billing specs\n\n**LLD**: docs/intent/billing/billing-design.md\n\n- `[x]` **BILL-001**: The system SHALL charge a subscription.\n- `[x]` **INVOICE-001**: The system SHALL issue an invoice.\n" }
       ],
       "assertions": [
-        { "text": "CLAUDE.md's '- Version:' bullet has been advanced to 1.2.0 even though a structural judgment step was deferred (the version is NOT left pinned at 1.1.0)", "spec_ids": ["LID-UPDATE-043"] },
+        { "text": "CLAUDE.md's '- Version:' bullet has been advanced to 1.2.0 (the installed version) even though a structural judgment step was deferred (the version is NOT left pinned at 1.1.0)", "spec_ids": ["LID-UPDATE-043"] },
         { "text": "The agent's report explicitly names the deferred/outstanding item — the 'prefix:' array ([BILL, INVOICE]) on docs/intent/billing/billing-design.md — as a persisting marker still to resolve", "spec_ids": ["LID-UPDATE-043"] },
         { "text": "The agent recommended a resolution for the deferred prefix array (collapse into <LEAF>-<TYPE> facets, promote, or split) rather than leaving it unmentioned", "spec_ids": ["LID-UPDATE-044"] },
         { "text": "The agent did NOT silently rewrite or auto-resolve the prefix array — docs/intent/billing/billing-design.md still contains 'prefix: [BILL, INVOICE]'", "spec_ids": ["LID-UPDATE-043", "LID-UPDATE-044"] }
+      ]
+    },
+    {
+      "id": 6,
+      "eval_name": "idempotent-on-agents-md-project",
+      "prompt": "Please set up LID in this project.",
+      "files": [
+        { "path": "AGENTS.md", "content": "# My Project\n\n## LID\n- Mode: Full\n- Version: 1.2.0\n\n## Linked-Intent Development (MANDATORY)\n\n**Consult the `linked-intent-dev` skill for ALL code changes.** All changes flow through the arrow of intent in one direction:\n\n```\nHLD → LLDs → EARS → Tests → Code\n```\n" },
+        { "path": "docs/high-level-design.md", "content": "# High-Level Design\n\n## Problem\n\n*(not yet specified)*\n" },
+        { "path": "docs/intent/.gitkeep", "content": "" }
+      ],
+      "assertions": [
+        { "text": "The skill detected the existing LID configuration by reading AGENTS.md (no CLAUDE.md is present), confirming it treats AGENTS.md as the instruction file when present", "spec_ids": ["LID-UPDATE-022", "LID-UPDATE-023", "LID-UPDATE-046"] },
+        { "text": "No file changes were made (AGENTS.md and existing docs are unmodified; no CLAUDE.md was created)", "spec_ids": ["LID-UPDATE-020", "LID-UPDATE-046"] },
+        { "text": "The agent's response informs the user what was detected (mode, version, directory status) rather than silently doing nothing", "spec_ids": ["LID-UPDATE-021", "LID-UPDATE-028"] }
       ]
     }
   ]

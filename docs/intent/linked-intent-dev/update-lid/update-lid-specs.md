@@ -3,7 +3,7 @@
 **LLD**: docs/intent/linked-intent-dev/update-lid/update-lid-design.md
 **Implementing artifacts**:
 - plugins/linked-intent-dev/skills/update-lid/SKILL.md
-- plugins/linked-intent-dev/skills/update-lid/references/claude-md-template.md
+- plugins/linked-intent-dev/skills/update-lid/references/agents-md-template.md
 
 Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 
@@ -15,17 +15,22 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 
 ## State Dispatch
 
-- `[x]` **LID-UPDATE-002**: When invoked on a project with no `CLAUDE.md` and no `docs/` directory, the system SHALL perform a full bootstrap — creating required directories and creating `CLAUDE.md` with LID directives and a mode marker.
-- `[x]` **LID-UPDATE-003**: When invoked on a project with an existing `CLAUDE.md` that contains no LID directives, the system SHALL append LID directives to `CLAUDE.md` without overwriting or removing its existing content.
-- `[x]` **LID-UPDATE-004**: When invoked on a project that has LID directives in `CLAUDE.md` but no well-formed `## LID` block — none present, or a malformed one (mode merged into the heading as `## LID Mode: …`, a missing `- Mode:` or `- Version:` bullet, or stray non-template bullets) — the system SHALL write the canonical block (a bare `## LID` heading with `- Mode:` defaulting to Full and `- Version:`), normalizing a malformed block in place rather than appending a second block.
-- `[x]` **LID-UPDATE-005**: When invoked on a fully-configured project with no mode change requested, the system SHALL check for convention drift — missing required directories, missing required files (including `docs/high-level-design.md`), outdated CLAUDE.md directive sections (including a malformed `## LID` block per LID-UPDATE-004), a node folder holding more than its `<node>-design.md` plus optional `<node>-specs.md` pair (an LLD not yet relocated into its own node folder), or a design doc whose `prefix:` frontmatter is an array — detecting the structural-marker categories independently of version lag — and surface each detected difference as a proposed update requiring user confirmation.
+- `[x]` **LID-UPDATE-002**: When invoked on a project with no instruction file and no `docs/` directory, the system SHALL perform a full bootstrap — creating required directories and creating the instruction file (per LID-UPDATE-045) with LID directives and a mode marker.
+- `[x]` **LID-UPDATE-003**: When invoked on a project with an existing instruction file that contains no LID directives, the system SHALL append LID directives to that file in place, without overwriting or removing its existing content.
+- `[x]` **LID-UPDATE-004**: When invoked on a project that has LID directives in the instruction file but no well-formed `## LID` block — none present, or a malformed one (mode merged into the heading as `## LID Mode: …`, a missing `- Mode:` or `- Version:` bullet, or stray non-template bullets) — the system SHALL write the canonical block (a bare `## LID` heading with `- Mode:` defaulting to Full and `- Version:`), normalizing a malformed block in place rather than appending a second block.
+- `[x]` **LID-UPDATE-005**: When invoked on a fully-configured project with no mode change requested, the system SHALL check for convention drift — missing required directories, missing required files (including `docs/high-level-design.md`), outdated instruction-file directive sections (including a malformed `## LID` block per LID-UPDATE-004), a node folder holding more than its `<node>-design.md` plus optional `<node>-specs.md` pair (an LLD not yet relocated into its own node folder), or a design doc whose `prefix:` frontmatter is an array — detecting the structural-marker categories independently of version lag — and surface each detected difference as a proposed update requiring user confirmation.
 - `[x]` **LID-UPDATE-006**: When invoked with an explicit mode change request, the system SHALL execute the appropriate mode transition (promotion or demotion).
+
+## Instruction-File Anchor
+
+- `[x]` **LID-UPDATE-045**: On a fresh bootstrap, the system SHALL create `AGENTS.md` as the canonical instruction file and a repo-root `CLAUDE.md` symlink alias resolving to it; where the environment cannot create symlinks (e.g., Windows without Developer Mode), it SHALL instead create a `CLAUDE.md` whose sole content is a single `@AGENTS.md` import line. The system SHALL NOT branch on host identity when choosing the instruction file.
+- `[x]` **LID-UPDATE-046**: When detecting or updating an already-configured project, the system SHALL treat `AGENTS.md` as the instruction file when it is present and otherwise `CLAUDE.md`, and SHALL update the existing file in place — it SHALL NOT migrate a `CLAUDE.md`-centered project to `AGENTS.md`.
 
 ## Mode Interaction
 
 - `[x]` **LID-UPDATE-007**: During a full bootstrap, the system SHALL prompt the user for the intended mode before writing the mode marker, **unless** the caller (e.g., `/map-codebase` invoking `update-lid` at terminal verification) has already determined the mode and passed it through — in which case the caller-provided mode is used without re-prompting.
 - `[x]` **LID-UPDATE-008**: When the user does not explicitly specify a mode during bootstrap, the system SHALL select Full LID.
-- `[x]` **LID-UPDATE-009**: The system SHALL persist the selected mode as a `- Mode: {Full|Scoped}` bullet in the `## LID` block of the project's `CLAUDE.md`.
+- `[x]` **LID-UPDATE-009**: The system SHALL persist the selected mode as a `- Mode: {Full|Scoped}` bullet in the `## LID` block of the project's instruction file.
 - `[x]` **LID-UPDATE-010**: When the user expresses uncertainty about mode selection during bootstrap, the system SHALL describe the differences between Full and Scoped LID before requesting a choice.
 
 ## Mode Transitions
@@ -54,14 +59,14 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 
 ## Detection Signals
 
-- `[x]` **LID-UPDATE-022**: The system SHALL detect existing LID setup by searching `CLAUDE.md` for the literal strings `"linked-intent-dev"` or `"Linked-Intent Development"`. Either match indicates LID directives are present.
-- `[x]` **LID-UPDATE-023**: The system SHALL detect mode by reading the `- Mode: {Full|Scoped}` bullet in `CLAUDE.md`'s `## LID` block (case-insensitive on the mode name, whitespace tolerated), and SHALL detect the project's conventions version by reading the `- Version: {X.Y.Z}` bullet in the same block.
+- `[x]` **LID-UPDATE-022**: The system SHALL detect existing LID setup by searching the instruction file for the literal strings `"linked-intent-dev"` or `"Linked-Intent Development"`. Either match indicates LID directives are present.
+- `[x]` **LID-UPDATE-023**: The system SHALL detect mode by reading the `- Mode: {Full|Scoped}` bullet in the instruction file's `## LID` block (case-insensitive on the mode name, whitespace tolerated), and SHALL detect the project's conventions version by reading the `- Version: {X.Y.Z}` bullet in the same block.
 - `[x]` **LID-UPDATE-024**: The system SHALL detect the arrow-maintenance overlay by the presence of a `docs/arrows/` directory at the project root.
 
 ## Arrow-Maintenance Coordination
 
-- `[x]` **LID-UPDATE-025**: When generating or updating the LID directives block in `CLAUDE.md`, the system SHALL include arrow-navigation rows pointing at `docs/arrows/index.yaml` and per-segment arrow docs if and only if the arrow-maintenance overlay is detected (LID-UPDATE-024).
-- `[x]` **LID-UPDATE-026**: The system SHALL re-check arrow-maintenance presence on every invocation, so that installing the overlay after initial setup triggers a CLAUDE.md update on the next `/update-lid` run.
+- `[x]` **LID-UPDATE-025**: When generating or updating the LID directives block in the instruction file, the system SHALL include arrow-navigation rows pointing at `docs/arrows/index.yaml` and per-segment arrow docs if and only if the arrow-maintenance overlay is detected (LID-UPDATE-024).
+- `[x]` **LID-UPDATE-026**: The system SHALL re-check arrow-maintenance presence on every invocation, so that installing the overlay after initial setup triggers an instruction-file update on the next `/update-lid` run.
 
 ## Verification / Show-What-Changed
 
@@ -72,10 +77,10 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 ## Scope Declaration (Scoped mode)
 
 - `[x]` **LID-UPDATE-030**: When the chosen mode is Scoped, the system SHALL prompt the user for the initial scope patterns (paths to include and, optionally, paths to exclude) before writing the `## LID` block with `- Mode: Scoped`.
-- `[x]` **LID-UPDATE-031**: When writing a Scoped-mode configuration, the system SHALL append a `## LID Scope` section to `CLAUDE.md` immediately after the `## LID` block (which carries `- Mode: Scoped`), with bulleted "Paths in scope" and (if any were declared) "Paths explicitly excluded" subsections using gitignore-style glob patterns.
-- `[x]` **LID-UPDATE-032**: When the chosen mode is Full, the system SHALL NOT write a `## LID Scope` section to `CLAUDE.md`. A missing section means "entire project in scope."
+- `[x]` **LID-UPDATE-031**: When writing a Scoped-mode configuration, the system SHALL append a `## LID Scope` section to the instruction file immediately after the `## LID` block (which carries `- Mode: Scoped`), with bulleted "Paths in scope" and (if any were declared) "Paths explicitly excluded" subsections using gitignore-style glob patterns.
+- `[x]` **LID-UPDATE-032**: When the chosen mode is Full, the system SHALL NOT write a `## LID Scope` section to the instruction file. A missing section means "entire project in scope."
 - `[x]` **LID-UPDATE-033**: During a mode transition from Full to Scoped, the system SHALL prompt the user for scope patterns and write a new `## LID Scope` section following LID-UPDATE-031.
-- `[x]` **LID-UPDATE-034**: During a mode transition from Scoped to Full, the system SHALL remove any existing `## LID Scope` section from `CLAUDE.md`.
+- `[x]` **LID-UPDATE-034**: During a mode transition from Scoped to Full, the system SHALL remove any existing `## LID Scope` section from the instruction file.
 
 ## Version Walk
 

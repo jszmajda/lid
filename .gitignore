@@ -6,6 +6,11 @@
 # Playwright review artifacts
 .playwright-mcp/
 
+# Eval run-output trees: regenerable skill-creator outputs, not plugin content,
+# and excluded from both hosts' plugin bundles. The eval *definitions*
+# (plugins/*/skills/*/evals/) stay tracked.
+plugins/*/skills/*-workspace/
+
 # Ad-hoc screenshots at repo root (site screenshots live in site/src/assets/)
 /*.png
 /*.jpg

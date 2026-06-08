@@ -1,0 +1,5 @@
+{
+  "name": "lid-experimental",
+  "description": "Experimental LID skills with opt-in installation and explicit lifecycle (promotion or retirement). Layers on top of linked-intent-dev and arrow-maintenance.",
+  "license": "MIT"
+}

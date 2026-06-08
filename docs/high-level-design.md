@@ -111,7 +111,7 @@ The operating principles that tie the preceding approaches to day-to-day work:
 
 LID is for developers using agentic coding systems — Claude Code, Cursor, Windsurf, GitHub Copilot, Aider, Continue, Codex, JetBrains Junie, Zed, and their descendants — who have noticed that English is a surprisingly imprecise programming language. A prompt that feels complete in your head emerges as something close to, but not exactly, what you meant. Most of the delta is latent intent — constraints you assumed were obvious and never wrote down. The agent fills those in plausibly, sometimes correctly, often close-but-wrong, and the gap compounds: one session's close-but-wrong becomes the next session's starting assumption.
 
-LID treats the agent as an *english compiler* (see Glossary) and adds the minimum scaffolding for that compilation to stay faithful to the intent it was given. The target user has already noticed the compounding problem and is looking for tooling that is opinionated enough to help and small enough not to get in the way. LID does not depend on any specific agent, harness, or IDE; the plugins described here ship for Claude Code (richest integration), and rule-file adapters for other agentic coding tools are documented in `docs/setup.md`. The methodology applies anywhere a developer is compiling English into running software.
+LID treats the agent as an *english compiler* (see Glossary) and adds the minimum scaffolding for that compilation to stay faithful to the intent it was given. The target user has already noticed the compounding problem and is looking for tooling that is opinionated enough to help and small enough not to get in the way. LID does not depend on any specific agent, harness, or IDE; the plugins described here ship for the plugin-capable hosts — Claude Code (richest integration) and Cursor — and rule-file adapters for tools without a plugin system are documented in `docs/setup.md`. The methodology applies anywhere a developer is compiling English into running software.
 
 ### Adoption modes
 
@@ -148,9 +148,9 @@ Intent flows in one direction. Changes originate upstream and cascade down. Docs
 
 **Cascade.** Within a single arrow segment (one leaf LLD and its downstream specs, tests, and code), cascade runs freely. Across arrow boundaries — from one segment into another's territory — agents pause and verify before propagating, because real LLDs are uneven and aggressive cross-boundary cascade in an under-specified project propagates incoherence. A change at any non-leaf node fans out across its descendant segments, visiting each in turn and pausing to confirm that segment can absorb it; a change at the root HLD fans out across the whole tree.
 
-### 2. Plugins (Claude Code — richest integration)
+### 2. Plugins
 
-Two Claude Code plugins, distributed from this repository and installed together by default:
+Three first-party plugins, distributed from this repository and run by plugin-capable hosts (Claude Code — the richest integration, with auto-invoking skills and phase gates — and Cursor). Two are core, installed together by default; one is opt-in:
 
 - **`linked-intent-dev`** — three skills under one plugin. The pure-prose **`linked-intent-dev`** workflow skill (auto-triggered on code-changing prompts in Full mode; also invokable as `/linked-intent-dev` to start a fresh project — give it a description of what you want to build and the workflow handles bootstrap as part of Phase 1) walks every change through HLD → LLD → EARS → Tests → Code with stops at every phase boundary. **`/update-lid`** is an idempotent command for reconciling an already-configured project — drift, mode transitions, convention updates — and is also reachable as a sub-step from the workflow skill (Phase 1) and from `/map-codebase` when bootstrap is needed. **`/lid-coach`** is an advisory principle-review command that reads the project's current LID artifacts and produces a prioritized report of recommendations for getting more out of the methodology — it does not edit files. Mandatory.
 - **`arrow-maintenance`** — navigation overlay (`docs/arrows/index.yaml`) plus two commands: `/arrow-maintenance` (audit-and-update pass; bootstraps the overlay on existing LID projects) and `/map-codebase` (brownfield bootstrap from raw code). Installed by default, **optional at runtime** — projects that do not need the overlay carry none of its overhead.
@@ -158,20 +158,32 @@ Two Claude Code plugins, distributed from this repository and installed together
 
 All three plugins are mode-aware. A skill detects the project's mode from its state and branches its behavior accordingly. Modes are therefore both a communication framing *and* a configuration axis — but the configuration lives inside skill logic, not as flags the user has to pass.
 
-### 3. Distribution (Claude Code)
+### 3. Distribution
 
-The `jszmajda/lid` repository uses Claude Code's plugin-marketplace mechanism to distribute the plugins — a technical detail of Claude Code, not a statement that LID accepts third-party plugin submissions. It ships three first-party plugins: two core (`linked-intent-dev` and `arrow-maintenance`, installed together by default) and one opt-in for novel capabilities under evaluation (`lid-experimental`). Installation:
+The plugins are authored once and delivered through each host's native mechanism. A plugin's content — its skills (`skills/<name>/SKILL.md`), commands, and reference files — sits in a layout that plugin-capable hosts read directly; the only per-host artifact is a thin **manifest** that registers the directory as a plugin, plus a repo-root catalog listing all of them. Distribution is therefore **one shared content source plus one thin manifest per host**, never a forked copy of the skill text. Adding a host later adds its manifest format and leaves the shared content untouched.
 
-```
-/plugin marketplace add jszmajda/lid
-/plugin install linked-intent-dev@jszmajda-lid
-/plugin install arrow-maintenance@jszmajda-lid
-/plugin install lid-experimental@jszmajda-lid   # opt-in
-```
+**First-class plugin hosts.** Two today, each reading the same `plugins/` content through its own manifest:
+
+- **Claude Code** — the richest integration (auto-invoking skills, phase gates). Reads `.claude-plugin/plugin.json` per plugin and a repo-root `.claude-plugin/marketplace.json` cataloguing all three:
+
+  ```
+  /plugin marketplace add jszmajda/lid
+  /plugin install linked-intent-dev@jszmajda-lid
+  /plugin install arrow-maintenance@jszmajda-lid
+  /plugin install lid-experimental@jszmajda-lid   # opt-in
+  ```
+
+- **Cursor** — reads `.cursor-plugin/plugin.json` per plugin and a repo-root `.cursor-plugin/marketplace.json`. Cursor discovers the same `SKILL.md` skills and `commands/` natively; once published to Cursor's marketplace the plugins install from the marketplace panel or via `/add-plugin`.
+
+Using each host's marketplace is a technical detail of that host, not a statement that LID accepts third-party plugin submissions — every plugin is first-party. Two core plugins (`linked-intent-dev` and `arrow-maintenance`) install together by default; `lid-experimental` is opt-in for novel capabilities under evaluation.
+
+**Rule-file adapters (hosts without a plugin system).** Tools that read project instructions but have no plugin/skill system — Windsurf, GitHub Copilot, Aider, Continue, JetBrains Junie, Zed, Codex CLI, and any tool that reads `AGENTS.md` at the project root — use LID through a small adapter file committed to the user's project. Each adapter points the agent at the `AGENTS.md` that holds the project's LID workflow; the methodology is identical, and what differs is only how the agent is *reminded* of it each turn. These adapter files (one per tool, copy-paste ready) are documented in `docs/setup.md` and are **not** distributed by this repository — each user drops the one they need into their own project. This keeps LID minimum-surface: one `AGENTS.md` source of truth, N thin adapter pointers. The brownfield `/map-codebase` flow ships for Claude Code today — its multi-phase sweep orchestrates enough reading and subagent coordination that porting it to another host is a separate step; once a project is bootstrapped by any means, the resulting artifacts work identically under any tool.
 
 This repository is simultaneously the distribution mechanism *and* the canonical mature-project reference — the `docs/` tree here is LID applied to LID.
 
 **Versioning.** LID is versioned with semver per plugin (`plugin.json` `version`), and `linked-intent-dev`'s version is the canonical "LID conventions" version. The CHANGELOG — canonical in the core plugin — is the release record. A project records the conventions version its docs conform to as `- Version:` in its `## LID` block, and `/update-lid` version-walks a project forward when that recorded version lags the installed plugin.
+
+**What warrants a version change.** The version tracks what a *downstream project* must or may act on — not every change to the plugins. **Major** marks radically new or breaking behavior; **minor**, an important structural or convention change a project would adopt; **patch**, a smaller change a project may act on. A change that asks nothing of existing projects — adding a supported host or platform, internal refactors, documentation — ships with **no version change**, held in the CHANGELOG's `## [No Version Update Required]` section, which folds into the next numbered version's entry when one is cut. (Introducing an experiment is typically a patch; changing a core skill is minor or major by the extent of the change.) This rule is load-bearing because `/update-lid`'s version-walk fires whenever a project's recorded version lags the installed one: bumping for a change that requires nothing of a project would trigger a no-op walk on every project, so withholding the bump is the correct, quieter behavior.
 
 **Third-party ecosystem.** Because the core stays minimal (Goal 2), capability LID deliberately does not build — editor integrations, language servers, CLIs, CI coherence checkers — is built by independent third-party projects. LID encourages this ecosystem and makes it discoverable while hosting and running none of it: discovery is by an open convention rather than a registry LID operates. This is distinct from the first-party marketplace above — surfacing the ecosystem is not accepting submissions into it — and from `lid-experimental` (first-party capability under evaluation). The `extensions` segment owns the convention and the curated pointer; `marketing-site` surfaces the ecosystem as a trust signal that the methodology is in real use. (Detail lives in those segments, not here.)
 
@@ -190,7 +202,7 @@ The brownfield `/map-codebase` flow is Claude-Code-specific today — the multi-
 LID-on-LID has a three-variant arrow depending on what kind of skill is being specified:
 
 - **Pure-prose skills** shape how the agent approaches work without executing a definite procedure. The `linked-intent-dev` skill itself is canonical: it guides agent behavior during code changes, but has no start, end, or checkable output. Arrow: `HLD → LLD → SKILL.md + references/`. Verification is continuous dogfooding.
-- **Behavioral skills** are those a user deliberately invokes (explicitly via a slash command, or implicitly when a user request matches the skill's trigger description) to execute a procedure that produces a verifiable project-state change. `/update-lid` and `/map-codebase` qualify — they create files, edit CLAUDE.md, or generate arrow docs. Arrow: `HLD → LLD → EARS → evals + SKILL.md + references/`. EARS specs anchor the assertions evals check.
+- **Behavioral skills** are those a user deliberately invokes (explicitly via a slash command, or implicitly when a user request matches the skill's trigger description) to execute a procedure that produces a verifiable project-state change. `/update-lid` and `/map-codebase` qualify — they create files, edit the project's agent-instructions file, or generate arrow docs. Arrow: `HLD → LLD → EARS → evals + SKILL.md + references/`. EARS specs anchor the assertions evals check.
 - **Dual-mode skills** have two invocation modes with different user-intent postures:
   - *Ambient mode* — auto-triggered when a detection signal matches project state. Posture is **catch and recommend**: the agent notices relevant work, surfaces findings, and edits only as the surrounding conversation authorizes. File writes are allowed but happen opportunistically.
   - *Command mode* — the skill is explicitly invoked as a slash command. Posture is **directed action**: the user has asked for the pass, so the skill proceeds assertively through audit and update.
@@ -228,9 +240,15 @@ Every capability LID does not have is a capability delegated to the fast-moving 
 
 This is why surface growth is aggressively resisted. A new command or skill is not just cognitive load for the user; it is LID reaching into territory the fast-moving layer will handle better next quarter. When a proposal arrives, the first question is: *can the existing surface absorb this, or is the agent about to absorb it anyway?* Only if both answers are no does a new surface get considered — and even then, the surface lands first in the `lid-experimental` plugin (see *Experimental features as a separate plugin* below), where it must earn community adoption before being promoted into core.
 
+### Cursor as a first-class plugin host
+
+Cursor is a first-class plugin host alongside Claude Code, not a rule-file adapter. Its native plugin marketplace reads the same `SKILL.md` format (`name`/`description` frontmatter), the same `skills/<name>/` and `commands/` layout, and the same Agent-Skills discovery LID already uses — so LID's plugins install and auto-invoke there from one shared source, differing only by a `.cursor-plugin/plugin.json` manifest beside the `.claude-plugin/` one. The cost LID accepts is a second manifest set and a marketplace-review relationship — the same cost already accepted for Claude Code, not a new class of cost.
+
+LID adds **no host-detection machinery** — no `--host` flag, no runtime host sniffing, no mirroring between `CLAUDE.md` and `AGENTS.md`. The project's instruction file is `AGENTS.md` (the cross-tool convention; under Claude Code `CLAUDE.md` is a symlink alias), and Cursor reads `AGENTS.md` natively, so the same skills read mode, version, and workflow from whatever file the host presents without branching on host identity. A detection layer would be surface LID does not need — the kind minimum-system discipline rejects.
+
 ### Modes: detection and transitions
 
-**Detection.** Each LID project declares its mode in `CLAUDE.md` under a `## LID` metadata block:
+**Detection.** Each LID project declares its mode in its agent-instructions file under a `## LID` metadata block:
 
 ```markdown
 ## LID
@@ -238,7 +256,7 @@ This is why surface growth is aggressively resisted. A new command or skill is n
 - Version: 1.2.0
 ```
 
-The skill reads the `- Mode:` bullet for the project's mode and the `- Version:` bullet for the `linked-intent-dev` conventions version the docs conform to (see *Versioning* under Architecture). CLAUDE.md is the right location because it is already the bootstrap entry point — the agent reads it unconditionally on entering a project, so detection costs zero extra file loads. Mode is a project-global property, not a per-document one, so CLAUDE.md is the appropriate scope rather than frontmatter on individual docs. **If the block or its `- Mode:` bullet is missing, the skill defaults to Full LID** — the more rigorous mode, erring on the side of more specification rather than less.
+The skill reads the `- Mode:` bullet for the project's mode and the `- Version:` bullet for the `linked-intent-dev` conventions version the docs conform to (see *Versioning* under Architecture). The instruction file is the right location because it is already the bootstrap entry point — the host reads it unconditionally on entering a project, so detection costs zero extra file loads. That file is `AGENTS.md` (the cross-tool convention) or `CLAUDE.md` under Claude Code; in this repository `CLAUDE.md` is a symlink to `AGENTS.md`, so the two are one file. Mode is a project-global property, not a per-document one, so the instruction file is the appropriate scope rather than frontmatter on individual docs. **If the block or its `- Mode:` bullet is missing, the skill defaults to Full LID** — the more rigorous mode, erring on the side of more specification rather than less.
 
 **Transitions.** Modes change in both directions, but the user always drives reconciliation:
 

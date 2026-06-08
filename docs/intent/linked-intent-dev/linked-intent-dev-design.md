@@ -38,7 +38,7 @@ The plugin lives at `plugins/linked-intent-dev/` with this shape:
   - `references/` — supporting reference docs (EARS syntax, LLD template, HLD template).
 - `skills/update-lid/` — the behavioral bootstrap/update skill. Specified in `docs/intent/linked-intent-dev/update-lid/update-lid-design.md`.
   - `SKILL.md`
-  - `references/` — CLAUDE.md template fragments keyed by mode.
+  - `references/` — instruction-file template fragments keyed by mode.
 - `skills/lid-coach/` — the behavioral principle-review skill. Specified in `docs/intent/linked-intent-dev/lid-coach/lid-coach-design.md`.
   - `SKILL.md`
 
@@ -48,11 +48,13 @@ The plugin intentionally does not bundle scripts. Everything the skills do is ex
 
 ## Mode Detection Mechanics
 
-Mode is detected by a single parse of `CLAUDE.md`. The skill reads the `## LID` block and takes the value of its `- Mode:` bullet, which is one of `Full` or `Scoped`. Matching is case-insensitive on the mode name; whitespace around the bullet is tolerated.
+The project's mode and version live in its **agent-instructions file** — `AGENTS.md` (the canonical cross-tool convention; under Claude Code a `CLAUDE.md` symlink alias resolves to it) or `CLAUDE.md` where a project predates the convention. This plugin's skills read whichever file the project presents — `AGENTS.md` if present, otherwise `CLAUDE.md` — and never branch on which host they run under. Throughout this plugin's LLDs and skills, *the instruction file* names this file. (The bootstrap-writing rule — create `AGENTS.md` canonical plus a `CLAUDE.md` alias, no host detection — lives in the `update-lid` LLD, the skill that writes it.)
+
+Mode is detected by a single parse of the instruction file. The skill reads the `## LID` block and takes the value of its `- Mode:` bullet, which is one of `Full` or `Scoped`. Matching is case-insensitive on the mode name; whitespace around the bullet is tolerated.
 
 If the `## LID` block or its `- Mode:` bullet is missing, malformed, or names an unrecognized mode value, the skill defaults to Full LID and surfaces a one-line warning during the next `linked-intent-dev` consult asking the user to add a valid `- Mode:` bullet explicitly. Full and Scoped are close enough in behavior that defaulting to the more rigorous one carries negligible cost. The skill does not silently write a marker — doing so would let a misconfigured project drift for sessions before anyone notices.
 
-**Multiple `CLAUDE.md` files.** In monorepos or nested projects, the agent's harness typically resolves which `CLAUDE.md` is in scope. The skill trusts that resolution. Absent harness guidance, the skill uses the `CLAUDE.md` nearest to the files under review — walking up from the file's directory until a `CLAUDE.md` is found.
+**Multiple instruction files.** In monorepos or nested projects, the agent's harness typically resolves which instruction file is in scope. The skill trusts that resolution. Absent harness guidance, the skill uses the instruction file nearest to the files under review — walking up from the file's directory until one is found.
 
 ## Spec ID Format
 
@@ -104,7 +106,7 @@ For behavioral skills, `evals/evals.json` and per-eval `eval_metadata.json` carr
       "spec_ids": ["LID-UPDATE-002"]
     },
     {
-      "text": "CLAUDE.md contains a '## LID' block with '- Mode: Full'",
+      "text": "the instruction file contains a '## LID' block with '- Mode: Full'",
       "spec_ids": ["LID-UPDATE-004", "LID-UPDATE-007"]
     }
   ]

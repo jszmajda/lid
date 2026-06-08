@@ -6,7 +6,9 @@
 - AGENTS.md (with CLAUDE.md symlink)
 - docs/setup.md
 - .claude-plugin/marketplace.json
+- .cursor-plugin/marketplace.json
 - CHANGELOG.md (canonical at plugins/linked-intent-dev/CHANGELOG.md, root symlink)
+- .gitignore
 - LICENSE
 - CODE_OF_CONDUCT.md
 - SECURITY.md
@@ -65,14 +67,22 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 
 - `[x]` **PROJ-STRUCT-024**: A `docs/setup.md` file SHALL exist describing how non-Claude-Code agents adopt LID through their tool's per-project rule mechanism.
 - `[x]` **PROJ-STRUCT-025**: `docs/setup.md` SHALL include a table or equivalent listing of tools that honor a repo-root `AGENTS.md` natively without requiring an adapter.
-- `[x]` **PROJ-STRUCT-026**: `docs/setup.md` SHALL provide explicit per-tool adapter snippets for tools that need or benefit from a separate rule file (Cursor, GitHub Copilot inline, and any other tool with a non-`AGENTS.md`-native path).
-- `[x]` **PROJ-STRUCT-027**: This repository SHALL NOT ship per-tool adapter files of its own. Adapter files are documented in `docs/setup.md` for users to drop into their own LID projects.
+- `[x]` **PROJ-STRUCT-026**: `docs/setup.md` SHALL provide explicit per-tool rule-file adapter snippets for tools that need or benefit from a separate file (GitHub Copilot inline, and any other tool with a non-`AGENTS.md`-native path). The Cursor adapter snippet (`.cursor/rules/lid.mdc`) SHALL be presented as the lighter no-plugin alternative to installing the Cursor plugin, not as Cursor's only integration path.
+- `[x]` **PROJ-STRUCT-027**: This repository SHALL NOT ship per-tool rule-file *adapter* files of its own (for example, it SHALL NOT contain a `.cursor/rules/lid.mdc` or `.github/copilot-instructions.md`); these are documented in `docs/setup.md` for users to drop into their own LID projects. Plugin *marketplace manifests* (`.claude-plugin/`, `.cursor-plugin/`) are NOT adapter files and ARE shipped — they register first-party plugins for a host's marketplace.
+- `[x]` **PROJ-STRUCT-062**: `docs/setup.md` SHALL document the first-class plugin hosts (Claude Code and Cursor), each installing the LID plugins from its own marketplace. The Cursor section SHALL present the plugin install as the primary path and the rule-file adapter as the lighter alternative.
 
 ## .claude-plugin/marketplace.json
 
 - `[x]` **PROJ-STRUCT-028**: A `.claude-plugin/marketplace.json` file SHALL exist at the repository root and SHALL declare the repository as a Claude Code plugin source.
 - `[x]` **PROJ-STRUCT-029**: `marketplace.json` SHALL list the three first-party plugins shipped from this repository: `linked-intent-dev`, `arrow-maintenance`, and `lid-experimental`. The `source` field for each plugin SHALL match an existing directory under `plugins/`.
 - `[x]` **PROJ-STRUCT-030**: Each plugin entry in `marketplace.json` SHALL include `name`, `description`, `source`, `version`, `category`, and `license` fields.
+
+## .cursor-plugin/marketplace.json
+
+- `[x]` **PROJ-STRUCT-056**: A `.cursor-plugin/marketplace.json` file SHALL exist at the repository root declaring the repository as a Cursor plugin source, with the Cursor-required marketplace-level fields `name`, `owner`, and `plugins`.
+- `[x]` **PROJ-STRUCT-057**: `.cursor-plugin/marketplace.json` SHALL list the three first-party plugins (`linked-intent-dev`, `arrow-maintenance`, `lid-experimental`). Each plugin entry SHALL include the Cursor-required `name` and `source`, plus `description`, `category`, and `license`. The `source` SHALL be the literal path `plugins/<name>` — the same directory the Claude manifest references — rather than a `pluginRoot`-relative form, so both hosts resolve plugins through one path convention.
+- `[x]` **PROJ-STRUCT-058**: Each plugin directory SHALL contain a `.cursor-plugin/plugin.json` carrying at least `name` (and, for LID's plugins, `description` and `license`). The Cursor manifests (`.cursor-plugin/marketplace.json` and each `.cursor-plugin/plugin.json`) SHALL omit `version` and SHALL NOT be part of the release-step version-sync set, since `update-lid`'s version-walk reads the project `## LID` block and the CHANGELOG rather than any marketplace manifest.
+- `[x]` **PROJ-STRUCT-060**: Each plugin's `name` SHALL be identical across every manifest that references it (`.claude-plugin/marketplace.json`, `.claude-plugin/plugin.json`, `.cursor-plugin/marketplace.json`, `.cursor-plugin/plugin.json`) and SHALL equal the plugin's directory name under `plugins/`, so a plugin carries one identity across both hosts.
 
 ## Repo-root file pointers
 
@@ -84,27 +94,32 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 
 - `[x]` **PROJ-STRUCT-033**: A `LICENSE` file SHALL exist at the repository root containing the MIT license under which the repository is distributed.
 
+## .gitignore
+
+- `[x]` **PROJ-STRUCT-059**: A `.gitignore` SHALL exclude the per-skill eval run-output trees (`plugins/*/skills/*-workspace/`) from version control, so these regenerable skill-creator outputs are absent from the repository and from both hosts' plugin bundles. The eval *definitions* (`plugins/*/skills/*/evals/evals.json`) SHALL NOT be ignored.
+
 ## Cascade
 
 - `[x]` **PROJ-STRUCT-034**: When HLD Goal 2 (minimum-system) is modified, the maintainer SHALL review `CONTRIBUTING.md`'s *Out of scope* and *Minimum-surface gate* sections for claim drift before the HLD change is considered complete.
 - `[x]` **PROJ-STRUCT-035**: When HLD Goal 4 (dogfooding) is modified, the maintainer SHALL review `CONTRIBUTING.md`'s *Tests, or justify* framing and *Arrow variant by change type* section.
 - `[x]` **PROJ-STRUCT-036**: When HLD § Key Design Decisions / *The arrow for LID itself* is modified — for example, a new variant is added or an existing one is revised — the maintainer SHALL update `CONTRIBUTING.md`'s arrow-variant decision tree to absorb the change.
-- `[x]` **PROJ-STRUCT-037**: When a new plugin is added under `plugins/`, removed, or renamed, the maintainer SHALL update `.claude-plugin/marketplace.json` and any install commands in `README.md` and `docs/setup.md` to match.
-- `[x]` **PROJ-STRUCT-038**: When a new agentic coding tool is added to the supported set, the maintainer SHALL update `docs/setup.md` with either a row in the simple-path table (if the tool honors `AGENTS.md` natively) or a per-tool section with an adapter snippet.
+- `[x]` **PROJ-STRUCT-037**: When a new plugin is added under `plugins/`, removed, or renamed, the maintainer SHALL update both marketplace manifests (`.claude-plugin/marketplace.json` and `.cursor-plugin/marketplace.json`), both per-plugin manifests (`.claude-plugin/plugin.json` and `.cursor-plugin/plugin.json`), and any install commands in `README.md` and `docs/setup.md` to match.
+- `[x]` **PROJ-STRUCT-038**: When a new agentic coding tool is added to the supported set, the maintainer SHALL update `docs/setup.md`; if the tool is a first-class plugin host, the maintainer SHALL additionally add its marketplace manifest, its per-plugin manifests, and a plugin-host section in `docs/setup.md`; if it is rule-file-only, the maintainer SHALL add either a simple-path table row (native `AGENTS.md`) or a per-tool adapter section.
 
 ## Build-Time Checks
 
 - `[ ]` **PROJ-STRUCT-039**: A repository CI workflow SHALL fail when an internal markdown link in `CONTRIBUTING.md` or `docs/setup.md` resolves to a missing file or anchor.
-- `[ ]` **PROJ-STRUCT-040**: A repository CI workflow SHALL fail when `.claude-plugin/marketplace.json` is not valid JSON or when its plugin `source` paths do not resolve to existing directories under `plugins/`.
+- `[ ]` **PROJ-STRUCT-040**: A repository CI workflow SHALL fail when either `.claude-plugin/marketplace.json` or `.cursor-plugin/marketplace.json` is not valid JSON or when its plugin `source` paths do not resolve to existing directories under `plugins/`.
 - `[ ]` **PROJ-STRUCT-041**: A repository CI workflow SHALL verify that `CLAUDE.md` resolves to `AGENTS.md` (symlink integrity) on every push.
 
 ## CHANGELOG.md
 
 - `[x]` **PROJ-STRUCT-043**: A `CHANGELOG.md` file SHALL exist with its canonical copy at `plugins/linked-intent-dev/CHANGELOG.md`, and the repository-root `CHANGELOG.md` SHALL be a symlink resolving to that canonical copy, so the changelog ships inside the `linked-intent-dev` plugin and `update-lid` can read it wherever the plugin is installed.
 - `[x]` **PROJ-STRUCT-044**: `CHANGELOG.md` SHALL follow semantic versioning and the Keep a Changelog format, and each release entry SHALL include a `### Migration (vX → vY)` section that `update-lid`'s version-walk reads to drive a guided upgrade.
-- `[x]` **PROJ-STRUCT-045**: The top (most recent) version in `CHANGELOG.md` SHALL be the canonical LID conventions version and SHALL equal the `version` field of `plugins/linked-intent-dev/.claude-plugin/plugin.json`.
-- `[x]` **PROJ-STRUCT-046**: When a release is cut, the three plugin `version` fields (in each plugin's `.claude-plugin/plugin.json`) and their three corresponding entries in `.claude-plugin/marketplace.json` SHALL all be bumped together and SHALL equal the version of the matching plugin, with the `CHANGELOG.md` top version equal to `linked-intent-dev`'s version; this release-step invariant is maintained by the discipline documented in `CONTRIBUTING.md` rather than by a CI gate, per the HLD Non-Goal that LID is not a linter/validator.
+- `[x]` **PROJ-STRUCT-045**: The most recent *versioned* entry in `CHANGELOG.md` (the first `## [X.Y.Z]` heading, below any `## [No Version Update Required]` section) SHALL be the canonical LID conventions version and SHALL equal the `version` field of `plugins/linked-intent-dev/.claude-plugin/plugin.json`.
+- `[x]` **PROJ-STRUCT-046**: When a release is cut, the three plugin `version` fields (in each plugin's `.claude-plugin/plugin.json`) and their three corresponding entries in `.claude-plugin/marketplace.json` SHALL all be bumped together and SHALL equal the version of the matching plugin, with the `CHANGELOG.md` top version equal to `linked-intent-dev`'s version; this release-step invariant is maintained by the discipline documented in `CONTRIBUTING.md` rather than by a CI gate, per the HLD Non-Goal that LID is not a linter/validator. The Cursor manifests carry no `version` and are excluded from this sync.
 - `[x]` **PROJ-STRUCT-054**: When a release is cut, a git tag and a GitHub Release matching the new version SHALL be published with release notes drawn from that version's `CHANGELOG.md` entry, and the Release SHALL create a linked discussion in the repository's Discussions **Announcements** category (for example, `gh release create vX.Y.Z --discussion-category Announcements`). Like `PROJ-STRUCT-046`, this step is maintained by the documented release discipline rather than by a CI gate.
+- `[x]` **PROJ-STRUCT-061**: `CHANGELOG.md` MAY carry a `## [No Version Update Required]` section above the most recent versioned entry, holding changes that warrant no version bump per the policy in HLD § Architecture / Distribution / *What warrants a version change* (e.g. additive host/platform support, internal refactors, docs); these fold into the next numbered version's entry when one is cut. Changes recorded only under that section SHALL NOT advance any plugin `version`, any project's `## LID` `- Version:` marker, or trigger a `/update-lid` version-walk.
 
 ## Arrow Registration
 
