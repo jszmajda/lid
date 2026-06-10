@@ -52,6 +52,8 @@ Each level translates the previous into more specific terms. They aren't indepen
 
 This is the "arrow of intent." It means you don't ask the agent to "fix the bug" — you ask it to "update the arrow so this behavior is clearly specified, tested, and implemented." The documentation becomes the source of truth, not the code. Code is output. Intent is the artifact you maintain.
 
+The linkage that holds the arrow together pays off twice. It's **navigation**: an agent walks from any behavior to the intent behind it in one `grep` per hop, without loading the whole project. And it's **attestation**: because every behavior cites a spec ID, "the code does what the design says" isn't something you take on faith — you, an audit pass, or a fresh agent with no context can check it mechanically. As agents write more of your code, review shifts from reading every line to verifying that what landed traces to what you meant. The linkage is what makes that check cheap.
+
 For more background, see [The Arrow of Intent](https://loki.ws/code/2026/01/25/the-arrow-of-intent.html).
 
 ## How LID Differs from Other SDD Systems
@@ -161,7 +163,7 @@ Code gets `@spec` annotations linking back to requirements:
 export function LoginForm({ ... }) { ... }
 ```
 
-Tests reference specs too. This creates a traceable chain from requirements to code to tests, walkable in one `grep` per hop.
+Tests reference specs too. This creates a traceable chain from requirements to code to tests, walkable in one `grep` per hop — and checkable the same way: one search on a spec ID returns everything that cites it, which is how you verify the agent's work instead of re-reading it.
 
 ### 4. Keep it coherent
 

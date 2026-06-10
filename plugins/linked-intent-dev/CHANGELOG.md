@@ -6,6 +6,11 @@ All notable changes to LID (Linked-Intent Development) are recorded here. The fo
 
 *Changes merged since the latest numbered version that did not require a version bump (per the policy in `docs/high-level-design.md` § Architecture / Distribution / What warrants a version change). These fold into the next numbered version's entry when one is cut.*
 
+### Changed
+
+- **HLD: linkage's payoff named as two-fold — navigation and attestation.** § Approach: Linkage-based Intent Tracking now states that the same identifiers that make the arrow walkable in tokens make its coherence checkable by grep (the traceability-matrix property), and that the two payoffs age differently as agent capability grows. Glossary gains an *Attestation* entry. Positioning only — no convention, command, or project-facing behavior changes.
+- **Marketing arrow: attestation story, copy-effectiveness pass, and Teams section.** The site's How-it-works carries the verification claim, a not-a-waterfall statement, and an honest cost passage; the hero lede leads pain-first with vocabulary deferred (show-then-name); a new Home Teams section (intent PRs, onboarding-by-cold-read, mixed-tool shared truth, scoped sub-team adoption, hotfix-then-remerge) sits between the demo and Quickstart with a design-diff figure; the README body states both linkage payoffs. `MKT-SITE-055`–`064` added; stale five-panel-trace markers corrected.
+
 ## [1.3.0] — 2026-06-06
 
 The memory-coherence release: durable project knowledge is redirected from agent memory into the arrow, and the definition of a tenet is sharpened to exclude specs in disguise.

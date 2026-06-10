@@ -129,8 +129,8 @@ arrows:
     blocks: []
     blockedBy: [linked-intent-dev, arrow-maintenance, extensions]
     detail: marketing-site.md
-    next: "Close the 18 active MKT-SITE gaps (notably MKT-SITE-047 five-panel trace and MKT-SITE-009 README/Quickstart cascade); optionally enrich the ecosystem social-proof surface (MKT-SITE-054) beyond the README + Home callout."
-    drift: "36 of 54 MKT-SITE specs [x]; 18 [ ] (site partially built — trace block + quickstart-cascade gaps). Added this cycle: MKT-SITE-053 (README badge row) and MKT-SITE-054 (ecosystem social proof — README callout + Home Annex 03B), both [x]."
+    next: "Close the 12 active MKT-SITE gaps (notably MKT-SITE-009 README/Quickstart cascade and the build-time checks -026/-027/-028/-029); reconcile the audited-SHA mismatch between marketing-site.md and this entry."
+    drift: "52 of 64 MKT-SITE specs [x]; 12 [ ] (build-time checks + process specs; content debt cleared). Added this cycle: MKT-SITE-055–059 (attestation story) and MKT-SITE-060–064 (copy-effectiveness pass — pain-first hero, show-then-name vocabulary, not-a-waterfall, cost honesty, Home Teams section; MKT-SITE-007 ordering amended), all [x]; five-panel trace cluster verified implemented and stale markers flipped."
 
   project-structure:
     status: AUDITED
