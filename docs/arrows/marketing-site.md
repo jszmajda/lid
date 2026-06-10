@@ -4,7 +4,7 @@ The conversion and orientation surface — the four-page Eleventy site at `site/
 
 ## Status
 
-**AUDITED** — last audited 2026-06-07 (git SHA `527cf08c9150`). 36 of 54 active specs implemented; 18 active gaps focused on the How-it-works five-panel trace block, theme system, build-time link checking, and README/Quickstart cascade behaviors. Added this cycle: the README badge row (`MKT-SITE-053`) and the ecosystem social-proof surface (`MKT-SITE-054` — README callout + Home Annex 03B).
+**AUDITED** — last audited 2026-06-07 (git SHA `527cf08c9150`); refreshed 2026-06-09 during the attestation and copy-effectiveness cascades. 52 of 64 active specs implemented; 12 active gaps, concentrated in build-time checks (link strictness, mermaid, a11y contrast), README/Quickstart cascade behaviors, and process specs (`MKT-SITE-033`–`036`). Added this cycle: the attestation story beat (`MKT-SITE-055`–`059`), and the copy-effectiveness pass (`MKT-SITE-060`–`064` — pain-first hero lede, show-then-name vocabulary rule, not-a-waterfall statement, cost-honesty passage, and the Home Teams section between demo and Quickstart; `MKT-SITE-007` ordering amended accordingly). The five-panel trace cluster (`MKT-SITE-039/-041/-045/-047/-048/-049`) verified implemented (panels + dimension rail in `site/src/index.njk` and `main.css`) and its stale gap markers flipped.
 
 ## References
 
@@ -15,7 +15,7 @@ The conversion and orientation surface — the four-page Eleventy site at `site/
 - `docs/intent/marketing-site/marketing-site-design.md`
 
 ### EARS
-- `docs/intent/marketing-site/marketing-site-specs.md` (51 specs, prefix `MKT-SITE-*`)
+- `docs/intent/marketing-site/marketing-site-specs.md` (64 specs, prefix `MKT-SITE-*`)
 
 ### Tests / Build checks
 - Build-time structural checks (link-check, mermaid render, markdown lint) — declared in the LLD § *Content Maintenance and Review*; CI workflow scope per `MKT-SITE-*` build specs.
@@ -41,30 +41,31 @@ The conversion and orientation surface — the four-page Eleventy site at `site/
 
 | Category (per LLD groupings) | Implemented | Active gap | Deferred |
 |---|---|---|---|
-| Content / pages / framing | majority `[x]` | a few `[ ]` (notably the five-panel trace details) | 0 |
-| README + ecosystem (badges `-053`, social proof `-054`) | 2 `[x]` | 0 | 0 |
-| Theme & typography | partial — system-aware theme `[x]`; some build-time / a11y checks `[ ]` | | 0 |
-| Build & deploy | partial — GitHub Pages deploy `[x]`; link-check strictness, README/Quickstart cascade `[ ]` | | 0 |
-| **Total** | **36** | **18** | **0** |
+| Content / pages / framing (incl. five-panel trace, attestation beat `-055`–`-058`) | majority `[x]` | `[ ]` MKT-SITE-012, -015, -023 | 0 |
+| README + ecosystem (badges `-053`, social proof `-054`, two-payoff passage `-059`) | 3 `[x]` | 0 | 0 |
+| Theme & typography | system-aware theme `[x]`; a11y contrast check `[ ]` (-026) | | 0 |
+| Build & deploy | GitHub Pages deploy `[x]`; mermaid/link-check strictness `[ ]` (-027/-028/-029), README/Quickstart cascade `[ ]` (-009) | | 0 |
+| Cascade & coherence process | `[x]` MKT-SITE-037 | `[ ]` MKT-SITE-033–036 | 0 |
+| **Total** | **47** | **12** | **0** |
 
-**Summary:** 36 of 54 active specs implemented; 18 active gaps. The site is live and serves the core flow; this cycle added the README badge row (`MKT-SITE-053`) and the ecosystem social-proof surface (`MKT-SITE-054`). The largest remaining cluster is the How-it-works five-panel trace and its responsive layout (MKT-SITE-039, -041, -045, -047 and adjacent IDs).
+**Summary:** 47 of 59 active specs implemented; 12 active gaps. The site is live and serves the core flow. This cycle added the attestation story (`MKT-SITE-055`–`059`), cascading from HLD § Linkage's two-payoff framing (navigation + attestation); the five-panel trace cluster was verified implemented and its stale markers corrected. Remaining gaps are build-time checks and process specs, not content debt.
 
 ## Key Findings
 
-1. **Five-panel trace block is the dominant gap cluster.** MKT-SITE-039, -041, -045, -047 and several siblings (~7 of the 18 gaps) describe the vertical trace, its legend, the shared EARS-ID through-line, and the responsive two-column pair at ≥960px. These are content/layout work, not blocked design.
+1. **Attestation beat carried by existing elements.** The verification story (lede claim, grep-note proof chain, outro review posture, README passage) landed inside the existing How-it-works structure per LLD Resolved 26 — no new page or section. The `MKT-SITE-058` guard (mechanism, never a trust or compliance claim) binds all attestation copy on site and README.
 2. **README/Quickstart cascade behavior unimplemented.** MKT-SITE-009 — *"When the README's Quickstart changes, the site's Quickstart SHALL cascade to match before the next deploy"* — is `[ ]`. Currently a manual review responsibility; could be automated as a CI check or simply as a `/linked-intent-dev` cascade-discipline reminder.
-3. **Site is a real LID-on-LID arrow segment.** Per `docs/intent/marketing-site/marketing-site-design.md` § *Cascade Concerns*: drift between site content and the HLD/plugin LLDs is a coherence-signal failure under HLD Goal 4. This bootstrap segment makes that auditable under `/arrow-maintenance` alongside the plugins (satisfies `MKT-SITE-036`).
-4. **No `@spec` annotations in `site/` source files.** Content artifacts may carry `@spec` comments in HTML/template comments, but a quick scan turned up none. EARS coverage for content is currently spec-file-header-only — same LID-on-LID inversion as skill prompts. Acceptable; a future `arrow-maintenance` audit may want to add inline `@spec` comments to template files for grep-addressability into the content.
+3. **Site is a real LID-on-LID arrow segment.** Per `docs/intent/marketing-site/marketing-site-design.md` § *Cascade Concerns*: drift between site content and the HLD/plugin LLDs is a coherence-signal failure under HLD Goal 4. This bootstrap segment makes that auditable under `/arrow-maintenance` alongside the plugins (satisfies the intent of `MKT-SITE-036`; the spec itself remains `[ ]` pending the named index entry being kept current as schema evolves).
+4. **`@spec` annotations now present in `site/src/index.njk`.** Section-level HTML comments cite the MKT-SITE specs each block implements. Coverage of the other page templates (`start.njk`, `examples.njk`, `anti-patterns.njk`) is still spec-file-header-only.
+5. **SHA bookkeeping mismatch.** This doc's audited SHA (`527cf08c9150`) and `index.yaml`'s (`65a143750760`) disagree for the same 2026-06-07 audit — surfaced for the next `/arrow-maintenance` pass to reconcile; not repaired here.
 
 ## Work Required
 
 ### Must Fix
-1. Close the five-panel trace gap cluster (MKT-SITE-039, -041, -045, -047 and adjacent layout/responsive specs). This is the largest content debt on the site.
-2. Implement README/Quickstart cascade verification (MKT-SITE-009) — at minimum a build-time check that the two Quickstart command blocks match.
+1. Implement README/Quickstart cascade verification (MKT-SITE-009) — at minimum a build-time check that the two Quickstart command blocks match.
 
 ### Should Fix
-3. Close the remaining theme / build / a11y gaps (the other ~9 `[ ]` MKT-SITE specs).
-4. Consider `@spec` annotations as HTML/template comments in `site/src/` so grep-addressability extends into the content layer.
+2. Close the remaining build / a11y / process gaps (MKT-SITE-012, -015, -023, -026, -027, -028, -029, -033–036).
+3. Extend `@spec` HTML-comment annotations to the remaining page templates.
 
 ### Nice to Have
-5. Once `examples/urlshort/` exists, link from the Examples page (currently labeled in the LLD as not-yet-built).
+4. Once `examples/urlshort/` exists, link from the Examples page (currently labeled in the LLD as not-yet-built).

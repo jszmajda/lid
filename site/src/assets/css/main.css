@@ -1510,6 +1510,184 @@ hr {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
+ * 7B. TEAMS — design-diff figure + numbered clause beats
+ * Two-up at ≥1000px (figure left, beats right) so the section reads as a
+ * pair like the trace and DAG blocks, instead of a full-width slab.
+ * ═══════════════════════════════════════════════════════════════════════ */
+
+.teams { --df-add: #7fae7a; --df-del: #c0766a; }
+@media (prefers-color-scheme: light) {
+  .teams { --df-add: #3e6b3a; --df-del: #9c3f2e; }
+}
+
+.teams-shell {
+  display: grid;
+  gap: var(--s-6);
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+
+@media (min-width: 1000px) {
+  .teams-shell {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: var(--s-8);
+  }
+  .teams-fig { position: sticky; top: var(--s-7); }
+}
+
+/* ── The figure: an LLD diff under review ── */
+
+.teams-fig {
+  margin: 0;
+  background: var(--paper-2);
+  border: 1px solid var(--graphite);
+  padding: var(--s-5);
+  min-width: 0;
+}
+
+.teams-fig-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-3);
+  flex-wrap: wrap;
+  margin-bottom: var(--s-4);
+  padding-bottom: var(--s-3);
+  border-bottom: 1px solid var(--graphite);
+}
+
+.teams-fig-path {
+  font-family: var(--type-mono);
+  font-size: 0.72rem;
+  color: var(--ink-3);
+  letter-spacing: 0.02em;
+  overflow-wrap: anywhere;
+}
+
+.teams-fig-badge {
+  font-family: var(--type-mono);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--nib);
+  border: 1px solid color-mix(in srgb, var(--nib) 45%, transparent);
+  padding: 0.15rem 0.5rem;
+  white-space: nowrap;
+}
+
+.teams-diff {
+  font-family: var(--type-mono);
+  font-size: clamp(0.66rem, 0.5rem + 0.45vw, 0.8rem);
+  line-height: 1.7;
+  overflow-x: auto;
+}
+.teams-diff code {
+  display: block;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  white-space: pre;
+}
+.teams-diff span { display: block; padding: 0 var(--s-2); }
+.df-ctx { color: var(--ink-3); }
+.df-del {
+  color: var(--df-del);
+  background: color-mix(in srgb, var(--df-del) 9%, transparent);
+}
+.df-add {
+  color: var(--df-add);
+  background: color-mix(in srgb, var(--df-add) 9%, transparent);
+}
+
+/* ── Review thread beneath the diff ── */
+
+.teams-thread {
+  margin-top: var(--s-4);
+  padding-top: var(--s-4);
+  border-top: 1px dashed var(--ink-4);
+  display: grid;
+  gap: var(--s-2);
+}
+
+.teams-msg {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--ink-2);
+  padding-left: var(--s-5);
+  position: relative;
+}
+
+.teams-who {
+  font-family: var(--type-mono);
+  font-size: 0.7rem;
+  color: var(--azure);
+  margin-right: var(--s-2);
+}
+.teams-who::after { content: " —"; color: var(--ink-4); }
+
+.teams-msg--resolved {
+  color: var(--ink-3);
+  font-size: 0.78rem;
+  font-family: var(--type-mono);
+  letter-spacing: 0.01em;
+}
+.teams-check { color: var(--nib); margin-right: var(--s-2); }
+
+.teams-fig-cap {
+  margin-top: var(--s-4);
+  padding-top: var(--s-3);
+  border-top: 1px solid var(--graphite);
+  font-size: 0.8rem;
+  color: var(--ink-3);
+  line-height: 1.55;
+}
+.teams-fig-cap .num {
+  font-family: var(--type-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  color: var(--nib);
+  margin-right: var(--s-3);
+}
+
+/* ── The beats: numbered drafting clauses ── */
+
+.teams-beats {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  counter-reset: teams-beat;
+  min-width: 0;
+}
+
+.teams-beats li {
+  counter-increment: teams-beat;
+  position: relative;
+  padding: var(--s-4) 0 var(--s-4) calc(var(--s-7) + var(--s-2));
+  border-top: 1px solid var(--graphite);
+  color: var(--ink-2);
+  font-size: 0.95rem;
+  line-height: 1.65;
+  max-width: 58ch;
+}
+.teams-beats li:first-child { border-top: 0; padding-top: var(--s-2); }
+.teams-beats li:last-child { padding-bottom: var(--s-2); }
+
+.teams-beats li::before {
+  content: "§ 0" counter(teams-beat);
+  position: absolute;
+  left: 0;
+  top: calc(var(--s-4) + 0.2em);
+  font-family: var(--type-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  color: var(--nib);
+}
+.teams-beats li:first-child::before { top: calc(var(--s-2) + 0.2em); }
+
+.teams-beats strong { color: var(--ink); font-weight: 600; }
+.teams-beats em { color: var(--ink); }
+
+/* ═══════════════════════════════════════════════════════════════════════
  * 8. QUICKSTART
  * ═══════════════════════════════════════════════════════════════════════ */
 
