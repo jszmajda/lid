@@ -59,6 +59,7 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 - `[x]` **MKT-SITE-010**: When a user loads the Start page, the site SHALL present four audience sections matching the home-page path links — evaluating, greenfield, brownfield, scoped.
 - `[x]` **MKT-SITE-011**: Each Start-page section SHALL contain a short description, the relevant plugin command(s) a user would run, and a link to the README for depth.
 - `[ ]` **MKT-SITE-012**: Start-page section descriptions SHALL be approximately 150 words each; depth beyond that SHALL link to the README rather than expand inline.
+- `[x]` **MKT-SITE-066**: The Start page's Evaluating section SHALL mention portfolio-tracker as a clonable example of the full arrow (design through `@spec`-cited tests and the CI coverage gate), with a link to the repository.
 - `[x]` **MKT-SITE-052**: The Start page SHALL surface `/lid-coach` — the core `linked-intent-dev` plugin's principle-review skill — within the audience-path narratives (at minimum the Evaluating path), framed as a tool for reviewing an already-running LID project against the methodology's principles, with a link to the skill's source in the repository. The site SHALL NOT add `/lid-coach` to the Home Quickstart command list or give it its own audience-path section, since it is neither an install step nor an audience path.
 
 ## Examples Page
@@ -66,7 +67,8 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 - `[x]` **MKT-SITE-013**: When a user loads the Examples page, the site SHALL link to the `examples/urlshort/` intent-only example in the repository.
 - `[x]` **MKT-SITE-014**: Where the threadkeeper project is publicly linkable with maintainer permission, the Examples page SHALL link to it as a long-running real-world case study.
 - `[ ]` **MKT-SITE-015**: If threadkeeper is not publicly linkable, the Examples page SHALL describe its nature (long-running, striated, real) without linking, rather than omit the case-study signal entirely.
-- `[x]` **MKT-SITE-016**: The Examples page SHALL frame the two examples as complementary — urlshort as "clean, minimal, 5-minute read"; threadkeeper as "messy, real, instructive."
+- `[x]` **MKT-SITE-016**: The Examples page SHALL frame the three examples as complementary lenses — urlshort as "clean, minimal, 5-minute read"; portfolio-tracker as "complete, real, end-to-end"; threadkeeper as "messy, real, instructive."
+- `[x]` **MKT-SITE-065**: When a user loads the Examples page, the site SHALL link to the portfolio-tracker repository (`github.com/jszmajda/portfolio-tracker`) as a complete public project built with LID end-to-end — design tree, EARS specs, `@spec`-cited tests, and code — naming its CI coverage gate (the build fails unless every spec is cited by at least one test and every citation resolves to a defined spec) as the mechanical enforcement of the verification claim the site describes.
 
 ## Anti-patterns Page
 

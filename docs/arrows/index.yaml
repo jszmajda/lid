@@ -130,7 +130,7 @@ arrows:
     blockedBy: [linked-intent-dev, arrow-maintenance, extensions]
     detail: marketing-site.md
     next: "Close the 12 active MKT-SITE gaps (notably MKT-SITE-009 README/Quickstart cascade and the build-time checks -026/-027/-028/-029); reconcile the audited-SHA mismatch between marketing-site.md and this entry."
-    drift: "52 of 64 MKT-SITE specs [x]; 12 [ ] (build-time checks + process specs; content debt cleared). Added this cycle: MKT-SITE-055–059 (attestation story) and MKT-SITE-060–064 (copy-effectiveness pass — pain-first hero, show-then-name vocabulary, not-a-waterfall, cost honesty, Home Teams section; MKT-SITE-007 ordering amended), all [x]; five-panel trace cluster verified implemented and stale markers flipped."
+    drift: "54 of 66 MKT-SITE specs [x]; 12 [ ] (build-time checks + process specs; content debt cleared). Added this cycle: MKT-SITE-055–059 (attestation story), MKT-SITE-060–064 (copy-effectiveness pass — pain-first hero, show-then-name vocabulary, not-a-waterfall, cost honesty, Home Teams section; MKT-SITE-007 ordering amended), and MKT-SITE-065–066 (portfolio-tracker exemplar — Examples third card, Start Evaluating mention; MKT-SITE-016 reframed to three lenses), all [x]; five-panel trace cluster verified implemented and stale markers flipped."
 
   project-structure:
     status: AUDITED

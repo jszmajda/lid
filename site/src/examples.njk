@@ -5,25 +5,25 @@ eleventyNavigation:
   key: Examples
   order: 3
 permalink: /examples/
-description: Two example LID projects — one small and clean, one real and messy — plus the repository itself as the canonical mature example.
+description: Three example LID projects — one small and clean, one complete and end-to-end, one real and messy — plus the repository itself as the canonical mature example.
 ---
 
-<!-- @spec MKT-SITE-013, MKT-SITE-014, MKT-SITE-015, MKT-SITE-016 -->
+<!-- @spec MKT-SITE-013, MKT-SITE-014, MKT-SITE-015, MKT-SITE-016, MKT-SITE-065 -->
 <div class="page">
   <div class="container">
 
     <header class="page-header">
       <div class="page-header-main">
         <span class="plate">Sheet 03 / Examples</span>
-        <h1>See LID in <em>two different lights</em>.</h1>
+        <h1>See LID in <em>three different lights</em>.</h1>
         <p class="lede">
-          One example is small, clean, intent-only — try to regenerate the code from the docs alone. The other is real, long-running, and messier than any pedagogical example could honestly be. Both are useful; they answer different questions.
+          One example is small, clean, intent-only — try to regenerate the code from the docs alone. One is a complete, working project — the whole chain from design to verified code, public and clonable. And one is real, long-running, and messier than any pedagogical example could honestly be. Three lenses; they answer different questions.
         </p>
       </div>
       <aside class="page-header-aside" aria-label="Sheet notes">
         <dl>
           <dt>Sheet</dt>         <dd>03 / 04</dd>
-          <dt>Examples</dt>      <dd>02 + self</dd>
+          <dt>Examples</dt>      <dd>03 + self</dd>
           <dt>Purpose</dt>       <dd>See it in use</dd>
           <dt>Next sheet</dt>    <dd><a href="{{ '/anti-patterns/' | url }}">Anti-patterns →</a></dd>
         </dl>
@@ -45,6 +45,18 @@ description: Two example LID projects — one small and clean, one real and mess
       </article>
 
       <article class="example-card bracketed">
+        <span class="tag">Complete · end-to-end</span>
+        <h2>Portfolio-tracker</h2>
+        <p>
+          A real, public project built with LID end-to-end: an HLD, eleven LLDs, 350 EARS specs, and the tests and code that cite them. A CI gate makes the linkage mechanical — the build fails unless every spec is cited by at least one test and every citation resolves to a defined spec. The verification story the home page describes, enforced in public.
+        </p>
+        <div class="foot">
+          <a class="cross" href="https://github.com/jszmajda/portfolio-tracker">Browse portfolio-tracker</a>
+          <p class="muted" style="margin-top: var(--s-3); font-size: 0.85rem;">Start with the README's guided tour — five files, read in order, from one design doc down to the CI gate that binds it.</p>
+        </div>
+      </article>
+
+      <article class="example-card bracketed">
         <span class="tag">Real · long-running</span>
         <h2>Threadkeeper</h2>
         <p>
@@ -62,7 +74,7 @@ description: Two example LID projects — one small and clean, one real and mess
       <span class="plate">Addendum</span>
       <h2 id="meta-heading">And LID itself.</h2>
       <p>
-        This whole repository is <a href="{{ site.repoUrl }}">LID applied to LID</a>. The <a href="{{ site.repoUrl }}/blob/main/docs/high-level-design.md">HLD</a>, the <a href="{{ site.repoUrl }}/tree/main/docs/llds">LLDs</a>, the <a href="{{ site.repoUrl }}/tree/main/docs/specs">EARS specs</a> — all live in <code>docs/</code>, traceable to the plugin code under <code>plugins/</code>. If LID could not describe itself, LID would be broken. It describes itself.
+        This whole repository is <a href="{{ site.repoUrl }}">LID applied to LID</a>. The <a href="{{ site.repoUrl }}/blob/main/docs/high-level-design.md">HLD</a>, the <a href="{{ site.repoUrl }}/tree/main/docs/intent">LLDs</a>, the <a href="{{ site.repoUrl }}/blob/main/docs/intent/marketing-site/marketing-site-specs.md">EARS specs</a> — all live in <code>docs/</code>, traceable to the plugin code under <code>plugins/</code>. If LID could not describe itself, LID would be broken. It describes itself.
       </p>
     </aside>
 
