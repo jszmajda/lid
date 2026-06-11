@@ -93,7 +93,7 @@ The tradeoff is that LID requires discipline. You review HLDs and LLDs carefully
 |--------|-------------|----------------|
 | **[lid-experimental](plugins/lid-experimental/README.md)** | Currently bundles `bidirectional-differential` — runs two parallel fresh Claude sessions on a chosen EARS+code pair (one reconstructs code from the EARS, the other reconstructs the EARS from stripped code) to surface intent the EARS doesn't state and unstated invariants the code encodes | When you want a deeper coherence check than `arrow-maintenance` provides, on a scoped slice of your specs. Requires `arrow-maintenance` overlay. |
 
-See the experimental [plugin README](plugins/lid-experimental/README.md) for an end-user walkthrough; lifecycle and design rationale live in [`docs/llds/lid-experimental.md`](docs/llds/lid-experimental.md). Users on other agentic coding tools follow the same workflow by pointing their tool's rule-file system at an `AGENTS.md` in their project. The plugins automate phase gates and skill invocation; other tools rely on the agent reading the instructions on every turn. Experimental skills are Claude-Code-only in their first iteration.
+See the experimental [plugin README](plugins/lid-experimental/README.md) for an end-user walkthrough; lifecycle and design rationale live in [`docs/intent/lid-experimental/lid-experimental-design.md`](docs/intent/lid-experimental/lid-experimental-design.md). Users on other agentic coding tools follow the same workflow by pointing their tool's rule-file system at an `AGENTS.md` in their project. The plugins automate phase gates and skill invocation; other tools rely on the agent reading the instructions on every turn. Experimental skills are Claude-Code-only in their first iteration.
 
 ## Installation (Claude Code)
 
@@ -136,7 +136,7 @@ You're starting something new. Here's the workflow:
 /linked-intent-dev
 ```
 
-This creates `docs/high-level-design.md`, `docs/llds/`, `docs/specs/` and appends LID directives to your project's `CLAUDE.md` (which Claude Code reads). If you also use Cursor, Windsurf, Codex, or another AGENTS.md-honoring tool, [`docs/setup.md`](docs/setup.md) shows how to alias `AGENTS.md` to the same content. It asks which mode you want — **Full LID** (whole project) or **Scoped LID** (a bounded piece of a larger project, with glob patterns declaring what's in scope).
+This creates `docs/high-level-design.md` and `docs/intent/` (one folder per design node, specs beside each design doc) and appends LID directives to your project's `CLAUDE.md` (which Claude Code reads). If you also use Cursor, Windsurf, Codex, or another AGENTS.md-honoring tool, [`docs/setup.md`](docs/setup.md) shows how to alias `AGENTS.md` to the same content. It asks which mode you want — **Full LID** (whole project) or **Scoped LID** (a bounded piece of a larger project, with glob patterns declaring what's in scope).
 
 ### 2. Design before you code
 
@@ -245,9 +245,10 @@ On other tools, the setup step is one-time (copy the adapter file from [`docs/se
 
 ## Reference implementations and validation
 
-- **LID-on-LID**: this repo applies LID to itself. Read `docs/high-level-design.md`, `docs/llds/linked-intent-dev.md`, and `docs/llds/arrow-maintenance.md` to see the intent tree. EARS specs live in `docs/specs/`.
+- **LID-on-LID**: this repo applies LID to itself. Read `docs/high-level-design.md`, `docs/intent/linked-intent-dev/linked-intent-dev-design.md`, and `docs/intent/arrow-maintenance/arrow-maintenance-design.md` to see the intent tree. EARS specs live beside each design doc as `{node}-specs.md` under `docs/intent/`.
 - **Eval suite**: each behavioral skill has a test harness at `plugins/*/skills/*/evals/evals.json` with spec_id-tagged assertions. Iteration 1 results in `plugins/*/skills/*-workspace/iteration-1/benchmark.md` — with-skill runs at 100%, delta of +36% to +56% over unguided baseline.
 - **Example project**: [`examples/urlshort/`](examples/urlshort/) — a URL shortener specified as HLD + LLDs + EARS specs with no code. Clone the directory, install the plugins, and ask Claude to generate an implementation that satisfies the specs. Run the same prompt twice and you should get two working implementations — possibly in different languages. Demonstrates code plasticity.
+- **Complete exemplar**: [portfolio-tracker](https://github.com/jszmajda/portfolio-tracker) — a real, public project built with LID end-to-end: a design tree, 350 EARS specs, `@spec`-cited tests and code, and a CI gate that fails the build unless every spec is cited by at least one test and every citation resolves to a defined spec. Its README opens with a five-file guided tour down one arrow segment.
 
 ## License
 

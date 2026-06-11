@@ -4,7 +4,7 @@ The conversion and orientation surface — the four-page Eleventy site at `site/
 
 ## Status
 
-**AUDITED** — last audited 2026-06-07 (git SHA `527cf08c9150`); refreshed 2026-06-09 during the attestation and copy-effectiveness cascades. 52 of 64 active specs implemented; 12 active gaps, concentrated in build-time checks (link strictness, mermaid, a11y contrast), README/Quickstart cascade behaviors, and process specs (`MKT-SITE-033`–`036`). Added this cycle: the attestation story beat (`MKT-SITE-055`–`059`), and the copy-effectiveness pass (`MKT-SITE-060`–`064` — pain-first hero lede, show-then-name vocabulary rule, not-a-waterfall statement, cost-honesty passage, and the Home Teams section between demo and Quickstart; `MKT-SITE-007` ordering amended accordingly). The five-panel trace cluster (`MKT-SITE-039/-041/-045/-047/-048/-049`) verified implemented (panels + dimension rail in `site/src/index.njk` and `main.css`) and its stale gap markers flipped.
+**AUDITED** — last audited 2026-06-07 (git SHA `527cf08c9150`); refreshed 2026-06-09 during the attestation and copy-effectiveness cascades, and 2026-06-11 for the portfolio-tracker exemplar cascade (`MKT-SITE-016` reframed to three lenses; `MKT-SITE-065`/`-066` added and implemented — Examples third card, Start Evaluating mention). 54 of 66 active specs implemented; 12 active gaps, concentrated in build-time checks (link strictness, mermaid, a11y contrast), README/Quickstart cascade behaviors, and process specs (`MKT-SITE-033`–`036`). Added this cycle: the attestation story beat (`MKT-SITE-055`–`059`), and the copy-effectiveness pass (`MKT-SITE-060`–`064` — pain-first hero lede, show-then-name vocabulary rule, not-a-waterfall statement, cost-honesty passage, and the Home Teams section between demo and Quickstart; `MKT-SITE-007` ordering amended accordingly). The five-panel trace cluster (`MKT-SITE-039/-041/-045/-047/-048/-049`) verified implemented (panels + dimension rail in `site/src/index.njk` and `main.css`) and its stale gap markers flipped.
 
 ## References
 
@@ -15,7 +15,7 @@ The conversion and orientation surface — the four-page Eleventy site at `site/
 - `docs/intent/marketing-site/marketing-site-design.md`
 
 ### EARS
-- `docs/intent/marketing-site/marketing-site-specs.md` (64 specs, prefix `MKT-SITE-*`)
+- `docs/intent/marketing-site/marketing-site-specs.md` (66 specs, prefix `MKT-SITE-*`)
 
 ### Tests / Build checks
 - Build-time structural checks (link-check, mermaid render, markdown lint) — declared in the LLD § *Content Maintenance and Review*; CI workflow scope per `MKT-SITE-*` build specs.
@@ -34,7 +34,7 @@ The conversion and orientation surface — the four-page Eleventy site at `site/
 **Key Components:**
 1. **Home** — hero (pitch, framing, schematic) → How it works (five-panel trace + DAG) → cascade demo (asciinema embed) → Quickstart → four path links → repo CTA in hero.
 2. **Start** — audience-path orientation (evaluating / greenfield / brownfield / scoped), each ~150 words.
-3. **Examples** — two cards: `examples/urlshort/` (clean, minimal) and Threadkeeper (messy, real).
+3. **Examples** — three cards: `examples/urlshort/` (clean, minimal), portfolio-tracker (complete, end-to-end), and Threadkeeper (messy, real).
 4. **Anti-patterns** — honest list of when LID is the wrong choice.
 
 ## Spec Coverage

@@ -1,7 +1,7 @@
 {
   "name": "lid-site",
   "version": "0.0.1",
-  "description": "Marketing site for Linked-Intent Development (LID) — see ../docs/llds/marketing-site.md",
+  "description": "Marketing site for Linked-Intent Development (LID) — see ../docs/intent/marketing-site/marketing-site-design.md",
   "private": true,
   "type": "module",
   "scripts": {

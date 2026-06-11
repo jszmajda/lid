@@ -58,7 +58,7 @@ Verification substitutes content-appropriate mechanisms for test-harness evals:
 - **Make verifiability legible.** After "what is this?", an evaluator's second silent question is "agents write code faster than I can review it — how do I trust what landed?" The site answers with the attestation story (HLD § Approach: Linkage-based Intent Tracking): every behavior traces to a spec ID, so checking coherence is a grep, not a re-read. The claim is carried inside existing Home sections — the How-it-works lede, the grep-note, and the outro — never as a separate page or section.
 - **Answer the team evaluator.** A reader assessing LID for a team needs "does this work for *us*" answered before install commands: how design alignment happens (intent PRs), how onboarding works (cold-readable docs), how mixed tools coexist (one markdown tree), how a sub-team adopts (Scoped mode), and what happens under incident pressure (hotfix outside the workflow, walk the design back after). The Home Teams section carries these as descriptions of artifact mechanics, never as governance promises.
 - **Surface honest non-fit.** An anti-patterns page ("LID is the wrong choice when...") builds trust that the project isn't oversold.
-- **Link real examples.** The `examples/urlshort/` intent-only example and threadkeeper as a long-running case study are reachable from the site without the reader having to know either exists.
+- **Link real examples.** The `examples/urlshort/` intent-only example, the portfolio-tracker complete OSS exemplar, and threadkeeper as a long-running case study are reachable from the site without the reader having to know any of them exists.
 
 ### Non-Goals
 
@@ -87,7 +87,7 @@ The site explicitly does not serve users *already using* LID day-to-day. Those u
 ```mermaid
 graph LR
   Home[Home<br/>pitch · demo · framing] --> Start[Start<br/>paths by audience]
-  Home --> Examples[Examples<br/>urlshort · threadkeeper]
+  Home --> Examples[Examples<br/>urlshort · portfolio-tracker · threadkeeper]
   Home --> AntiPatterns[Anti-patterns<br/>when LID is wrong]
   Start --> Repo[GitHub repo<br/>plugins · docs · README]
   Examples --> Repo
@@ -163,7 +163,7 @@ The landing page. Section ordering is deliberate: the page walks a cold evaluato
 
 Audience-path orientation. Four short sections:
 
-- **Evaluating LID?** — "Read the README. Skim the HLD. Try `examples/urlshort/`." This audience wants to validate the claims before committing.
+- **Evaluating LID?** — "Read the README. Skim the HLD. Try `examples/urlshort/`. Clone portfolio-tracker to see the full arrow with its coverage gate." This audience wants to validate the claims before committing.
 - **Starting a new project?** — Greenfield onboarding: install plugins, then invoke `/linked-intent-dev` with a description of what you want to build (the workflow bootstraps LID as part of Phase 1).
 - **Adding LID to an existing codebase?** — Brownfield onboarding: same install, plus `/arrow-maintenance:map-codebase` with a token-intensity warning.
 - **Scoped to one subsystem?** — Scoped LID introduction: when the team hasn't adopted and you're trying it on a slice. Explicitly links to the HLD's modes section.
@@ -174,12 +174,13 @@ Each section is short (~150 words). Depth is a README click away.
 
 ### Page: Examples
 
-Two cards, each linking out:
+Three cards, each linking out. Each card answers a different evaluator question, and the three are framed as lenses, not a ranking:
 
 - **`examples/urlshort/`** — small, intent-only, "regenerate from these docs" demo (HLD + LLDs + EARS, no code). Labeled as "clean, minimal, 5-minute read." The example exists in the repository at `examples/urlshort/` and is linked directly.
+- **Portfolio-tracker** (`github.com/jszmajda/portfolio-tracker`) — a complete public OSS project built with LID end-to-end: HLD, eleven LLDs, 350 EARS specs, `@spec`-cited tests and code, the `docs/arrows/` overlay, and a CI coverage gate that fails the build unless every spec is cited by at least one test and every citation resolves to a defined spec. Labeled as "complete, real, end-to-end." Its conversion role is specific: it is the roster's existence proof for the site's verification claim — the grep-note *describes* checking code against design mechanically; portfolio-tracker *enforces* exactly that in public CI. The card points at the project's own README, which carries a five-file guided tour reading down one arrow segment.
 - **Threadkeeper** — long-running real-world project that uses LID. Labeled as "messy, real, instructive." Linked only if the project is public or excerpts can be shared with the maintainer's permission.
 
-A short intro paragraph explains the difference: clean example for understanding the system; messy example for understanding how the system ages.
+A short intro paragraph explains the difference: the clean example for understanding the system; the complete example for seeing the whole arrow landed in real code; the messy example for understanding how the system ages.
 
 ### Page: Anti-Patterns
 
@@ -306,6 +307,7 @@ Once `docs/arrows/` is bootstrapped for this repository, the site appears as a *
 | Anti-patterns authorship | User-feedback-driven with a minimal starter set | Exhaustive guessed list; community-contributed open page; none | Guessed anti-patterns ring hollow and invite drift. Starting minimal and growing from real feedback keeps the list honest. |
 | Inline-SVG rect sizing | All schematic `<rect>` elements ≥ 70×30 viewBox units; encode hierarchy via stroke, typography, or node count, never rect size | Descending rect sizes per arrow tier (smaller = lower) | Below ~60×28, Firefox Android hits a soft-reload paint bug where the fill never rasterizes and the page background shows through as "white" until a hard reload — no fill/style/opacity/marker workaround helps, only rect size. Diagnosed 2026-04 via a 12-variant isolation page on the DAG schematic's descending tiers. |
 | Threadkeeper treatment | Linked as case study only with maintainer permission | Featured prominently; not linked at all | Threadkeeper is valuable because it is real and messy, but its striated docs make it a poor pedagogical example. The site's framing ("messy, real, instructive") captures this honestly. |
+| Portfolio-tracker treatment | Third Examples card ("complete, real, end-to-end") plus a one-line mention in the Start page's Evaluating path | Replace threadkeeper with it; replace urlshort with it; feature it on the Home page | Portfolio-tracker is the only example with the full arrow landed in public code — HLD through `@spec`-cited tests with a CI coverage gate — a lens neither sibling carries: urlshort shows intent without code, threadkeeper shows how a LID system ages. Replacing either would trade away its distinct lesson. A Home-page feature was rejected on minimum surface: Examples is the owned slot for example link-outs, the same single-curated-pointer discipline applied to the ecosystem link. |
 | Call-to-action scope | "Install and use" (single outbound link) | Newsletter; Discord; contact form; RSS | LID is not a product funnel. Single CTA keeps the page from feeling like a sales surface. |
 | Page length | ~150 words per Start section; ~300 for Home hero | Long-form pages with examples inline; ultra-terse cards only | Short-enough-to-skim with links into depth matches the evaluator-audience primary optimization. |
 | Home section ordering | Hero → How it works → Cascade demo → Teams → Quickstart → Paths | Hero → Quickstart → Demo → Paths (original); Hero → Demo → Quickstart → How it works (demo-first) | Cold evaluators need a structural mental model before commands. The original install-high ordering optimized for users who had already decided; in practice the page lost the still-evaluating reader. Putting How it works between hero and demo means the structural claim, the temporal demonstration, and the install commands arrive in the order an evaluator can actually absorb them. The hero's "Install" CTA anchor-links to the Quickstart, so a decided reader still reaches the commands in one click regardless of section position. |
@@ -365,6 +367,7 @@ Once `docs/arrows/` is bootstrapped for this repository, the site appears as a *
 27. ✅ The hero lede leads with the felt intent-gap problem and the fix-once benefit; methodology acronyms and the term "arrow" are excluded from the hero, and site-wide vocabulary follows show-then-name (plain English first mention, acronym after the trace instantiates it).
 28. ✅ How-it-works carries two honesty beats: the not-a-waterfall statement (every level stays editable; edits recompile downward) and "the price" (review stops, design-diff reading, token overhead, framed as an evaluable trade).
 29. ✅ The Home page carries a Teams section between the cascade demo and Quickstart with five artifact-grounded beats (intent PRs, onboarding-by-cold-read, mixed-tool shared truth, scoped sub-team adoption, hotfix-then-remerge); no dedicated Teams page and no fifth audience path.
+30. ✅ The Examples page carries three cards as three lenses — urlshort (clean, minimal, intent-only), portfolio-tracker (complete, real, end-to-end — the public existence proof for the verification claim), threadkeeper (messy, real, instructive) — with portfolio-tracker also mentioned in the Start page's Evaluating path. No Home-page feature for any example.
 
 ### Deferred to implementation
 
@@ -379,4 +382,5 @@ Once `docs/arrows/` is bootstrapped for this repository, the site appears as a *
 - `docs/intent/arrow-maintenance/arrow-maintenance-design.md` — the brownfield onboarding story the Start page surfaces.
 - `README.md` — the deep documentation the site links to for everything below surface.
 - `examples/urlshort/` — canonical small intent-only example the site links to.
+- `https://github.com/jszmajda/portfolio-tracker` — complete public LID exemplar the Examples page links to; its README carries the guided tour the card points at.
 - `plugins/linked-intent-dev/skills/linked-intent-dev/references/lld-templates.md` — LLD structure this document follows.
