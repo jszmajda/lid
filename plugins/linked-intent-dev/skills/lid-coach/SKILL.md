@@ -204,6 +204,7 @@ For each dimension, compare what you observe in the project to the audit signals
 15. **Minimum system** (→ *minimum surface, maximum discipline*) — unnecessary custom conventions?
 16. **Tenet quality** (→ *tenets capture forward-looking preference*) — does a Full-LID HLD have a `## Tenets` section? Are the tenets real tie-breakers (defensible opposite, and a lean not a triggered *when X, do Y* rule) or platitudes / spec-shaped rules? Ordered when they could conflict?
 17. **Verticalize intent** (→ *verticalize intent*) — is intent navigable along one axis (the design tree), or has a second navigation structure crept in (a cross-cutting index, tag system, or registry parallel to the tree)? A cross-cutting concern modeled as its own node referenced by dependent nodes is verticalized, not a second axis — do not flag it.
+18. **Decision capture** (→ *docs carry current intent* — the keep-side and its ceiling) — decisions that stay live once landed (a cold reader would still question or try to reverse them without the full tradeoffs) surviving only in conversation or as a compressed Decisions-table row a fresh reader cannot reconstruct? Flag the missing decision doc. Judge forward from the landed state, not from how contested the call was; the over-production ceiling (docs that read native once landed are accumulation) is already covered by the *docs carry current intent* lens.
 
 This list is the minimum. The coach may produce findings outside these dimensions when a principle violation does not fit neatly into one — always cite the principle by name.
 
