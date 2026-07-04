@@ -35,7 +35,7 @@ arrows:
     blockedBy: []
     detail: linked-intent-dev/core.md
     next: null
-    drift: "39 of 39 LID-CORE specs [x] (workflow skill; pure-prose guidance, no eval harness). 1.3.0 cascade landed: sharpened tenet definition (class-level lean / defensible-opposite) and the intent-narrowing edge-audit framing. No gaps."
+    drift: "46 of 46 LID-CORE specs [x] (workflow skill; pure-prose guidance, no eval harness). No gaps."
 
   update-lid:
     status: AUDITED
