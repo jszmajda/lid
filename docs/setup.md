@@ -43,7 +43,12 @@ Other tools that honor `AGENTS.md` per the [spec](https://agents.md/) and should
 
 Nearest-wins nesting is part of the spec; Codex and Amp implement hierarchical merge, while Zed and Cline pick a single file.
 
-**If you use only tools from this list and an `AGENTS.md` at your root, you are done.** The sections below cover tools that need something extra, or that benefit from an explicit adapter.
+**The workflow doc.** An `AGENTS.md` alone carries only LID's compact core — the arrow mandate, the inspection invariant, and navigation. The full workflow ships as `docs/lid/workflow.md`, a generated file the LID bootstrap offers to vendor into your project (and `/update-lid` keeps in sync — edit it upstream or in `AGENTS.md`, never in place). Your `AGENTS.md` points to it: harnesses with plugin support load the skill instead; everything else should read the doc before making changes. Two notes on making that pointer reliable:
+
+- **Prose pointers are best-effort on most tools** — the model chooses whether to follow them. That is why the compact core in `AGENTS.md` carries the invariants that must survive an ignored pointer.
+- **Use deterministic loading where your tool has it:** Amp users can `@`-mention the doc from `AGENTS.md` (guaranteed inclusion, globs supported); Aider users should commit a `.aider.conf.yml` with `read: AGENTS.md` (see the [Aider section](#aider)); Claude Code and Cursor need nothing extra — the plugins carry the workflow.
+
+**If you use only tools from this list, with an `AGENTS.md` at your root and the vendored workflow doc, you are done.** The sections below cover tools that need something extra, or that benefit from an explicit adapter.
 
 ---
 
@@ -203,7 +208,7 @@ read:
   - docs/high-level-design.md
 ```
 
-`read:` loads files as read-only context on every session (and caches them if prompt caching is on). The list takes explicit paths — no glob support. Add specific LLDs when working in a particular arrow segment:
+`read:` loads files as read-only context on every session (and caches them if prompt caching is on). The list takes explicit paths — no glob support. Do **not** add the vendored `docs/lid/workflow.md` here — it is the full workflow and `read:` would pay for it on every session; when the model asks to see it (following the `AGENTS.md` pointer), approve adding it for that session instead. Add specific LLDs when working in a particular arrow segment:
 
 ```yaml
 read:

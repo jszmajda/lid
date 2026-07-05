@@ -40,7 +40,7 @@ Inspect the project and take exactly one of these actions:
 
 | Detected state | Action |
 |---|---|
-| No instruction file, no `docs/` | **Full bootstrap** — create required directories, create the instruction file (`AGENTS.md` + `CLAUDE.md` symlink, per *Instruction-file anchor*) with LID directives + `## LID` block (`- Mode:` + `- Version:` set to the installed `linked-intent-dev` version). |
+| No instruction file, no `docs/` | **Full bootstrap** — create required directories, create the instruction file (`AGENTS.md` + `CLAUDE.md` symlink, per *Instruction-file anchor*) with LID directives + `## LID` block (`- Mode:` + `- Version:` set to the installed `linked-intent-dev` version), and offer the vendored workflow doc (see *Workflow-doc vendoring*). |
 | Instruction file exists, no LID directives | **Append directives** — append the LID directives block to the existing instruction file without overwriting existing content. Create `docs/` if missing. |
 | LID directives present, no `## LID` block (or no `- Mode:` bullet) | **Add or normalize the LID block** — default mode Full, `- Version:` set to the installed version. If a malformed `## LID` heading already exists (mode merged into the heading, e.g. `## LID Mode: Full`, or stray non-template bullets), rewrite it in place to the canonical `## LID` + `- Mode:` + `- Version:` form rather than appending a second block. |
 | Project `- Version:` lower than the installed version (or `- Version:` absent → predating versioned conventions) | **Version-walk** (see below) — propose the intervening CHANGELOG migrations, confirm, apply mechanical / surface judgment, refresh `- Version:`. |
@@ -70,6 +70,16 @@ Surface migration and reconciliation choices in the project's own terms — its 
 On a successful walk, refresh the project's `- Version:` bullet to the installed version. When a walk crosses several releases, refresh once at the end rather than stepping the bullet per release. The defining marker of a conventions version is its structural layout — for the 1.2 conventions, relocation onto the `docs/intent/` node-as-folder tree — so a project that has taken those structural moves *is* on the new conventions and the bullet advances even when the user defers residual cleanup (a prefix array, a not-yet-promoted folder); do not pin it to the prior version. What an honest walk owes the user is not a withheld version bump but a clear account: the completion report names every deferred resolution and every persisting marker (unresolved `prefix:` arrays, overloaded node folders), and those markers stay in place so the fall-through to reconcile-conventions — and every later `/update-lid` run — re-surfaces them until resolved.
 
 After version-walk completes, fall through to ordinary reconcile-conventions against the now-current conventions.
+
+## Workflow-doc vendoring
+
+Hosts without a plugin system read the full workflow from a vendored doc, not the instruction file (HLD § Distribution; rationale: `docs/decisions/workflow-distribution.md`).
+
+- **Bootstrap offer (default yes).** During full bootstrap, offer to vendor the workflow doc. State the tradeoff plainly: with the doc, the instruction file carries a compact core — arrow mandate, inspection invariant, navigation, `## LID` block — plus a capability-conditional pointer ("consult the `linked-intent-dev` skill if your harness provides it; otherwise read `docs/lid/workflow.md` before making changes"). Declining keeps the fuller compressed workflow summary in the instruction file instead. Either shape is valid; the choice is the user's.
+- **Vendoring is copying the shipped asset.** Copy this skill's `references/workflow-doc.md` (assembled from the core skill source at release) to `docs/lid/workflow.md`, preserving its generated-file header — source plugin version, and the statement that changes belong upstream or in the instruction file. Never author or edit workflow content per-project.
+- **Aider bridge.** When the user wants deterministic loading for Aider, offer a committed `.aider.conf.yml` carrying `read: AGENTS.md` — Aider auto-loads nothing else; this is its own idiom. Per-tool loading notes live in `docs/setup.md`.
+- **Version-walk re-sync.** When `docs/lid/workflow.md` is present during a version-walk, re-copying the current shipped asset is a mechanical step (batched per the version-walk discipline).
+- **Hand-edits surface, never overwrite.** During reconcile-conventions, compare the vendored doc's version stamp and content against the shipped asset. Surface a stale or locally-modified doc with a recommendation — re-sync; move local additions to the instruction file or upstream — and never silently replace a file the user has edited, even a generated one (*do-not-overwrite rule*).
 
 ## Mode prompting
 

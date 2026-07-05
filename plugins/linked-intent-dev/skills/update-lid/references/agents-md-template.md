@@ -32,6 +32,13 @@ Paths explicitly excluded:
 HLD → LLDs → EARS → Tests → Code
 ```
 
+<!-- Workflow bullets: two variants (LID-UPDATE-050). Variant A when the workflow doc is vendored (the default); Variant B when the user declined it. Use exactly one. -->
+
+<!-- Variant A — workflow doc vendored: -->
+- **All changes**: consult the `linked-intent-dev` skill if your harness provides it; otherwise read `docs/lid/workflow.md` before making changes.
+- **Bug fixes**: same arrow, no short-circuit — the workflow doc covers it.
+
+<!-- Variant B — no vendored doc: -->
 - **New features and refactors**: full six-phase workflow (HLD check → LLD check/draft → EARS → intent-narrowing edge audit → tests-first → code).
 - **Bug fixes**: walk the arrow like any other change — find where behavior diverged from intent and cascade from there. No short-circuit.
 - **If unsure**: use the full workflow.

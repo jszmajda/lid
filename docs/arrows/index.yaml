@@ -47,7 +47,7 @@ arrows:
     blockedBy: []
     detail: linked-intent-dev/update-lid.md
     next: null
-    drift: "47 of 47 LID-UPDATE specs [x]; no gaps. Grew in 1.3.0: AGENTS.md-canonical instruction file + Windows symlink fallback (045/046) and the tool-agnostic memory->intent directive (047)." 
+    drift: "53 of 53 LID-UPDATE specs [x]; no gaps. 1.4.0 adds workflow-doc vendoring (048-053: bootstrap offer, shipped-asset copy, template variants, version-walk re-sync, hand-edit surfacing, Aider bridge). Grew in 1.3.0: AGENTS.md-canonical instruction file + Windows symlink fallback (045/046) and the tool-agnostic memory->intent directive (047)." 
 
   lid-coach:
     status: AUDITED
