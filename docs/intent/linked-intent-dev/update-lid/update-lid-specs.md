@@ -4,6 +4,7 @@
 **Implementing artifacts**:
 - plugins/linked-intent-dev/skills/update-lid/SKILL.md
 - plugins/linked-intent-dev/skills/update-lid/references/agents-md-template.md
+- plugins/linked-intent-dev/skills/update-lid/references/workflow-doc.md (generated at release from the core skill source)
 
 Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 
