@@ -37,6 +37,22 @@ The fundamental purpose of LID is to narrow the agent's output distribution to t
 
 Specs, tests, and linkage narrow the decisions already in view. The gap that hurts most, though, is the decision *not yet in view* — the choice the agent will face in some future session that no spec anticipated. **Tenets** narrow that space ahead of time: a tenet is a one-line tie-breaker stating which way to lean when a decision has two defensible answers and no spec covers it. The discriminating test is the defensible opposite — a real tenet's reverse is a choice a different project could reasonably make; a statement whose opposite is absurd is a platitude that narrows nothing. A second test guards the other edge: a tenet is a *lean across a class* of decisions no spec anticipates, not a triggered rule. A candidate that reads as *when X, do Y* — a definite action behind a trigger — is a spec in a tenet's clothes and belongs in EARS, not the tenet list, even when its opposite is defensible. A tenet says which way to **lean**; a spec says what to **do**; a Key Design Decision records what was already **chosen**. Tenets are captured at the HLD phase, where project-wide preference belongs, ordered so the higher one wins a conflict, and they are edge detection for the decisions the arrow has not reached yet.
 
+Narrowing is two kinds of work, and they are verified differently.
+
+- **Specifying** turns latent intent into a written spec. Its check: does the spec capture what the human actually meant?
+- **Inspecting the cascade** checks the downstream rungs — tests, code — against the spec. Its check: does the work realize what the spec captured?
+
+Each kind of work admits more than one instrument. A spec can be written as a draft the human reviews, or elicited — the agent asks concept-by-concept questions and drafts from the answers. A cascade can be inspected by the human reading the output; by a zero-context reader that never saw the conversation, so it cannot inherit the builder's blind spots; or by a delegated inspector that reports summarized findings for the human to rule on. Inspection may also be relocated downstream into the project's existing review process — a pull-request review gathered after the change lands.
+
+The instruments may vary. The requirement does not: **every phase is inspected.** Skipping inspection produces false assurance — the arrow looks rigorous while nothing checks whether the agent found the human's real intent or only a plausible guess.
+
+Two rules protect this:
+
+- **Ambiguity always goes to the human.** When a spec admits more than one reading, only the human knows which was meant; that question cannot be delegated to any instrument.
+- **A delegated inspector is not trusted blindly.** Its pass means "no counterexample found," not proof. It reports focused, summarized findings, and the human rules on them.
+
+How *deeply* the human personally inspects is their choice. The default leans strongly toward inspection, and choosing less is a warned override, honored like any other (see `docs/decisions/inspection-instrument-selection.md`). Who inspects is open — anyone the human authorizes.
+
 Framed this way, LID is less a documentation system than an **intent-narrowing system**. The artifacts happen to look like documentation, but their load-bearing job is constraint. The mechanisms in the sections below should be read with that frame in mind.
 
 ## Approach: Linkage-based Intent Tracking
@@ -105,7 +121,7 @@ The operating principles that tie the preceding approaches to day-to-day work:
 - **Minimum surface, maximum discipline.** LID's commands and conventions stay thin; the methodology may be as thick as the project requires.
 - **LID runs on the agent, not a runtime.** Deterministic work is specified in prose for the agent to perform, not shipped as tooling the project must run; helpers may accelerate but are never required.
 - **The user is always right — with warning.** A user may override a phase requirement; the skill warns about the drift risk and honors the override.
-- **Stop and iterate at every phase** — for *generative* multi-phase workflows. After completing each phase of the linked-intent-dev workflow (HLD, LLD, EARS, tests, code), and after each sub-step of `/map-codebase`'s brownfield flow, the skill presents its output and waits for explicit approval before proceeding. Each stop is mandatory, not optional. Command-mode skills that execute a single directed pass (for example `/arrow-maintenance`'s audit-and-update) are not phase-structured in this sense — they produce a structured report at the end and surface individual findings for user judgment, but do not interrupt the pass at synthetic phase boundaries. The tenet applies where the workflow is producing intent; it does not apply to batch audit runs whose whole point is to execute directed action without further user gating.
+- **Every phase is inspected — by the human, or an inspector the human has authorized.** Alignment with intent is verified, never assumed; what varies is the instrument, not whether inspection happens.
 
 ## Goals
 

@@ -22,6 +22,11 @@ The `linked-intent-dev` workflow skill is pure prose — its `SKILL.md` is the a
 - `[x]` **LID-CORE-005**: When a workflow phase completes, the system SHALL present its output to the user and SHALL proceed to the next phase only on explicit approval. Each stop is mandatory, not optional.
 - `[x]` **LID-CORE-006**: Before starting or resuming implementation, the system SHALL run a coherence pre-flight verifying that the HLD, LLD, EARS specs, and tests are mutually coherent for the segment about to be touched, and when drift is detected it SHALL fix the docs before implementing.
 - `[x]` **LID-CORE-007**: When drafting or revising any HLD, LLD, or EARS spec, the system SHALL write it to read as if authored fresh from current intent alone — excluding narration of how the intent changed, meaning that resolves only with conversation context, and rebuttals to questions only a past discussion raised.
+- `[x]` **LID-CORE-047**: During specification work (Phases 1–3), the system SHALL match its specification instrument to the user's current grain of interaction — elicitation when the user engages one concept at a time, drafting-then-review when the user reviews documents whole — including when the grain shifts mid-artifact.
+- `[x]` **LID-CORE-048**: When eliciting, the system SHALL raise one aspect per exchange, presenting real tradeoffs with concrete examples and confirming understanding before recording the user's choice.
+- `[x]` **LID-CORE-049**: When inspection of a phase is delegated to an inspector, the system SHALL present the inspector's summarized findings at that phase's stop for the human to rule on, and SHALL NOT treat an inspector's pass as proof of alignment.
+- `[x]` **LID-CORE-050**: When a spec or draft admits more than one reading, the system SHALL surface the fork to the human for resolution, regardless of which instruments are in play — before tests are written against either reading.
+- `[x]` **LID-CORE-051**: When inspection is delegated, the system SHALL preserve every phase-boundary stop, changing only what the human rules on at the stop — the inspector's findings rather than the raw phase output.
 
 ## Phase 1 — HLD Check
 

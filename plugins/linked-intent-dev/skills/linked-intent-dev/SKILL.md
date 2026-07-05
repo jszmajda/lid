@@ -9,7 +9,7 @@ This skill guides a structured linked-intent development workflow. LID's goal is
 
 ## Three rules govern every phase
 
-**Stop and iterate at every phase boundary.** After completing each phase below, present the output to the user, incorporate numbered feedback, and proceed only on explicit approval. Each stop is mandatory. Skipping stops is the single most common way this workflow degrades into a rush — the discipline is non-optional. (Carveout: command-mode skills that execute a single directed pass, like `/arrow-maintenance`'s audit-and-update, are not phase-structured in this sense and do not pause mid-pass. This workflow is generative; phases here produce intent, so every boundary gets a stop.)
+**Stop and iterate at every phase boundary.** After completing each phase below, present it — the phase output in full, or an authorized inspector's summarized findings (see *Specification and inspection instruments* below) — incorporate numbered feedback, and proceed only on explicit approval. Each stop is mandatory; the stops are the mechanism realizing the HLD tenet *Every phase is inspected*. Skipping stops is the single most common way this workflow degrades into a rush. (Carveout: command-mode skills that execute a single directed pass, like `/arrow-maintenance`'s audit-and-update, are not phase-structured in this sense and do not pause mid-pass. This workflow is generative; phases here produce intent, so every boundary gets a stop.)
 
 **Run a coherence pre-flight before starting or resuming implementation.** When picking up work — new session, returning to a change, cascading from an upstream change — verify that the HLD, LLDs, EARS specs, and tests are mutually coherent for the segment about to be touched:
 
@@ -20,6 +20,20 @@ This skill guides a structured linked-intent development workflow. LID's goal is
 If drift is detected, fix the docs first, then implement. A resumption check prevents one session's drift from being compounded into the next session's change.
 
 **Write docs as their fresh author.** Every HLD, LLD, and EARS spec produced by these phases must read as if authored fresh today, by someone who knew only the current intent and nothing of this conversation. As you draft or revise a doc, run the test on each line — would that fresh author put it on the page? Three residues fail it: narration of how the intent changed; meaning that only resolves for someone who was in this conversation; and answers or rebuttals that exist only because we discussed the question here. The keep-side is load-bearing too — rationale, considered alternatives, and constraints a fresh author would independently write stay; they are present intent, not residue. Record rejected alternatives and why in the LLD's Decisions & Alternatives table, not as asides in body prose. This is the *docs carry current intent* tenet. Write in the project's own domain language — name components, segments, and specs with the words the user and the codebase already use, not generic or LID-imposed labels. This is the *Speak the project's language* tenet.
+
+## Specification and inspection instruments
+
+Two kinds of intent work run through the phases, verified differently: **specifying** (Phases 1–3: turning latent intent into written spec — checked against what the user actually meant) and **inspecting the cascade** (the stops and the Phase 4–6 checks — checking downstream rungs against the spec). Each admits more than one instrument; offer the choice conversationally. There is no configuration for it (see `docs/decisions/inspection-instrument-selection.md`).
+
+**Specifying — follow the user's grain.** Drafting-then-review works one document at a time: draft the artifact whole, the user reviews it whole. Elicitation works one concept at a time: raise a single aspect, the user responds to just that, and the document accretes from the answers. Match the user's current grain — a user who answers one aspect of a draft and ignores the rest is asking for elicitation; whole-document feedback means draft-review is working. Switching mid-artifact is normal. When eliciting: one aspect per exchange, real tradeoffs with concrete examples, confirm understanding before recording a choice, and keep it short — an easy-to-click menu that hides the real decision is worse than no menu.
+
+**Inspecting — the user chooses the inspector.** Default: the user reads each phase's output at its stop. On the user's authorization: a **zero-context reader** (given only the arrow artifacts, never the conversation, so it cannot inherit the builder's blind spots — the coach's cold-read pass and the experimental blind differential are this family) or a **delegated inspector** (a subagent reviewing the phase output in the user's place). Inspection may also be **relocated out-of-band**: the user lands the change on a branch and leans on the project's existing review process (a pull-request review); the stops still run in-session, and a review finding that reveals an *intent* gap walks the arrow like any bug.
+
+Three rules hold whatever the instruments:
+
+- A delegated inspector's findings are never applied silently — present them summarized and focused at the stop; a pass means "no counterexample found," not proof.
+- A spec or draft that admits more than one reading always goes back to the user — only they hold the latent intent — before tests are written against either reading.
+- Delegation changes *who inspects at a stop*, never *how many stops there are*. The user can still override anything, per *the user is always right — with warning*.
 
 ## Mode-aware triggering
 

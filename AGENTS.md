@@ -33,7 +33,7 @@ Users install via:
 
 The plugins form a layered system:
 
-1. **linked-intent-dev** is the core workflow — consult for ALL code changes. Every change walks the full arrow (HLD → LLD → EARS → Tests → Code) with a stop at each phase boundary. Bug fixes walk the same arrow — find where intent diverged and cascade from there; no short-circuit. Fresh projects start with `/linked-intent-dev` + a description of what to build (the workflow bootstraps LID inline). Established projects use `/update-lid` to reconcile drift, change modes, or refresh conventions.
+1. **linked-intent-dev** is the core workflow — consult for ALL code changes. Every change walks the full arrow (HLD → LLD → EARS → Tests → Code); each phase's output is inspected — by the user or an inspector they name — before the next begins, and ambiguous spec readings go back to the user. Bug fixes walk the same arrow — find where intent diverged and cascade from there; no short-circuit. Fresh projects start with `/linked-intent-dev` + a description of what to build (the workflow bootstraps LID inline). Established projects use `/update-lid` to reconcile drift, change modes, or refresh conventions.
 
 2. **arrow-maintenance** overlays on top — adds navigation (`index.yaml`) and tracking (arrow docs) for projects too large to hold in one context window. Includes `/map-codebase` for brownfield codebase mapping.
 
