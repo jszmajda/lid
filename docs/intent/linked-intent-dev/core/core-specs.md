@@ -61,6 +61,9 @@ The `linked-intent-dev` workflow skill is pure prose — its `SKILL.md` is the a
 ## Phase 4 — Intent-Narrowing Edge Audit
 
 - `[x]` **LID-CORE-020**: After specs are drafted, the system SHALL run an intent-narrowing edge audit across the LLD and specs together — cross-spec and cross-segment ownership, composition ambiguity, namespace ambiguity, sequencing ambiguity, and places the user's latent intent is narrower than the specs literally allow — and SHALL resolve these with the user before tests are written.
+- `[x]` **LID-CORE-053**: When Phase 4 runs, for each new or changed EARS spec the system SHALL probe for divergent plausible readings — what a blind implementer could take the line to require — and surface only the genuine forks to the user for resolution before tests are written.
+- `[x]` **LID-CORE-054**: When probing for divergent readings, the system SHALL use the most context-independent reader available — in-context generation as the floor, blind subagents given only the spec text when available, and an equivalently capable model from a different provider where the platform allows.
+- `[x]` **LID-CORE-055**: When a fork is resolved, the system SHALL land the resolution as a narrowing edit to the forked spec or as a new atomic spec line, and SHALL NOT bundle multiple resolved behaviors into one compound spec.
 
 ## Phase 5 — Tests First
 

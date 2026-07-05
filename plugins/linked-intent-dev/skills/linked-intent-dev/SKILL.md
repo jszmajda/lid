@@ -117,6 +117,8 @@ Distinct from the Phase 2 LLD-level probe in what it targets. Phase 2 asked "wha
 
 Ask the user to resolve these *before* tests are written. LID's fundamental purpose — narrowing the agent's output distribution to the user's latent intent — is carried by this step more than any other.
 
+**Divergence probe (per-spec).** The target list above is compositional; each new or changed spec line also gets probed individually. Generate 2–3 deliberately divergent plausible readings — what a blind implementer could take this line to require — and surface only the genuine forks for user resolution. Do not rely on introspection ("does this look ambiguous?"): the distribution that would miss the ambiguity is the one being asked. Use the most context-independent reader available — in-context generation is the floor; when subagents are available, delegate to blind readers given *only* the spec text, never the conversation; where the platform allows, use an equivalently capable model from a different provider. Land each fork's resolution as a narrowing edit or a new atomic spec line — never a compound "shall X and Y".
+
 **STOP for user review.**
 
 ### Phase 5 — Tests first
