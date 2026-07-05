@@ -35,7 +35,7 @@ arrows:
     blockedBy: []
     detail: linked-intent-dev/core.md
     next: null
-    drift: "55 of 55 LID-CORE specs [x] (workflow skill; pure-prose guidance, no eval harness). No gaps."
+    drift: "56 of 56 LID-CORE specs [x] (workflow skill; pure-prose guidance, no eval harness). No gaps."
 
   update-lid:
     status: AUDITED

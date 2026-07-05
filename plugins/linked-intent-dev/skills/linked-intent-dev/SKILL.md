@@ -93,6 +93,7 @@ Every LLD change produces a corresponding EARS update. See `references/ears-synt
 - Spec IDs are stable. Revisions mutate text, not IDs, unless scope genuinely changes.
 - Deleted IDs are not reused — git preserves the history.
 - Delete specs that are no longer wanted rather than marking them obsolete.
+- EARS requirement content lives only in the node's `{node}-specs.md` — never defined in a design doc. Design docs may cite spec IDs; they never carry requirement lines, status markers, or in-place definitions of what an ID requires.
 
 After drafting or revising specs, run **post-draft consistency verification**:
 

@@ -57,6 +57,7 @@ The `linked-intent-dev` workflow skill is pure prose — its `SKILL.md` is the a
 - `[x]` **LID-CORE-017**: When an LLD changes, the system SHALL produce the corresponding EARS update — new, revised, or deleted specs.
 - `[x]` **LID-CORE-018**: On revision the system SHALL mutate spec text rather than spec IDs unless scope genuinely changes, SHALL NOT reuse a deleted spec ID, and SHALL delete unwanted specs rather than marking them obsolete.
 - `[x]` **LID-CORE-019**: After drafting or revising specs, the system SHALL run post-draft consistency verification (coverage, contradiction, implicit scoping, context-free reading) and present a brief consistency report.
+- `[x]` **LID-CORE-056**: When drafting or updating EARS specs, the system SHALL express EARS-labeled requirement content only in the owning node's `{node}-specs.md`; a design doc cites spec IDs without defining or extending their content.
 
 ## Phase 4 — Intent-Narrowing Edge Audit
 

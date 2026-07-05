@@ -1,6 +1,6 @@
 # Audit Checklist
 
-Run these five checks every time you audit — whether as part of a `/arrow-maintenance` command run or when the ambient skill notices something worth surfacing. When a project-local coherence script is declared under `## LID Tooling` in `CLAUDE.md`, invoke it for the deterministic checks and treat its output as authoritative; otherwise perform in-prompt.
+Run these six checks every time you audit — whether as part of a `/arrow-maintenance` command run or when the ambient skill notices something worth surfacing. When a project-local coherence script is declared under `## LID Tooling` in `CLAUDE.md`, invoke it for the deterministic checks and treat its output as authoritative; otherwise perform in-prompt.
 
 **Incremental mode.** When `audited_sha` is populated for a segment and git history is available, the discovery step (which segments need re-auditing this run) is *project-wide*: `git diff --name-only {min(audited_sha across segments)} HEAD` → map each changed file to its segment via arrow docs' References — only audit those segments. The per-check scoping below applies *within* each segment selected for audit; it does not replace the top-level incremental discovery.
 
@@ -54,6 +54,16 @@ Enumerate:
 - Entries in `index.yaml`'s `unmapped.docs` list — these are the trackable orphans; bulk-assign where clear, flag where ambiguous.
 
 **Finding format**: `orphan: {path} — not referenced from any arrow segment`.
+
+## 6. Misplaced EARS
+
+Scan every `-design.md` in the intent tree (sub-HLDs and the root HLD included) for EARS-labeled intent the design doc *defines* rather than references:
+
+- **Mechanical screen** (scriptable): requirement lines inside a `-design.md` — status marker + bold spec ID + requirement text (`- [x|[ ]|[D]] **ID**: …`).
+- **Judgment pass**: marker-less spec-ID-labeled statements that introduce or extend normative content in place. The test is definition versus reference — a reference adds no normative content beyond what the cited specs-file line carries; a definition does.
+- Do **not** flag bare spec-ID mentions, within or across segments — those are navigation, not ownership.
+
+**Finding format**: `{segment}: misplaced EARS — {ID} defined in {design-doc} ({location}); suggest extracting to {node}-specs.md`. Surface only; never auto-move.
 
 ## After the checks
 

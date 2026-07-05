@@ -35,8 +35,9 @@ Every `/arrow-maintenance` run, in order:
    - **Staleness**: compare `audited` and `audited_sha` against current state to find segments whose files changed since last audit.
    - **Drift signals**: modified code since `audited_sha`, specs changed without test updates, tests passing but missing `@spec` annotations, `@spec` annotations pointing to missing spec IDs (*reverse orphans*).
    - **Orphan artifacts**: LLDs, specs, or code files not listed in any arrow doc's References section.
+   - **Misplaced EARS**: EARS-labeled intent that a `-design.md` *defines* rather than references — requirement lines with status markers (mechanical screen), or marker-less spec-ID-labeled statements introducing normative content in place (judgment pass). Bare spec-ID mentions are navigation; do not flag them.
 
-   Exclude the reserved `docs/arrows/_experiments/` subtree from all five checks — it is owned by `lid-experimental`, not this skill, and is never audited, cleaned up, or regenerated here (see `docs/intent/arrow-maintenance/arrow-maintenance-design.md`).
+   Exclude the reserved `docs/arrows/_experiments/` subtree from all six checks — it is owned by `lid-experimental`, not this skill, and is never audited, cleaned up, or regenerated here (see `docs/intent/arrow-maintenance/arrow-maintenance-design.md`).
 
    When a project-local coherence script is declared under `## LID Tooling` in `CLAUDE.md` (as `Coherence check: {path}`), invoke that script and treat its output as authoritative for the deterministic checks it performs. Languages and paths vary by project — trust the declaration. If the declaration is missing or the declared path does not exist, perform the checks in-prompt. A reference Node implementation is bundled at `references/coherence-check.mjs` that users may copy to their project and declare in CLAUDE.md.
 
@@ -49,6 +50,7 @@ Every `/arrow-maintenance` run, in order:
 
 4. **Surface everything else for user decision:**
    - Reverse orphans — ask whether to create the missing spec, delete the annotation, or treat as an alias of an existing spec. Do not auto-resolve.
+   - Misplaced EARS — requirement content defined in a `-design.md`; suggest extracting to the sibling `{node}-specs.md` and leaving a reference behind. Definition vs. reference is a judgment; do not auto-move.
    - Ambiguous segment assignments for `unmapped.docs` entries.
    - Candidate lifecycle events (splits, merges) detected from drift signals.
    - Any finding where the right fix depends on intent.

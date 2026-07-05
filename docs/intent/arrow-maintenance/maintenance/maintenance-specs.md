@@ -48,6 +48,7 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 - `[x]` **SCALE-MAINT-028**: When executing a rename of a leaf segment, the system SHALL rewrite every path-concatenated EARS ID under that segment's leaf prefix (e.g., `AUTH-UI-001` → `IDENTITY-UI-001`) across the spec files AND every `@spec` annotation in code and tests that cites those IDs, in the same session as the arrow-doc filename, `index.yaml` entry key, and cross-reference updates — landing all together or not at all.
 - `[x]` **SCALE-MAINT-029**: When executing a re-parent of a subtree to a new parent node in the design tree, the system SHALL rewrite the path-concatenated EARS IDs of every spec in the moved subtree (e.g., `PEVAL-RUN-014` → `ORCH-RUN-014`) and every `@spec` annotation citing them across code, tests, and docs, AND update the `parent`/`children` links in `index.yaml` for the moved node and both the old and new parents, atomically within the same session.
 - `[x]` **SCALE-MAINT-030**: The system SHALL treat path-concatenated EARS IDs as stable under ordinary growth, rewriting them ONLY as part of a deliberate rename or re-parent operation, and SHALL NOT leave a partial application in which IDs are rewritten in spec files but not in their `@spec` annotations (or vice versa).
+- `[x]` **SCALE-MAINT-031**: During an audit, the system SHALL scan every `-design.md` in the intent tree for EARS-labeled intent the design doc defines rather than references — requirement lines with status markers, and marker-less spec-ID-labeled statements that introduce normative content in place — and SHALL surface each as a finding with the suggested resolution of extracting the content to the owning `{node}-specs.md`, without auto-repairing.
 
 ## Derived Views
 
@@ -66,7 +67,7 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 
 ## Coherence-Script Delegation
 
-- `[x]` **SCALE-MAINT-025**: When `CLAUDE.md` contains a `## LID Tooling` section with a `Coherence check: {path}` entry and the declared path resolves to an executable file, the system SHALL invoke that script for audit and treat its output as authoritative for the deterministic checks it performs (reference coherence, orphan and reverse-orphan detection, coverage counts). When the declaration is missing or the declared path does not resolve, the system SHALL perform the equivalent checks in-prompt.
+- `[x]` **SCALE-MAINT-025**: When `CLAUDE.md` contains a `## LID Tooling` section with a `Coherence check: {path}` entry and the declared path resolves to an executable file, the system SHALL invoke that script for audit and treat its output as authoritative for the deterministic checks it performs (reference coherence, orphan and reverse-orphan detection, the misplaced-EARS mechanical screen, coverage counts). When the declaration is missing or the declared path does not resolve, the system SHALL perform the equivalent checks in-prompt.
 - `[x]` **SCALE-MAINT-026**: The system SHALL NOT require a coherence script. The script is an opt-in performance accelerator, declared per-project via CLAUDE.md.
 
 <!-- Starting-a-Session workflow is ambient-mode prose guidance per the arrow-maintenance LLD; it is verified by dogfooding, not EARS. See arrow-maintenance.md § Starting a Session. -->
