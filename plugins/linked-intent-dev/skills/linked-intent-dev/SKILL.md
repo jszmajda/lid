@@ -35,6 +35,12 @@ Three rules hold whatever the instruments:
 - A spec or draft that admits more than one reading always goes back to the user — only they hold the latent intent — before tests are written against either reading.
 - Delegation changes *who inspects at a stop*, never *how many stops there are*. The user can still override anything, per *the user is always right — with warning*.
 
+## Delegation discipline
+
+Discipline does not travel by ambient context. A subagent dispatched to perform phase work receives only its prompt — not this skill, not the instruction file, not the conversation. Embed the phase's obligations in the dispatch prompt itself.
+
+For implementation work (Phases 5–6): the EARS spec ID(s) in scope, the tests-first gate ("write failing tests first; do not proceed to code until they fail as expected"), and the `@spec` annotation requirement. For a Phase 2 probe: what the probe targets. For a delegated inspector: the spec(s) it inspects against and the requirement to return summarized, focused findings. When a phase gains a new obligation, dispatches of that phase's work carry it.
+
 ## Mode-aware triggering
 
 Every LID project declares its mode in its instruction file (the project's `AGENTS.md`, or `CLAUDE.md` under Claude Code) under the `## LID` block's `- Mode:` bullet. Defaults to Full if the block or bullet is missing or malformed (surface a one-line warning).
@@ -120,6 +126,7 @@ Write tests **before** the code that satisfies them, per the HLD's intent-preloa
 - Tests carry `@spec` annotations citing the EARS IDs they verify.
 - Place the `@spec` annotation on the test that directly exercises the spec's behavior, not on every inner assertion.
 - Do not proceed to code until tests exist and fail in the expected way.
+- When this work is delegated to a subagent, the dispatch prompt embeds these obligations — see *Delegation discipline*.
 
 **STOP for user review.**
 

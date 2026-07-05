@@ -27,6 +27,7 @@ The `linked-intent-dev` workflow skill is pure prose — its `SKILL.md` is the a
 - `[x]` **LID-CORE-049**: When inspection of a phase is delegated to an inspector, the system SHALL present the inspector's summarized findings at that phase's stop for the human to rule on, and SHALL NOT treat an inspector's pass as proof of alignment.
 - `[x]` **LID-CORE-050**: When a spec or draft admits more than one reading, the system SHALL surface the fork to the human for resolution, regardless of which instruments are in play — before tests are written against either reading.
 - `[x]` **LID-CORE-051**: When inspection is delegated, the system SHALL preserve every phase-boundary stop, changing only what the human rules on at the stop — the inspector's findings rather than the raw phase output.
+- `[x]` **LID-CORE-052**: When dispatching phase work to a subagent, the system SHALL embed in the dispatch prompt the obligations that phase carries — for implementation work, the EARS IDs in scope, the tests-first gate, and the `@spec` annotation requirement.
 
 ## Phase 1 — HLD Check
 
