@@ -72,6 +72,15 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 
 - `[x]` **LID-UPDATE-047**: When generating or updating the LID directives block in the instruction file, the system SHALL include a tool-agnostic memory→intent directive instructing the agent to test, before persisting durable project knowledge to any memory mechanism, whether the knowledge is project intent (would a fresh agent, in any tool, next session, need it to build the system right?) and, if so, to record it in the arrow rather than memory.
 
+## Workflow-Doc Vendoring
+
+- `[ ]` **LID-UPDATE-048**: During a full bootstrap, the system SHALL offer the vendored workflow doc, defaulting to yes and stating the tradeoff: with the doc, the instruction file carries a compact core plus a capability-conditional pointer; declining keeps the fuller compressed workflow summary in the instruction file.
+- `[ ]` **LID-UPDATE-049**: When vendoring the workflow doc, the system SHALL copy the plugin's shipped `references/workflow-doc.md` asset to `docs/lid/workflow.md`, preserving its generated-file header naming the source plugin version and stating that changes belong upstream or in the instruction file.
+- `[ ]` **LID-UPDATE-050**: When the workflow doc is vendored, the system SHALL write the instruction file's workflow section as the compact core — arrow mandate, inspection invariant, and the capability-conditional pointer to `docs/lid/workflow.md`; when the offer is declined, it SHALL write the compressed workflow summary instead.
+- `[ ]` **LID-UPDATE-051**: During a version-walk on a project where `docs/lid/workflow.md` is present, the system SHALL re-copy the current shipped workflow-doc asset as a mechanical step.
+- `[ ]` **LID-UPDATE-052**: When reconcile-conventions finds a vendored workflow doc whose version stamp or content differs from the shipped asset, the system SHALL surface the difference with a recommended resolution (re-sync; relocate local additions upstream or to the instruction file) and SHALL NOT overwrite a locally-modified doc without confirmation.
+- `[ ]` **LID-UPDATE-053**: When the user wants deterministic instruction loading for Aider, the system SHALL offer a committed `.aider.conf.yml` carrying a `read: AGENTS.md` entry rather than any Aider-specific instruction file.
+
 ## Verification / Show-What-Changed
 
 - `[x]` **LID-UPDATE-027**: After making any file changes (bootstrap, append directives, mode transition, drift reconciliation), the system SHALL read back the modified files and surface a summary to the user naming the files changed and the sections added or modified.
