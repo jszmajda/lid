@@ -37,7 +37,7 @@ Every `/arrow-maintenance` run, in order:
    - **Orphan artifacts**: LLDs, specs, or code files not listed in any arrow doc's References section.
    - **Misplaced EARS**: EARS-labeled intent that a `-design.md` *defines* rather than references — requirement lines with status markers (mechanical screen), or marker-less spec-ID-labeled statements introducing normative content in place (judgment pass). Bare spec-ID mentions are navigation; do not flag them.
 
-   Exclude the reserved `docs/arrows/_experiments/` subtree from all six checks — it is owned by `lid-experimental`, not this skill, and is never audited, cleaned up, or regenerated here (see `docs/intent/arrow-maintenance/arrow-maintenance-design.md`).
+   Exclude the reserved underscore subtrees under `docs/arrows/` from all six checks — `_experiments/` (owned by `lid-experimental`) and `_map-codebase/` (the brownfield bootstrap's transient sweep files). Neither is audited, cleaned up, or regenerated here (see `docs/intent/arrow-maintenance/arrow-maintenance-design.md`).
 
    When a project-local coherence script is declared under `## LID Tooling` in `CLAUDE.md` (as `Coherence check: {path}`), invoke that script and treat its output as authoritative for the deterministic checks it performs. Languages and paths vary by project — trust the declaration. If the declaration is missing or the declared path does not exist, perform the checks in-prompt. A reference Node implementation is bundled at `references/coherence-check.mjs` that users may copy to their project and declare in CLAUDE.md.
 

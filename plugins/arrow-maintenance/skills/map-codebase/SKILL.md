@@ -62,9 +62,9 @@ For each file, record a structured summary:
 
 Output: a flat list of observed behaviors with file/line references. **No segmentation attempted here.**
 
-**Capacity constraint handling.** If the declared scope exceeds the invocation's capacity (single-agent context window, or the chosen subagent budget), surface the constraint with concrete sizing evidence, warn the user that a sampled sweep produces lower-quality mapping, and recommend narrowing scope or enabling subagent parallelism. The user may override and proceed with sampling anyway. Under override, preserve state across truncation points via per-subagent files (`.lid/map-codebase/sweep-{N}.md`) or by incrementally writing arrow-doc partial drafts during reconnaissance — never silently discard information the orchestrator cannot hold.
+**Capacity constraint handling.** If the declared scope exceeds the invocation's capacity (single-agent context window, or the chosen subagent budget), surface the constraint with concrete sizing evidence, warn the user that a sampled sweep produces lower-quality mapping, and recommend narrowing scope or enabling subagent parallelism. The user may override and proceed with sampling anyway. Under override, preserve state across truncation points via per-subagent files (`docs/arrows/_map-codebase/sweep-{N}.md`) or by incrementally writing arrow-doc partial drafts during reconnaissance — never silently discard information the orchestrator cannot hold.
 
-When subagents ran in parallel, each subagent writes its sweep to its own file; the orchestrator processes them in chunks during Phase 2.
+When subagents ran in parallel, each subagent writes its sweep to its own file; the orchestrator processes them in chunks during Phase 2. The `docs/arrows/_map-codebase/` working area is transient handoff state, not overlay content — remove it at terminal verification.
 
 See [subagent-sweep-prompt.md](references/subagent-sweep-prompt.md) for the prompt template given to sweep workers.
 

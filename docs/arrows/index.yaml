@@ -99,7 +99,7 @@ arrows:
 
   lid-experimental:
     status: MAPPED
-    children: [bidirectional-differential]   # sub-HLD; no arrow doc, no EARS — detail points to its design doc
+    children: [bidirectional-differential, review-depth]   # sub-HLD; no arrow doc, no EARS — detail points to its design doc
     sampled: 2026-04-25
     audited: null
     audited_sha: null
@@ -120,6 +120,18 @@ arrows:
     detail: lid-experimental/bidirectional-differential.md
     next: "Reword EXP-BIDIFF-007's reference pointer (currently names non-existent stripping-rules.md; behavior lives in audit-protocol.md §Stripping rule categories). After that, run skill-creator evals against the three baseline fixtures."
     drift: "EXP-BIDIFF-007 spec text references a reference file (`stripping-rules.md`) that was consolidated into `audit-protocol.md`. Behavior is implemented; spec prose is stale."
+
+  review-depth:
+    status: MAPPED
+    parent: lid-experimental
+    sampled: 2026-07-05
+    audited: null
+    audited_sha: null
+    blocks: []
+    blockedBy: [linked-intent-dev]
+    detail: lid-experimental/review-depth.md
+    next: "Dogfood on real let-go changes (this repo, Threadkeeper); fork taxonomy accretes from real logs. Promotion bar in the LLD."
+    drift: "10 of 10 EXP-DEPTH specs [x] (pure-prose experiment skill; dogfooding verification). No gaps."
 
   marketing-site:
     status: AUDITED
