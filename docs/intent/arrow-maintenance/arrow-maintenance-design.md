@@ -64,6 +64,7 @@ An arrow-maintained project's `docs/arrows/` contains:
 - `index.yaml` — the manifest of the design tree.
 - Per-segment arrow docs, nested in a folder structure that **mirrors the design tree under `docs/intent/`** — a leaf segment's arrow doc lives at the path mirroring its design doc (e.g., `docs/arrows/prompt-eval/runner.md` mirrors `docs/intent/prompt-eval/runner.md`), and sub-HLD (grouping) nodes are directories rather than arrow docs. At depth-2 this is a flat set of `{segment-name}.md` files.
 - `_experiments/` — *reserved namespace* for experiment-produced artifacts (see *Experiment-produced artifacts* below). Not owned or audited by either skill.
+- `_map-codebase/` — *reserved working area* for the brownfield bootstrap's sweep-handoff files (see the map-codebase LLD). Transient: removed at the end of a mapping run; never audited.
 
 ### `index.yaml` Schema
 
@@ -172,7 +173,7 @@ When information is duplicated across artifacts, the authority rule is:
 
 The `docs/arrows/_experiments/` subtree is reserved for artifacts produced by `lid-experimental` plugin skills that want to attach per-segment or per-EARS experiment state to the arrow overlay. The subtree is **not owned by either arrow-maintenance skill** — each experiment owns its own namespace inside it and is responsible for creating, updating, and removing its own artifacts.
 
-The leading underscore keeps reserved overlay subtrees out of the segment namespace — segment names are never underscore-prefixed — so they cannot collide with a project's own segments now that intent nests.
+The leading underscore keeps reserved overlay subtrees out of the segment namespace — segment names are never underscore-prefixed — so they cannot collide with a project's own segments now that intent nests. The same rule and audit exemption cover `docs/arrows/_map-codebase/`, the brownfield bootstrap's transient sweep-handoff area (owned by the map-codebase LLD, removed at the end of a mapping run).
 
 Convention:
 
@@ -193,6 +194,7 @@ docs/arrows/_experiments/<experiment-name>/<segment-path>/<artifact>.md
 Active experiments at this document's current version:
 
 - `bidirectional-differential` — see `docs/intent/lid-experimental/bidirectional-differential/bidirectional-differential-design.md`. Uses `docs/arrows/_experiments/bidirectional-differential/<segment-name>/<EARS-ID>.md`.
+- `review-depth` — see `docs/intent/lid-experimental/review-depth/review-depth-design.md`. Uses `docs/arrows/_experiments/review-depth/<segment-name>/fork-log.md`.
 
 ## Decisions & Alternatives
 

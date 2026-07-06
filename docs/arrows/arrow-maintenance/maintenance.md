@@ -28,6 +28,6 @@ The dual-mode `/arrow-maintenance` skill — ambient catch-and-recommend on arro
 
 | Spec range | Implemented | Active gap | Deferred |
 |---|---|---|---|
-| SCALE-MAINT-001..027 | 27 | 0 | 0 |
+| SCALE-MAINT-001..031 | 31 | 0 | 0 |
 
 Ambient-mode behavior is verified by dogfooding per the dual-mode variant (no EARS).

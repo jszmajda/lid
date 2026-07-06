@@ -62,9 +62,9 @@ For each file, record a structured summary:
 
 Output: a flat list of observed behaviors with file/line references. **No segmentation attempted here.**
 
-**Capacity constraint handling.** If the declared scope exceeds the invocation's capacity (single-agent context window, or the chosen subagent budget), surface the constraint with concrete sizing evidence, warn the user that a sampled sweep produces lower-quality mapping, and recommend narrowing scope or enabling subagent parallelism. The user may override and proceed with sampling anyway. Under override, preserve state across truncation points via per-subagent files (`.lid/map-codebase/sweep-{N}.md`) or by incrementally writing arrow-doc partial drafts during reconnaissance — never silently discard information the orchestrator cannot hold.
+**Capacity constraint handling.** If the declared scope exceeds the invocation's capacity (single-agent context window, or the chosen subagent budget), surface the constraint with concrete sizing evidence, warn the user that a sampled sweep produces lower-quality mapping, and recommend narrowing scope or enabling subagent parallelism. The user may override and proceed with sampling anyway. Under override, preserve state across truncation points via per-subagent files (`docs/arrows/_map-codebase/sweep-{N}.md`) or by incrementally writing arrow-doc partial drafts during reconnaissance — never silently discard information the orchestrator cannot hold.
 
-When subagents ran in parallel, each subagent writes its sweep to its own file; the orchestrator processes them in chunks during Phase 2.
+When subagents ran in parallel, each subagent writes its sweep to its own file; the orchestrator processes them in chunks during Phase 2. The `docs/arrows/_map-codebase/` working area is transient handoff state, not overlay content — remove it at terminal verification.
 
 See [subagent-sweep-prompt.md](references/subagent-sweep-prompt.md) for the prompt template given to sweep workers.
 
@@ -126,12 +126,12 @@ Derive segment and component names from the codebase's existing vocabulary — i
 
 ## Phase 5 — Artifact Generation
 
-The design layer is a recursive tree. A leaf node owns EARS and an arrow doc; an intermediate (sub-HLD) node groups its children and owns neither. Where the chosen granularity produces nested structure — leaf segments gathered under a grouping node — that nesting is the design tree, and every artifact path mirrors it. A flat depth-2 mapping (the common case) has every segment at the root level, so the mirrored path collapses to a single file name. `{segment-path}` below means the root-to-leaf path; at depth-2 it is just the segment name.
+The design layer is a recursive tree. A leaf node owns EARS and an arrow doc; an intermediate (sub-HLD) node groups its children and owns neither. Where the chosen granularity produces nested structure — leaf segments gathered under a grouping node — that nesting is the design tree, and every artifact path mirrors it. A flat depth-2 mapping (the common case) has every segment at the root level, so the mirrored path collapses to a single folder name. `{segment-path}` below means the root-to-leaf path; at depth-2 it is just the segment name.
 
 For each approved leaf segment, generate these artifacts in order with a **STOP after each**:
 
 1. **Per-segment arrow doc** at the tree-mirrored path `docs/arrows/{segment-path}.md` (e.g. `docs/arrows/billing/invoicing.md` for an `invoicing` leaf under a `billing` group; `docs/arrows/auth.md` for a root-level `auth` leaf) — References pointing to actual files, initial `status: MAPPED`. Grouping (sub-HLD) nodes are directories, not arrow docs. See [arrow-doc template](../../arrow-maintenance/references/arrow-doc-template.md). **STOP.**
-2. **Skeleton LLD** at the mirroring path `docs/intent/{segment-path}.md` — standard LLD template ([lld-templates](../../../linked-intent-dev/skills/linked-intent-dev/references/lld-templates.md)), no separate brownfield template. Content carries brownfield state: `[inferred]` markers in Decisions & Alternatives table, Open Questions for observed-but-unexplained behaviors. **STOP.**
+2. **Skeleton LLD** at the tree-mirrored node folder `docs/intent/{segment-path}/{segment-name}-design.md` (node-as-folder; e.g. `docs/intent/billing/invoicing/invoicing-design.md`, or `docs/intent/auth/auth-design.md` at depth-2) — standard LLD template ([lld-templates](../../../linked-intent-dev/skills/linked-intent-dev/references/lld-templates.md)), no separate brownfield template. Content carries brownfield state: `[inferred]` markers in Decisions & Alternatives table, Open Questions for observed-but-unexplained behaviors. **STOP.**
 3. **EARS spec file** beside the segment's design doc at `docs/intent/<segment-path>/{segment-name}-specs.md` — reserved spec-ID prefix that is the segment's root-to-leaf path (path-concatenated: the leaf prefix is the full path from the root, e.g. a `runner` leaf under `prompt-eval` reserves `PEVAL-RUN`). Ask the user for a namespacing parent if the prefix collides with an existing one. Initial status semantics:
    - `[x]` — behavior is observed as working in current code.
    - `[ ]` — behavior is specified but broken or partial in current code.

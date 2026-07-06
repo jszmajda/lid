@@ -18,7 +18,7 @@ Advisory principle-review skill for LID projects. Reads a project's LID artifact
 - `docs/intent/linked-intent-dev/linked-intent-dev-design.md` — parent `LID` sub-HLD for plugin-level concerns (mode detection, spec ID format, LID-on-LID linkage inversion, eval metadata schema). The coach LLD references this rather than re-specifying.
 
 ### EARS
-- `docs/intent/linked-intent-dev/lid-coach/lid-coach-specs.md` (52 specs, prefix `LID-COACH-*`)
+- `docs/intent/linked-intent-dev/lid-coach/lid-coach-specs.md` (58 specs, prefix `LID-COACH-*`)
 
 ### Tests / Evals
 - `plugins/linked-intent-dev/skills/lid-coach/evals/evals.json` — eight prompt fixtures with assertions (unconfigured-project handoff, healthy full-project posture/scorecard/voice, HLD bloat, accumulation antipattern, scoped missing scope, advisory posture, lid-shaped-without-directives, index.yaml-driven arrow sampling).

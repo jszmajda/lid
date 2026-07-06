@@ -9,7 +9,7 @@ This skill guides a structured linked-intent development workflow. LID's goal is
 
 ## Three rules govern every phase
 
-**Stop and iterate at every phase boundary.** After completing each phase below, present the output to the user, incorporate numbered feedback, and proceed only on explicit approval. Each stop is mandatory. Skipping stops is the single most common way this workflow degrades into a rush — the discipline is non-optional. (Carveout: command-mode skills that execute a single directed pass, like `/arrow-maintenance`'s audit-and-update, are not phase-structured in this sense and do not pause mid-pass. This workflow is generative; phases here produce intent, so every boundary gets a stop.)
+**Stop and iterate at every phase boundary.** After completing each phase below, present it — the phase output in full, or an authorized inspector's summarized findings (see *Specification and inspection instruments* below) — incorporate numbered feedback, and proceed only on explicit approval. Each stop is mandatory; the stops are the mechanism realizing the HLD tenet *Every phase is inspected*. Skipping stops is the single most common way this workflow degrades into a rush. (Carveout: command-mode skills that execute a single directed pass, like `/arrow-maintenance`'s audit-and-update, are not phase-structured in this sense and do not pause mid-pass. This workflow is generative; phases here produce intent, so every boundary gets a stop — unless the user has expressly authorized a consolidated cadence: a warned override, or an opt-in experiment they have declared.)
 
 **Run a coherence pre-flight before starting or resuming implementation.** When picking up work — new session, returning to a change, cascading from an upstream change — verify that the HLD, LLDs, EARS specs, and tests are mutually coherent for the segment about to be touched:
 
@@ -20,6 +20,26 @@ This skill guides a structured linked-intent development workflow. LID's goal is
 If drift is detected, fix the docs first, then implement. A resumption check prevents one session's drift from being compounded into the next session's change.
 
 **Write docs as their fresh author.** Every HLD, LLD, and EARS spec produced by these phases must read as if authored fresh today, by someone who knew only the current intent and nothing of this conversation. As you draft or revise a doc, run the test on each line — would that fresh author put it on the page? Three residues fail it: narration of how the intent changed; meaning that only resolves for someone who was in this conversation; and answers or rebuttals that exist only because we discussed the question here. The keep-side is load-bearing too — rationale, considered alternatives, and constraints a fresh author would independently write stay; they are present intent, not residue. Record rejected alternatives and why in the LLD's Decisions & Alternatives table, not as asides in body prose. This is the *docs carry current intent* tenet. Write in the project's own domain language — name components, segments, and specs with the words the user and the codebase already use, not generic or LID-imposed labels. This is the *Speak the project's language* tenet.
+
+## Specification and inspection instruments
+
+Two kinds of intent work run through the phases, verified differently: **specifying** (Phases 1–3: turning latent intent into written spec — checked against what the user actually meant) and **inspecting the cascade** (the stops and the Phase 4–6 checks — checking downstream rungs against the spec). Each admits more than one instrument; offer the choice conversationally. There is no configuration for it (see `docs/decisions/inspection-instrument-selection.md`).
+
+**Specifying — follow the user's grain.** Drafting-then-review works one document at a time: draft the artifact whole, the user reviews it whole. Elicitation works one concept at a time: raise a single aspect, the user responds to just that, and the document accretes from the answers. Match the user's current grain — a user who answers one aspect of a draft and ignores the rest is asking for elicitation; whole-document feedback means draft-review is working. Switching mid-artifact is normal. When eliciting: one aspect per exchange, real tradeoffs with concrete examples, confirm understanding before recording a choice, and keep it short — an easy-to-click menu that hides the real decision is worse than no menu.
+
+**Inspecting — the user chooses the inspector.** Default: the user reads each phase's output at its stop. On the user's authorization: a **zero-context reader** (given only the arrow artifacts, never the conversation, so it cannot inherit the builder's blind spots — the coach's cold-read pass and the experimental blind differential are this family) or a **delegated inspector** (a subagent reviewing the phase output in the user's place). Inspection may also be **relocated out-of-band**: the user lands the change on a branch and leans on the project's existing review process (a pull-request review). Relocation is scoped to what the review will actually read — a code-focused review covers only the code rungs, so the intent phases keep their full in-session ruling unless the review explicitly covers the intent artifacts. The stops still run in-session, and a review finding that reveals an *intent* gap walks the arrow like any bug.
+
+Three rules hold whatever the instruments:
+
+- A delegated inspector's findings are never applied silently — present them summarized and focused at the stop; a pass means "no counterexample found," not proof. On a clean pass, name where the inspector looked hardest and offer the user a spot-check of that raw output — ruling on a clean pass means sampling, not ratifying an empty report.
+- A spec or draft that admits more than one reading always goes back to the user — only they hold the latent intent — at whatever phase the fork is discovered, before further tests or code land against either reading. A fork found after tests exist is surfaced with the affected tests named.
+- Delegation changes *who inspects at a stop*, never *how many stops there are*. The user can still override anything, per *the user is always right — with warning*.
+
+## Delegation discipline
+
+Discipline does not travel by ambient context. A subagent dispatched to perform phase work receives only its prompt — not this skill, not the instruction file, not the conversation. Embed the phase's obligations in the dispatch prompt itself.
+
+For implementation work (Phases 5–6): the EARS spec ID(s) in scope, the tests-first gate ("write failing tests first; do not proceed to code until they fail as expected"), and the `@spec` annotation requirement. For a Phase 2 probe: what the probe targets. For a delegated inspector: the spec(s) it inspects against and the requirement to return summarized, focused findings. For every dispatch, whatever the phase: the obligation to surface, not resolve, ambiguity — a spec that admits more than one reading comes back as a question, never as a silently chosen reading. A dispatched agent that itself dispatches carries these obligations into its own dispatch prompts — the rule travels with the work. When a phase gains a new obligation, dispatches of that phase's work carry it.
 
 ## Mode-aware triggering
 
@@ -38,7 +58,7 @@ Once configured, proceed with the HLD check: does a top-level HLD exist at `docs
 
 For consequential architectural changes (a new approach, a significant trade-off, a new mode) — and on a fresh-project HLD draft — before committing to a full HLD **sketch 2–3 competing options** (~200 words each, naming downstream consequences) and present them for user selection. Surfacing decisions as *choices among alternatives* — rather than as the agent's best guess — is the primary edge-detection mechanism at the HLD level.
 
-When drafting or revising the HLD, **elicit tenets**: surface the few decisions that could reasonably go more than one acceptable way, ask the user which way to lean, and record each as a one-line tie-breaker under `## Tenets`. Apply the defensible-opposite test before proposing one — if the reverse of the tenet is absurd rather than a choice a different project could reasonably make, it is a platitude and resolves nothing; drop it. Apply a second test too: a tenet leans a class of decisions no spec anticipates — if the candidate reads as a triggered action (*when X, do Y* with a definite outcome), it is a spec, not a tenet; route it to EARS rather than the tenet list, even when its opposite is defensible. A tenet is edge detection for choices no spec will anticipate. Surface the load-bearing ones you can see and invite more; do not interrogate the user for an exhaustive set.
+When drafting or revising the HLD, **elicit tenets**: surface the few decisions that could reasonably go more than one acceptable way, ask the user which way to lean, and record each as a one-line tie-breaker under `## Tenets`. Apply the defensible-opposite test before proposing one — if the reverse of the tenet is absurd rather than a choice a different project could reasonably make, it is a platitude and resolves nothing; drop it. Apply a second test too: a tenet leans a class of decisions no spec anticipates — if the candidate reads as a triggered action (*when X, do Y* with a definite outcome), it is a spec, not a tenet; route it to EARS rather than the tenet list, even when its opposite is defensible. Apply a third rule to the survivors — form: a tenet stays a one-line lean. When a genuine tenet carries operational elaboration (how to apply it, steps to run), record only the lean under `## Tenets` and route the elaboration into workflow guidance — a user project's instruction file, or the governing skill when editing LID itself. Apply the three in order: platitude test, spec test, form rule. A tenet is edge detection for choices no spec will anticipate. Surface the load-bearing ones you can see and invite more; do not interrogate the user for an exhaustive set.
 
 Whatever you draft, verify the HLD reads **context-free**: rationale present, alternatives named, no reliance on conversation context that won't travel to the next session.
 
@@ -54,7 +74,7 @@ If not, draft one using the template at `references/lld-templates.md`.
 
 The design layer is a recursive tree, and "HLD" and "LLD" are **roles by position**: the root is the HLD, the leaves are the LLDs that own EARS, and a component with enough internal depth to outgrow one doc is promoted to a **sub-HLD** — HLD-shaped for its subtree, owning no EARS of its own — with child components beneath it. Depth-2 (one HLD over a flat set of leaf LLDs) is the default; nesting is a triggered exception. So a single large LLD is a candidate for promotion to a sub-HLD, not automatically a smell — weigh promotion when a leaf outgrows itself rather than splitting reflexively.
 
-When a node looks like it holds more than one thing, three shapes are possible, and which fits turns on the intent, not the size of the doc: if the parts share parent intent a parent doc should hold, **promote** to a sub-HLD over child leaves; if they are distinct intents with no shared parent, they are **sibling leaves**, each owning its own prefix; if they are merely categories of one intent — cross-cutting concerns (errors, security, performance, monitoring) or requirement *types* — keep one leaf and fold them into within-leaf `<LEAF>-<TYPE>` facets. The deciding test for promotion is whether the parent doc would carry real intent or just a table of contents: a categorical grouping is a taxonomy label, not a sub-HLD.
+When a node looks like it holds more than one thing, choose its shape by the *kind* of multiplicity, not the size of the doc. Two forces shape the tree, pulling opposite directions on purpose: **split out what is independent; consolidate what is bounded.** A concern that spans components and carries design decisions of its own (monitoring, security, a cost strategy) is an independent arrow: model it as its own node, referenced by dependent nodes from their own design docs — never as labels spread across many nodes or a side catalogue. (Where the arrow-maintenance overlay is present, the dependency edge is also encoded in its index; the overlay's guidance covers the fields.) Within one bounded component, the pull reverses — consolidate: if the parts share parent intent a parent doc should hold, **promote** to a sub-HLD over child leaves; if they are distinct intents with no shared parent, they are **sibling leaves**, each owning its own prefix; if they are merely categories of one component's intent — requirement types like errors, security, or performance *within that component* — keep one leaf and fold them into within-leaf `<LEAF>-<TYPE>` facets. The test between the two forces: does the concern carry its own design decisions spanning components (own node), or is it a sorting of one component's requirements (facet)? The deciding test for promotion is whether the parent doc would carry real intent or just a table of contents: a categorical grouping is a taxonomy label, not a sub-HLD.
 
 In complex projects multiple LLDs may look semantically relevant. Do not silently pick — surface the candidate leaf LLDs with their scopes and ask the user which applies.
 
@@ -73,6 +93,7 @@ Every LLD change produces a corresponding EARS update. See `references/ears-synt
 - Spec IDs are stable. Revisions mutate text, not IDs, unless scope genuinely changes.
 - Deleted IDs are not reused — git preserves the history.
 - Delete specs that are no longer wanted rather than marking them obsolete.
+- EARS requirement content lives only in the node's `{node}-specs.md` — never defined in a design doc. Design docs may cite spec IDs; they never carry requirement lines, status markers, or in-place definitions of what an ID requires.
 
 After drafting or revising specs, run **post-draft consistency verification**:
 
@@ -97,6 +118,8 @@ Distinct from the Phase 2 LLD-level probe in what it targets. Phase 2 asked "wha
 
 Ask the user to resolve these *before* tests are written. LID's fundamental purpose — narrowing the agent's output distribution to the user's latent intent — is carried by this step more than any other.
 
+**Divergence probe (per-spec).** The target list above is compositional; each new or changed spec line also gets probed individually. Generate 2–3 deliberately divergent plausible readings — what a blind implementer could take this line to require — and surface only the genuine forks for user resolution. Do not rely on introspection ("does this look ambiguous?"): the distribution that would miss the ambiguity is the one being asked. Use the most context-independent reader available — in-context generation is the floor; when subagents are available, delegate to blind readers given *only* the spec text, never the conversation; where the platform allows, use an equivalently capable model from a different provider. Land each fork's resolution as a narrowing edit or a new atomic spec line — never a compound "shall X and Y".
+
 **STOP for user review.**
 
 ### Phase 5 — Tests first
@@ -106,6 +129,7 @@ Write tests **before** the code that satisfies them, per the HLD's intent-preloa
 - Tests carry `@spec` annotations citing the EARS IDs they verify.
 - Place the `@spec` annotation on the test that directly exercises the spec's behavior, not on every inner assertion.
 - Do not proceed to code until tests exist and fail in the expected way.
+- When this work is delegated to a subagent, the dispatch prompt embeds these obligations — see *Delegation discipline*.
 
 **STOP for user review.**
 

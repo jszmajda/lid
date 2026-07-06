@@ -1,5 +1,5 @@
 schema_version: 2
-last_updated: 2026-06-07
+last_updated: 2026-07-05
 
 taxonomy:
   core:
@@ -35,7 +35,7 @@ arrows:
     blockedBy: []
     detail: linked-intent-dev/core.md
     next: null
-    drift: "39 of 39 LID-CORE specs [x] (workflow skill; pure-prose guidance, no eval harness). 1.3.0 cascade landed: sharpened tenet definition (class-level lean / defensible-opposite) and the intent-narrowing edge-audit framing. No gaps."
+    drift: "57 of 57 LID-CORE specs [x] (workflow skill; pure-prose guidance, no eval harness). No gaps."
 
   update-lid:
     status: AUDITED
@@ -47,7 +47,7 @@ arrows:
     blockedBy: []
     detail: linked-intent-dev/update-lid.md
     next: null
-    drift: "47 of 47 LID-UPDATE specs [x]; no gaps. Grew in 1.3.0: AGENTS.md-canonical instruction file + Windows symlink fallback (045/046) and the tool-agnostic memory->intent directive (047)." 
+    drift: "53 of 53 LID-UPDATE specs [x]; no gaps. 1.4.0 adds workflow-doc vendoring (048-053: bootstrap offer, shipped-asset copy, template variants, version-walk re-sync, hand-edit surfacing, Aider bridge). Grew in 1.3.0: AGENTS.md-canonical instruction file + Windows symlink fallback (045/046) and the tool-agnostic memory->intent directive (047)." 
 
   lid-coach:
     status: AUDITED
@@ -59,7 +59,7 @@ arrows:
     blockedBy: []
     detail: linked-intent-dev/lid-coach.md
     next: "Author iteration-2 fixtures covering the 35 unexercised LID-COACH specs (invocation 001-002, inputs 008-012, principle-body 014-015, review dims 016-032 less 019/023, 036/038/041/042/047/048/051, 053 tenet-quality) plus the 3 new tenet-cascade specs (054 verticalize-intent, 055 granularity-as-tree, 056 nested-arrow-validity); 048 needs a >15-LLD fixture project; 053 needs a fixture with a tenet-less HLD and one with platitude tenets; 054 needs a fixture carrying a cross-cutting index/tag registry beside the tree; 055 needs a fixture with an outgrown leaf LLD (promotion candidate) and one bundling several share-design separable-behavior concerns (sub-HLD candidate); 056 needs a fixture whose design layer nests sub-HLDs with a subtree-gathering intermediate prefix (must NOT be flagged) alongside a genuine phase deviation (must be flagged)."
-    drift: "22 of 57 LID-COACH specs [x] (skill-creator iteration-1, 2026-05-15, 38/38 with-skill assertions, covering 18). 35 remain [ ] — unexercised by the current 8 fixtures, not skill-body gaps. LID-COACH-053 (tenet quality) added 2026-05-18 from the HLD tenets cascade; spec + principle body in place, eval fixture pending. LID-COACH-054/055/056 added from the verticalize-intent + refocused-cascade + recursive-design-tree HLD cascade; spec + principle body in place, marked [x] for body coverage, eval fixtures pending. LID-COACH-026 (cascade health) reworded to the lowest-node-that-dominates framing — body and spec match; fixture status unchanged."
+    drift: "23 of 58 LID-COACH specs [x] (skill-creator iteration-1, 2026-05-15, 38/38 with-skill assertions, covering 18). 35 remain [ ] — unexercised by the current 8 fixtures, not skill-body gaps. LID-COACH-053 (tenet quality) added 2026-05-18 from the HLD tenets cascade; spec + principle body in place, eval fixture pending. LID-COACH-054/055/056 added from the verticalize-intent + refocused-cascade + recursive-design-tree HLD cascade; spec + principle body in place, marked [x] for body coverage, eval fixtures pending. LID-COACH-058 (decision under-capture, landed-state test) added with review dimension 18 — body coverage in place, eval fixture pending. LID-COACH-026 (cascade health) reworded to the lowest-node-that-dominates framing — body and spec match; fixture status unchanged."
 
   arrow-maintenance:
     status: MAPPED
@@ -99,7 +99,7 @@ arrows:
 
   lid-experimental:
     status: MAPPED
-    children: [bidirectional-differential]   # sub-HLD; no arrow doc, no EARS — detail points to its design doc
+    children: [bidirectional-differential, review-depth]   # sub-HLD; no arrow doc, no EARS — detail points to its design doc
     sampled: 2026-04-25
     audited: null
     audited_sha: null
@@ -121,6 +121,18 @@ arrows:
     next: "Reword EXP-BIDIFF-007's reference pointer (currently names non-existent stripping-rules.md; behavior lives in audit-protocol.md §Stripping rule categories). After that, run skill-creator evals against the three baseline fixtures."
     drift: "EXP-BIDIFF-007 spec text references a reference file (`stripping-rules.md`) that was consolidated into `audit-protocol.md`. Behavior is implemented; spec prose is stale."
 
+  review-depth:
+    status: MAPPED
+    parent: lid-experimental
+    sampled: 2026-07-05
+    audited: null
+    audited_sha: null
+    blocks: []
+    blockedBy: [linked-intent-dev]
+    detail: lid-experimental/review-depth.md
+    next: "Dogfood on real declared-depth changes (this repo, Threadkeeper); fork taxonomy accretes from real logs. Promotion bar in the LLD."
+    drift: "10 of 10 EXP-DEPTH specs [x] (pure-prose experiment skill; dogfooding verification). No gaps."
+
   marketing-site:
     status: AUDITED
     sampled: 2026-04-25
@@ -141,7 +153,7 @@ arrows:
     blockedBy: [linked-intent-dev]
     detail: project-structure.md
     next: "Wire build-time structural checks for the three deferred specs (PROJ-STRUCT-039 link-check, 040 marketplace.json validity, 041 CLAUDE.md symlink integrity), most cheaply via a CI workflow extending marketing-site's."
-    drift: "58 of 61 specs [x]; 3 [ ] (build-time checks 039-041, deferred to CI). Grew substantially this cycle: community-health artifacts (047-053: CODE_OF_CONDUCT/SECURITY/CITATION/.github templates), release-publication ritual (054), EXTENSIONS.md ownership pointer (055), and Cursor first-class plugin-host support (056-062: .cursor-plugin manifests, .gitignore, name-identity, No-Version-Update policy, docs/setup.md hosts). PROJ-STRUCT-014 retired; -018 revised to a motivation-first PR shape. Cursor specs renumbered 047-053 -> 056-062 to resolve a merge-time ID collision with the community-health specs."
+    drift: "59 of 62 specs [x]; 3 [ ] (build-time checks 039-041, deferred to CI). Grew substantially this cycle: community-health artifacts (047-053: CODE_OF_CONDUCT/SECURITY/CITATION/.github templates), release-publication ritual (054), EXTENSIONS.md ownership pointer (055), and Cursor first-class plugin-host support (056-062: .cursor-plugin manifests, .gitignore, name-identity, No-Version-Update policy, docs/setup.md hosts). PROJ-STRUCT-014 retired; -018 revised to a motivation-first PR shape. Cursor specs renumbered 047-053 -> 056-062 to resolve a merge-time ID collision with the community-health specs."
 
   extensions:
     status: AUDITED

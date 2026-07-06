@@ -16,7 +16,7 @@ The pure-prose `linked-intent-dev` workflow skill (invokable as `/linked-intent-
 - `docs/intent/linked-intent-dev/linked-intent-dev-design.md` — parent `LID` sub-HLD for plugin-level concerns (mode detection, spec ID format, LID-on-LID linkage inversion, eval-metadata schema).
 
 ### EARS
-- `docs/intent/linked-intent-dev/core/core-specs.md` (39 specs, prefix `LID-CORE-*`)
+- `docs/intent/linked-intent-dev/core/core-specs.md` (57 specs, prefix `LID-CORE-*`)
 
 ### Tests / Evals
 - None. The pure-prose workflow skill has no eval suite; its behaviors are verified by dogfooding (the LID repo runs on this skill).

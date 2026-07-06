@@ -29,14 +29,15 @@ Every `/arrow-maintenance` run, in order:
 
 1. **Repair broken overlay state.** Malformed `index.yaml`, missing per-segment docs referenced by the index, stale schema versions — these are this skill's domain, so fix them first.
 
-2. **Run the five audit checks** (see `references/audit-checklist.md`):
+2. **Run the six audit checks** (see `references/audit-checklist.md`):
    - **Reference coherence**: do arrow-doc pointers resolve? Are cited EARS specs present? Are LLD section headings as referenced?
    - **Coverage**: does every behavioral spec have at least one eval assertion citing it?
    - **Staleness**: compare `audited` and `audited_sha` against current state to find segments whose files changed since last audit.
    - **Drift signals**: modified code since `audited_sha`, specs changed without test updates, tests passing but missing `@spec` annotations, `@spec` annotations pointing to missing spec IDs (*reverse orphans*).
    - **Orphan artifacts**: LLDs, specs, or code files not listed in any arrow doc's References section.
+   - **Misplaced EARS**: EARS-labeled intent that a `-design.md` *defines* rather than references — requirement lines with status markers (mechanical screen), or marker-less spec-ID-labeled statements introducing normative content in place (judgment pass). Bare spec-ID mentions are navigation; do not flag them.
 
-   Exclude the reserved `docs/arrows/_experiments/` subtree from all five checks — it is owned by `lid-experimental`, not this skill, and is never audited, cleaned up, or regenerated here (see `docs/intent/arrow-maintenance/arrow-maintenance-design.md`).
+   Exclude the reserved underscore subtrees under `docs/arrows/` from all six checks — `_experiments/` (owned by `lid-experimental`) and `_map-codebase/` (the brownfield bootstrap's transient sweep files). Neither is audited, cleaned up, or regenerated here (see `docs/intent/arrow-maintenance/arrow-maintenance-design.md`).
 
    When a project-local coherence script is declared under `## LID Tooling` in `CLAUDE.md` (as `Coherence check: {path}`), invoke that script and treat its output as authoritative for the deterministic checks it performs. Languages and paths vary by project — trust the declaration. If the declaration is missing or the declared path does not exist, perform the checks in-prompt. A reference Node implementation is bundled at `references/coherence-check.mjs` that users may copy to their project and declare in CLAUDE.md.
 
@@ -49,6 +50,7 @@ Every `/arrow-maintenance` run, in order:
 
 4. **Surface everything else for user decision:**
    - Reverse orphans — ask whether to create the missing spec, delete the annotation, or treat as an alias of an existing spec. Do not auto-resolve.
+   - Misplaced EARS — requirement content defined in a `-design.md`; suggest extracting to the sibling `{node}-specs.md` and leaving a reference behind. Definition versus reference is a judgment; do not auto-move.
    - Ambiguous segment assignments for `unmapped.docs` entries.
    - Candidate lifecycle events (splits, merges) detected from drift signals.
    - Any finding where the right fix depends on intent.
@@ -132,6 +134,6 @@ The skill does not prescribe "run audit every N commits" or "run weekly." Surfac
 
 - `references/index-schema.md` — full `index.yaml` schema.
 - `references/arrow-doc-template.md` — per-segment arrow doc template.
-- `references/audit-checklist.md` — the five audit checks in actionable form.
+- `references/audit-checklist.md` — the six audit checks in actionable form.
 - `references/coherence-check.mjs` — reference Node implementation of deterministic checks. Optional; any equivalent in any language works.
 - `references/README-template.md` — template for the `docs/arrows/README.md` that projects install alongside their overlay.

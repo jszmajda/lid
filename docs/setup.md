@@ -16,7 +16,7 @@ Every tool below assumes your project has:
 1. An `AGENTS.md` at the root that describes the LID workflow for your project.
 2. A `docs/` tree with `high-level-design.md` and `intent/`.
 
-Claude Code users get both for free: `/linked-intent-dev` (the workflow skill) bootstraps them as part of Phase 1 on a fresh project — invoke it with a description of what you want to build. Non-Claude-Code users can copy [this repo's `AGENTS.md`](../AGENTS.md) and `docs/` layout as a starting point, or run Claude Code once just to scaffold — the artifacts themselves are tool-agnostic.
+Claude Code users get both for free: `/linked-intent-dev` (the workflow skill) bootstraps them as part of Phase 1 on a fresh project — invoke it with a description of what you want to build. Non-Claude-Code users can copy [this repo's `AGENTS.md`](../AGENTS.md) and `docs/` layout as a starting point — and vendor the workflow doc per the note in the next section — or run Claude Code once just to scaffold; the artifacts themselves are tool-agnostic.
 
 ---
 
@@ -43,7 +43,12 @@ Other tools that honor `AGENTS.md` per the [spec](https://agents.md/) and should
 
 Nearest-wins nesting is part of the spec; Codex and Amp implement hierarchical merge, while Zed and Cline pick a single file.
 
-**If you use only tools from this list and an `AGENTS.md` at your root, you are done.** The sections below cover tools that need something extra, or that benefit from an explicit adapter.
+**The workflow doc.** An `AGENTS.md` alone carries only LID's compact core — the arrow mandate, the inspection invariant, and navigation. The full workflow ships as `docs/lid/workflow.md`, a generated file the LID bootstrap offers to vendor into your project (and `/update-lid` keeps in sync — edit it upstream or in `AGENTS.md`, never in place). **No plugin host?** Vendor it manually: copy `plugins/linked-intent-dev/skills/update-lid/references/workflow-doc.md` from the LID repository (a clone, or the file as published at the release tag) to `docs/lid/workflow.md` in your project. Re-syncing after a LID upgrade is the same copy at the newer version. Your `AGENTS.md` points to it: harnesses with plugin support load the skill instead; everything else should read the doc before making changes. Two notes on making that pointer reliable:
+
+- **Prose pointers are best-effort on most tools** — the model chooses whether to follow them. That is why the compact core in `AGENTS.md` carries the invariants that must survive an ignored pointer.
+- **Use deterministic loading where your tool has it:** Amp users can `@`-mention the doc from `AGENTS.md` (guaranteed inclusion, globs supported); Aider users should commit a `.aider.conf.yml` with `read: AGENTS.md` (see the [Aider section](#aider)); Claude Code and Cursor need nothing extra — the plugins carry the workflow.
+
+**If you use only tools from this list, with an `AGENTS.md` at your root and the vendored workflow doc, you are done.** The sections below cover tools that need something extra, or that benefit from an explicit adapter.
 
 ---
 
@@ -192,22 +197,20 @@ Sources: [Copilot repository instructions](https://docs.github.com/en/copilot/ho
 
 ## Aider
 
-Aider does **not** read `AGENTS.md` automatically — you have to wire it in via `.aider.conf.yml`. Aider's canonical conventions filename is `CONVENTIONS.md`; symlink `AGENTS.md` to `CONVENTIONS.md` if you want a single source of truth.
-
-**`CONVENTIONS.md`** (symlink to `AGENTS.md`, or a standalone file)
+Aider does **not** read `AGENTS.md` automatically — wire it in via `.aider.conf.yml`, which Aider auto-reads from the repo root. List `AGENTS.md` directly: `read:` takes any path, so no `CONVENTIONS.md` file or symlink is needed (that filename is only Aider's documentation convention).
 
 **`.aider.conf.yml`**
 ```yaml
 read:
-  - CONVENTIONS.md
+  - AGENTS.md
   - docs/high-level-design.md
 ```
 
-`read:` loads files as read-only context on every session (and caches them if prompt caching is on). The list takes explicit paths — no glob support. Add specific LLDs when working in a particular arrow segment:
+`read:` loads files as read-only context on every session (and caches them if prompt caching is on). The list takes explicit paths — no glob support. Do **not** add the vendored `docs/lid/workflow.md` here — it is the full workflow and `read:` would pay for it on every session; when the model asks to see it (following the `AGENTS.md` pointer), approve adding it for that session instead. Add specific LLDs when working in a particular arrow segment:
 
 ```yaml
 read:
-  - CONVENTIONS.md
+  - AGENTS.md
   - docs/high-level-design.md
   - docs/intent/auth/auth-design.md
   - docs/intent/auth/auth-specs.md
