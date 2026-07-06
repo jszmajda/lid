@@ -35,7 +35,7 @@ arrows:
     blockedBy: []
     detail: linked-intent-dev/core.md
     next: null
-    drift: "56 of 56 LID-CORE specs [x] (workflow skill; pure-prose guidance, no eval harness). No gaps."
+    drift: "57 of 57 LID-CORE specs [x] (workflow skill; pure-prose guidance, no eval harness). No gaps."
 
   update-lid:
     status: AUDITED
@@ -153,7 +153,7 @@ arrows:
     blockedBy: [linked-intent-dev]
     detail: project-structure.md
     next: "Wire build-time structural checks for the three deferred specs (PROJ-STRUCT-039 link-check, 040 marketplace.json validity, 041 CLAUDE.md symlink integrity), most cheaply via a CI workflow extending marketing-site's."
-    drift: "58 of 61 specs [x]; 3 [ ] (build-time checks 039-041, deferred to CI). Grew substantially this cycle: community-health artifacts (047-053: CODE_OF_CONDUCT/SECURITY/CITATION/.github templates), release-publication ritual (054), EXTENSIONS.md ownership pointer (055), and Cursor first-class plugin-host support (056-062: .cursor-plugin manifests, .gitignore, name-identity, No-Version-Update policy, docs/setup.md hosts). PROJ-STRUCT-014 retired; -018 revised to a motivation-first PR shape. Cursor specs renumbered 047-053 -> 056-062 to resolve a merge-time ID collision with the community-health specs."
+    drift: "59 of 62 specs [x]; 3 [ ] (build-time checks 039-041, deferred to CI). Grew substantially this cycle: community-health artifacts (047-053: CODE_OF_CONDUCT/SECURITY/CITATION/.github templates), release-publication ritual (054), EXTENSIONS.md ownership pointer (055), and Cursor first-class plugin-host support (056-062: .cursor-plugin manifests, .gitignore, name-identity, No-Version-Update policy, docs/setup.md hosts). PROJ-STRUCT-014 retired; -018 revised to a motivation-first PR shape. Cursor specs renumbered 047-053 -> 056-062 to resolve a merge-time ID collision with the community-health specs."
 
   extensions:
     status: AUDITED

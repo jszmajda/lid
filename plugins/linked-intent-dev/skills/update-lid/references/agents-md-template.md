@@ -36,7 +36,7 @@ HLD → LLDs → EARS → Tests → Code
 <!-- Workflow bullets: two variants (LID-UPDATE-050). Variant A when the workflow doc is vendored (the default); Variant B when the user declined it. Write exactly one into the user's file; strip the unused variant and these comment markers. -->
 
 <!-- Variant A — workflow doc vendored: -->
-- **All changes**: consult the `linked-intent-dev` skill if your harness provides it; otherwise read `docs/lid/workflow.md` before making changes.
+- **All changes**: consult the `linked-intent-dev` skill if your harness provides it; otherwise read `docs/lid/workflow.md` before making changes. The workflow in one line: HLD check → LLD → EARS specs → edge audit → failing tests first → code — inspected at each phase.
 - **Bug fixes**: same arrow, no short-circuit — the workflow doc covers it.
 
 <!-- Variant B — no vendored doc: -->

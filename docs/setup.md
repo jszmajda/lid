@@ -16,7 +16,7 @@ Every tool below assumes your project has:
 1. An `AGENTS.md` at the root that describes the LID workflow for your project.
 2. A `docs/` tree with `high-level-design.md` and `intent/`.
 
-Claude Code users get both for free: `/linked-intent-dev` (the workflow skill) bootstraps them as part of Phase 1 on a fresh project — invoke it with a description of what you want to build. Non-Claude-Code users can copy [this repo's `AGENTS.md`](../AGENTS.md) and `docs/` layout as a starting point, or run Claude Code once just to scaffold — the artifacts themselves are tool-agnostic.
+Claude Code users get both for free: `/linked-intent-dev` (the workflow skill) bootstraps them as part of Phase 1 on a fresh project — invoke it with a description of what you want to build. Non-Claude-Code users can copy [this repo's `AGENTS.md`](../AGENTS.md) and `docs/` layout as a starting point — and vendor the workflow doc per the note in the next section — or run Claude Code once just to scaffold; the artifacts themselves are tool-agnostic.
 
 ---
 
@@ -43,7 +43,7 @@ Other tools that honor `AGENTS.md` per the [spec](https://agents.md/) and should
 
 Nearest-wins nesting is part of the spec; Codex and Amp implement hierarchical merge, while Zed and Cline pick a single file.
 
-**The workflow doc.** An `AGENTS.md` alone carries only LID's compact core — the arrow mandate, the inspection invariant, and navigation. The full workflow ships as `docs/lid/workflow.md`, a generated file the LID bootstrap offers to vendor into your project (and `/update-lid` keeps in sync — edit it upstream or in `AGENTS.md`, never in place). Your `AGENTS.md` points to it: harnesses with plugin support load the skill instead; everything else should read the doc before making changes. Two notes on making that pointer reliable:
+**The workflow doc.** An `AGENTS.md` alone carries only LID's compact core — the arrow mandate, the inspection invariant, and navigation. The full workflow ships as `docs/lid/workflow.md`, a generated file the LID bootstrap offers to vendor into your project (and `/update-lid` keeps in sync — edit it upstream or in `AGENTS.md`, never in place). **No plugin host?** Vendor it manually: copy `plugins/linked-intent-dev/skills/update-lid/references/workflow-doc.md` from the LID repository (a clone, or the file as published at the release tag) to `docs/lid/workflow.md` in your project. Re-syncing after a LID upgrade is the same copy at the newer version. Your `AGENTS.md` points to it: harnesses with plugin support load the skill instead; everything else should read the doc before making changes. Two notes on making that pointer reliable:
 
 - **Prose pointers are best-effort on most tools** — the model chooses whether to follow them. That is why the compact core in `AGENTS.md` carries the invariants that must survive an ignored pointer.
 - **Use deterministic loading where your tool has it:** Amp users can `@`-mention the doc from `AGENTS.md` (guaranteed inclusion, globs supported); Aider users should commit a `.aider.conf.yml` with `read: AGENTS.md` (see the [Aider section](#aider)); Claude Code and Cursor need nothing extra — the plugins carry the workflow.

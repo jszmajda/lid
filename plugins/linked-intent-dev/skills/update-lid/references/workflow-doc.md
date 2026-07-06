@@ -5,7 +5,7 @@
 
 # LID Workflow (vendored)
 
-The full linked-intent-development workflow, vendored for agent harnesses without a plugin system. Read this before making code changes in this project. The reference material this workflow cites (`references/...` paths) is appended as sections at the end of this document — the content is here, not in a references directory.
+The full linked-intent-development workflow, vendored for agent harnesses without a plugin system. Read this before making code changes in this project. The reference material this workflow cites (`references/...` paths) is appended as sections at the end of this document — the content is here, not in a references directory. References to `docs/decisions/` and `docs/intent/...` paths inside LID-specific passages describe LID's own repository — consult them at the LID repo, not in this project.
 
 ---
 
@@ -15,7 +15,7 @@ This skill guides a structured linked-intent development workflow. LID's goal is
 
 ## Three rules govern every phase
 
-**Stop and iterate at every phase boundary.** After completing each phase below, present it — the phase output in full, or an authorized inspector's summarized findings (see *Specification and inspection instruments* below) — incorporate numbered feedback, and proceed only on explicit approval. Each stop is mandatory; the stops are the mechanism realizing the HLD tenet *Every phase is inspected*. Skipping stops is the single most common way this workflow degrades into a rush. (Carveout: command-mode skills that execute a single directed pass, like `/arrow-maintenance`'s audit-and-update, are not phase-structured in this sense and do not pause mid-pass. This workflow is generative; phases here produce intent, so every boundary gets a stop.)
+**Stop and iterate at every phase boundary.** After completing each phase below, present it — the phase output in full, or an authorized inspector's summarized findings (see *Specification and inspection instruments* below) — incorporate numbered feedback, and proceed only on explicit approval. Each stop is mandatory; the stops are the mechanism realizing the HLD tenet *Every phase is inspected*. Skipping stops is the single most common way this workflow degrades into a rush. (Carveout: command-mode skills that execute a single directed pass, like `/arrow-maintenance`'s audit-and-update, are not phase-structured in this sense and do not pause mid-pass. This workflow is generative; phases here produce intent, so every boundary gets a stop — unless the user has expressly authorized a consolidated cadence: a warned override, or an opt-in experiment they have declared.)
 
 **Run a coherence pre-flight before starting or resuming implementation.** When picking up work — new session, returning to a change, cascading from an upstream change — verify that the HLD, LLDs, EARS specs, and tests are mutually coherent for the segment about to be touched:
 
@@ -33,19 +33,19 @@ Two kinds of intent work run through the phases, verified differently: **specify
 
 **Specifying — follow the user's grain.** Drafting-then-review works one document at a time: draft the artifact whole, the user reviews it whole. Elicitation works one concept at a time: raise a single aspect, the user responds to just that, and the document accretes from the answers. Match the user's current grain — a user who answers one aspect of a draft and ignores the rest is asking for elicitation; whole-document feedback means draft-review is working. Switching mid-artifact is normal. When eliciting: one aspect per exchange, real tradeoffs with concrete examples, confirm understanding before recording a choice, and keep it short — an easy-to-click menu that hides the real decision is worse than no menu.
 
-**Inspecting — the user chooses the inspector.** Default: the user reads each phase's output at its stop. On the user's authorization: a **zero-context reader** (given only the arrow artifacts, never the conversation, so it cannot inherit the builder's blind spots — the coach's cold-read pass and the experimental blind differential are this family) or a **delegated inspector** (a subagent reviewing the phase output in the user's place). Inspection may also be **relocated out-of-band**: the user lands the change on a branch and leans on the project's existing review process (a pull-request review); the stops still run in-session, and a review finding that reveals an *intent* gap walks the arrow like any bug.
+**Inspecting — the user chooses the inspector.** Default: the user reads each phase's output at its stop. On the user's authorization: a **zero-context reader** (given only the arrow artifacts, never the conversation, so it cannot inherit the builder's blind spots — the coach's cold-read pass and the experimental blind differential are this family) or a **delegated inspector** (a subagent reviewing the phase output in the user's place). Inspection may also be **relocated out-of-band**: the user lands the change on a branch and leans on the project's existing review process (a pull-request review). Relocation is scoped to what the review will actually read — a code-focused review covers only the code rungs, so the intent phases keep their full in-session ruling unless the review explicitly covers the intent artifacts. The stops still run in-session, and a review finding that reveals an *intent* gap walks the arrow like any bug.
 
 Three rules hold whatever the instruments:
 
-- A delegated inspector's findings are never applied silently — present them summarized and focused at the stop; a pass means "no counterexample found," not proof.
-- A spec or draft that admits more than one reading always goes back to the user — only they hold the latent intent — before tests are written against either reading.
+- A delegated inspector's findings are never applied silently — present them summarized and focused at the stop; a pass means "no counterexample found," not proof. On a clean pass, name where the inspector looked hardest and offer the user a spot-check of that raw output — ruling on a clean pass means sampling, not ratifying an empty report.
+- A spec or draft that admits more than one reading always goes back to the user — only they hold the latent intent — at whatever phase the fork is discovered, before further tests or code land against either reading. A fork found after tests exist is surfaced with the affected tests named.
 - Delegation changes *who inspects at a stop*, never *how many stops there are*. The user can still override anything, per *the user is always right — with warning*.
 
 ## Delegation discipline
 
 Discipline does not travel by ambient context. A subagent dispatched to perform phase work receives only its prompt — not this skill, not the instruction file, not the conversation. Embed the phase's obligations in the dispatch prompt itself.
 
-For implementation work (Phases 5–6): the EARS spec ID(s) in scope, the tests-first gate ("write failing tests first; do not proceed to code until they fail as expected"), and the `@spec` annotation requirement. For a Phase 2 probe: what the probe targets. For a delegated inspector: the spec(s) it inspects against and the requirement to return summarized, focused findings. When a phase gains a new obligation, dispatches of that phase's work carry it.
+For implementation work (Phases 5–6): the EARS spec ID(s) in scope, the tests-first gate ("write failing tests first; do not proceed to code until they fail as expected"), and the `@spec` annotation requirement. For a Phase 2 probe: what the probe targets. For a delegated inspector: the spec(s) it inspects against and the requirement to return summarized, focused findings. For every dispatch, whatever the phase: the obligation to surface, not resolve, ambiguity — a spec that admits more than one reading comes back as a question, never as a silently chosen reading. A dispatched agent that itself dispatches carries these obligations into its own dispatch prompts — the rule travels with the work. When a phase gains a new obligation, dispatches of that phase's work carry it.
 
 ## Mode-aware triggering
 
@@ -229,9 +229,6 @@ Place at the entry point of the behavior's implementation graph, not on every he
 it('validates email format before submission', () => { ... });
 ```
 
-## LID-on-LID exception
-
-Inside LID's own repository (when editing LID itself), `@spec` annotation direction inverts — `SKILL.md` bodies cannot host `@spec` without bending runtime behavior. Spec files carry the artifact pointer in their header; SKILL.md stays clean. This applies only inside the LID repo. See `docs/intent/linked-intent-dev/linked-intent-dev-design.md § Spec-File Header Format` for the schema.
 
 ## Reference files
 

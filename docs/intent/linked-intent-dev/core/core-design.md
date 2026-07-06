@@ -59,7 +59,7 @@ The skill errs toward over-triggering rather than under-triggering. An over-trig
 
 Three rules govern every phase below.
 
-**Stop and iterate at every phase boundary.** After completing each phase, the agent presents — the phase output in full, or an authorized inspector's summarized findings (see *Specification and inspection instruments*) — incorporates numbered feedback, and proceeds only on explicit approval. Each stop is mandatory, not optional. Skipping stops is the single most common way this workflow degrades into a rush. This is the stop mechanism realizing the HLD tenet *Every phase is inspected*.
+**Stop and iterate at every phase boundary.** After completing each phase, the agent presents — the phase output in full, or an authorized inspector's summarized findings (see *Specification and inspection instruments*) — incorporates numbered feedback, and proceeds only on explicit approval. Each stop is mandatory, not optional — unless the user has expressly authorized a consolidated cadence (a warned override, or an opt-in experiment they have declared). Skipping stops is the single most common way this workflow degrades into a rush. This is the stop mechanism realizing the HLD tenet *Every phase is inspected*.
 
 **Before starting (or resuming) implementation, run a coherence pre-flight.** Verify that the current state of HLD, LLDs, EARS specs, and tests are mutually coherent for the segment about to be touched — do EARS specs trace to the current LLD? Do tests trace to current EARS? Does the LLD still reflect the HLD's architecture? If drift is detected, fix the docs first and only then implement. A resumption check prevents one session's drift from being compounded into the next session's change.
 
@@ -73,12 +73,12 @@ The HLD distinguishes two kinds of intent work, verified differently: **specifyi
 
 **Inspection instruments.** The default: the human reads each phase's output at its stop. Alternatives the human may authorize: a **zero-context reader** — a reviewer given only the arrow artifacts, never the conversation, so it cannot inherit the builder's blind spots (the coach's cold-read pass and the experimental blind differential are this family) — or a **delegated inspector**, a subagent reviewing a phase's output in the human's place.
 
-A third form is **out-of-band review**: the human lands the change on a branch and gathers inspection through the project's existing review process — a pull-request review by teammates, a review bot. This relocates inspection downstream rather than removing it: the phase stops still run in-session, but the human may rule quickly and lean on the review for depth. Two cautions hold. Specification questions cannot wait for the review — a fork in latent intent is resolved in-session, before tests are written against a guess. And a review finding that reveals an *intent* gap (not just a code slip) comes back through the arrow like any bug: find where intent diverged, cascade from there.
+A third form is **out-of-band review**: the human lands the change on a branch and gathers inspection through the project's existing review process — a pull-request review by teammates, a review bot. This relocates inspection downstream rather than removing it: the phase stops still run in-session, but the human may rule quickly and lean on the review for depth — scoped to what the review will actually read. A code-focused review covers the code rungs; the intent phases (HLD, LLD, EARS) keep their full in-session ruling unless the review explicitly covers the intent artifacts. Two cautions hold. Specification questions cannot wait for the review — a fork in latent intent is resolved in-session, before tests are written against a guess. And a review finding that reveals an *intent* gap (not just a code slip) comes back through the arrow like any bug: find where intent diverged, cascade from there.
 
 Two rules are invariants, not defaults:
 
-- **A delegated inspector's findings are never applied silently.** It reports summarized, focused findings; the human rules on them at the stop. A pass means "no counterexample found," not proof.
-- **Specification questions always go to the human.** A spec admitting two readings is a fork in latent intent, and only the human holds the latent intent — no instrument can answer it.
+- **A delegated inspector's findings are never applied silently.** It reports summarized, focused findings; the human rules on them at the stop. A pass means "no counterexample found," not proof — on a clean pass the report names where the inspector looked hardest, and the human is offered a spot-check of that raw output.
+- **Specification questions always go to the human.** A spec admitting two readings is a fork in latent intent, and only the human holds the latent intent — no instrument can answer it. The obligation has no expiry: a fork discovered at any phase — including after tests exist — surfaces before work proceeds against either reading.
 
 **Delegation changes *who inspects at a stop*, never *how many stops there are*.** Every phase boundary still stops; what changes is whether the human rules on raw output or on an inspector's findings. The human can still override anything — skip a stop, skip inspection — per *the user is always right, with warning*: warn about the drift risk, honor the choice.
 
@@ -88,7 +88,7 @@ Discipline does not travel by ambient context. A subagent dispatched to perform 
 
 The named primary instance is implementation work: a dispatch of Phase 5–6 work embeds the EARS spec ID(s) in scope, the tests-first gate (write failing tests first; do not proceed to code until they fail as expected), and the `@spec` annotation requirement. The same rule covers every delegated instrument: the Phase 2 edge-case probe's prompt embeds what the probe targets; a delegated inspector's dispatch embeds the spec(s) it inspects against and the summarized-findings requirement whose inbound side is LID-CORE-049.
 
-The rule is dynamic, not a fixed checklist: when a phase gains a new obligation, dispatches of that phase's work carry it.
+Two riders apply to every dispatch, whatever the phase: ambiguity is surfaced, not resolved — a spec admitting more than one reading returns to the dispatcher as a question, never as a silently chosen reading — and a dispatched agent that itself dispatches carries these obligations into its own dispatch prompts. The rule is dynamic, not a fixed checklist: when a phase gains a new obligation, dispatches of that phase's work carry it.
 
 When the skill triggers, it guides the agent through six phases:
 

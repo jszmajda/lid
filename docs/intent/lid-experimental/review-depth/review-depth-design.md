@@ -41,7 +41,7 @@ Specification forks — a spec or draft admitting more than one reading (LID-COR
 - **Critical-path escape:** a fork that blocks all remaining work interrupts immediately regardless of classification.
 - **At the boundary, read — don't recall.** The consolidated review presents parked forks by reading the log, grouped by kind. Each ruling comes with an offer to update the declared judgment areas to match the revealed pattern — the judgment map is living, and the accumulated fork taxonomy is this experiment's most valuable output.
 
-**Fork log location:** `docs/arrows/_experiments/review-depth/<segment>/fork-log.md` when the arrow-maintenance overlay is present — the reserved experiment namespace, excluded from audits, removable at retirement. On overlay-less projects the skill asks once and the answer rides the user's declaration prose.
+**Fork log location** (confirmed at change entry, file created if absent): `docs/arrows/_experiments/review-depth/<segment>/fork-log.md` when the arrow-maintenance overlay is present — the reserved experiment namespace, excluded from audits, removable at retirement. On overlay-less projects the skill asks once and the answer rides the user's declaration prose.
 
 ## Promotion and retirement
 
@@ -51,6 +51,10 @@ Stated up front, per experiment discipline:
 - **Retire** — if consolidated reviews repeatedly trigger multi-phase rework (the boundary feedback invalidating already-drafted work), or if the fork protocol's parking proves unsafe in practice.
 
 Rework cost at the consolidated boundary — not interrupt count alone — is the honest metric: feedback arriving after five phases can invalidate all five.
+
+## Known limitations
+
+Eligibility is agent self-assessment. The fail-open triggers key on structural acts — an HLD edit, an LLD restructuring, a boundary crossing — so an architectural decision the agent does not recognize as architectural fires none of them and reaches the user inside the consolidated review. This is not designed away: detecting it would require the agent to notice what it failed to notice, and in practice agents tend to over-suggest HLD involvement rather than under-suggest it, which bounds the risk. The promotion evidence bar measures exactly this failure: a consolidated review that surfaces a correction a per-phase stop would have caught earlier counts against promotion.
 
 ## Decisions & Alternatives
 

@@ -5,7 +5,7 @@ description: Experimental declared review depth for linked-intent development. U
 
 # Review Depth (experiment)
 
-An experimental overlay on the `linked-intent-dev` workflow: the user declares the phase depth they personally review; deeper phases still run in full, but their outputs consolidate into **one review at the declared boundary** instead of stopping per phase. Per-phase stops remain LID's default — this skill changes nothing unless the user has declared a declaration.
+An experimental overlay on the `linked-intent-dev` workflow: the user declares the phase depth they personally review; deeper phases still run in full, but their outputs consolidate into **one review at the declared boundary** instead of stopping per phase. Per-phase stops remain LID's default — this skill changes nothing unless the user has declared a review depth. An active declaration is the user's express authorization to suspend the per-phase stop default (LID-CORE-005) below the declared depth.
 
 ## Recognizing the declaration
 
@@ -22,16 +22,19 @@ Declare eligibility before consolidating — never decide it silently:
 
 > This change qualifies for consolidated review: segment-local, no HLD or structural LLD work anticipated. Proceeding under your through-LLD declaration — per-phase for HLD/LLD, one consolidated review after tests. OK?
 
+Confirm the fork-log location as part of entry — create the file if it does not exist — so the first fork has somewhere to land before it arrives.
+
 **Fail-open.** If the work turns out to touch the HLD, restructure an LLD, or cascade across a segment boundary, revert to per-phase stops for the remainder of the change and say so.
 
 ## Fork protocol
 
 A specification fork — a spec or draft line admitting more than one reading — is a latent-intent question. Depth changes how the user *reviews*; it never changes who *resolves* a fork:
 
-- **In a declared judgment area:** surface immediately, whatever the depth.
+- **In a declared judgment area — or plausibly in one:** surface immediately, whatever the depth. Classification doubt resolves toward surfacing.
 - **Outside judgment areas:** park it — **write it to the fork log at detection, before routing around it.** Never resolve it silently. Entry shape: the spec line, the divergent readings, kind, status.
 - **Dependency rule:** write no tests or code against an unresolved fork's spec line; do the independent work first.
 - **Critical-path escape:** a fork blocking all remaining work surfaces immediately.
+- **After the boundary:** a fork discovered once the consolidated review has passed surfaces immediately — the log has already been read.
 
 **Fork log location:** `docs/arrows/_experiments/review-depth/<segment>/fork-log.md` when `docs/arrows/` exists; otherwise ask the user once and record the answer in their declaration prose. The log is externalized state — retention must never depend on holding forks in working memory across the change.
 
