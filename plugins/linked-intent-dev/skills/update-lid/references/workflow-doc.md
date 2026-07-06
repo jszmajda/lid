@@ -1,5 +1,5 @@
 <!-- GENERATED FILE — do not edit here.
-     Assembled from the linked-intent-dev plugin (version 1.3.0) at release.
+     Assembled from the linked-intent-dev plugin (version 1.4.0) at release.
      Changes belong upstream (in the plugin) or in this project's instruction file.
      Re-sync via /update-lid where available; see docs/setup.md otherwise. -->
 

@@ -1,7 +1,7 @@
 {
   "name": "linked-intent-dev",
-  "description": "Structured design-before-code workflow: HLD → LLD → EARS specs → Implementation plan",
-  "version": "1.3.0",
+  "description": "Structured design-before-code workflow: HLD \u2192 LLD \u2192 EARS specs \u2192 Implementation plan",
+  "version": "1.4.0",
   "author": {
     "name": "Jess Szmajda"
   },
