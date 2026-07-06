@@ -6,13 +6,13 @@ node: high-level-design
 
 ## Context
 
-Plugin hosts (Claude Code, Cursor) load the `linked-intent-dev` skill on demand — the full workflow arrives only when a change is in flight. Every other host reads exactly one thing: the project's instruction file. That file is paid for on every turn of every session, and some hosts enforce hard budgets on it (Codex silently truncates combined AGENTS.md content at 32 KiB). The distribution question: in what form does the full workflow reach instruction-file-only hosts, without taxing every session's context and without maintaining a second, drift-prone copy of the methodology? Evidence base: `docs/research/harness-instruction-idioms.md` (verified survey of the target harnesses' idioms, 2026-07-05).
+Plugin hosts (Claude Code, Cursor) load the `linked-intent-dev` skill on demand — the full workflow arrives only when a change is in flight. Every other host reads exactly one thing: the project's instruction file. That file is paid for on every turn of every session, and some hosts enforce hard budgets on it (Codex silently truncates combined AGENTS.md content at 32 KiB by default — configurable, but silent). The distribution question: in what form does the full workflow reach instruction-file-only hosts, without taxing every session's context and without maintaining a second, drift-prone copy of the methodology? Evidence base: `docs/research/harness-instruction-idioms.md` (verified survey of the target harnesses' idioms, 2026-07-05).
 
 ## Decision Elements
 
-- **Gate — fits the hard budgets.** Whatever lands in the instruction file must sit well inside Codex's 32 KiB combined cap alongside the user's own content; silent truncation is invisible failure.
-- **One source, no paraphrase (major).** A hand-maintained summary of the workflow is a drift class: the summary froze an over-specified stop rule once already. Whatever ships must be derived from the skill source, not authored beside it. (*Intent leads*; *docs carry current intent*.)
-- **Survives unreliable pointers (major).** Prose "read this file first" pointers are model-dependent on most target harnesses (deterministic imports exist only on Amp and Claude Code), with documented failures. Load-bearing guarantees cannot live solely behind a pointer.
+- **Gate — fits the hard budgets.** Whatever lands in the instruction file must sit well inside Codex's combined cap (32 KiB by default) alongside the user's own content; silent truncation is invisible failure.
+- **One source, no paraphrase (major).** A hand-maintained summary of the workflow is a drift class: a paraphrase falls behind its source and freezes judgments the source has since revised. Whatever ships must be derived from the skill source, not authored beside it. (*Intent leads*; *docs carry current intent*.)
+- **Survives unreliable pointers (major).** Prose "read this file first" pointers are model-dependent on most target harnesses (deterministic imports exist only on Amp and Claude Code), with a documented failure and no systematic reliability evidence. Load-bearing guarantees cannot live solely behind a pointer.
 - **Footprint tidiness (moderate).** Communities accept vendored files; they push back on sprawl ("makes it look like the framework is the project"). LID already owns a `docs/` presence — additions should ride it, not add root directories.
 - **User choice (moderate).** Minimal-harness users are intentional about their repos and context windows; distribution is offered, not imposed. (*The user is always right — with warning*.)
 
@@ -50,7 +50,7 @@ The plugin ships a workflow doc assembled from the core skill source at release.
 
 - Budget gate: **passes** — the always-loaded core shrinks; the doc is read on demand.
 - One source: **strong** — the doc is release-assembled from the skill, never authored separately.
-- Pointer resilience: **strong** — the invariant floor stays in the instruction file, so an ignored pointer degrades to today's guarantees, not to nothing.
+- Pointer resilience: **strong** — the **invariant floor** — the arrow mandate and inspection invariant kept in the instruction file's compact core — stays in place, so an ignored pointer degrades to today's guarantees, not to nothing.
 - Footprint: **strong** — one committed file inside `docs/`, no new root directories.
 - Choice: **strong** — offered at bootstrap with the tradeoff stated; per-tool deterministic loading (Aider's committed `.aider.conf.yml` `read:` entry, Amp `@`-mention) documented in `docs/setup.md`.
 

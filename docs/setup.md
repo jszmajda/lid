@@ -197,14 +197,12 @@ Sources: [Copilot repository instructions](https://docs.github.com/en/copilot/ho
 
 ## Aider
 
-Aider does **not** read `AGENTS.md` automatically — you have to wire it in via `.aider.conf.yml`. Aider's canonical conventions filename is `CONVENTIONS.md`; symlink `AGENTS.md` to `CONVENTIONS.md` if you want a single source of truth.
-
-**`CONVENTIONS.md`** (symlink to `AGENTS.md`, or a standalone file)
+Aider does **not** read `AGENTS.md` automatically — wire it in via `.aider.conf.yml`, which Aider auto-reads from the repo root. List `AGENTS.md` directly: `read:` takes any path, so no `CONVENTIONS.md` file or symlink is needed (that filename is only Aider's documentation convention).
 
 **`.aider.conf.yml`**
 ```yaml
 read:
-  - CONVENTIONS.md
+  - AGENTS.md
   - docs/high-level-design.md
 ```
 
@@ -212,7 +210,7 @@ read:
 
 ```yaml
 read:
-  - CONVENTIONS.md
+  - AGENTS.md
   - docs/high-level-design.md
   - docs/intent/auth/auth-design.md
   - docs/intent/auth/auth-specs.md

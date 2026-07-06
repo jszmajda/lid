@@ -10,11 +10,11 @@ Pure-prose experiment skill — no eval harness; `[x]` marks behavior the SKILL.
 
 ---
 
-## Posture and Depth
+## Declaration and Depth
 
-- `[x]` **EXP-DEPTH-001**: When the user has declared a review posture naming a let-go depth (in their instruction file or in-session), the system SHALL run every workflow phase, stopping per-phase at and above the declared depth and consolidating deeper phases' outputs into one review at the declared boundary.
-- `[x]` **EXP-DEPTH-002**: When entering a change under a declared let-go posture, the system SHALL state the change's eligibility — segment-local, no HLD or structural LLD work anticipated — and SHALL proceed consolidated only on the user's go.
-- `[x]` **EXP-DEPTH-003**: If work under a let-go posture touches the HLD, restructures an LLD, or cascades across a segment boundary, the system SHALL revert to per-phase stops for the remainder of the change.
+- `[x]` **EXP-DEPTH-001**: When the user has declared a review depth (in their instruction file or in-session), the system SHALL run every workflow phase, stopping per-phase at and above the declared depth and consolidating deeper phases' outputs into one review at the declared boundary.
+- `[x]` **EXP-DEPTH-002**: When entering a change under a declared review depth, the system SHALL state the change's eligibility — segment-local, no HLD or structural LLD work anticipated — and SHALL proceed consolidated only on the user's go.
+- `[x]` **EXP-DEPTH-003**: If work under a declared review depth touches the HLD, restructures an LLD, or cascades across a segment boundary, the system SHALL revert to per-phase stops for the remainder of the change.
 
 ## Fork Protocol
 
@@ -24,4 +24,4 @@ Pure-prose experiment skill — no eval harness; `[x]` marks behavior the SKILL.
 - `[x]` **EXP-DEPTH-007**: If an unresolved fork blocks all remaining work in the change, the system SHALL surface it to the user immediately.
 - `[x]` **EXP-DEPTH-008**: At the consolidated boundary, the system SHALL present parked forks by reading the fork log — grouped by kind, never reconstructed from memory — alongside the LLD delta, spec delta, and failing tests.
 - `[x]` **EXP-DEPTH-009**: When the user rules on parked forks, the system SHALL offer an update to the declared judgment areas reflecting the revealed pattern.
-- `[x]` **EXP-DEPTH-010**: The system SHALL keep the fork log under `docs/arrows/_experiments/review-depth/` when the arrow-maintenance overlay is present, and otherwise at a location the user names once in their posture declaration.
+- `[x]` **EXP-DEPTH-010**: The system SHALL keep the fork log under `docs/arrows/_experiments/review-depth/` when the arrow-maintenance overlay is present, and otherwise at a location the user names once in their depth declaration.

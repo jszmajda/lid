@@ -5,6 +5,7 @@ Append this block to the project's instruction file — `AGENTS.md` (canonical; 
 - The `## LID` block is mandatory. Substitute the user's chosen mode into `- Mode:` and the `linked-intent-dev` plugin version the project's docs conform to into `- Version:`.
 - The `## LID Scope` section is **included only** when mode is Scoped, and follows the `## LID` block. When mode is Full, omit the section entirely — its absence means "entire project in scope." For Scoped mode, substitute the user's declared include/exclude patterns into the bulleted lists below.
 - The "Arrow of intent overlay" row in the navigation table is **included only** when `docs/arrows/` exists in the project root at invocation time. When absent, omit that row entirely — do not write the parenthetical note to the user's file.
+- The workflow bullets below have **two variants** (A: vendored-doc pointer; B: compressed summary). Write **exactly one** into the user's file, per the user's vendoring choice, and strip the unused variant and every variant comment marker.
 - The `## LID Tooling` section is **included only** when the project has tooling to declare (most commonly a coherence-check script). Omit entirely when there is nothing to declare; the skill falls back to in-prompt audit when the section is missing or empty.
 
 ---
@@ -32,7 +33,7 @@ Paths explicitly excluded:
 HLD → LLDs → EARS → Tests → Code
 ```
 
-<!-- Workflow bullets: two variants (LID-UPDATE-050). Variant A when the workflow doc is vendored (the default); Variant B when the user declined it. Use exactly one. -->
+<!-- Workflow bullets: two variants (LID-UPDATE-050). Variant A when the workflow doc is vendored (the default); Variant B when the user declined it. Write exactly one into the user's file; strip the unused variant and these comment markers. -->
 
 <!-- Variant A — workflow doc vendored: -->
 - **All changes**: consult the `linked-intent-dev` skill if your harness provides it; otherwise read `docs/lid/workflow.md` before making changes.

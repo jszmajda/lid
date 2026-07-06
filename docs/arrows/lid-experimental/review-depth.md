@@ -1,6 +1,6 @@
 # Arrow: review-depth
 
-Experimental let-go review depth — user-declared prose posture, consolidated reviews below the declared phase depth, write-at-detection fork log. Opt-in via the `lid-experimental` plugin; core per-phase stops remain the default.
+Experimental declared review depth — the user declares, in their own prose, the phase depth they personally review; consolidated reviews below the declared phase depth, write-at-detection fork log. Opt-in via the `lid-experimental` plugin; core per-phase stops remain the default.
 
 ## References
 
@@ -8,7 +8,7 @@ Experimental let-go review depth — user-declared prose posture, consolidated r
 - **EARS**: `docs/intent/lid-experimental/review-depth/review-depth-specs.md` (prefix `EXP-DEPTH`)
 - **Artifact**: `plugins/lid-experimental/skills/review-depth/SKILL.md`
 - **Working state**: `docs/arrows/_experiments/review-depth/` (fork logs; reserved namespace, audit-excluded)
-- **Related decisions**: `docs/decisions/inspection-instrument-selection.md` (the no-configuration stance the prose posture preserves)
+- **Related decisions**: `docs/decisions/inspection-instrument-selection.md` (the no-configuration stance the user-authored declaration preserves)
 
 ## Spec Coverage
 

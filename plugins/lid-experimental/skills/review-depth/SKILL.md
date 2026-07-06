@@ -1,17 +1,17 @@
 ---
 name: review-depth
-description: Experimental let-go review depth for linked-intent development. Use when a LID project's instruction file declares a review posture in prose (e.g. "Review posture - I review through LLD; below that, consolidate to one review") or the user asks to batch phase reviews, consolidate stops, or let go below a phase depth. Overlays the linked-intent-dev workflow — every phase still runs; interrupts consolidate. Never activates on its own judgment.
+description: Experimental declared review depth for linked-intent development. Use when a LID project's instruction file declares a review depth in prose (e.g. "Review depth - I review through LLD; below that, consolidate to one review") or the user asks to batch phase reviews, consolidate stops, or let go below a phase depth. Overlays the linked-intent-dev workflow — every phase still runs; interrupts consolidate. Never activates on its own judgment.
 ---
 
 # Review Depth (experiment)
 
-An experimental overlay on the `linked-intent-dev` workflow: the user declares the phase depth they personally review; deeper phases still run in full, but their outputs consolidate into **one review at the declared boundary** instead of stopping per phase. Per-phase stops remain LID's default — this skill changes nothing unless the user has declared a posture.
+An experimental overlay on the `linked-intent-dev` workflow: the user declares the phase depth they personally review; deeper phases still run in full, but their outputs consolidate into **one review at the declared boundary** instead of stopping per phase. Per-phase stops remain LID's default — this skill changes nothing unless the user has declared a declaration.
 
-## Recognizing the posture
+## Recognizing the declaration
 
-The posture is the **user's own prose** — in their instruction file or stated in-session. LID writes no configuration for it. Recommended shape (offer it to users who want a standing declaration):
+The declaration is the **user's own prose** — in their instruction file or stated in-session. LID writes no configuration for it. Recommended shape (offer it to users who want a standing declaration):
 
-> Review posture: I review through LLD; below that, consolidate to one review.
+> Review depth: I review through LLD; below that, consolidate to one review.
 > Judgment areas: naming and API shapes; anything touching auth.
 
 Depth values track the phases — *through HLD*, *through LLD*, *through EARS*, *through tests*. "Through X": phases at and above X stop per-phase as usual; deeper phases consolidate. **Judgment areas** name the fork kinds the user wants routed to them immediately (see below). No declaration means no change: full per-phase stops.
@@ -20,7 +20,7 @@ Depth values track the phases — *through HLD*, *through LLD*, *through EARS*, 
 
 Declare eligibility before consolidating — never decide it silently:
 
-> This change qualifies for consolidated review: segment-local, no HLD or structural LLD work anticipated. Proceeding under your through-LLD posture — per-phase for HLD/LLD, one consolidated review after tests. OK?
+> This change qualifies for consolidated review: segment-local, no HLD or structural LLD work anticipated. Proceeding under your through-LLD declaration — per-phase for HLD/LLD, one consolidated review after tests. OK?
 
 **Fail-open.** If the work turns out to touch the HLD, restructure an LLD, or cascade across a segment boundary, revert to per-phase stops for the remainder of the change and say so.
 
@@ -33,7 +33,7 @@ A specification fork — a spec or draft line admitting more than one reading �
 - **Dependency rule:** write no tests or code against an unresolved fork's spec line; do the independent work first.
 - **Critical-path escape:** a fork blocking all remaining work surfaces immediately.
 
-**Fork log location:** `docs/arrows/_experiments/review-depth/<segment>/fork-log.md` when `docs/arrows/` exists; otherwise ask the user once and record the answer in their posture prose. The log is externalized state — retention must never depend on holding forks in working memory across the change.
+**Fork log location:** `docs/arrows/_experiments/review-depth/<segment>/fork-log.md` when `docs/arrows/` exists; otherwise ask the user once and record the answer in their declaration prose. The log is externalized state — retention must never depend on holding forks in working memory across the change.
 
 ## The consolidated review
 

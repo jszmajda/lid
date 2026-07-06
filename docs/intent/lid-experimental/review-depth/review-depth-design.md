@@ -13,11 +13,11 @@ This experiment adds a **declared review depth**: the human names the phase dept
 
 Skill variant: pure-prose (guides agent behavior alongside the core workflow; no deterministic procedure). Verification is dogfooding; `[x]` marks behavior the SKILL.md embodies.
 
-## Posture declaration
+## Declaring a review depth
 
-The posture is **user-authored prose**, not LID-written configuration. LID defines no bullet, key, or section for it — the user writes their preference in their own instruction file (or states it in-session), and this skill recognizes it. A recommended shape, documented for copy-adaptation:
+The declaration is **user-authored prose**, not LID-written configuration. LID defines no bullet, key, or section for it — the user writes their preference in their own instruction file (or states it in-session), and this skill recognizes it. A recommended shape, documented for copy-adaptation:
 
-> Review posture: I review through LLD; below that, consolidate to one review.
+> Review depth: I review through LLD; below that, consolidate to one review.
 > Judgment areas: naming and API shapes; anything touching auth.
 
 Depth values follow the phases: *through HLD*, *through LLD*, *through EARS*, *through tests* — "through X" means phases at or above X stop per-phase; deeper phases consolidate. **Judgment areas** name the kinds of specification forks the human wants routed to them immediately regardless of depth.
@@ -41,13 +41,13 @@ Specification forks — a spec or draft admitting more than one reading (LID-COR
 - **Critical-path escape:** a fork that blocks all remaining work interrupts immediately regardless of classification.
 - **At the boundary, read — don't recall.** The consolidated review presents parked forks by reading the log, grouped by kind. Each ruling comes with an offer to update the declared judgment areas to match the revealed pattern — the judgment map is living, and the accumulated fork taxonomy is this experiment's most valuable output.
 
-**Fork log location:** `docs/arrows/_experiments/review-depth/<segment>/fork-log.md` when the arrow-maintenance overlay is present — the reserved experiment namespace, excluded from audits, removable at retirement. On overlay-less projects the skill asks once and the answer rides the user's posture prose.
+**Fork log location:** `docs/arrows/_experiments/review-depth/<segment>/fork-log.md` when the arrow-maintenance overlay is present — the reserved experiment namespace, excluded from audits, removable at retirement. On overlay-less projects the skill asks once and the answer rides the user's declaration prose.
 
 ## Promotion and retirement
 
 Stated up front, per experiment discipline:
 
-- **Promote** — as **quiet absorption**: a documented, discoverable core capability that LID never advertises or suggests; per-phase stops remain the visible default. Bar: at least five dogfooded let-go changes across at least two projects in which no consolidated review surfaced a correction a per-phase stop would have caught earlier at lower rework cost, and the friction reduction is affirmatively reported by the user. Promotion reopens the no-configuration decision with evidence in hand.
+- **Promote** — as **quiet absorption**: a documented, discoverable core capability that LID never advertises or suggests; per-phase stops remain the visible default. Bar: at least five dogfooded declared-depth changes across at least two projects in which no consolidated review surfaced a correction a per-phase stop would have caught earlier at lower rework cost, and the friction reduction is affirmatively reported by the user. Promotion reopens the no-configuration decision with evidence in hand.
 - **Retire** — if consolidated reviews repeatedly trigger multi-phase rework (the boundary feedback invalidating already-drafted work), or if the fork protocol's parking proves unsafe in practice.
 
 Rework cost at the consolidated boundary — not interrupt count alone — is the honest metric: feedback arriving after five phases can invalidate all five.
@@ -56,7 +56,7 @@ Rework cost at the consolidated boundary — not interrupt count alone — is th
 
 | Decision | Chosen | Alternatives Considered | Rationale |
 |---|---|---|---|
-| Posture declaration form | User-authored prose, recognized by the skill | LID-defined `- Review:` bullet in the `## LID` block (licensed by the inspection-instrument decision doc's experimental carve-out); conversational-only | A structured bullet makes LID the author of inspection config it elsewhere refuses to write; conversational-only makes the user re-declare each session, which is itself the friction under test. Prose the user writes is a standing declaration with zero LID-defined surface — and a minimal-harness user is exactly the user who writes their own instruction file. |
+| Declaration declaration form | User-authored prose, recognized by the skill | LID-defined `- Review:` bullet in the `## LID` block (licensed by the inspection-instrument decision doc's experimental carve-out); conversational-only | A structured bullet makes LID the author of inspection config it elsewhere refuses to write; conversational-only makes the user re-declare each session, which is itself the friction under test. Prose the user writes is a standing declaration with zero LID-defined surface — and a minimal-harness user is exactly the user who writes their own instruction file. |
 | Fork log home | `docs/arrows/_experiments/review-depth/` (overlay present); ask-once otherwise | A new `.lid/` working directory; conversation memory | The `_experiments/` namespace exists for precisely this — experiment state attached to the overlay, audit-excluded, `rm -rf` at retirement. A parked fork held only in conversation memory is silently lost to context compaction, which is the failure the write-at-detection rule exists to prevent. |
 | Consolidated-stop placement | One boundary after tests, before code | Boundary before tests; per-rung mini-boundaries | The review must contain failing tests to preserve tests-first edge detection; earlier placement reviews intent nobody has tried to pin executably yet. The rework risk this creates is the experiment's central measurement, not a flaw to design away. |
 
@@ -68,6 +68,6 @@ Rework cost at the consolidated boundary — not interrupt count alone — is th
 ## References
 
 - `docs/intent/lid-experimental/lid-experimental-design.md` — parent sub-HLD.
-- `docs/decisions/inspection-instrument-selection.md` — the no-configuration decision this experiment's posture form preserves.
+- `docs/decisions/inspection-instrument-selection.md` — the no-configuration decision this experiment's declaration form preserves.
 - `docs/intent/linked-intent-dev/core/core-design.md` — the stop discipline and instrument framing this experiment overlays.
 - `plugins/lid-experimental/skills/review-depth/SKILL.md` — the artifact.

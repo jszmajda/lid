@@ -126,15 +126,15 @@ Audits EARS↔code coherence by running two fresh `claude -p` sessions in parall
 - **Sub-LLD**: `docs/intent/lid-experimental/bidirectional-differential/bidirectional-differential-design.md`
 - **EARS**: `docs/intent/lid-experimental/bidirectional-differential/bidirectional-differential-specs.md` (prefix `EXP-BIDIFF`)
 - **Skill**: `plugins/lid-experimental/skills/bidirectional-differential/`
+- **Candidate promotion target**: `linked-intent-dev` (primary — the audit's natural home is Phase 6 integration) or `arrow-maintenance` (secondary — if audit-record-maintenance dominates implementation).
 
 ### review-depth
 
-Tests a declared let-go review depth for the core workflow: the user names, in their own prose, the phase depth they personally review; deeper phases still run but consolidate into one review at the declared boundary. Specification forks outside the user's declared judgment areas are parked in a write-at-detection fork log (in the `_experiments/` reserved subtree) and ruled on at the boundary; forks inside judgment areas interrupt immediately. Fail-open guardrails revert to per-phase stops when work outgrows eligibility. Promotion target is quiet absorption into core (documented, never advertised), which reopens the no-inspection-configuration decision with evidence.
+Tests a declared review depth for the core workflow: the user names, in their own prose, the phase depth they personally review; deeper phases still run but consolidate into one review at the declared boundary. Specification forks outside the user's declared judgment areas are parked in a write-at-detection fork log (in the `_experiments/` reserved subtree) and ruled on at the boundary; forks inside judgment areas interrupt immediately. Fail-open guardrails revert to per-phase stops when work outgrows eligibility. Promotion target is quiet absorption into core (documented, never advertised), which reopens the no-inspection-configuration decision with evidence.
 
 - **Sub-LLD**: `docs/intent/lid-experimental/review-depth/review-depth-design.md`
 - **EARS**: `docs/intent/lid-experimental/review-depth/review-depth-specs.md` (prefix `EXP-DEPTH`)
 - **Skill**: `plugins/lid-experimental/skills/review-depth/`
-- **Candidate promotion target**: `linked-intent-dev` (primary — the audit's natural home is Phase 6 integration) or `arrow-maintenance` (secondary — if audit-record-maintenance dominates implementation).
 
 ## Spec Coverage
 

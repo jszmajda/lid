@@ -4,7 +4,7 @@ The behavioral `update-lid` skill (invokable as `/update-lid`) — bootstraps a 
 
 ## Status
 
-**AUDITED** — last audited 2026-06-07 (git SHA `65a143750760`). `update-lid` complete (47/47 specs `[x]`).
+**AUDITED** — last audited 2026-06-07 (git SHA `65a143750760`). `update-lid` complete (53/53 specs `[x]`; workflow-doc vendoring 048-053 added after the last audit).
 
 ## References
 
@@ -16,7 +16,8 @@ The behavioral `update-lid` skill (invokable as `/update-lid`) — bootstraps a 
 - `docs/intent/linked-intent-dev/linked-intent-dev-design.md` — parent `LID` sub-HLD for plugin-level concerns (mode detection, spec ID format, eval-metadata schema).
 
 ### EARS
-- `docs/intent/linked-intent-dev/update-lid/update-lid-specs.md` (47 specs, prefix `LID-UPDATE-*`)
+- `docs/intent/linked-intent-dev/update-lid/update-lid-specs.md` (53 specs, prefix `LID-UPDATE-*`)
+- `plugins/linked-intent-dev/skills/update-lid/references/workflow-doc.md` (shipped vendoring asset, release-assembled)
 
 ### Tests / Evals
 - `plugins/linked-intent-dev/skills/update-lid/evals/evals.json`
