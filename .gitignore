@@ -27,3 +27,17 @@ docs/research/threadkeeper-recommendations.md
 docs/research/**/node_modules/
 docs/research/experiments/*/**
 !docs/research/experiments/*/RESULTS.md
+
+# B10 publishes its full audit trail (2026-08-03 decision): the fixture is the
+# public portfolio-tracker repo, so the privacy rationale above doesn't apply.
+# Pre-registration, pilot record, sealed key + seed patches + T1 records,
+# adjudication mapping + human rulings, scoring, and the reusable harness are
+# tracked; raw model run outputs (runs/, adjudication/) stay local.
+!docs/research/experiments/b10-differential-catch-rate/DESIGN.md
+!docs/research/experiments/b10-differential-catch-rate/PILOT.md
+!docs/research/experiments/b10-differential-catch-rate/scoring.json
+!docs/research/experiments/b10-differential-catch-rate/scoring-final.json
+!docs/research/experiments/b10-differential-catch-rate/answer-key/
+!docs/research/experiments/b10-differential-catch-rate/answer-key/**
+!docs/research/experiments/b10-differential-catch-rate/harness/
+!docs/research/experiments/b10-differential-catch-rate/harness/**

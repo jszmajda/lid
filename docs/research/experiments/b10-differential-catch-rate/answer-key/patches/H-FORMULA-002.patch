@@ -1,0 +1,44 @@
+diff --git a/crates/sheets-view/src/lib.rs b/crates/sheets-view/src/lib.rs
+index 7e9df24..ed1fc90 100644
+--- a/crates/sheets-view/src/lib.rs
++++ b/crates/sheets-view/src/lib.rs
+@@ -555,7 +555,7 @@ pub fn render_positions(
+         if !seen.insert(symbol) {
+             return Err(ViewError::DuplicateSymbolRow(symbol.clone()));
+         }
+-        let r = (rows.len() as u32) + DATA_START_ROW; // this row's 1-based number
++        let r = (rows.len() as u32) + 1; // this row's 1-based number within the data block
+         let ticker = resolve_ticker(aliases, symbol);
+ 
+         // Avg cost/share = total_basis / shares (engine value; guard zero shares).
+diff --git a/crates/sheets-view/tests/formula.rs b/crates/sheets-view/tests/formula.rs
+index 753ff6a..861e552 100644
+--- a/crates/sheets-view/tests/formula.rs
++++ b/crates/sheets-view/tests/formula.rs
+@@ -79,7 +79,7 @@ fn per_row_formulas_reference_their_own_row_beneath_frozen_header() {
+     assert_eq!(DATA_START_ROW, 2);
+ 
+     for (i, row) in positions.rows.iter().enumerate() {
+-        let r = (i as u32) + DATA_START_ROW;
++        let r = (i as u32) + 1;
+         // Market Value = Price(E) × Shares(B) on THIS row.
+         let mv = row[col("Market Value")].text();
+         assert!(mv.contains(&format!("E{r}")), "MV row {r}: {mv}");
+@@ -93,7 +93,7 @@ fn per_row_formulas_reference_their_own_row_beneath_frozen_header() {
+         // The formula must NOT reference any OTHER data row's number, so a row
+         // shift cannot mis-pair the cells.
+         for other in 0..positions.rows.len() {
+-            let ro = (other as u32) + DATA_START_ROW;
++            let ro = (other as u32) + 1;
+             if ro != r {
+                 assert!(
+                     !mv.contains(&format!("E{ro}")),
+@@ -129,7 +129,7 @@ fn positions_shows_pretax_and_live_posttax_estimate() {
+     assert!(POSITIONS_HEADER.iter().any(|h| *h == "Unrealized P&L"));
+ 
+     let row = &positions.rows[0];
+-    let r = DATA_START_ROW;
++    let r = 1;
+     // Net Unrealized = Unrealized P&L(G) × (1 − Est. Tax Rate(H)) on this row.
+     let net = row[col("Net Unrealized (est)")].text();
+     assert!(net.contains(&format!("G{r}")), "net: {net}");

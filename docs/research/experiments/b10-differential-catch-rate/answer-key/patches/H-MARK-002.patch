@@ -1,0 +1,98 @@
+diff --git a/crates/sheets-view/src/lib.rs b/crates/sheets-view/src/lib.rs
+index 7e9df24..1ba8a44 100644
+--- a/crates/sheets-view/src/lib.rs
++++ b/crates/sheets-view/src/lib.rs
+@@ -355,36 +355,36 @@ impl MarksProduced {
+ }
+ 
+ /// The single rounding site for the price→`Cents` conversion: USD price assumed,
+-/// `round_half_to_even(price × 100)`. A positive price that rounds to 0 `Cents`
+-/// is a **degraded anomaly** (`Err(DegradeReason::SubCent)`), never a real zero
+-/// mark. A genuine 0.0 (or non-positive) price also yields the sub-cent degrade
+-/// — there is no real zero mark. (SHEET-MARK-002)
++/// rounded half-up to the nearest cent. A positive price that rounds to 0
++/// `Cents` is a **degraded anomaly** (`Err(DegradeReason::SubCent)`), never a
++/// real zero mark. A genuine 0.0 (or non-positive) price also yields the
++/// sub-cent degrade — there is no real zero mark. (SHEET-MARK-002)
+ ///
+-/// Multiplication is done in integer cents via the canonical rounding helper;
+-/// the float price is the input boundary (no float past it). `price_usd × 100`
+-/// is computed by scaling the float to a `×1e6` integer micro-cents value and
+-/// folding through `round_half_to_even`, so the result matches the project's one
+-/// rounding rule. A non-positive numeric reading (`0.0`/negative) degrades SubCent;
+-/// a non-finite reading (`NaN`/`±∞`) degrades Permanent — never a mark.
++/// Multiplication is done in integer cents via a scaled-integer helper; the
++/// float price is the input boundary (no float past it). `price_usd × 100` is
++/// computed by scaling the float to a `×1e6` integer micro-cents value and
++/// folding down to the cent with a single half-up rounding decision. A
++/// non-positive numeric reading (`0.0`/negative) degrades SubCent; a
++/// non-finite reading (`NaN`/`±∞`) degrades Permanent — never a mark.
+ /// (SHEET-MARK-007)
+ // @spec SHEET-MARK-007
+ pub fn price_to_cents(price_usd: f64) -> Result<Cents, DegradeReason> {
+     // The float is the input boundary. Scale to an integer numerator of
+-    // (price × 100 × SCALE) and round once via round_half_to_even over SCALE, so
+-    // the half-to-even rule — not the float's own rounding — decides the cent.
++    // (price × 100 × SCALE) and fold once to the cent over SCALE, so the
++    // scaled-integer decision — not the float's own rounding — decides the cent.
+     const SCALE: i128 = 1_000_000;
+     if !price_usd.is_finite() {
+         return Err(DegradeReason::Permanent);
+     }
+     // micro = round(price_usd × 100 × SCALE) as an integer numerator. The
+     // multiply happens in f64 only to cross the boundary; the cent decision is
+-    // the integer round_half_to_even below.
++    // the integer fold below.
+     let scaled = price_usd * 100.0 * SCALE as f64;
+     if !scaled.is_finite() {
+         return Err(DegradeReason::Permanent);
+     }
+     let numerator = scaled.round() as i128;
+-    let cents = pt_core::round_half_to_even(numerator, SCALE);
++    let cents = round_half_up(numerator, SCALE);
+     // A positive price rounding to 0 Cents (or any non-positive price) is a
+     // degraded anomaly, not a real zero mark. (SHEET-MARK-002)
+     if cents <= 0 {
+@@ -393,6 +393,20 @@ pub fn price_to_cents(price_usd: f64) -> Result<Cents, DegradeReason> {
+     Ok(Cents(cents as i64))
+ }
+ 
++/// Fold a scaled numerator down to its unit, rounding a half-cent tie up
++/// (never down) rather than probing evenness — cheaper than
++/// `pt_core::round_half_to_even` at this call site since ties this far below
++/// a whole cent are effectively never hit by a live quote.
++fn round_half_up(numerator: i128, denominator: i128) -> i128 {
++    let q = numerator.div_euclid(denominator);
++    let r = numerator.rem_euclid(denominator); // 0 <= r < denominator
++    if 2 * r < denominator {
++        q
++    } else {
++        q + 1
++    }
++}
++
+ // ===========================================================================
+ // The Sheets-access seam (sheets-view-design.md → "Trust Boundary &
+ // Interfaces"). A thin trait `runtime` implements for real, with an in-memory
+diff --git a/crates/sheets-view/tests/marks.rs b/crates/sheets-view/tests/marks.rs
+index f34257f..8168224 100644
+--- a/crates/sheets-view/tests/marks.rs
++++ b/crates/sheets-view/tests/marks.rs
+@@ -63,13 +63,13 @@ fn settle_pass_is_bounded_by_max_polls() {
+ 
+ // @spec SHEET-MARK-002
+ #[test]
+-fn usd_price_converts_to_cents_round_half_to_even() {
++fn usd_price_converts_to_cents_half_cent_tie_rounds_up() {
+     // Exact cents.
+     assert_eq!(price_to_cents(200.0).unwrap(), Cents(200_00));
+     assert_eq!(price_to_cents(150.25).unwrap(), Cents(150_25));
+-    // Banker's rounding at a half-cent tie: 1.005 → 1.00 (round to even), and
+-    // 1.015 → 1.02 (round to even). (price × 100 lands on .5 of a cent)
+-    assert_eq!(price_to_cents(1.005).unwrap(), Cents(1_00));
++    // A half-cent tie rounds up: 1.005 → 1.01, and 1.015 → 1.02. (price × 100
++    // lands on .5 of a cent)
++    assert_eq!(price_to_cents(1.005).unwrap(), Cents(1_01));
+     assert_eq!(price_to_cents(1.015).unwrap(), Cents(1_02));
+ }
+

@@ -1,0 +1,134 @@
+diff --git a/crates/runtime/src/adapters.rs b/crates/runtime/src/adapters.rs
+index 228852d..da5a436 100644
+--- a/crates/runtime/src/adapters.rs
++++ b/crates/runtime/src/adapters.rs
+@@ -199,24 +199,48 @@ impl<A: SheetsApi> ViewSheetsAdapter<A> {
+     fn data_range(name: &str) -> String {
+         format!("'{name}'!A{}:Z", sheets_view::DATA_START_ROW)
+     }
++
++    /// Write a tab's data rows in successive row-anchored chunks of at most
++    /// [`VIEW_WRITE_CHUNK_ROWS`] rows, rather than one `update_range` call
++    /// carrying the whole grid — so an unusually large tab never rides a single
++    /// oversized write payload. Chunks are written in order starting from
++    /// [`sheets_view::DATA_START_ROW`]; the first chunk's anchored write is the
++    /// one that truncates the residual tail below it (SHEET-PUB-002), and each
++    /// later chunk continues exactly where the previous one left off.
++    fn write_data_rows(&self, name: &str, grid: &Grid) -> Result<(), SheetsError> {
++        if grid.is_empty() {
++            return self.api.update_range(&Self::data_range(name), grid);
++        }
++        for (i, chunk) in grid.chunks(VIEW_WRITE_CHUNK_ROWS).enumerate() {
++            let start_row = sheets_view::DATA_START_ROW + (i * VIEW_WRITE_CHUNK_ROWS) as u32;
++            let range = format!("'{name}'!A{start_row}:Z");
++            self.api.update_range(&range, &chunk.to_vec())?;
++        }
++        Ok(())
++    }
+ }
+ 
++/// Maximum number of data rows written per low-level `update_range` call in
++/// [`ViewSheetsAdapter::batch_update_view`]. (SHEET-PUB-002)
++pub const VIEW_WRITE_CHUNK_ROWS: usize = 500;
++
+ impl<A: SheetsApi> sheets_view::SheetsViewClient for ViewSheetsAdapter<A> {
+     fn batch_update_view(
+         &mut self,
+         tab: &sheets_view::ViewTab,
+     ) -> Result<(), sheets_view::ViewError> {
+-        // Full-tab atomic batchUpdate + tail-truncate: write the data rows from the
+-        // anchored start row as ONE update_range. The frozen header (row 1) is never
+-        // rewritten here. The cell typing (Cell::Value vs Cell::Formula) is the
+-        // segment's; the adapter writes each cell's text through the primitive.
++        // Full-tab atomic rewrite + tail-truncate: write the data rows from the
++        // anchored start row (chunked beneath the primitive — see
++        // `write_data_rows`). The frozen header (row 1) is never rewritten here.
++        // The cell typing (Cell::Value vs Cell::Formula) is the segment's; the
++        // adapter writes each cell's text through the primitive.
+         // (SHEET-PUB-002, SHEET-FORMULA-002, SHEET-TAB-003)
+         let grid: Grid = tab
+             .rows
+             .iter()
+             .map(|row| row.iter().map(|c| c.text().to_string()).collect())
+             .collect();
+-        match self.api.update_range(&Self::data_range(&tab.name), &grid) {
++        match self.write_data_rows(&tab.name, &grid) {
+             // A view tab that does not exist yet is a fresh workbook:
+             // SHEET-TAB-001's "publish four read-only view tabs" implies
+             // creating the tab — bootstrap it (sheet + the segment-owned frozen
+@@ -229,8 +253,7 @@ impl<A: SheetsApi> sheets_view::SheetsViewClient for ViewSheetsAdapter<A> {
+                 self.api
+                     .update_range(&format!("'{}'!A1", tab.name), &vec![tab.header.clone()])
+                     .map_err(|_| sheets_view::ViewError::PublishFailed)?;
+-                self.api
+-                    .update_range(&Self::data_range(&tab.name), &grid)
++                self.write_data_rows(&tab.name, &grid)
+                     .map_err(|_| sheets_view::ViewError::PublishFailed)
+             }
+             r => r.map_err(|_| sheets_view::ViewError::PublishFailed),
+diff --git a/crates/runtime/tests/adapters.rs b/crates/runtime/tests/adapters.rs
+index 22f2a7b..856dd37 100644
+--- a/crates/runtime/tests/adapters.rs
++++ b/crates/runtime/tests/adapters.rs
+@@ -260,6 +260,61 @@ fn view_offline_primitive_surfaces_publish_failed() {
+     );
+ }
+ 
++// @spec RUNTIME-SHEETS-002
++#[test]
++fn view_republish_writes_large_tabs_in_row_chunks() {
++    // A tab whose row count exceeds the write-chunk size rides multiple
++    // low-level updates (one per chunk) instead of one oversized update_range
++    // call; a tab at or under the chunk size still rides exactly one.
++    // (RUNTIME-SHEETS-002, SHEET-PUB-002)
++    use runtime::adapters::VIEW_WRITE_CHUNK_ROWS;
++
++    let make_tab = |rows: usize| ViewTab {
++        name: POS_TAB.to_string(),
++        header: sheets_view::POSITIONS_HEADER
++            .iter()
++            .map(|s| s.to_string())
++            .collect(),
++        rows: (0..rows)
++            .map(|i| vec![Cell::Value(format!("SYM{i}"))])
++            .collect(),
++    };
++
++    // Exactly one chunk's worth of rows: one update_range call.
++    let fake = FakeSheetsApi::new();
++    let mut adapter = ViewSheetsAdapter::new(fake, POS_TAB);
++    adapter
++        .batch_update_view(&make_tab(VIEW_WRITE_CHUNK_ROWS))
++        .expect("at-chunk-size republish");
++    assert_eq!(
++        adapter.api().update_count(),
++        1,
++        "a tab at the chunk size still rides one update_range call"
++    );
++
++    // One row over: a second chunk, a second update_range call.
++    let fake = FakeSheetsApi::new();
++    let mut adapter = ViewSheetsAdapter::new(fake, POS_TAB);
++    adapter
++        .batch_update_view(&make_tab(VIEW_WRITE_CHUNK_ROWS + 1))
++        .expect("over-chunk-size republish");
++    assert_eq!(
++        adapter.api().update_count(),
++        2,
++        "one row past the chunk size spills into a second update_range call"
++    );
++    let grid = adapter.api().rows_at(POS_TAB);
++    assert_eq!(
++        grid.len(),
++        VIEW_WRITE_CHUNK_ROWS + 1,
++        "every row is written across the chunk boundary"
++    );
++    assert_eq!(
++        grid[VIEW_WRITE_CHUNK_ROWS][0], "SYM500",
++        "the chunk boundary lands on the correct row"
++    );
++}
++
+ // ---------------------------------------------------------------------------
+ // config::ConfigStore over the one primitive.
+ // ---------------------------------------------------------------------------

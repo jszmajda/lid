@@ -1,0 +1,12 @@
+diff --git a/docs/intent/sheets-view/sheets-view-specs.md b/docs/intent/sheets-view/sheets-view-specs.md
+index a9fbc14..6ad27b0 100644
+--- a/docs/intent/sheets-view/sheets-view-specs.md
++++ b/docs/intent/sheets-view/sheets-view-specs.md
+@@ -24,7 +24,7 @@ accounting/tax math.
+ ## Symbol → Ticker Mapping
+ 
+ - [x] **SHEET-MAP-001**: The system shall resolve a ledger `Symbol` to its `GOOGLEFINANCE` ticker via `config`'s alias map (identity when unset) and build the `Price` formula from the resolved ticker.
+-- [x] **SHEET-MAP-002**: The system shall key mark read-back by row identity (symbol), asserting one row per symbol and erroring loudly if violated.
++- [x] **SHEET-MAP-002**: The system shall key mark read-back by row identity (symbol), asserting one row per symbol; on violation the offending row shall be quarantined from the published view and the violation logged loudly, rather than the whole render failing.
+ 
+ ## Marks Read-Back

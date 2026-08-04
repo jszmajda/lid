@@ -1,0 +1,14 @@
+{
+  "t1SeedAudit": {
+    "aAttempts": 1,
+    "bAttempts": 2,
+    "classification": "CONFIRMED",
+    "finding": "Direction A (spec\u2192code): reading SHEET-MARK-007's text and predicting the code, a fresh reconstruction would guard on `!price_usd.is_finite()` for the Permanent arm; diffing that prediction against the actual seeded code (guard narrowed to `is_nan()`, second guard's arm flipped to SubCent) surfaces the mismatch on the first pass \u2014 gap confirmed immediately once \u00b1\u221e is traced through both guards. Direction B (code+tests\u2192spec): a first pass that reconstructs the spec from the function's own doc-comment (lines 367-368, which still say '\u00b1\u221e degrades Permanent') reproduces the ORIGINAL correct spec and would falsely clear the gap \u2014 the doc-comment is stale-but-present and misleads a comment-level read. A second pass that instead traces the live branches for a \u00b1\u221e input (ignoring the comment) and cross-checks the test's concrete pinned value (`Err(DegradeReason::SubCent)` for `f64::INFINITY`) reconstructs the true executed contract and diverges from the real EARS text at exactly the \u00b1\u221e clause \u2014 gap confirmed on the second, deeper pass. This two-attempt asymmetry (A catches it in 1, naive B needs a retry to avoid a false-clear) is the expected signature of a class-H hollow-test seed."
+  },
+  "t1ControlAudit": {
+    "aAttempts": 1,
+    "bAttempts": 1,
+    "classification": "no gap (clean)",
+    "finding": "Ran the identical two-direction check against the untouched neighboring spec SHEET-MARK-002 ('a positive price that rounds to 0 Cents shall be recorded as a degraded anomaly, not a zero mark') as a false-positive control. Direction A: spec-predicted code (final `if cents <= 0 { return Err(SubCent) }` catching both sub-cent-rounding and non-positive finite prices) matches the actual code exactly \u2014 no divergence on the first pass. Direction B: reconstructing the spec from the code path plus its tests (marks.rs `sub_cent_price_is_degraded_not_a_mark` and the zero/negative assertions, all untouched by the seed) reproduces SHEET-MARK-002's text with no discrepancy. No false alarm raised on the adjacent, unmodified boundary, which supports that the SHEET-MARK-007 finding above is a real, isolated seeded gap rather than an artifact of an over-eager audit heuristic."
+  }
+}

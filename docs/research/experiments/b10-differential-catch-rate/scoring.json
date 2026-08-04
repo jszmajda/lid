@@ -1,0 +1,1697 @@
+{
+ "recall": {
+  "T1": {
+   "U": [
+    2,
+    3
+   ],
+   "P": [
+    3,
+    3
+   ],
+   "H": [
+    2,
+    2
+   ],
+   "total": [
+    7,
+    8
+   ]
+  },
+  "T2": {
+   "U": [
+    7,
+    8
+   ],
+   "P": [
+    8,
+    8
+   ],
+   "H": [
+    8,
+    8
+   ],
+   "total": [
+    23,
+    24
+   ]
+  },
+  "T2CAP": {
+   "U": [
+    2,
+    3
+   ],
+   "P": [
+    3,
+    3
+   ],
+   "H": [
+    2,
+    2
+   ],
+   "total": [
+    7,
+    8
+   ]
+  },
+  "T3": {
+   "U": [
+    2,
+    3
+   ],
+   "P": [
+    3,
+    3
+   ],
+   "H": [
+    2,
+    2
+   ],
+   "total": [
+    7,
+    8
+   ]
+  },
+  "EXP-LUNA": {
+   "U": [
+    2,
+    3
+   ],
+   "P": [
+    3,
+    3
+   ],
+   "H": [
+    2,
+    2
+   ],
+   "total": [
+    7,
+    8
+   ]
+  },
+  "EXP-HAIKU": {
+   "U": [
+    2,
+    3
+   ],
+   "P": [
+    3,
+    3
+   ],
+   "H": [
+    1,
+    2
+   ],
+   "total": [
+    6,
+    8
+   ]
+  }
+ },
+ "ranks": {
+  "T2": [
+   3,
+   0,
+   0,
+   1,
+   0,
+   0,
+   0,
+   1,
+   0,
+   2,
+   1,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   3,
+   0,
+   0,
+   0
+  ],
+  "T2CAP": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   1
+  ],
+  "T3": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "EXP-LUNA": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "EXP-HAIKU": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ]
+ },
+ "false_alarm": {
+  "T2": {
+   "CROSSREF": 59,
+   "REAL": 53,
+   "FALSE-ALARM": 8,
+   "total": 120
+  },
+  "T2CAP": {
+   "CROSSREF": 32,
+   "REAL": 44,
+   "FALSE-ALARM": 1,
+   "total": 77
+  },
+  "T3": {
+   "CROSSREF": 20,
+   "REAL": 22,
+   "total": 42
+  },
+  "EXP-LUNA": {
+   "REAL": 20,
+   "CROSSREF": 23,
+   "total": 43
+  },
+  "EXP-HAIKU": {
+   "REAL": 6,
+   "CROSSREF": 11,
+   "FALSE-ALARM": 1,
+   "total": 18
+  }
+ },
+ "codes": {
+  "T2": {
+   "B-ONLY-DRIFT": 14,
+   "BD-DRIFT": 34
+  },
+  "T2CAP": {
+   "BD-DRIFT": 16
+  },
+  "T3": {
+   "BD-DRIFT": 11,
+   "B-ONLY-DRIFT": 5
+  },
+  "EXP-LUNA": {
+   "BD-DRIFT": 9,
+   "B-ONLY-DRIFT": 7
+  },
+  "EXP-HAIKU": {
+   "A-ONLY-DRIFT": 2,
+   "B-ONLY-DRIFT": 7,
+   "BD-DRIFT": 4,
+   "INCONSISTENT-BLIND": 1,
+   "BD-COHERENT": 2
+  }
+ },
+ "stability": {
+  "T2": {
+   "a-medium": 16,
+   "b-high": 45,
+   "a-high": 30,
+   "b-medium": 3,
+   "a-low": 2
+  },
+  "T2CAP": {
+   "a-high": 16,
+   "b-high": 16
+  },
+  "T3": {
+   "a-high": 14,
+   "b-high": 15,
+   "a-medium": 2,
+   "b-medium": 1
+  },
+  "EXP-LUNA": {
+   "a-high": 9,
+   "b-high": 15,
+   "a-medium": 5,
+   "a-low": 2,
+   "b-medium": 1
+  },
+  "EXP-HAIKU": {
+   "a-high": 6,
+   "b-high": 16,
+   "a-low": 8,
+   "a-medium": 2
+  }
+ },
+ "sol_agreement": {
+  "agree": 112,
+  "disagree": 22,
+  "rate": 0.836,
+  "disagreements": [
+   [
+    "R07",
+    "S1",
+    7,
+    "CROSSREF",
+    "FALSE-ALARM"
+   ],
+   [
+    "R07",
+    "S1",
+    9,
+    "CROSSREF",
+    "REAL"
+   ],
+   [
+    "R07",
+    "S3",
+    1,
+    "CROSSREF",
+    "REAL"
+   ],
+   [
+    "R07",
+    "S4",
+    0,
+    "CROSSREF",
+    "FALSE-ALARM"
+   ],
+   [
+    "R07",
+    "S5",
+    0,
+    "CROSSREF",
+    "REAL"
+   ],
+   [
+    "R07",
+    "S5",
+    1,
+    "CROSSREF",
+    "FALSE-ALARM"
+   ],
+   [
+    "R07",
+    "S5",
+    3,
+    "FALSE-ALARM",
+    "REAL"
+   ],
+   [
+    "R10",
+    "S1",
+    1,
+    "REAL",
+    "FALSE-ALARM"
+   ],
+   [
+    "R10",
+    "S1",
+    5,
+    "FALSE-ALARM",
+    "REAL"
+   ],
+   [
+    "R10",
+    "S2",
+    2,
+    "REAL",
+    "FALSE-ALARM"
+   ],
+   [
+    "R10",
+    "S4",
+    4,
+    "REAL",
+    "FALSE-ALARM"
+   ],
+   [
+    "R03",
+    "S2",
+    0,
+    "CROSSREF",
+    "REAL"
+   ],
+   [
+    "R03",
+    "S4",
+    0,
+    "REAL",
+    "FALSE-ALARM"
+   ],
+   [
+    "R03",
+    "S5",
+    0,
+    "CROSSREF",
+    "REAL"
+   ],
+   [
+    "R03",
+    "S5",
+    1,
+    "REAL",
+    "FALSE-ALARM"
+   ],
+   [
+    "R03",
+    "S5",
+    2,
+    "REAL",
+    "CROSSREF"
+   ],
+   [
+    "R03",
+    "S5",
+    3,
+    "REAL",
+    "FALSE-ALARM"
+   ],
+   [
+    "R03",
+    "S5",
+    5,
+    "REAL",
+    "CROSSREF"
+   ],
+   [
+    "R03",
+    "S5",
+    7,
+    "REAL",
+    "CROSSREF"
+   ],
+   [
+    "R18",
+    "S5",
+    2,
+    "CROSSREF",
+    "REAL"
+   ],
+   [
+    "R18",
+    "S5",
+    3,
+    "CROSSREF",
+    "FALSE-ALARM"
+   ],
+   [
+    "K17",
+    "S5",
+    "-",
+    true,
+    false
+   ]
+  ]
+ },
+ "incidental_control_REAL": [
+  [
+   "SHEET-FORMULA-001",
+   "T2",
+   "R01",
+   "S1",
+   1,
+   "Verified in lib.rs lines 563-574 and pinned by tests (per_row_formulas_reference_their_own_row_beneath_frozen_header asserts the E/B and F/D"
+  ],
+  [
+   "SHEET-FORMULA-001",
+   "T2",
+   "R01",
+   "S1",
+   2,
+   "Verified: lib.rs lines 570-574 emit =IF(D{r}=0,0,G{r}/D{r}) \u2014 the zero-cost-basis case yields a literal 0, not blank or an error. No require"
+  ],
+  [
+   "SHEET-FORMULA-002",
+   "T2",
+   "R03",
+   "S1",
+   0,
+   "The 13-column A-M schema, column order, and the arithmetic bodies MV=E*B, Unrealized=F-D, Unrealized%=IF(D=0,0,G/D) are pinned by lib.rs L56"
+  ],
+  [
+   "SHEET-FORMULA-002",
+   "T2",
+   "R03",
+   "S1",
+   1,
+   "Verified: unreal_pct is =IF(D{r}=0,0,G{r}/D{r}) (lib.rs L570-574). No requirement anywhere in the file mentions a zero-basis/div-by-zero tie"
+  ],
+  [
+   "SHEET-FORMULA-002",
+   "T2",
+   "R03",
+   "S1",
+   6,
+   "Verified: formula.rs L221-224 asserts qcol == 12, and adapters.rs hardcodes QUOTE_DATE_COL=12. SHEET-MARK-008 requires the companion column "
+  ],
+  [
+   "SHEET-FORMULA-002",
+   "T3",
+   "R03",
+   "S2",
+   1,
+   "Verified: DATA_START_ROW=2 is a public constant with 'header occupies row 1' semantics (lib.rs L145-148) and the test hard-pins it (formula."
+  ],
+  [
+   "SHEET-FORMULA-002",
+   "T3",
+   "R03",
+   "S2",
+   2,
+   "Same claim as S1[0]/S1[1]/S1[6]: the exact column layout, formula algebra, zero-basis guard, and Quote Date at index 12 are code+test-pinned"
+  ],
+  [
+   "SHEET-FORMULA-002",
+   "EXP-LUNA",
+   "R03",
+   "S3",
+   0,
+   "Same claim as S2[1]: DATA_START_ROW=2 and header-is-row-1 are pinned by lib.rs L148 and formula.rs L77 while the spec deliberately names nei"
+  ],
+  [
+   "SHEET-FORMULA-002",
+   "EXP-LUNA",
+   "R03",
+   "S3",
+   1,
+   "Same claim as S1[0]/S2[2]: the specific column assignments and formula bodies (F=E*B, G=F-D, K's zero-basis guard, M at index 12) are code+t"
+  ],
+  [
+   "SHEET-FORMULA-002",
+   "EXP-HAIKU",
+   "R03",
+   "S4",
+   0,
+   "The spec's 'references to that row's own cells' admits both direct refs and INDIRECT+ROW, but the tests pin the direct mechanism: formula.rs"
+  ],
+  [
+   "SHEET-FORMULA-002",
+   "T2CAP",
+   "R03",
+   "S5",
+   1,
+   "Verified: formula.rs L79-106 asserts own-row refs only for Market Value and Unrealized P&L, and the cross-row leak loop checks only the MV s"
+  ],
+  [
+   "SHEET-FORMULA-002",
+   "T2CAP",
+   "R03",
+   "S5",
+   2,
+   "Verified: ViewSheetsAdapter::batch_update_view writes 'A2:Z' via update_range (adapters.rs L219), a plain values.update PUT (sheets.rs L510)"
+  ],
+  [
+   "SHEET-FORMULA-002",
+   "T2CAP",
+   "R03",
+   "S5",
+   3,
+   "Verified: write_stale_banner targets '{tab}'!AA1 \u2014 row 1 (adapters.rs L286) \u2014 while the spec never defines the frozen header's column extent"
+  ],
+  [
+   "SHEET-FORMULA-002",
+   "T2CAP",
+   "R03",
+   "S5",
+   4,
+   "Same claim as S1[0]/S2[2]/S3[1]: the fixed 13-column order, the exact formula/value partition asserted name-by-name, and the formula bodies "
+  ],
+  [
+   "SHEET-FORMULA-002",
+   "T2CAP",
+   "R03",
+   "S5",
+   5,
+   "Verified: price_reading_from_cells hardcodes PRICE_COL=4 and QUOTE_DATE_COL=12, keys by cell 0, defaults an unparseable/missing quote date t"
+  ],
+  [
+   "SHEET-FORMULA-002",
+   "T2CAP",
+   "R03",
+   "S5",
+   6,
+   "Same claim as S2[1]/S3[0]: DATA_START_ROW=2 is a public constant consumed by the adapters and hard-pinned by assert_eq!(DATA_START_ROW, 2) ("
+  ],
+  [
+   "SHEET-FORMULA-002",
+   "T2CAP",
+   "R03",
+   "S5",
+   7,
+   "The bare percent encoding is SHEET-FORMULA-005, but this finding's load-bearing additions are stated nowhere: fmt_ppm's exact signed 4-fract"
+  ],
+  [
+   "SHEET-FORMULA-003",
+   "T2",
+   "R05",
+   "S1",
+   0,
+   "Verified: render_positions writes the Est. Tax Rate cell as an empty-string engine value when the symbol is absent from effective_rates (lib"
+  ],
+  [
+   "SHEET-FORMULA-004",
+   "T2CAP",
+   "R07",
+   "S1",
+   2,
+   "The accrual band's 6-column vocabulary (Sale ID, Lot ID, Jurisdiction, Tax Year, Amount, Lifecycle State) is fixed by TAX_HEADER and width-p"
+  ],
+  [
+   "SHEET-FORMULA-004",
+   "T2CAP",
+   "R07",
+   "S1",
+   3,
+   "Verified: fmt_cents (lib.rs 473-478) pins sign/two-digit-fraction/no-separator formatting, and formula.rs re-implements it inline and assert"
+  ],
+  [
+   "SHEET-FORMULA-004",
+   "T2CAP",
+   "R07",
+   "S1",
+   4,
+   "Verified: applied_cents.map(fmt_cents).unwrap_or_default() (lib.rs 711) makes absent amounts the empty string, while formula.rs asserts all "
+  ],
+  [
+   "SHEET-FORMULA-004",
+   "T2CAP",
+   "R07",
+   "S1",
+   5,
+   "Verified: jurisdiction_label ('Federal'/'State({code})') and lifecycle_label ('Accrued'/'Allocated'/'Moved'/'Paid' with payloads discarded) "
+  ],
+  [
+   "SHEET-FORMULA-004",
+   "EXP-HAIKU",
+   "R07",
+   "S2",
+   1,
+   "Contains the genuine gap: the accrual band's 6-column schema (Sale ID/Lot ID/Jurisdiction/Tax Year/Amount/Lifecycle State) appears in no req"
+  ],
+  [
+   "SHEET-FORMULA-004",
+   "EXP-HAIKU",
+   "R07",
+   "S2",
+   2,
+   "Verified: nullable applied_cents renders empty (lib.rs 711); formula.rs asserts all five reserve columns never blank. No requirement states "
+  ],
+  [
+   "SHEET-FORMULA-004",
+   "T3",
+   "R07",
+   "S3",
+   0,
+   "Bundles the genuine accrual-header gap (6 columns stated nowhere in the file) with structure/names that are CROSSREF to SHEET-TAB-004 (two b"
+  ],
+  [
+   "SHEET-FORMULA-004",
+   "T3",
+   "R07",
+   "S3",
+   2,
+   "Same cluster as S1 findings 3-5: fmt_cents display algorithm, empty-string for absent applied_cents, Federal/State(code) and lifecycle label"
+  ],
+  [
+   "SHEET-FORMULA-004",
+   "EXP-LUNA",
+   "R07",
+   "S4",
+   2,
+   "The accrual 6-column schema, signed two-decimal dollar formatting, empty unapplied amounts, and Federal/State(code) + lifecycle label vocabu"
+  ],
+  [
+   "SHEET-FORMULA-004",
+   "T2",
+   "R07",
+   "S5",
+   2,
+   "Verified: the fmt_cents algorithm with literal-string test pins, Federal/State(code) labels, the four-member lifecycle vocabulary with paylo"
+  ],
+  [
+   "SHEET-FORMULA-005",
+   "T2",
+   "R09",
+   "S1",
+   1,
+   "Confirmed in code: lib.rs 585 writes eff_rate.map(fmt_ppm).unwrap_or_default() \u2014 a symbol absent from effective_rates renders an empty-strin"
+  ],
+  [
+   "SHEET-FORMULA-005",
+   "T2",
+   "R09",
+   "S1",
+   2,
+   "Confirmed: fmt_ppm (lib.rs 497-505) formats '{sign}{whole}.{frac:04}%' with the doc-pinned example Ppm(150_000) -> '15.0000%' (line 496), an"
+  ],
+  [
+   "SHEET-MAP-001",
+   "T2",
+   "R11",
+   "S1",
+   0,
+   "lib.rs price_formula hard-codes =GOOGLEFINANCE(\"{ticker}\",\"price\") (quoted literal ticker + explicit \"price\" attribute) and mapping.rs pins "
+  ],
+  [
+   "SHEET-MAP-001",
+   "T2",
+   "R11",
+   "S1",
+   4,
+   "formula.rs deliberately pins the Quote Date column position with assert_eq!(qcol, 12, \"Quote Date is the read-back's column-12 companion\") \u2014"
+  ],
+  [
+   "SHEET-MAP-002",
+   "T3",
+   "R13",
+   "S1",
+   0,
+   "Verified: read_marks (lib.rs:817-887) consumes PricePass = BTreeMap<Symbol,PriceReading> (lib.rs:299), so duplicate physical rows are collap"
+  ],
+  [
+   "SHEET-MAP-002",
+   "T3",
+   "R13",
+   "S1",
+   1,
+   "Verified: Symbol is column A (POSITIONS_HEADER index 0), DATA_START_ROW = 2 (lib.rs:148), Price column E, Quote Date column M (lib.rs:174-18"
+  ],
+  [
+   "SHEET-MAP-002",
+   "T3",
+   "R13",
+   "S1",
+   2,
+   "The material core is genuine: keys are raw Symbol strings with byte-exact, case-sensitive equality and no trim/normalization (BTreeMap keys "
+  ],
+  [
+   "SHEET-MAP-002",
+   "T3",
+   "R13",
+   "S1",
+   3,
+   "Contains materially unstated pinned behavior verified in read_marks: unrequested readings silently ignored (for s in symbols, lib.rs:829-833"
+  ],
+  [
+   "SHEET-MAP-002",
+   "T2CAP",
+   "R13",
+   "S2",
+   0,
+   "All citations verified exactly: guard at lib.rs:540-545 over map-keyed snapshot.positions, unreachable per comment lib.rs:534-539 and tests "
+  ],
+  [
+   "SHEET-MAP-002",
+   "T2CAP",
+   "R13",
+   "S2",
+   1,
+   "Verified: latest.insert(s.clone(), r.clone()) on every poll (lib.rs:829-833) \u2014 later readings silently replace earlier ones with no assertio"
+  ],
+  [
+   "SHEET-MAP-002",
+   "T2CAP",
+   "R13",
+   "S2",
+   2,
+   "Verified: read_marks iterates only the caller-supplied symbols slice (lib.rs:829-833, 848); PricePass entries not in that slice are never sc"
+  ],
+  [
+   "SHEET-MAP-002",
+   "T2CAP",
+   "R13",
+   "S2",
+   3,
+   "Verified: the settled check treats None like Transient (lib.rs:838 matches Some(Transient) | None), and the output match routes Some(Transie"
+  ],
+  [
+   "SHEET-MAP-002",
+   "T2CAP",
+   "R13",
+   "S2",
+   4,
+   "Verified: DuplicateSymbolRow carries only the Symbol (lib.rs:412), Display is a Debug passthrough write!(f, \"{self:?}\") (lib.rs:415-419), an"
+  ],
+  [
+   "SHEET-MAP-002",
+   "T2CAP",
+   "R13",
+   "S2",
+   6,
+   "Contains materially unstated pinned constants: Symbol/Price/Quote Date at columns A/E/M (lib.rs:174-188, hard-coded letter refs in formulas "
+  ],
+  [
+   "SHEET-MAP-002",
+   "T2CAP",
+   "R13",
+   "S2",
+   7,
+   "Accurate and material: no requirement defines symbol equality for the key, on a requirement whose entire content is a keying rule; the code "
+  ],
+  [
+   "SHEET-MAP-002",
+   "T2",
+   "R13",
+   "S3",
+   0,
+   "Same claim as S1-0/S2-0, verified: the spec's assertion is required at mark read-back, but read_marks (lib.rs:817-887) does zero uniqueness "
+  ],
+  [
+   "SHEET-MAP-002",
+   "T2",
+   "R13",
+   "S3",
+   1,
+   "Verified: Display for ViewError is a literal Debug passthrough (lib.rs:415-419) and the test pins the exact output DuplicateSymbolRow(\"AMZN\""
+  ],
+  [
+   "SHEET-MAP-002",
+   "T2",
+   "R13",
+   "S3",
+   2,
+   "Verified: duplicate detection and keying operate on the raw Symbol with exact byte equality \u2014 BTreeSet<&Symbol> in render_positions (lib.rs:"
+  ],
+  [
+   "SHEET-MAP-002",
+   "EXP-LUNA",
+   "R13",
+   "S5",
+   0,
+   "Verified against read_marks: the poll-then-check loop executes at least one poll even at max_polls = 0; default max_polls is exactly 8 (lib."
+  ],
+  [
+   "SHEET-MAP-002",
+   "EXP-LUNA",
+   "R13",
+   "S5",
+   2,
+   "The column layout component is genuine unstated pinned behavior: Symbol column A, Price column E, Quote Date column M, data at DATA_START_RO"
+  ],
+  [
+   "SHEET-MAP-002",
+   "EXP-LUNA",
+   "R13",
+   "S5",
+   3,
+   "Contains materially unstated pinned behavior: absent readings handled identically to Transient (lib.rs:838, 873-879 \u2014 no requirement address"
+  ],
+  [
+   "SHEET-MAP-002",
+   "EXP-LUNA",
+   "R13",
+   "S5",
+   5,
+   "Verified composite of two claim families already adjudicated REAL: (a) the error's implementation shape \u2014 ViewError::DuplicateSymbolRow(Symb"
+  ],
+  [
+   "SHEET-MARK-001",
+   "T2",
+   "R15",
+   "S1",
+   0,
+   "Verified: the settle bound is SettleConfig{max_polls: u32} (default 8) at sheets-view/src/lib.rs:776-845 \u2014 a pure poll-count ceiling. No Dur"
+  ],
+  [
+   "SHEET-MARK-002",
+   "T2",
+   "R17",
+   "S1",
+   2,
+   "Confirmed as genuinely pinned, spec-silent behavior. The code scales through SCALE=1_000_000 and decides the tie via the integer pt_core::ro"
+  ],
+  [
+   "SHEET-MARK-003",
+   "T2",
+   "R19",
+   "S1",
+   0,
+   "Verified at sheets-view/src/lib.rs:873-878: a symbol still Transient/absent past the window with a prior mark is carried into out.marks and "
+  ],
+  [
+   "SHEET-MARK-003",
+   "T2",
+   "R19",
+   "S1",
+   2,
+   "Verified: SettleConfig.max_polls (default 8, lib.rs:779-790), exact poll-count break at polls >= cfg.max_polls, pinned by tests (max_polls:3"
+  ],
+  [
+   "SHEET-MARK-003",
+   "EXP-LUNA",
+   "R19",
+   "S2",
+   0,
+   "Same claim as S1 index 0, verified identically: read_marks carries the prior mark past max_polls and never records the symbol degraded when "
+  ],
+  [
+   "SHEET-MARK-003",
+   "EXP-LUNA",
+   "R19",
+   "S2",
+   2,
+   "Same family as S1 index 2. Verified: default max_polls == 8 (lib.rs:786-790), exact total-poll bound pinned by read_count assertions, and ma"
+  ],
+  [
+   "SHEET-MARK-003",
+   "EXP-LUNA",
+   "R19",
+   "S2",
+   3,
+   "Verified at lib.rs:829-838: only symbols in the requested slice are tracked/emitted, latest.insert replaces the reading per pass, a symbol a"
+  ],
+  [
+   "SHEET-MARK-003",
+   "EXP-LUNA",
+   "R19",
+   "S2",
+   5,
+   "Verified in runtime tests: qty-0 fully-closed symbols excluded from mark requests, freshness, and the trading-day reduction (cycle.rs:341-40"
+  ],
+  [
+   "SHEET-MARK-003",
+   "T3",
+   "R19",
+   "S3",
+   1,
+   "Same family as S1 index 2 / S2 indices 2-3, verified: latest-reading retention (lib.rs:830-833), omitted reading treated as unresolved (lib."
+  ],
+  [
+   "SHEET-MARK-003",
+   "T3",
+   "R19",
+   "S3",
+   2,
+   "The load-bearing component is the same central drift as S1/S2/S4 index 0: no degraded entry is ever added when a prior mark exists \u2014 only a "
+  ],
+  [
+   "SHEET-MARK-003",
+   "T2CAP",
+   "R19",
+   "S4",
+   0,
+   "Same central claim as S1/S2 index 0, verified in full detail: the TimedOut degrade sits in the else of `if let Some(prev) = prior.get(s)` (l"
+  ],
+  [
+   "SHEET-MARK-003",
+   "T2CAP",
+   "R19",
+   "S4",
+   1,
+   "Same family as S1 index 2, verified: the window is polls within one settle pass (SettleConfig.max_polls, default 8, lib.rs:779-790; break at"
+  ],
+  [
+   "SHEET-MARK-003",
+   "T2CAP",
+   "R19",
+   "S4",
+   6,
+   "Verified: the settled predicate counts a missing reading as unsettled (lib.rs:836-838) and the output match folds None into the Transient ar"
+  ],
+  [
+   "SHEET-MARK-003",
+   "T2CAP",
+   "R19",
+   "S4",
+   7,
+   "Part (a) is verified and unstated: only requested symbols are settled/degraded, and the qty-0 exclusion from requests, freshness, and the tr"
+  ],
+  [
+   "SHEET-MARK-003",
+   "T2CAP",
+   "R19",
+   "S4",
+   8,
+   "Verified: the carried prior is inserted into the same marks map as fresh reads (lib.rs:875) with no stale flag or attempt count; MarksProduc"
+  ],
+  [
+   "SHEET-MARK-003",
+   "T2CAP",
+   "R19",
+   "S4",
+   9,
+   "Verified from the loop structure: latest.insert unconditionally overwrites per poll (lib.rs:830-833) and the settled predicate is recomputed"
+  ],
+  [
+   "SHEET-MARK-003",
+   "EXP-HAIKU",
+   "R19",
+   "S5",
+   0,
+   "Same claim as S1 index 2 / S4 index 1, verified: the bound is a shared per-pass poll count (SettleConfig.max_polls, default 8; break at poll"
+  ],
+  [
+   "SHEET-MARK-006",
+   "T2",
+   "R25",
+   "S1",
+   1,
+   "Verified: adapters.rs:262-265 returns Ok(empty PricePass) when is_missing_tab, pinned by cold_start.rs::the_price_pass_on_a_fresh_workbook_i"
+  ],
+  [
+   "SHEET-MARK-006",
+   "T2",
+   "R25",
+   "S1",
+   2,
+   "Verified: ViewError has only PublishFailed/SettleTimeout/DuplicateSymbolRow (lib.rs:399-413); both testkit.rs:206-208 and the real adapter ("
+  ],
+  [
+   "SHEET-MARK-006",
+   "T2",
+   "R25",
+   "S1",
+   3,
+   "Verified at lib.rs:1021-1023: `let marks = read_marks(...)?` discards the already-computed RepublishOutcome (published flag lost) after work"
+  ],
+  [
+   "SHEET-MARK-006",
+   "EXP-LUNA",
+   "R25",
+   "S2",
+   4,
+   "Verified: read_marks filters the pass to caller-supplied symbols (lib.rs:829-833), treats a symbol absent from the pass identically to Trans"
+  ],
+  [
+   "SHEET-MARK-006",
+   "EXP-LUNA",
+   "R25",
+   "S2",
+   5,
+   "Verified: cold_start.rs pins the 400 'Unable to parse range' -> TabMissing vs outage -> Unreachable split, empty-read of missing tabs, and b"
+  ],
+  [
+   "SHEET-MARK-006",
+   "T3",
+   "R25",
+   "S3",
+   3,
+   "Verified: the runtime adapter classifies a missing fresh Positions tab as Ok(empty pass) while genuine unreachability stays Err (adapters.rs"
+  ],
+  [
+   "SHEET-MARK-006",
+   "T2CAP",
+   "R25",
+   "S4",
+   1,
+   "Verified end-to-end: adapters.rs:262-265 turns a missing tab into Ok(empty pass); an empty Ok pass leaves every symbol in the None arm, burn"
+  ],
+  [
+   "SHEET-MARK-006",
+   "T2CAP",
+   "R25",
+   "S4",
+   2,
+   "Verified: read_marks has no completeness gate \u2014 a symbol absent from the returned pass is folded into the Transient arm (lib.rs:838, 873) an"
+  ],
+  [
+   "SHEET-MARK-006",
+   "T2CAP",
+   "R25",
+   "S4",
+   3,
+   "Verified at lib.rs:1021-1023: the `?` on read_marks discards the RepublishOutcome after batchUpdates landed and Publisher.stale mutated; the"
+  ],
+  [
+   "SHEET-MARK-006",
+   "T2CAP",
+   "R25",
+   "S4",
+   4,
+   "Verified: ViewError carries no transport variant (lib.rs:399-413); adapters.rs:264 and testkit.rs:206-208 both alias settle-read failure ont"
+  ],
+  [
+   "SHEET-MARK-006",
+   "T2CAP",
+   "R25",
+   "S4",
+   6,
+   "Verified: run_cycle takes prior: &MarksCache (cycle.rs:307-334) so retention is structural, and the sole test (runtime/tests/cycle.rs:308-33"
+  ],
+  [
+   "SHEET-MARK-007",
+   "T2",
+   "R27",
+   "S1",
+   2,
+   "Verified in price_to_cents: after the raw is_finite check, `let scaled = price_usd * 100.0 * SCALE as f64; if !scaled.is_finite() { return E"
+  ],
+  [
+   "SHEET-MARK-008",
+   "T2",
+   "R29",
+   "S1",
+   0,
+   "Confirmed in adapters.rs price_reading_from_cells: when Price parses numeric, the Quote Date cell is parsed with `.and_then(|s| s.trim().par"
+  ],
+  [
+   "SHEET-MARK-008",
+   "T2",
+   "R29",
+   "S1",
+   1,
+   "Confirmed: adapters.rs hardcodes `QUOTE_DATE_COL: usize = 12` and sheets-view/tests/formula.rs asserts `assert_eq!(qcol, 12, \"Quote Date is "
+  ],
+  [
+   "SHEET-MARK-008",
+   "T2",
+   "R29",
+   "S1",
+   2,
+   "Confirmed: quote_date_formula in sheets-view/src/lib.rs embeds the literal attribute string \"tradetime\" and formula.rs asserts `text.contain"
+  ],
+  [
+   "SHEET-PUB-001",
+   "EXP-HAIKU",
+   "R31",
+   "S1",
+   0,
+   "Verified: mark-refresh runs only inside Publisher::republish_then_settle (lib.rs 1012-1025) after a republish; the only periodicity is the h"
+  ],
+  [
+   "SHEET-PUB-001",
+   "EXP-HAIKU",
+   "R31",
+   "S1",
+   2,
+   "Verified: AUTOREFRESH_INTERVAL = Duration::from_secs(60*60) in pt/src/shell.rs, asserted in pt/tests/shell_autorefresh.rs; it drives run_ref"
+  ],
+  [
+   "SHEET-PUB-001",
+   "T2",
+   "R31",
+   "S2",
+   0,
+   "Same claim as S1#0, fully verified: every trigger (post-submit in tui_app.rs run_form_action, manual [r], hourly should_autorefresh, LivePor"
+  ],
+  [
+   "SHEET-PUB-001",
+   "T2",
+   "R31",
+   "S2",
+   4,
+   "Verified: run_cycle and run_cycle_publishing both filter p.total_qty.0 != 0 before read_marks (cycle.rs), so closed/disposed symbols are nev"
+  ],
+  [
+   "SHEET-PUB-001",
+   "EXP-LUNA",
+   "R31",
+   "S3",
+   3,
+   "Verified: the qty!=0 filter (cycle.rs, both cycle functions) excludes closed symbols from pricing, freshness, and the reduce_trading_day_key"
+  ],
+  [
+   "SHEET-PUB-001",
+   "T2CAP",
+   "R31",
+   "S4",
+   0,
+   "Verified: import_app.rs run_import_flow under --commit calls import::commit appending N events, prints 'COMMITTED: {n} events appended', and"
+  ],
+  [
+   "SHEET-PUB-001",
+   "T2CAP",
+   "R31",
+   "S4",
+   1,
+   "Verified: the lock guard drops when republish returns; read_marks runs outside it, and on LockError::Held republish returns published:false "
+  ],
+  [
+   "SHEET-PUB-001",
+   "T2CAP",
+   "R31",
+   "S4",
+   2,
+   "Verified: no loop exists in sheets-view/runtime (republish_then_settle is straight-line); the only periodicity is pt/src/tui_app.rs event_lo"
+  ],
+  [
+   "SHEET-PUB-001",
+   "T2CAP",
+   "R31",
+   "S4",
+   3,
+   "Verified: run_cycle_publishing step 5 re-replays with this run's marks but never republishes again \u2014 the code comment states 'The published "
+  ],
+  [
+   "SHEET-PUB-001",
+   "T2CAP",
+   "R31",
+   "S4",
+   7,
+   "Verified: LivePort::connect runs the publishing cycle before any append or request; the hourly ambient refresh, post-submit refresh, and eve"
+  ],
+  [
+   "SHEET-PUB-001",
+   "T2CAP",
+   "R31",
+   "S4",
+   8,
+   "Verified: pt/src/wiring.rs run_live_cycle passes &MarksCache::new() (line 235) on every call, and neither LivePort::refresh nor run_headless"
+  ],
+  [
+   "SHEET-PUB-001",
+   "T3",
+   "R31",
+   "S5",
+   0,
+   "Verified: run_live_cycle constructs a fresh Publisher per invocation (wiring.rs line 231), so there is no shared loop owner/queue across TUI"
+  ],
+  [
+   "SHEET-PUB-001",
+   "T3",
+   "R31",
+   "S5",
+   1,
+   "Verified trigger policy: connect, manual [r], hourly automatic (POLL_TICK=1s tick, shell-owned clock rule), post-submit, and headless summar"
+  ],
+  [
+   "SHEET-PUB-001",
+   "T3",
+   "R31",
+   "S5",
+   2,
+   "Split finding: the five band identities ARE sibling-stated (SHEET-TAB-001/SHEET-TAB-004), but the replay-phase contract \u2014 pre-settle renderi"
+  ],
+  [
+   "SHEET-PUB-002",
+   "T2",
+   "R33",
+   "S1",
+   0,
+   "Confirmed against the code: SHEET-PUB-002 pins 'a single batchUpdate that writes the new range and truncates the residual tail to the exact "
+  ],
+  [
+   "SHEET-PUB-002",
+   "T2",
+   "R33",
+   "S1",
+   1,
+   "Confirmed: the ONLY tail-truncation in the tree is FakeSheetsApi::update_range (runtime/src/testkit.rs:191-205), which unconditionally grid."
+  ],
+  [
+   "SHEET-PUB-003",
+   "T2",
+   "R35",
+   "S1",
+   0,
+   "Verified: Publisher tracks staleness per tab (stale: BTreeSet<String>, RepublishOutcome.stale_tabs; the republish loop at sheets-view/src/li"
+  ],
+  [
+   "SHEET-PUB-003",
+   "T2",
+   "R35",
+   "S1",
+   2,
+   "The trailing reassert step itself is stated by sibling SHEET-TAB-002, but the finding's central claim \u2014 an order failure flips published to "
+  ],
+  [
+   "SHEET-PUB-003",
+   "T2",
+   "R35",
+   "S1",
+   3,
+   "Verified: lib.rs:984 pins the literal banner format 'STALE \u2014 last sync {stale_banner_quote_ts}' and runtime/src/adapters.rs:286 pins the cel"
+  ],
+  [
+   "SHEET-PUB-003",
+   "T2",
+   "R35",
+   "S1",
+   4,
+   "Verified: ViewSheetsAdapter::batch_update_view (runtime/src/adapters.rs:219-237) treats a missing-tab error as fresh-workbook bootstrap \u2014 en"
+  ],
+  [
+   "SHEET-PUB-004",
+   "T2",
+   "R37",
+   "S1",
+   0,
+   "Verified: pt-core's Lock::acquire is synchronous fail-or-succeed (LockError::Held/Io; doc comment explicitly says 'this trait is fail-or-suc"
+  ],
+  [
+   "SHEET-PUB-004",
+   "T2",
+   "R37",
+   "S1",
+   1,
+   "Verified: on a refused acquisition republish returns RepublishOutcome{published:false, stale_tabs: self.stale_tabs()} with the stale set unt"
+  ],
+  [
+   "SHEET-PUB-004",
+   "T2",
+   "R37",
+   "S1",
+   2,
+   "Verified: republish_acquires_the_lock_before_mutating asserts lock.acquire_count() == 1 for a cycle spanning a batch_update_view AND the set"
+  ],
+  [
+   "SHEET-PUB-004",
+   "T2",
+   "R37",
+   "S1",
+   4,
+   "Verified in code: a batch_update_view failure on one tab does not release/reacquire the lock or abort \u2014 the loop continues to the next tab, "
+  ],
+  [
+   "SHEET-TAB-001",
+   "T2CAP",
+   "R39",
+   "S1",
+   2,
+   "Confirmed: POSITIONS_HEADER (13 cols), OPEN_LOTS_HEADER (10), REALIZED_HEADER (11), TAX_HEADER (6), TAX_RESERVE_HEADER (7) are pinned consta"
+  ],
+  [
+   "SHEET-TAB-001",
+   "T2CAP",
+   "R39",
+   "S1",
+   3,
+   "Confirmed in runtime/src/adapters.rs: price_reading_from_cells hard-codes PRICE_COL=4 and QUOTE_DATE_COL=12, read_price_pass keys on cells.f"
+  ],
+  [
+   "SHEET-TAB-001",
+   "T2CAP",
+   "R39",
+   "S1",
+   10,
+   "Confirmed: runtime/tests/cold_start.rs pins republish_to_a_fresh_workbook_creates_the_view_tab_with_its_frozen_header and the_price_pass_on_"
+  ],
+  [
+   "SHEET-TAB-001",
+   "T2CAP",
+   "R39",
+   "S1",
+   11,
+   "Partially sibling-covered but the core survives: the post-tax formulas (=G*H, =G*(1-H)) are SHEET-FORMULA-003 and the days-since-1970 quote-"
+  ],
+  [
+   "SHEET-TAB-001",
+   "EXP-LUNA",
+   "R39",
+   "S2",
+   1,
+   "Confirmed against the code: ViewSheetsAdapter::batch_update_view only calls update_range and never clear_range; GoogleSheetsApi::update_rang"
+  ],
+  [
+   "SHEET-TAB-001",
+   "EXP-LUNA",
+   "R39",
+   "S2",
+   4,
+   "The surviving core is genuine: exact headers, column positions, and the dollar/share formatting conventions (fmt_cents, fmt_shares) are stat"
+  ],
+  [
+   "SHEET-TAB-001",
+   "T3",
+   "R39",
+   "S3",
+   1,
+   "Verified: ViewSheetsAdapter::batch_update_view issues only update_range('<tab>'!A2:Z) with never a clear_range; GoogleSheetsApi::update_rang"
+  ],
+  [
+   "SHEET-TAB-001",
+   "T3",
+   "R39",
+   "S3",
+   4,
+   "The leading claim survives: the exact ordered headers for all four tabs are stated nowhere in the file (Open Lots and Realized schemas entir"
+  ],
+  [
+   "SHEET-TAB-001",
+   "T3",
+   "R39",
+   "S3",
+   6,
+   "The missing-tab bootstrap (is_missing_tab classification, ensure_sheet, one-time header write at A1, data-write retry) is pinned by runtime/"
+  ],
+  [
+   "SHEET-TAB-001",
+   "T2",
+   "R39",
+   "S5",
+   1,
+   "Confirmed: the exact 13/10/11-column schemas (labels, order, count) for Positions, Open Lots, and Realized are pinned constants with width-p"
+  ],
+  [
+   "SHEET-TAB-002",
+   "T2",
+   "R41",
+   "S1",
+   0,
+   "Confirmed in the tree: runtime/src/adapters.rs:240-246 has ViewSheetsAdapter::set_tab_order unconditionally return Ok(()) without touching s"
+  ],
+  [
+   "SHEET-TAB-002",
+   "T2",
+   "R41",
+   "S1",
+   1,
+   "Confirmed: workbook_tab_order() (sheets-view/src/lib.rs:75-92) inserts HISTORY_TAB between the four views and the config tabs, and the test "
+  ],
+  [
+   "SHEET-TAB-002",
+   "T2",
+   "R41",
+   "S1",
+   2,
+   "Confirmed: workbook_tab_order() is a literal Vec of ten fixed names with no classification logic, and tests/tabs.rs pins the exact intra-gro"
+  ],
+  [
+   "SHEET-TAB-003",
+   "T2",
+   "R43",
+   "S1",
+   1,
+   "Verified by grep over the entire crates/ tree: zero references to a Sheets basicFilter/FilterView object anywhere (the only 'Filter' hits ar"
+  ],
+  [
+   "SHEET-TAB-004",
+   "T2",
+   "R45",
+   "S1",
+   0,
+   "Confirmed: TAX_HEADER (6 cols) and TAX_RESERVE_HEADER (7 cols) are code constants in crates/sheets-view/src/lib.rs (lines 219-238), with TAX"
+  ],
+  [
+   "SHEET-TAB-004",
+   "T2",
+   "R45",
+   "S1",
+   1,
+   "Confirmed: TaxView holds two fully independent ViewTabs (TAX_TAB, TAX_RESERVE_TAB), each published via its own batch_update_view with its ow"
+  ],
+  [
+   "SHEET-TAB-004",
+   "T2",
+   "R45",
+   "S1",
+   3,
+   "Confirmed: tax::Accrual.applied_cents is Option<Cents> (tax/src/lib.rs:244) and render_tax renders Amount as empty string via .map(fmt_cents"
+  ],
+  [
+   "SHEET-TAB-004",
+   "T2",
+   "R45",
+   "S1",
+   4,
+   "Confirmed: render_tax plainly iterates the input accruals and annual_rows slices with no sort or regrouping, and the reserve-summary test pi"
+  ],
+  [
+   "SHEET-TAB-004",
+   "T2",
+   "R45",
+   "S1",
+   5,
+   "Confirmed: VIEW_TABS has exactly 4 entries and workbook_tab_order() omits TAX_RESERVE_TAB (lib.rs:70-92), with the doc comment 'part of the "
+  ],
+  [
+   "SHEET-TAB-005",
+   "T2CAP",
+   "R47",
+   "S1",
+   0,
+   "Verified: fmt_cents (lib.rs:473-478) pins sign-iff-negative, fixed two decimals from integer cents, no separator/symbol, emitted as Cell::Va"
+  ],
+  [
+   "SHEET-TAB-005",
+   "T2CAP",
+   "R47",
+   "S1",
+   1,
+   "Verified: all five figures render unconditionally through fmt_cents (zero -> \"0.00\") while the accrual band's Amount is applied_cents.map(fm"
+  ],
+  [
+   "SHEET-TAB-005",
+   "T2CAP",
+   "R47",
+   "S1",
+   2,
+   "Verified: render_tax loops the &[AnnualRow] slice directly (lib.rs:725-736) with no sort, dedupe, or uniqueness check; tests pin rows.len() "
+  ],
+  [
+   "SHEET-TAB-005",
+   "T2CAP",
+   "R47",
+   "S1",
+   4,
+   "Verified: jurisdiction_label (lib.rs:752-757) pins Federal -> \"Federal\", State(code) -> \"State({code})\", and tax year renders as bare decima"
+  ],
+  [
+   "SHEET-TAB-005",
+   "T2CAP",
+   "R47",
+   "S1",
+   6,
+   "Verified: TAX_RESERVE_HEADER (lib.rs:230-238) fixes the exact seven strings and positions; tabs.rs:103-109 asserts the published header equa"
+  ],
+  [
+   "SHEET-TAB-005",
+   "EXP-LUNA",
+   "R47",
+   "S2",
+   0,
+   "Same claim as S1 finding 0, verified identically: fmt_cents pins signed two-decimal dollar text and tests require literal \"50.00\"/\"20.00\"; n"
+  ],
+  [
+   "SHEET-TAB-005",
+   "EXP-LUNA",
+   "R47",
+   "S2",
+   1,
+   "The band's name and distinct-range status are stated by SHEET-TAB-004 (and TAB-005 itself names the band), but the finding's substantive pin"
+  ],
+  [
+   "SHEET-TAB-005",
+   "EXP-LUNA",
+   "R47",
+   "S2",
+   2,
+   "Same claim as S1 finding 4, verified: jurisdiction_label's \"Federal\"/\"State({code})\" and the base-10 TaxYear string are pinned by code and b"
+  ],
+  [
+   "SHEET-TAB-005",
+   "EXP-LUNA",
+   "R47",
+   "S2",
+   3,
+   "Same claim as S1 finding 2, verified: render_tax preserves slice order and duplicates (plain loop, no sort/group/dedupe); no requirement sta"
+  ],
+  [
+   "SHEET-TAB-005",
+   "T2",
+   "R47",
+   "S4",
+   0,
+   "Same claim as S1 finding 2, verified: the single 'for r in annual_rows' loop with no sort/group/dedup, plus the positional-zip and rows.len("
+  ],
+  [
+   "SHEET-TAB-005",
+   "T2",
+   "R47",
+   "S4",
+   1,
+   "Same claim as S1 finding 0, verified: the fmt_cents algorithm (sign iff negative, abs/100, abs%100 zero-padded to 2) is re-implemented verba"
+  ],
+  [
+   "SHEET-TAB-005",
+   "T2",
+   "R47",
+   "S4",
+   3,
+   "Same claim as S1 finding 4, verified: jurisdiction_label and the bare-decimal Tax Year are code/test-pinned and stated by no requirement."
+  ],
+  [
+   "SHEET-TAB-005",
+   "T2",
+   "R47",
+   "S4",
+   4,
+   "Bundled claim matching S2 finding 1: the band-separation half is SHEET-TAB-004-stated, but the exact TAX_RESERVE_HEADER literal list/order a"
+  ],
+  [
+   "SHEET-TAB-005",
+   "T2",
+   "R47",
+   "S4",
+   5,
+   "Same claim as S1 finding 1, verified: zero renders \"0.00\" never blank, defended by the explicit non-empty assertions with the 'gap the revie"
+  ],
+  [
+   "SHEET-TAB-005",
+   "T2",
+   "R47",
+   "S4",
+   6,
+   "Verified: render_tax(&[Accrual], &[AnnualRow]) -> TaxView is infallible with no duplicate-(Jurisdiction,TaxYear) guard, while render_positio"
+  ],
+  [
+   "SHEET-TAB-005",
+   "T3",
+   "R47",
+   "S5",
+   0,
+   "Same claim as S1 finding 0, verified: fmt_cents fixes signed two-decimal dollar text (Cents(5000) -> \"50.00\") and the tests assert it litera"
+  ],
+  [
+   "SHEET-TAB-005",
+   "T3",
+   "R47",
+   "S5",
+   1,
+   "Bundled claim matching S2 finding 1 / S4 finding 4: separation and the band name are SHEET-TAB-004-stated and frozen-header behavior is SHEE"
+  ],
+  [
+   "SHEET-TAB-005",
+   "T3",
+   "R47",
+   "S5",
+   2,
+   "Same claim as S1 finding 4, verified: \"Federal\", \"State(<code>)\", and decimal-integer TaxYear are code/test-pinned display normalizations st"
+  ],
+  [
+   "SHEET-TAB-005",
+   "T3",
+   "R47",
+   "S5",
+   3,
+   "Same claim as S1 finding 2, verified: input-order preservation and one-row-per-supplied-AnnualRow without aggregation, dedup, or validation "
+  ],
+  [
+   "SHEET-TAB-005",
+   "T3",
+   "R47",
+   "S5",
+   4,
+   "Bundle: the Cell::Value-typing half is sibling-stated (SHEET-FORMULA-001/004, matching the CROSSREF on S1 finding 5), but the zero-renders-\""
+  ]
+ ],
+ "per_seed": {
+  "U-FORMULA-001": {
+   "T2": true
+  },
+  "H-FORMULA-002": {
+   "T2": true
+  },
+  "P-FORMULA-003": {
+   "T2": true
+  },
+  "H-FORMULA-004": {
+   "T2": true
+  },
+  "P-FORMULA-005": {
+   "EXP-LUNA": true,
+   "T2CAP": true,
+   "EXP-HAIKU": true,
+   "T2": true,
+   "T3": true,
+   "T1": true
+  },
+  "U-MAP-001": {
+   "EXP-LUNA": true,
+   "T2CAP": true,
+   "EXP-HAIKU": true,
+   "T2": true,
+   "T3": true,
+   "T1": true
+  },
+  "P-MAP-002": {
+   "T2": true
+  },
+  "U-MARK-001": {
+   "T2": true
+  },
+  "H-MARK-002": {
+   "EXP-LUNA": true,
+   "T2": true,
+   "T3": true,
+   "EXP-HAIKU": true,
+   "T2CAP": true,
+   "T1": true
+  },
+  "H-MARK-003": {
+   "T2": true
+  },
+  "U-MARK-004": {
+   "T2": false,
+   "EXP-HAIKU": false,
+   "T2CAP": false,
+   "EXP-LUNA": false,
+   "T3": false,
+   "T1": false
+  },
+  "P-MARK-005": {
+   "T2": true
+  },
+  "P-MARK-006": {
+   "T2": true
+  },
+  "H-MARK-007": {
+   "T2": true
+  },
+  "H-MARK-008": {
+   "T3": true,
+   "EXP-HAIKU": false,
+   "EXP-LUNA": true,
+   "T2CAP": true,
+   "T2": true,
+   "T1": true
+  },
+  "U-PUB-001": {
+   "T2": true
+  },
+  "U-PUB-002": {
+   "T2CAP": true,
+   "EXP-LUNA": true,
+   "T2": true,
+   "T3": true,
+   "EXP-HAIKU": true,
+   "T1": true
+  },
+  "P-PUB-003": {
+   "EXP-HAIKU": true,
+   "EXP-LUNA": true,
+   "T3": true,
+   "T2": true,
+   "T2CAP": true,
+   "T1": true
+  },
+  "H-PUB-004": {
+   "T2": true
+  },
+  "P-TAB-001": {
+   "T2": true
+  },
+  "U-TAB-002": {
+   "T2": true
+  },
+  "P-TAB-003": {
+   "T2CAP": true,
+   "EXP-LUNA": true,
+   "EXP-HAIKU": true,
+   "T3": true,
+   "T2": true,
+   "T1": true
+  },
+  "U-TAB-004": {
+   "T2": true
+  },
+  "H-TAB-005": {
+   "T2": true
+  }
+ }
+}

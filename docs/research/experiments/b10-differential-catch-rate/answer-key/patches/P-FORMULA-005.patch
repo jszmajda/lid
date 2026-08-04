@@ -1,0 +1,12 @@
+diff --git a/docs/intent/sheets-view/sheets-view-specs.md b/docs/intent/sheets-view/sheets-view-specs.md
+index a9fbc14..5ac953a 100644
+--- a/docs/intent/sheets-view/sheets-view-specs.md
++++ b/docs/intent/sheets-view/sheets-view-specs.md
+@@ -19,7 +19,7 @@ accounting/tax math.
+ - [x] **SHEET-FORMULA-002**: The system shall write each per-row formula as references to that row's own cells, from a fixed anchored start row beneath a never-rewritten frozen header, so a row shift cannot mis-pair them.
+ - [x] **SHEET-FORMULA-003**: The Positions tab shall show a pre-tax `Unrealized P&L` and a live post-tax `Net Unrealized = Unrealized P&L × (1 − Est. Tax Rate)`, where `Est. Tax Rate` is the per-position effective unrealized tax rate written by `tax`; the post-tax columns shall be labelled estimates.
+ - [x] **SHEET-FORMULA-004**: The Tax tab shall present kernel-exact (stacked, as-of-last-sync) tax-adjusted figures, distinct from the Positions live estimate.
+-- [x] **SHEET-FORMULA-005**: The system shall write the `Est. Tax Rate` cell so Sheets parses it as a number (a percent-typed `userEnteredValue`, e.g. a `"%"`-suffixed value), so the live post-tax `Est. Unrealized Tax` / `Net Unrealized` formulas that multiply it evaluate numerically rather than against text.
++- [x] **SHEET-FORMULA-005**: The system shall write the `Est. Tax Rate` cell so Sheets parses it as a number (a percent-typed `userEnteredValue`, e.g. a `"%"`-suffixed value) and shall protect the cell against manual edits, so the live post-tax `Est. Unrealized Tax` / `Net Unrealized` formulas that multiply it evaluate numerically rather than against text or an operator-overwritten value.
+ 
+ ## Symbol → Ticker Mapping

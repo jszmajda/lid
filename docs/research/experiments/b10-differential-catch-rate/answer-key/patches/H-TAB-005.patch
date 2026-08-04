@@ -1,0 +1,28 @@
+diff --git a/crates/sheets-view/src/lib.rs b/crates/sheets-view/src/lib.rs
+index 7e9df24..b803e2d 100644
+--- a/crates/sheets-view/src/lib.rs
++++ b/crates/sheets-view/src/lib.rs
+@@ -739,13 +739,22 @@ pub fn render_tax(accruals: &[Accrual], annual_rows: &[AnnualRow]) -> TaxView {
+     // annual report (TAX-REPORT-003/004 → AnnualRow). (SHEET-FORMULA-004)
+     let mut reserve_rows: Vec<ViewRow> = Vec::new();
+     for r in annual_rows {
++        // Outstanding falls straight out of the accrual band already built above
++        // (accrued − paid), so derive it from the per-accrual applied amounts
++        // rather than re-reading the annual row's own figure.
++        let local_accrued: i64 = accruals
++            .iter()
++            .filter(|a| a.key.jurisdiction == r.jurisdiction && a.key.tax_year == r.tax_year)
++            .filter_map(|a| a.applied_cents.map(|c| c.0))
++            .sum();
++        let outstanding_cents = Cents(local_accrued - r.paid_cents.0);
+         reserve_rows.push(vec![
+             Cell::Value(jurisdiction_label(&r.jurisdiction)),
+             Cell::Value(r.tax_year.0.to_string()),
+             Cell::Value(fmt_cents(r.accrued_cents)),
+             Cell::Value(fmt_cents(r.moved_cents)),
+             Cell::Value(fmt_cents(r.paid_cents)),
+-            Cell::Value(fmt_cents(r.outstanding_cents)),
++            Cell::Value(fmt_cents(outstanding_cents)),
+             Cell::Value(fmt_cents(r.shortfall_cents)),
+         ]);
+     }
