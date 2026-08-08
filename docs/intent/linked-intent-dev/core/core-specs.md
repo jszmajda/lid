@@ -3,6 +3,7 @@
 **LLD**: docs/intent/linked-intent-dev/core/core-design.md
 **Implementing artifacts**:
 - plugins/linked-intent-dev/skills/linked-intent-dev/SKILL.md
+- plugins/linked-intent-dev/skills/linked-intent-dev/references/capability-flags.md
 
 Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 
@@ -28,6 +29,9 @@ The `linked-intent-dev` workflow skill is pure prose — its `SKILL.md` is the a
 - `[x]` **LID-CORE-050**: When a spec or draft admits more than one reading, the system SHALL surface the fork to the human for resolution, regardless of which instruments are in play and at whatever phase the fork is discovered — before further tests or code are written against either reading; a fork discovered after tests exist is surfaced before proceeding, with the affected tests named.
 - `[x]` **LID-CORE-051**: When inspection is delegated, the system SHALL preserve every phase-boundary stop, changing only what the human rules on at the stop — the inspector's findings rather than the raw phase output.
 - `[x]` **LID-CORE-057**: When inspection is relocated to an out-of-band review, the system SHALL confirm with the user which artifacts the review will cover and SHALL NOT lighten the in-session ruling for phases whose artifacts the review will not read.
+- `[ ]` **LID-CORE-058**: When a phase's work touches an area the capability-flag list flags for the executing model's class, the system SHALL name that area and what to check at the phase's stop, and SHALL route that judgment to the human even when the human has authorized another inspector at that stop.
+- `[ ]` **LID-CORE-059**: When determining whether a capability flag applies, the system SHALL place the executing model by its own name first and then by size tier and release year, and SHALL treat the flag as applying when it cannot place itself.
+- `[ ]` **LID-CORE-060**: When raising a capability flag, the system SHALL state the flagged area and the request for review once, plainly, without qualifying the rest of its work.
 - `[x]` **LID-CORE-052**: When dispatching phase work to a subagent, the system SHALL embed in the dispatch prompt the obligations that phase carries — for implementation work, the EARS IDs in scope, the tests-first gate, and the `@spec` annotation requirement — and, for every dispatch regardless of phase, the obligation to surface rather than resolve ambiguity: a spec admitting more than one reading returns to the dispatcher as a question, never as a silently chosen reading.
 
 ## Phase 1 — HLD Check

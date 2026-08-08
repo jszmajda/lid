@@ -122,6 +122,7 @@ The operating principles that tie the preceding approaches to day-to-day work:
 - **LID runs on the agent, not a runtime.** Deterministic work is specified in prose for the agent to perform, not shipped as tooling the project must run; helpers may accelerate but are never required.
 - **The user is always right — with warning.** A user may override a phase requirement; the skill warns about the drift risk and honors the override.
 - **Every phase is inspected — by the human, or an inspector the human has authorized.** Alignment with intent is verified, never assumed; what varies is the instrument, not whether inspection happens.
+- **Design for the pair, not the model.** LID's guidance is written for the user and model working together. It carries discipline that holds on any model. Judgment that depends on the model's capability goes to the pair's review; LID does not reword itself to coax a model through it. LID's evals can only ever sample the models that execute it.
 
 ## Goals
 

@@ -35,6 +35,8 @@ Three rules hold whatever the instruments:
 - A spec or draft that admits more than one reading always goes back to the user — only they hold the latent intent — at whatever phase the fork is discovered, before further tests or code land against either reading. A fork found after tests exist is surfaced with the affected tests named.
 - Delegation changes *who inspects at a stop*, never *how many stops there are*. The user can still override anything, per *the user is always right — with warning*.
 
+**Capability flags — bring the user in where your model class is known to miss things.** `references/capability-flags.md` lists kinds of judgment that eval evidence shows some model classes reliably miss. Check whether a flag applies to you: match by your own model name first, then by size tier and release year; if you cannot place yourself, treat the flags as applying. When a phase's work touches a flagged area, do your best work there as usual, then at that phase's stop name the area and what the user should check — e.g., "Please check this LLD's mechanisms against the HLD tenets yourself; models in my class are known to miss contradictions like that." Send that judgment to the user even if they have authorized another inspector at that stop, because an inspector running on the same model has the same gap. Say it once, plainly — it routes one judgment to the user; it does not qualify the rest of your work.
+
 ## Delegation discipline
 
 Discipline does not travel by ambient context. A subagent dispatched to perform phase work receives only its prompt — not this skill, not the instruction file, not the conversation. Embed the phase's obligations in the dispatch prompt itself.
@@ -163,7 +165,7 @@ Re-read each adjacent level of the arrow for the changed segment and produce a s
 
 ## Decision docs
 
-Most design decisions are recorded as a row in the relevant LLD's Decisions & Alternatives table. A few earn a full **decision doc** — a standalone artifact laying out a decision's context, criteria, options, and selection at enough resolution that a future cold reader can re-run the judgment.
+Most design decisions are recorded as a row in the relevant LLD's Decisions & Alternatives table. A few earn a full **decision doc** — a standalone artifact laying out a decision's context, criteria, options, and selection at enough resolution that a future cold reader can re-run the judgment. A decision doc lives two lives: drafted, it is a position built to structure debate — through the PR that carries it on a team, or with the agent in a solo session; finalized, it memorializes that deep work so the rest of the system's intent can lean on it.
 
 Apply the test from the **landed** state, not the deliberation: *would a cold reader of the result find the choice non-obvious — question it, or be tempted to reverse it?* — not *was it hard to decide?* A decision that was contested while you worked but reads as obvious or native once it lands needs **neither a doc nor a row**; the structure documents itself, and recording a settled-obvious choice is the residue the *docs carry current intent* tenet strips. Add a **table row** when a cold reader would wonder "why this?" and a line settles it. Write a **full decision doc** only when the choice stays genuinely live — a reader would re-litigate it without the competing options and criteria. Decision docs are rare; a directory full of them is a smell.
 
@@ -233,3 +235,4 @@ Inside LID's own repository (when editing LID itself), `@spec` annotation direct
 - `references/lld-templates.md` — LLD structure template.
 - `references/hld-template.md` — HLD standard sections template.
 - `references/decision-doc-template.md` — decision-doc structure, the earns-its-place heuristic, and the fit-verdict format.
+- `references/capability-flags.md` — kinds of judgment some model classes are known to miss, and which classes; read when checking whether to bring the user in.

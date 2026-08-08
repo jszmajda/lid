@@ -17,7 +17,7 @@ This is the `LID` sub-HLD: it owns no EARS itself and parents three leaf LLDs, o
 | [`update-lid/update-lid-design.md`](update-lid/update-lid-design.md) | `LID-UPDATE` | the behavioral bootstrap/maintenance skill |
 | [`lid-coach/lid-coach-design.md`](lid-coach/lid-coach-design.md) | `LID-COACH` | the behavioral principle-review skill |
 
-The three skills share a body of plugin-level design — mode detection, spec-ID format, the LID-on-LID linkage inversion, `index.yaml` update mechanics, and the eval-metadata schema. Those concerns live in this sub-HLD and are referenced from the leaves rather than restated in each. Skill-specific design lives in the corresponding leaf.
+The three skills share a body of plugin-level design — mode detection, spec-ID format, the LID-on-LID linkage inversion, `index.yaml` update mechanics, the eval-metadata schema, and capability flags. Those concerns live in this sub-HLD and are referenced from the leaves rather than restated in each. Skill-specific design lives in the corresponding leaf.
 
 **A note on actors.** Throughout this plugin's docs, "the skill" refers to the prose guidance contained in a `SKILL.md`. The skill does not act on its own — it is content the agent consults. When a doc says "the skill surfaces X" or "the skill warns," the mechanism is: the agent, after consulting the skill, performs the surfacing or warning in the assistant turn it produces. The skill is the instruction; the agent is the actor.
 
@@ -35,7 +35,7 @@ The plugin lives at `plugins/linked-intent-dev/` with this shape:
 - `.claude-plugin/plugin.json` — Claude Code plugin manifest (name, version, skills listing). Its `version` is the canonical LID conventions version (see the HLD's Versioning note).
 - `skills/linked-intent-dev/` — the pure-prose workflow skill. Specified in `docs/intent/linked-intent-dev/core/core-design.md`.
   - `SKILL.md`
-  - `references/` — supporting reference docs (EARS syntax, LLD template, HLD template).
+  - `references/` — supporting reference docs (EARS syntax, LLD template, HLD template, capability flags).
 - `skills/update-lid/` — the behavioral bootstrap/update skill. Specified in `docs/intent/linked-intent-dev/update-lid/update-lid-design.md`.
   - `SKILL.md`
   - `references/` — instruction-file template fragments keyed by mode.
@@ -117,6 +117,32 @@ For behavioral skills, `evals/evals.json` and per-eval `eval_metadata.json` carr
 
 Coverage audit: every behavioral EARS spec should appear in at least one assertion's `spec_ids` across the eval suite. The `arrow-maintenance` overlay runs this audit when present. The pure-prose `linked-intent-dev` workflow skill (`LID-CORE`) has no eval suite — its behaviors are guidance the agent consults, not a deterministic harness run — so the coverage audit applies only to the behavioral leaves (`LID-UPDATE`, `LID-COACH`).
 
+**Models tested.** Each `evals.json` carries a top-level `tested_with` list recording the runs its results rest on: the exact model ID, the run date, which evals ran, and the with-skill pass count — e.g. `{"model": "claude-sonnet-4-5", "date": "2026-09-25", "evals": "0-10", "passed": "48/51"}`. Evals name models, never relative tiers ("floor", "frontier", "strong"): which model counts as strong changes as models change, and an exact ID stays true. A suite's results are a claim about the models it names; every other model is unsampled (HLD tenet *Design for the pair, not the model*). An empty list means no run is on record.
+
+## Capability Flags
+
+LID's guidance runs on whatever model the user pairs it with. Most of it — phase discipline, restraint, the stops — holds on any model. Some judgment does not: eval evidence can show a class of models reliably missing a kind of judgment that other classes catch, where rewording the skill does not close the gap. A **capability flag** records such a gap so that LID brings the user in on that judgment rather than letting the model proceed on it alone (HLD tenet *Design for the pair, not the model*).
+
+**Where the list lives.** One file, `skills/linked-intent-dev/references/capability-flags.md`. Any LID skill whose work touches a flagged area reads it — the core workflow, `lid-coach`, and the `review-depth` experiment each specify how in their own LLDs.
+
+**Entry shape.** Each flag names:
+
+- **Area** — the kind of judgment, described so a model can recognize it while working (e.g., *noticing that a design's mechanism contradicts one of the project's own tenets or goals*).
+- **Model class** — a vendor size tier (small / mid / large; e.g., Haiku / Sonnet / Opus) and a release-year bound, with the tested model IDs as examples. The flag covers the named class and any smaller tier released in or before the bound year.
+- **Evidence** — fixtures, runs per model, pass rates per exact model ID, and the date.
+
+**Self-matching.** A model places itself by its own name first, then by tier and release year. A model that cannot place itself treats the flags as applying to it: an unneeded review costs the user a moment; a skipped review that was needed costs a missed defect.
+
+**What a flag does.** It changes who checks the judgment, not what the model does: the model still does its best work in the area, then names the area to the user once, plainly, and asks them to check that judgment themselves. It is a routing instruction, not a disclaimer — no apology, no hedging of the rest of the work.
+
+**Evidence bar.** A flag enters the list only when all three hold:
+
+1. At least 10 runs per model configuration.
+2. The pass-rate gap between the flagged class and a class that passes exceeds the spread between repeated identical runs on one model, measured by a noise study on the same fixtures.
+3. The gap reproduces on at least two fixtures.
+
+A flag leaves the list when a rerun on its class no longer clears the bar. Newer models fall outside a flag through its year bound, without editing the list.
+
 ## Decisions & Alternatives
 
 These are the decisions shared across the plugin's three skills. Skill-specific decisions live in each leaf LLD's own Decisions & Alternatives section.
@@ -125,6 +151,9 @@ These are the decisions shared across the plugin's three skills. Skill-specific 
 |---|---|---|---|
 | Spec ID format | Path-concatenated prefix — the root-to-leaf path of the owning segment, one segment per tree level, with an optional within-leaf type facet | Fixed two-segment format (`FEATURE-TYPE-NNN`); loose namespaces decoupled from position; GUID; hierarchical numeric only | The prefix encodes position, so a single grep gathers a subtree and an agent can place any ID from the ID alone. Fixed segments cannot express depth. Position-decoupled prefixes need a second structure (frontmatter) to locate a spec. GUIDs break grep-friendliness. (See `docs/decisions/namespace-structure.md`.) |
 | EARS spec linkage direction for LID-on-LID | Spec file header points to artifacts (inverted) | `@spec` annotations in SKILL.md body; frontmatter `specs:` field | Prompt bodies cannot host annotations without instruction contamination. Spec-as-authoritative-end is philosophically cleaner than either alternative. |
+| Capability-flag keying | Model class — vendor size tier plus release-year bound, with tested model IDs as examples | Exact model IDs only; a single "Sonnet-level" capability floor; no flags, rewording the skill until the gap closes | Exact IDs cover only tested models, which is almost none of the models users run. A single floor goes stale as models improve and says nothing about which judgment is at risk. Rewording was tried against a detection gap: pass rates on the missing model did not move, and wording aimed at it regressed other behaviors. Class keying lets an untested model place itself; a model that cannot place itself assumes the flag applies, because an extra review costs less than a missed defect. |
+| What a capability flag does | Brings the user in on the flagged judgment | Skip the area on flagged classes; a general "results may vary" disclaimer | When judgment depends on the model, bring in the user: the pair is what executes LID, and the user supplies what the model class misses. Skipping drops the check entirely; a disclaimer moves no work and wears on the pair's working relationship. |
+| Recording eval models | `tested_with` with exact model IDs, date, evals run, pass count | Tier labels ("floor", "frontier") | A tier is relative to the models of its day and silently goes stale; an exact ID stays true. |
 
 ## Open Questions & Future Decisions
 

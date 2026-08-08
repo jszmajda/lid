@@ -1,5 +1,6 @@
 {
   "skill_name": "update-lid",
+  "tested_with": [{ "model": "claude-fable-5", "date": "2026-08-08", "evals": "0-13", "passed": "52/52" }],
   "evals": [
     {
       "id": 0,
@@ -37,7 +38,7 @@
       "eval_name": "idempotent-on-configured-project",
       "prompt": "Please set up LID in this project.",
       "files": [
-        { "path": "CLAUDE.md", "content": "# My Project\n\n## LID\n- Mode: Full\n- Version: 1.2.0\n\n## Linked-Intent Development (MANDATORY)\n\n**Consult the `linked-intent-dev` skill for ALL code changes.** All changes flow through the arrow of intent in one direction:\n\n```\nHLD → LLDs → EARS → Tests → Code\n```\n" },
+        { "path": "CLAUDE.md", "content": "# My Project\n\n## LID\n- Mode: Full\n- Version: 1.4.0\n\n## Linked-Intent Development (MANDATORY)\n\n**Consult the `linked-intent-dev` skill for ALL code changes.** All changes flow through the arrow of intent in one direction:\n\n```\nHLD → LLDs → EARS → Tests → Code\n```\n" },
         { "path": "docs/high-level-design.md", "content": "# High-Level Design\n\n## Problem\n\n*(not yet specified)*\n" },
         { "path": "docs/intent/.gitkeep", "content": "" }
       ],
@@ -51,14 +52,14 @@
       "eval_name": "normalize-malformed-lid-block",
       "prompt": "Please reconcile this project's LID setup.",
       "files": [
-        { "path": "CLAUDE.md", "content": "# My Project\n\n## LID Mode: Full\n\n- Version: 1.2.0\n\n## Linked-Intent Development (MANDATORY)\n\n**Consult the `linked-intent-dev` skill for ALL code changes.**\n" },
+        { "path": "CLAUDE.md", "content": "# My Project\n\n## LID Mode: Full\n\n- Version: 1.4.0\n\n## Linked-Intent Development (MANDATORY)\n\n**Consult the `linked-intent-dev` skill for ALL code changes.**\n" },
         { "path": "docs/high-level-design.md", "content": "# High-Level Design\n\n## Problem\n\n*(not yet specified)*\n" },
         { "path": "docs/intent/.gitkeep", "content": "" }
       ],
       "assertions": [
         { "text": "CLAUDE.md now contains a bare '## LID' heading on its own line (the heading is no longer the malformed '## LID Mode: Full')", "spec_ids": ["LID-UPDATE-004"] },
         { "text": "CLAUDE.md now contains a standalone '- Mode: Full' bullet under the '## LID' heading", "spec_ids": ["LID-UPDATE-004", "LID-UPDATE-009"] },
-        { "text": "CLAUDE.md still has the '- Version: 1.2.0' bullet and exactly ONE LID block (no duplicate '## LID' block was appended below the malformed one)", "spec_ids": ["LID-UPDATE-004"] },
+        { "text": "CLAUDE.md still has the '- Version: 1.4.0' bullet and exactly ONE LID block (no duplicate '## LID' block was appended below the malformed one)", "spec_ids": ["LID-UPDATE-004"] },
         { "text": "The agent's response reports that it normalized the malformed LID block in place", "spec_ids": ["LID-UPDATE-027"] }
       ]
     },
@@ -67,7 +68,7 @@
       "eval_name": "reconcile-surfaces-structural-markers-at-current-version",
       "prompt": "Please reconcile this project's LID setup against current conventions.",
       "files": [
-        { "path": "CLAUDE.md", "content": "# My Project\n\n## LID\n- Mode: Full\n- Version: 1.2.0\n\n## Linked-Intent Development (MANDATORY)\n\n**Consult the `linked-intent-dev` skill for ALL code changes.**\n" },
+        { "path": "CLAUDE.md", "content": "# My Project\n\n## LID\n- Mode: Full\n- Version: 1.4.0\n\n## Linked-Intent Development (MANDATORY)\n\n**Consult the `linked-intent-dev` skill for ALL code changes.**\n" },
         { "path": "docs/high-level-design.md", "content": "# High-Level Design\n\n## Problem\n\nPayments and orders for a small storefront.\n" },
         { "path": "docs/intent/orders/orders-design.md", "content": "---\nparent: high-level-design\nprefix: ORDER\n---\n# LLD: Orders\n\nOrder lifecycle.\n" },
         { "path": "docs/intent/orders/orders-specs.md", "content": "# orders specs\n\n**LLD**: docs/intent/orders/orders-design.md\n\n- `[x]` **ORDER-001**: The system SHALL create an order.\n" },
@@ -87,16 +88,16 @@
     {
       "id": 5,
       "eval_name": "version-walk-advances-on-deferred-judgment-step",
-      "prompt": "This project records LID Version 1.1.0 but I want it on the current 1.2.0 conventions. Please reconcile it. If a structural decision needs my judgment, surface it with a recommendation but defer it for now and proceed — do not block on it.",
+      "prompt": "This project records LID Version 1.1.0 but I want it on current conventions. Please reconcile it. If a structural decision needs my judgment, surface it with a recommendation but defer it for now and proceed — do not block on it.",
       "files": [
         { "path": "CLAUDE.md", "content": "# My Project\n\n## LID\n- Mode: Full\n- Version: 1.1.0\n\n## Linked-Intent Development (MANDATORY)\n\n**Consult the `linked-intent-dev` skill for ALL code changes.**\n" },
-        { "path": "CHANGELOG.md", "content": "# Changelog\n\n## [1.2.0]\n\n### Migration (v1.1 → v1.2)\n- Node-as-folder: each LLD lives in docs/intent/<node>/ as <node>-design.md (plus <node>-specs.md).\n- A design doc whose `prefix:` frontmatter is an array is an unresolved multi-prefix marker; resolve by collapse into <LEAF>-<TYPE> facets, promote to a sub-HLD over child leaves, or split into sibling leaves. A `prefix:` array must not survive the walk.\n" },
+        { "path": "CHANGELOG.md", "content": "# Changelog\n\n## [1.4.0]\n\n### Migration (v1.3 → v1.4)\n- Directives refresh (mechanical): the instruction file's per-phase stop procedure line becomes the inspection invariant.\n- Vendored workflow doc (judgment): choose whether to vendor docs/lid/workflow.md; declining keeps the compressed workflow summary in the instruction file.\n\n## [1.3.0]\n\n### Migration (v1.2 → v1.3)\n- Add the memory→intent directive (mechanical): reconcile adds the Memory vs. intent paragraph to the instruction file if missing.\n\n## [1.2.0]\n\n### Migration (v1.1 → v1.2)\n- Node-as-folder: each LLD lives in docs/intent/<node>/ as <node>-design.md (plus <node>-specs.md).\n- A design doc whose `prefix:` frontmatter is an array is an unresolved multi-prefix marker; resolve by collapse into <LEAF>-<TYPE> facets, promote to a sub-HLD over child leaves, or split into sibling leaves. A `prefix:` array must not survive the walk.\n" },
         { "path": "docs/high-level-design.md", "content": "# High-Level Design\n\n## Problem\n\nSubscription billing for a SaaS product.\n" },
         { "path": "docs/intent/billing/billing-design.md", "content": "---\nparent: high-level-design\nprefix: [BILL, INVOICE]\n---\n# LLD: Billing\n\nCharges, invoices, and dunning.\n" },
         { "path": "docs/intent/billing/billing-specs.md", "content": "# billing specs\n\n**LLD**: docs/intent/billing/billing-design.md\n\n- `[x]` **BILL-001**: The system SHALL charge a subscription.\n- `[x]` **INVOICE-001**: The system SHALL issue an invoice.\n" }
       ],
       "assertions": [
-        { "text": "CLAUDE.md's '- Version:' bullet has been advanced to 1.2.0 (the installed version) even though a structural judgment step was deferred (the version is NOT left pinned at 1.1.0)", "spec_ids": ["LID-UPDATE-043"] },
+        { "text": "CLAUDE.md's '- Version:' bullet has been advanced to the installed version (1.4.0) even though a structural judgment step was deferred (the version is NOT left pinned at 1.1.0)", "spec_ids": ["LID-UPDATE-043"] },
         { "text": "The agent's report explicitly names the deferred/outstanding item — the 'prefix:' array ([BILL, INVOICE]) on docs/intent/billing/billing-design.md — as a persisting marker still to resolve", "spec_ids": ["LID-UPDATE-043"] },
         { "text": "The agent recommended a resolution for the deferred prefix array (collapse into <LEAF>-<TYPE> facets, promote, or split) rather than leaving it unmentioned", "spec_ids": ["LID-UPDATE-044"] },
         { "text": "The agent did NOT silently rewrite or auto-resolve the prefix array — docs/intent/billing/billing-design.md still contains 'prefix: [BILL, INVOICE]'", "spec_ids": ["LID-UPDATE-043", "LID-UPDATE-044"] }
@@ -107,7 +108,7 @@
       "eval_name": "idempotent-on-agents-md-project",
       "prompt": "Please set up LID in this project.",
       "files": [
-        { "path": "AGENTS.md", "content": "# My Project\n\n## LID\n- Mode: Full\n- Version: 1.2.0\n\n## Linked-Intent Development (MANDATORY)\n\n**Consult the `linked-intent-dev` skill for ALL code changes.** All changes flow through the arrow of intent in one direction:\n\n```\nHLD → LLDs → EARS → Tests → Code\n```\n" },
+        { "path": "AGENTS.md", "content": "# My Project\n\n## LID\n- Mode: Full\n- Version: 1.4.0\n\n## Linked-Intent Development (MANDATORY)\n\n**Consult the `linked-intent-dev` skill for ALL code changes.** All changes flow through the arrow of intent in one direction:\n\n```\nHLD → LLDs → EARS → Tests → Code\n```\n" },
         { "path": "docs/high-level-design.md", "content": "# High-Level Design\n\n## Problem\n\n*(not yet specified)*\n" },
         { "path": "docs/intent/.gitkeep", "content": "" }
       ],
@@ -125,6 +126,94 @@
       "assertions": [
         { "text": "AGENTS.md contains a tool-agnostic memory-to-intent directive instructing the agent that, before saving durable project knowledge to agent/tool memory, it tests whether the knowledge is project intent and, if so, records it in the arrow rather than memory", "spec_ids": ["LID-UPDATE-047"] },
         { "text": "The memory-to-intent directive is phrased tool-agnostically (it does not name a specific product's memory feature) and distinguishes project intent (which goes to the arrow) from user/relationship knowledge (which legitimately stays in memory)", "spec_ids": ["LID-UPDATE-047"] }
+      ]
+    },
+    {
+      "id": 8,
+      "eval_name": "bootstrap-vendors-workflow-doc",
+      "prompt": "I have an empty project directory and want to start using linked-intent development on it. Set it up with Full LID. Take your recommended default on any offer without waiting for me.",
+      "files": [],
+      "assertions": [
+        { "text": "docs/lid/workflow.md exists and is a copy of the plugin's shipped references/workflow-doc.md asset (the release-assembled workflow content, not freshly authored per-project prose)", "spec_ids": ["LID-UPDATE-048", "LID-UPDATE-049"] },
+        { "text": "docs/lid/workflow.md preserves the generated-file header: it names the source plugin version (1.4.0) and states that changes belong upstream (in the plugin) or in the project's instruction file", "spec_ids": ["LID-UPDATE-049"] },
+        { "text": "The instruction file's workflow section is the compact core (Variant A): it contains the capability-conditional pointer (consult the linked-intent-dev skill if the harness provides it; otherwise read docs/lid/workflow.md) and does NOT contain the Variant-B six-phase compressed-summary bullets", "spec_ids": ["LID-UPDATE-050"] },
+        { "text": "No template variant comment markers (e.g. '<!-- Variant') leaked into the written instruction file", "spec_ids": ["LID-UPDATE-050"] },
+        { "text": "The agent's response presents the vendoring choice with its tradeoff (compact core + pointer vs. fuller compressed summary in the instruction file) rather than vendoring silently — stated even though the default was taken", "spec_ids": ["LID-UPDATE-048"] }
+      ]
+    },
+    {
+      "id": 9,
+      "eval_name": "workflow-doc-decline-writes-compressed-summary",
+      "prompt": "Set up LID in this empty project with Full mode. Don't vendor a workflow doc — I want everything kept in the instruction file itself.",
+      "files": [],
+      "assertions": [
+        { "text": "No docs/lid/workflow.md was created (the vendoring offer was declined)", "spec_ids": ["LID-UPDATE-048", "LID-UPDATE-050"] },
+        { "text": "The instruction file's workflow section is the compressed summary (Variant B): the six-phase workflow bullets appear inline and no pointer to docs/lid/workflow.md is present", "spec_ids": ["LID-UPDATE-050"] },
+        { "text": "No template variant comment markers (e.g. '<!-- Variant') leaked into the written instruction file", "spec_ids": ["LID-UPDATE-050"] }
+      ]
+    },
+    {
+      "id": 10,
+      "eval_name": "standing-decline-not-reoffered",
+      "prompt": "Please reconcile this project's LID setup against current conventions.",
+      "files": [
+        { "path": "AGENTS.md", "content": "# My Project\n\n## LID\n- Mode: Full\n- Version: 1.4.0\n\n## Linked-Intent Development (MANDATORY)\n\n**Consult the `linked-intent-dev` skill for ALL code changes.** All changes flow through the arrow of intent in one direction:\n\n```\nHLD → LLDs → EARS → Tests → Code\n```\n\n- **New features and refactors**: full six-phase workflow (HLD check → LLD check/draft → EARS → intent-narrowing edge audit → tests-first → code).\n- **Bug fixes**: walk the arrow like any other change — find where behavior diverged from intent and cascade from there. No short-circuit.\n- **If unsure**: use the full workflow.\n\nEach phase's output is inspected — by the user or an inspector they name — before the next begins; ambiguous spec readings go back to the user.\n" },
+        { "path": "docs/high-level-design.md", "content": "# High-Level Design\n\n## Problem\n\nA small inventory service.\n" },
+        { "path": "docs/intent/.gitkeep", "content": "" }
+      ],
+      "assertions": [
+        { "text": "The agent does NOT re-offer workflow-doc vendoring and does not create docs/lid/workflow.md — the Variant-B (compressed summary) workflow section already in AGENTS.md records a standing decline", "spec_ids": ["LID-UPDATE-048"] },
+        { "text": "AGENTS.md's workflow section is unchanged: the compressed-summary bullets remain and no docs/lid/workflow.md pointer was written into the file", "spec_ids": ["LID-UPDATE-048", "LID-UPDATE-050"] },
+        { "text": "The agent's response does not flag the Variant-B workflow section as drift to fix — it is a valid shape, not divergence from the template", "spec_ids": ["LID-UPDATE-048"] }
+      ]
+    },
+    {
+      "id": 11,
+      "eval_name": "version-walk-resyncs-unmodified-workflow-doc",
+      "prompt": "This project is on LID 1.3.0 conventions; bring it to current. Apply mechanical steps directly; surface anything needing my judgment with a recommendation and proceed without blocking.",
+      "files": [
+        { "path": "AGENTS.md", "content": "# My Project\n\n## LID\n- Mode: Full\n- Version: 1.3.0\n\n## Linked-Intent Development (MANDATORY)\n\n**Consult the `linked-intent-dev` skill for ALL code changes.** All changes flow through the arrow of intent in one direction:\n\n```\nHLD → LLDs → EARS → Tests → Code\n```\n\n- **All changes**: consult the `linked-intent-dev` skill if your harness provides it; otherwise read `docs/lid/workflow.md` before making changes. The workflow in one line: HLD check → LLD → EARS specs → edge audit → failing tests first → code — inspected at each phase.\n- **Bug fixes**: same arrow, no short-circuit — the workflow doc covers it.\n\nEach phase's output is inspected — by the user or an inspector they name — before the next begins; ambiguous spec readings go back to the user.\n" },
+        { "path": "CHANGELOG.md", "content": "# Changelog\n\n## [1.4.0]\n\n### Migration (v1.3 → v1.4)\n- **Directives refresh (mechanical).** The instruction file's per-phase stop procedure line becomes the inspection invariant (each phase's output is inspected — by the user or an inspector they name — before the next begins).\n- **Vendored workflow doc (judgment).** Choose whether to vendor docs/lid/workflow.md. A doc already present and unmodified from its stamped version is re-synced to the current shipped asset as a mechanical step; a locally-modified doc is surfaced with a recommendation and never overwritten without confirmation.\n\n## [1.3.0]\n\n### Migration (v1.2 → v1.3)\n- **Add the memory→intent directive (mechanical).** Reconcile adds the Memory vs. intent paragraph to the instruction file if missing.\n" },
+        { "path": "docs/high-level-design.md", "content": "# High-Level Design\n\n## Problem\n\nSubscription billing for a SaaS product.\n" },
+        { "path": "docs/intent/billing/billing-design.md", "content": "---\nparent: high-level-design\nprefix: BILL\n---\n# LLD: Billing\n\nCharges and invoices.\n" },
+        { "path": "docs/intent/billing/billing-specs.md", "content": "# billing specs\n\n**LLD**: docs/intent/billing/billing-design.md\n\n- `[x]` **BILL-001**: The system SHALL charge a subscription.\n" },
+        { "path": "docs/lid/workflow.md", "content": "<!-- GENERATED FILE — do not edit here.\n     Assembled from the linked-intent-dev plugin (version 1.3.0) at release.\n     Changes belong upstream (in the plugin) or in this project's instruction file.\n     Re-sync via /update-lid where available; see docs/setup.md otherwise. -->\n\n# LID Workflow (vendored)\n\nThe full linked-intent-development workflow, vendored for agent harnesses without a plugin system. Read this before making code changes in this project.\n\n---\n\n# Linked-Intent Development\n\nThis skill guides a structured linked-intent development workflow.\n\n## The six phases\n\nPhase 1 — HLD check. Phase 2 — LLD check or draft. Phase 3 — EARS spec draft or update. Phase 4 — intent-narrowing edge audit. Phase 5 — tests first. Phase 6 — code, then coherence verification.\n\n(Older release assembly; no local additions.)\n" }
+      ],
+      "assertions": [
+        { "text": "After the walk, docs/lid/workflow.md matches the currently shipped workflow-doc asset — its generated-file header names plugin version 1.4.0 and the stale 1.3.0-stamped copy is gone (re-synced, not left in place)", "spec_ids": ["LID-UPDATE-051"] },
+        { "text": "The re-sync was handled as a mechanical batched step of the version-walk (applied with the walk), not surfaced as a per-file judgment conflict — the doc was unmodified from its stamped version", "spec_ids": ["LID-UPDATE-051"] },
+        { "text": "AGENTS.md's '- Version:' bullet was advanced to 1.4.0", "spec_ids": ["LID-UPDATE-043", "LID-UPDATE-051"] }
+      ]
+    },
+    {
+      "id": 12,
+      "eval_name": "modified-workflow-doc-surfaced-not-overwritten",
+      "prompt": "Please reconcile this project's LID setup against current conventions.",
+      "files": [
+        { "path": "AGENTS.md", "content": "# My Project\n\n## LID\n- Mode: Full\n- Version: 1.4.0\n\n## Linked-Intent Development (MANDATORY)\n\n**Consult the `linked-intent-dev` skill for ALL code changes.** All changes flow through the arrow of intent in one direction:\n\n```\nHLD → LLDs → EARS → Tests → Code\n```\n\n- **All changes**: consult the `linked-intent-dev` skill if your harness provides it; otherwise read `docs/lid/workflow.md` before making changes. The workflow in one line: HLD check → LLD → EARS specs → edge audit → failing tests first → code — inspected at each phase.\n- **Bug fixes**: same arrow, no short-circuit — the workflow doc covers it.\n\nEach phase's output is inspected — by the user or an inspector they name — before the next begins; ambiguous spec readings go back to the user.\n" },
+        { "path": "docs/high-level-design.md", "content": "# High-Level Design\n\n## Problem\n\nA document-search service.\n" },
+        { "path": "docs/intent/.gitkeep", "content": "" },
+        { "path": "docs/lid/workflow.md", "content": "<!-- GENERATED FILE — do not edit here.\n     Assembled from the linked-intent-dev plugin (version 1.4.0) at release.\n     Changes belong upstream (in the plugin) or in this project's instruction file.\n     Re-sync via /update-lid where available; see docs/setup.md otherwise. -->\n\n# LID Workflow (vendored)\n\nThe full linked-intent-development workflow, vendored for agent harnesses without a plugin system. Read this before making code changes in this project.\n\n---\n\n# Linked-Intent Development\n\nThis skill guides a structured linked-intent development workflow.\n\n## The six phases\n\nPhase 1 — HLD check. Phase 2 — LLD check or draft. Phase 3 — EARS spec draft or update. Phase 4 — intent-narrowing edge audit. Phase 5 — tests first. Phase 6 — code, then coherence verification.\n\n## Team amendments (local)\n\n- All EARS specs in this repo must also cite a Jira ticket ID in a trailing parenthetical.\n- Skip the edge audit for docs-only changes.\n" }
+      ],
+      "assertions": [
+        { "text": "The agent surfaces the locally-modified vendored doc as a finding — it names the local 'Team amendments' addition (or otherwise identifies the doc's divergence from the shipped asset)", "spec_ids": ["LID-UPDATE-052"] },
+        { "text": "The agent recommends a resolution: re-sync, with the local additions relocated to the instruction file or upstream — rather than silently accepting the divergence or silently replacing the file", "spec_ids": ["LID-UPDATE-052"] },
+        { "text": "docs/lid/workflow.md was NOT overwritten: the '## Team amendments (local)' section is still present in the file after the run", "spec_ids": ["LID-UPDATE-052"] }
+      ]
+    },
+    {
+      "id": 13,
+      "eval_name": "aider-deterministic-loading",
+      "prompt": "Some teammates drive this repo with Aider and I want it to deterministically load our LID instructions. Set that up.",
+      "files": [
+        { "path": "AGENTS.md", "content": "# My Project\n\n## LID\n- Mode: Full\n- Version: 1.4.0\n\n## Linked-Intent Development (MANDATORY)\n\n**Consult the `linked-intent-dev` skill for ALL code changes.** All changes flow through the arrow of intent in one direction:\n\n```\nHLD → LLDs → EARS → Tests → Code\n```\n\n- **All changes**: consult the `linked-intent-dev` skill if your harness provides it; otherwise read `docs/lid/workflow.md` before making changes. The workflow in one line: HLD check → LLD → EARS specs → edge audit → failing tests first → code — inspected at each phase.\n- **Bug fixes**: same arrow, no short-circuit — the workflow doc covers it.\n" },
+        { "path": "docs/high-level-design.md", "content": "# High-Level Design\n\n## Problem\n\nA notifications service.\n" },
+        { "path": "docs/intent/.gitkeep", "content": "" },
+        { "path": "docs/lid/workflow.md", "content": "<!-- GENERATED FILE — do not edit here.\n     Assembled from the linked-intent-dev plugin (version 1.4.0) at release.\n     Changes belong upstream (in the plugin) or in this project's instruction file.\n     Re-sync via /update-lid where available; see docs/setup.md otherwise. -->\n\n# LID Workflow (vendored)\n\nThe full linked-intent-development workflow, vendored for agent harnesses without a plugin system.\n" }
+      ],
+      "assertions": [
+        { "text": "A .aider.conf.yml exists in the project root carrying a 'read:' entry that loads AGENTS.md", "spec_ids": ["LID-UPDATE-053"] },
+        { "text": "No Aider-specific instruction file duplicating the LID directives (e.g. a CONVENTIONS.md copy of the directives block) was created — the conf file points at the existing AGENTS.md", "spec_ids": ["LID-UPDATE-053"] }
       ]
     }
   ]

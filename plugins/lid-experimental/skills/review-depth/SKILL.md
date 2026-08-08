@@ -14,7 +14,7 @@ The declaration is the **user's own prose** — in their instruction file or sta
 > Review depth: I review through LLD; below that, consolidate to one review.
 > Judgment areas: naming and API shapes; anything touching auth.
 
-Depth values track the phases — *through HLD*, *through LLD*, *through EARS*, *through tests*. "Through X": phases at and above X stop per-phase as usual; deeper phases consolidate. **Judgment areas** name the fork kinds the user wants routed to them immediately (see below). No declaration means no change: full per-phase stops.
+Depth values track the phases — *through HLD*, *through LLD*, *through EARS*, *through tests*. "Through X": phases at and above X stop per-phase as usual; deeper phases consolidate. **Judgment areas** name the fork kinds the user wants routed to them immediately (see below). Any area the core `linked-intent-dev` skill's `references/capability-flags.md` flags for your model class is a judgment area too, without the user declaring it. No declaration means no change: full per-phase stops.
 
 ## Entering a change
 
@@ -32,6 +32,7 @@ A specification fork — a spec or draft line admitting more than one reading �
 
 - **In a declared judgment area — or plausibly in one:** surface immediately, whatever the depth. Classification doubt resolves toward surfacing.
 - **Outside judgment areas:** park it — **write it to the fork log at detection, before routing around it.** Never resolve it silently. Entry shape: the spec line, the divergent readings, kind, status.
+- **Capability-flagged work:** when a phase's work touches an area flagged for your model class (place yourself by name, then by size tier and release year; if you cannot, treat the flag as applying), stop immediately whatever the depth, even with no fork involved. Name the area and what the user should check; resume consolidation after they rule.
 - **Dependency rule:** write no tests or code against an unresolved fork's spec line; do the independent work first.
 - **Critical-path escape:** a fork blocking all remaining work surfaces immediately.
 - **After the boundary:** a fork discovered once the consolidated review has passed surfaces immediately — the log has already been read.

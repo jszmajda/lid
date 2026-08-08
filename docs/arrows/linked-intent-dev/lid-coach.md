@@ -21,8 +21,8 @@ Advisory principle-review skill for LID projects. Reads a project's LID artifact
 - `docs/intent/linked-intent-dev/lid-coach/lid-coach-specs.md` (58 specs, prefix `LID-COACH-*`)
 
 ### Tests / Evals
-- `plugins/linked-intent-dev/skills/lid-coach/evals/evals.json` — eight prompt fixtures with assertions (unconfigured-project handoff, healthy full-project posture/scorecard/voice, HLD bloat, accumulation antipattern, scoped missing scope, advisory posture, lid-shaped-without-directives, index.yaml-driven arrow sampling).
-- skill-creator iteration-1 at `lid-coach-workspace/iteration-1/` (run 2026-05-15): with-skill 38/38 assertions (100%, ±0), baseline 83% (±19). evals 0/3/4/5 are non-discriminating (baseline already passes) — candidates to strengthen in iteration-2.
+- `plugins/linked-intent-dev/skills/lid-coach/evals/evals.json` — eleven prompt fixtures with assertions (unconfigured-project handoff, healthy full-project posture/scorecard/voice, HLD bloat, accumulation antipattern, scoped missing scope, advisory posture, lid-shaped-without-directives, index.yaml-driven arrow sampling, spec-shaped tenet ×2, decision under-capture).
+- skill-creator iterations at `lid-coach-workspace/` (latest: iteration-3, 2026-08-08, 51/51 with-skill assertions; fixture 10's decision-capture assertions are near-baseline-passable and need tighter discriminators).
 
 ### Code (skill prompts and bundled content)
 - `plugins/linked-intent-dev/skills/lid-coach/SKILL.md` — embedded principle body (description + *why it matters* + audit signal per principle), dispatch table, scorecard format, coach-voice guidance, advisory posture, cold-read pass directive, conversational-mode pointer.
