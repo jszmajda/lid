@@ -1,0 +1,134 @@
+diff --git a/crates/sheets-view/src/lib.rs b/crates/sheets-view/src/lib.rs
+index 7e9df24..da7c115 100644
+--- a/crates/sheets-view/src/lib.rs
++++ b/crates/sheets-view/src/lib.rs
+@@ -110,6 +110,10 @@ pub enum Cell {
+     /// A live sheet formula (`=GOOGLEFINANCE(…)`, market value, unrealized, the
+     /// post-tax estimate columns) that recomputes as the mark moves.
+     Formula(String),
++    /// An engine-written value paired with an explicit Sheets number-format
++    /// pattern, so the cell renders consistently (e.g. as currency) rather
++    /// than falling back to the sheet's general formatting.
++    FormattedValue(String, &'static str),
+ }
+ 
+ impl Cell {
+@@ -123,6 +127,15 @@ impl Cell {
+         match self {
+             Cell::Value(v) => v,
+             Cell::Formula(f) => f,
++            Cell::FormattedValue(v, _) => v,
++        }
++    }
++
++    /// The explicit Sheets number-format pattern carried by this cell, if any.
++    pub fn number_format(&self) -> Option<&'static str> {
++        match self {
++            Cell::FormattedValue(_, fmt) => Some(fmt),
++            _ => None,
+         }
+     }
+ }
+@@ -488,6 +501,16 @@ fn fmt_cents(c: Cents) -> String {
+     format!("{sign}{}.{:02}", a / 100, a % 100)
+ }
+ 
++/// The Sheets number-format pattern for an engine-written currency cell, so it
++/// renders as dollars regardless of the workbook's or viewer's locale default.
++pub const CURRENCY_NUMBER_FORMAT: &str = "$#,##0.00;-$#,##0.00";
++
++/// An engine-written money value, carrying [`CURRENCY_NUMBER_FORMAT`] alongside
++/// its formatted text.
++fn money_cell(c: Cents) -> Cell {
++    Cell::FormattedValue(fmt_cents(c), CURRENCY_NUMBER_FORMAT)
++}
++
+ /// Format `MicroShares` as a share quantity with up to 6 decimals, trimmed.
+ fn fmt_shares(q: MicroShares) -> String {
+     let v = q.0;
+@@ -565,9 +588,9 @@ pub fn render_positions(
+                 (pos.total_basis_cents.0 as i128) * 1_000_000,
+                 pos.total_qty.0 as i128,
+             );
+-            fmt_cents(Cents(per_share as i64))
++            Cents(per_share as i64)
+         } else {
+-            "0.00".to_string()
++            Cents(0)
+         };
+ 
+         let eff_rate = effective_rates.get(symbol).copied();
+@@ -587,20 +610,20 @@ pub fn render_positions(
+         ));
+ 
+         rows.push(vec![
+-            Cell::Value(symbol.clone()),                   // A Symbol
+-            Cell::Value(fmt_shares(pos.total_qty)),        // B Shares
+-            Cell::Value(avg_cost),                         // C Avg Cost/Share
+-            Cell::Value(fmt_cents(pos.total_basis_cents)), // D Total Basis
+-            price_formula(&ticker),                        // E Price (formula)
+-            market_value,                                  // F Market Value (formula)
+-            unrealized,                                    // G Unrealized P&L (formula)
++            Cell::Value(symbol.clone()),            // A Symbol
++            Cell::Value(fmt_shares(pos.total_qty)), // B Shares
++            money_cell(avg_cost),                   // C Avg Cost/Share
++            money_cell(pos.total_basis_cents),      // D Total Basis
++            price_formula(&ticker),                 // E Price (formula)
++            market_value,                           // F Market Value (formula)
++            unrealized,                             // G Unrealized P&L (formula)
+             // H Est. Tax Rate: an engine VALUE from tax (empty when degraded).
+             Cell::Value(eff_rate.map(fmt_ppm).unwrap_or_default()),
+-            est_tax,                                        // I Est. Unrealized Tax (formula)
+-            net_unreal,                                     // J Net Unrealized (formula)
+-            unreal_pct,                                     // K Unrealized % (formula)
+-            Cell::Value(fmt_cents(pos.realized_pnl_cents)), // L Realized P&L (value)
+-            quote_date_formula(&ticker),                    // M Quote Date (formula)
++            est_tax,                            // I Est. Unrealized Tax (formula)
++            net_unreal,                         // J Net Unrealized (formula)
++            unreal_pct,                         // K Unrealized % (formula)
++            money_cell(pos.realized_pnl_cents), // L Realized P&L (value)
++            quote_date_formula(&ticker),        // M Quote Date (formula)
+         ]);
+     }
+ 
+diff --git a/crates/sheets-view/tests/formula.rs b/crates/sheets-view/tests/formula.rs
+index 753ff6a..c5ff19e 100644
+--- a/crates/sheets-view/tests/formula.rs
++++ b/crates/sheets-view/tests/formula.rs
+@@ -205,6 +205,36 @@ fn est_tax_rate_cell_is_numeric_percent_the_posttax_formulas_can_multiply() {
+     );
+ }
+ 
++#[test]
++fn money_value_cells_carry_the_currency_number_format() {
++    let marks = common::marks(&[("AMZN", 200_00), ("GOOG", 140_00)]);
++    let snap = common::small_snapshot(&marks);
++    let ctx = common::ctx(2022);
++    let rates = common::effective_rates(&snap, Date(19_200), &ctx);
++    let aliases = AliasMap::default();
++    let positions = render_positions(&snap, &rates, &aliases).unwrap();
++
++    let row = &positions.rows[0];
++    for name in ["Avg Cost/Share", "Total Basis", "Realized P&L"] {
++        let cell = &row[col(name)];
++        assert_eq!(
++            cell.number_format(),
++            Some(sheets_view::CURRENCY_NUMBER_FORMAT),
++            "{name} must carry the currency number format: {cell:?}"
++        );
++    }
++
++    // Non-money cells (identifiers, quantities, and the live formulas) carry no
++    // explicit number format.
++    for name in ["Symbol", "Shares", "Est. Tax Rate", "Price"] {
++        assert_eq!(
++            row[col(name)].number_format(),
++            None,
++            "{name} should not carry a number format"
++        );
++    }
++}
++
+ // @spec SHEET-MARK-008
+ #[test]
+ fn positions_carries_a_locale_proof_quote_date_companion_column() {

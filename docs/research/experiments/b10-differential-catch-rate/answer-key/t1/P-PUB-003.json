@@ -1,0 +1,36 @@
+{
+  "t1SeedAudit": {
+    "spec": "SHEET-PUB-003 (target, seeded)",
+    "currentText": "If a republish fails, then the system shall leave the canonical log unaffected, mark the view stale, retry with an exponential backoff schedule, and surface staleness via a best-effort in-tab banner and the TUI.",
+    "aAttempts": [
+      "1) Build a per-tab backoff state machine: attempt counter n, delay = base * 2^n (e.g. base=1s, cap ~60s-5min), stored beside the stale flag; a scheduler/timer or a lazily-checked 'eligible-at' timestamp gates the next real attempt. Invented: base delay, growth factor, cap, whether unbounded or gives up after K attempts.",
+      "2) Tie backoff to the sync cadence itself rather than wall-clock: after failure #1 skip 1 sync cycle, failure #2 skip 2, failure #3 skip 4, etc., redefining 'next sync' as 'next ELIGIBLE sync'. Invented: initial skip count, whether skipped cycles still call the client, reset-on-success semantics.",
+      "3) Bolt on a generic retry-with-jitter utility (HTTP-client style) with a max-retry ceiling after which the tab becomes 'permanently stale' pending human action, diverging from an infinite always-retry model. Invented: jitter algorithm, max-retry ceiling and post-exhaustion behavior, whether backoff state persists across process restart."
+    ],
+    "commonInventedAssumptions": "initial delay, multiplier, cap, jitter, reset-on-success, and a clock/timer source integrated with the existing 'one serialized loop' cadence (SHEET-PUB-001) \u2014 none of which appears anywhere in the actual crate.",
+    "bAttempts": [
+      "1) 'On failure, leave the canonical log unaffected, flag the tab stale in a per-tab set, write a best-effort in-tab STALE banner naming the last-sync timestamp (non-blocking on its own failure), and retry unconditionally the very next time republish() is invoked \u2014 no delay, counter, or backoff of any kind; the next call attempts the tab again regardless of elapsed time.' (from: bare BTreeSet<String> stale set, unconditional per-call loop, immediate insert/remove, no timestamps/counters anywhere)",
+      "2) 'Failure/success per tab is tracked as pure set-membership, cleared the instant that tab republishes successfully; a failed batchUpdate does not block the tab-order reassert from still being attempted; a held advisory lock is a distinct up-front refusal (nothing written) separate from a per-tab batchUpdate failure.' (same conclusion, more mechanism detail)",
+      "3) 'On failure, mark stale and best-effort-write an in-tab banner containing \"STALE\" plus the supplied timestamp; retry is simply that the caller calls republish() again on its own normal cadence (e.g. after the next event append, SHEET-PUB-001) and whatever tabs remain in the stale set get retried exactly like any other tab \u2014 no timer, counter, or schedule of any kind exists on this type.'"
+    ],
+    "bConvergence": "All three B attempts converge tightly and specifically on 'flat, immediate, uncounted retry on the next call' and explicitly rule out backoff \u2014 the code contains literally zero timing/counter state to hang a backoff reconstruction on.",
+    "classification": "BD-DRIFT",
+    "finding": "The gap is concrete and falsifiable from BOTH directions, not just the predicted A-direction. A-direction: reading the spec's 'exponential backoff schedule' and sketching an implementation invents delay/counter/timer machinery that, checked against the real Publisher::republish, simply doesn't exist anywhere in the crate \u2014 a clean A-direction catch. B-direction: reconstructing spec from the code alone, a careful reading of the two-field Publisher struct (client + a bare BTreeSet<String>) and the unconditional per-call retry loop leaves no honest basis for inventing backoff \u2014 a rigorous B-direction reconstruction lands on 'immediate retry, no schedule' and directly contradicts the actual spec text when compared. The caveat: B-direction's catch is more fragile than A's in practice \u2014 it depends on the auditor explicitly noting the ABSENCE of timing state rather than hand-waving 'retried later' loosely enough to stay compatible with either reading; a shallower B-direction pass (one that doesn't scrutinize what's missing) could plausibly miss the contradiction, which is likely why this seed class is scored as expected-A-direction by design. Performed carefully, though, this particular seed is bidirectionally catchable because 'exponential backoff' is a specific, falsifiable mechanism, not a vague claim."
+  },
+  "t1ControlAudit": {
+    "spec": "SHEET-MAP-002 (control, NOT modified)",
+    "currentText": "The system shall key mark read-back by row identity (symbol), asserting one row per symbol and erroring loudly if violated.",
+    "aAttempts": [
+      "1) Iterate positions tracking seen symbols in a set; return a hard Result::Err (typed error variant) on a repeat, mirroring the guard present in the real code. Invented: HashSet vs BTreeSet, exact error type/message.",
+      "2) Treat it as an internal invariant rather than public API surface: a debug_assert!/panic active only in debug builds, since duplicates are 'supposed to be impossible' by construction. Invented: whether the check is compiled out in release, panic vs recoverable Result.",
+      "3) Read 'erroring loudly' as panic!() rather than a typed recoverable error, since the phrase is ambiguous between hard-fail and return-a-typed-error. Invented: panic message format, whether callers are expected to catch/handle it."
+    ],
+    "bAttempts": [
+      "1) 'render_positions shall assert mark read-back keys by row identity (Symbol) \u2014 one row per symbol \u2014 and return a typed, loud error (ViewError::DuplicateSymbolRow(symbol)) rather than silently overwrite/double-render a row, if that invariant is ever violated.' (from: BTreeSet<&Symbol> seen-set, Err(DuplicateSymbolRow) return, tested Display impl)",
+      "2) 'Because Snapshot.positions is itself a Map<Symbol,_>, no duplicate can occur through the real API today; render_positions still guards defensively and returns Err(DuplicateSymbolRow) if the invariant is ever violated, for forward-compatibility with a hypothetical non-Map data source.' (near-verbatim match to the code's own doc comment)",
+      "3) 'The settle pass depends on exactly one row existing per symbol since it re-keys by symbol; render_positions builds a seen-set while emitting rows and errors loudly (a typed ViewError variant) on any repeat, guaranteeing the row\u2194symbol pairing the mark read-back relies on is never ambiguous.'"
+    ],
+    "classification": "BD-COHERENT",
+    "finding": "No drift. All three B-direction reconstructions converge tightly on language nearly identical to the actual spec text and to the code's own doc comments (including the 'defensive/structurally unreachable' nuance the test file itself calls out). A-direction assumptions (data-structure choice, panic-vs-Result phrasing) are cosmetic implementation-detail gaps the spec deliberately leaves open, not intent gaps \u2014 'erroring loudly' is satisfied by the real ViewError::DuplicateSymbolRow(Symbol) Result variant either way. This control was not touched in this seeding session, and the audit correctly found it clean."
+  }
+}

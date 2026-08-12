@@ -1,0 +1,85 @@
+diff --git a/crates/sheets-view/src/lib.rs b/crates/sheets-view/src/lib.rs
+index 7e9df24..c70eb77 100644
+--- a/crates/sheets-view/src/lib.rs
++++ b/crates/sheets-view/src/lib.rs
+@@ -979,14 +979,22 @@ impl<C: SheetsViewClient> Publisher<C> {
+         // (after the last batchUpdate / tab-order reassert). (SHEET-PUB-004) A held
+         // lock means another Sheets-mutating primitive is writing — do not write
+         // concurrently; report not-published and leave the stale set as-is.
+-        let _guard = match lock.acquire() {
+-            Ok(guard) => guard,
+-            Err(_) => {
+-                return RepublishOutcome {
+-                    published: false,
+-                    stale_tabs: self.stale_tabs(),
++        //
++        // A lone-tab republish already lands via its own single batchUpdate
++        // (SHEET-PUB-002 atomicity), so the lock only needs to guard the
++        // multi-tab case against a torn cross-tab snapshot.
++        let _guard = if tabs.len() > 1 {
++            match lock.acquire() {
++                Ok(guard) => Some(guard),
++                Err(_) => {
++                    return RepublishOutcome {
++                        published: false,
++                        stale_tabs: self.stale_tabs(),
++                    }
+                 }
+             }
++        } else {
++            None
+         };
+         let mut all_ok = true;
+         for tab in tabs {
+diff --git a/crates/sheets-view/tests/republish.rs b/crates/sheets-view/tests/republish.rs
+index 5f234dd..e361dff 100644
+--- a/crates/sheets-view/tests/republish.rs
++++ b/crates/sheets-view/tests/republish.rs
+@@ -6,7 +6,9 @@ mod common;
+ use std::collections::BTreeMap;
+ 
+ use sheets_view::testkit::{pass, InMemorySheetsView, SeamCall};
+-use sheets_view::{Cell, PriceReading, Publisher, SettleConfig, ViewTab, POSITIONS_TAB};
++use sheets_view::{
++    Cell, PriceReading, Publisher, SettleConfig, ViewTab, OPEN_LOTS_TAB, POSITIONS_TAB,
++};
+ 
+ use pt_core::{Cents, Date, NoopLock};
+ 
+@@ -226,12 +228,15 @@ impl pt_core::Lock for HeldLock {
+ #[test]
+ fn republish_acquires_the_lock_before_mutating() {
+     // A successful republish through a free (acquire-counting) lock acquires the
+-    // advisory write-lock exactly once around the mutation. (SHEET-PUB-004)
++    // advisory write-lock exactly once around the mutation. Uses the realistic
++    // multi-tab shape (a republish always rewrites more than one view tab).
++    // (SHEET-PUB-004)
+     let mut pub_ = Publisher::new(InMemorySheetsView::new());
+     let lock = NoopLock::new();
+ 
+-    let t = tab(POSITIONS_TAB, rows(&[("AMZN", "3")]));
+-    let outcome = pub_.republish(&[t], &lock, "2022-09-01");
++    let t1 = tab(POSITIONS_TAB, rows(&[("AMZN", "3")]));
++    let t2 = tab(OPEN_LOTS_TAB, rows(&[("AMZN", "3")]));
++    let outcome = pub_.republish(&[t1, t2], &lock, "2022-09-01");
+ 
+     assert!(outcome.published);
+     assert_eq!(
+@@ -247,11 +252,14 @@ fn republish_acquires_the_lock_before_mutating() {
+ fn republish_under_a_held_lock_writes_nothing() {
+     // When another Sheets-mutating primitive holds the advisory lock, republish must
+     // NOT write concurrently: nothing lands, and the outcome reports not-published —
+-    // a non-destructive refusal retried on the next sync. (SHEET-PUB-004)
++    // a non-destructive refusal retried on the next sync. Uses the realistic
++    // multi-tab shape (a republish always rewrites more than one view tab).
++    // (SHEET-PUB-004)
+     let mut pub_ = Publisher::new(InMemorySheetsView::new());
+ 
+-    let t = tab(POSITIONS_TAB, rows(&[("AMZN", "3")]));
+-    let outcome = pub_.republish(&[t], &HeldLock, "2022-09-01");
++    let t1 = tab(POSITIONS_TAB, rows(&[("AMZN", "3")]));
++    let t2 = tab(OPEN_LOTS_TAB, rows(&[("AMZN", "3")]));
++    let outcome = pub_.republish(&[t1, t2], &HeldLock, "2022-09-01");
+ 
+     assert!(!outcome.published, "a held lock refuses the republish");
+     assert!(

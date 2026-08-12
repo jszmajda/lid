@@ -1,0 +1,12 @@
+diff --git a/docs/intent/sheets-view/sheets-view-specs.md b/docs/intent/sheets-view/sheets-view-specs.md
+index a9fbc14..653663f 100644
+--- a/docs/intent/sheets-view/sheets-view-specs.md
++++ b/docs/intent/sheets-view/sheets-view-specs.md
+@@ -33,7 +33,7 @@ accounting/tax math.
+ - [x] **SHEET-MARK-003**: If a `Price` cell is a transient `#N/A`/`Loading...`, then the system shall keep the prior good cached mark and retry, recording the symbol degraded (no mark) only after it stays non-numeric past the bounded retry window.
+ - [x] **SHEET-MARK-004**: The system shall stamp each cached mark with `GOOGLEFINANCE`'s quote date, not the wall-clock read time.
+ - [x] **SHEET-MARK-005**: A degraded symbol mark shall feed `ledger-core`'s per-symbol degradation (`LEDGER-PNL-007`); while offline, the kernels shall use the last cached marks with their quote-epoch stamps.
+-- [x] **SHEET-MARK-006**: If a transport failure occurs during the marks read-back pass, then the system shall propagate the error and emit no marks for that pass (no partial or degraded marks); `runtime` owns carry-forward, retaining the last cached marks.
++- [x] **SHEET-MARK-006**: If a transport failure occurs during the marks read-back pass, then the system shall retry once in-pass before propagating the error, emitting no marks for that pass (no partial or degraded marks) only once the retry also fails; `runtime` owns carry-forward, retaining the last cached marks.
+ - [x] **SHEET-MARK-007**: A non-positive numeric price reading (`0.0` or negative) shall be recorded as a sub-cent degraded anomaly, and a non-finite reading (`NaN`/`±∞`) shall be recorded as a permanent degraded anomaly — never as a mark — so a bad reading never silently understates or corrupts value.
+ - [x] **SHEET-MARK-008**: The system shall render a companion `Quote Date` column on the Positions tab whose formula encodes `GOOGLEFINANCE`'s trade date as a locale-proof integer count of days since 1970-01-01 (a `TEXT`-formatted serial-date difference, empty while loading/errored), so the settle pass parses the per-symbol quote-epoch stamp from the values read-back without locale-dependent datetime parsing.

@@ -1,0 +1,32 @@
+{
+  "t1SeedAudit": {
+    "target": "SHEET-MARK-008",
+    "aAttempts": [
+      "Naive impl from spec text: `=IFERROR(TEXT(INT(GOOGLEFINANCE(ticker,\"tradetime\"))-DATE(1970,1,1),\"0\"),\"\")` \u2014 assumed GOOGLEFINANCE's tradetime returns a Sheets-native-epoch serial needing rebase; assumed 'serial-date difference' means an explicit `-DATE(1970,1,1)` subtraction inside the TEXT()-wrapped formula itself (not in downstream Rust).",
+      "Same computation via a referenced epoch-anchor cell instead of an inline DATE(1970,1,1) literal \u2014 still a days-since-1970 difference; assumption: spec is agnostic to inline-literal vs. cell-reference implementation of the constant.",
+      "Reordered IFERROR/INT nesting variants \u2014 still every variant retains an explicit subtraction against 1970-01-01, because the spec names that date literally and calls the result a 'difference'."
+    ],
+    "bAttempts": [
+      "Read quote_date_formula + its own (now-scrubbed) doc comment alone: reconstructs 'truncate trade time to date serial, render via TEXT, empty on error' with NO epoch commitment \u2014 self-consistent, raises no alarm on its own.",
+      "Read quote_date_formula + the parser (price_reading_from_cells) + pt_core::Date's doc ('Days since the Unix epoch'): reconstructs 'the digit string is parsed as days since Unix epoch (1970-01-01)' \u2014 but this epoch label is borrowed from the consumer type, not verified against what the formula actually computes when evaluated live; static Rust code cannot observe GOOGLEFINANCE's real numeric output.",
+      "Read only what the test currently pins (positions_carries_a_locale_proof_quote_date_companion_column): GOOGLEFINANCE+tradetime+TEXT()+IFERROR+resolved-ticker \u2014 no epoch assertion survives; reconstructed spec is strictly weaker than the real one, silently missing the one clause (DATE(1970,1,1)) that used to catch this."
+    ],
+    "classification": "A-ONLY-DRIFT",
+    "finding": "The spec's unusually specific wording ('days since 1970-01-01', 'a TEXT-formatted serial-date difference') makes the A-direction (spec-forward) reconstruction concrete enough to predict an explicit epoch subtraction that the current formula lacks \u2014 comparing that prediction to the actual formula string surfaces the gap immediately. But a B-direction reconstruction confined to the code, its own (edited-in-lockstep) doc comments, and the current test suite finds nothing wrong: everything downstream was narrowed together to stay self-consistent, and the one fact that would falsify it (GOOGLEFINANCE's real live-evaluated epoch) is unobservable from static code or from CI, since the real-Sheets e2e path is explicitly skipped without live credentials. This audit surfaced the seeded gap, but only via the A-direction leg \u2014 a B-only pass over code+tests as they now stand would have missed it entirely, which is the intended difficulty of a class-H hollow-test seed."
+  },
+  "t1ControlAudit": {
+    "control": "SHEET-FORMULA-004",
+    "aAttempts": [
+      "Naive impl: render both Tax-tab bands (accrual + reserve-summary) purely as engine-written Cell::Value(...) entries sourced from the tax kernel's last-sync figures, never a Sheets formula; assumption invented \u2014 'distinct from the Positions live estimate' was read as forbidding ALL formulas, since spec doesn't say 'no formulas' explicitly, only contrasts against Positions' live-ness.",
+      "Naive impl: a formula that merely references an engine-written helper cell (e.g. `=A2`), still 'kernel-exact/as-of-last-sync' in effect; assumption invented \u2014 spec doesn't explicitly rule out a static (non-live) formula wrapper, only rules out a LIVE one.",
+      "Naive impl: two stacked bands, values only; assumption invented \u2014 'stacked' read as physical layout (bands placed one after another) rather than as a cumulative/aggregated-figures semantic; spec's parenthetical is genuinely ambiguous between the two readings."
+    ],
+    "bAttempts": [
+      "Read render_tax alone: every cell for both accruals and reserve_summary is built via Cell::Value (fmt_cents/jurisdiction_label/lifecycle_label/to_string) \u2014 reconstructs 'kernel-exact, never a formula' cleanly, matching the spec.",
+      "Read the TaxView/TAX_RESERVE_HEADER doc comments ('kernel-exact accrued/moved/paid/outstanding/shortfall...physically separated from the accrual band'): reconstructs 'two distinct typed ranges, pure kernel values, never blended into an among-data summary' \u2014 corroborates 'kernel-exact/distinct' independently.",
+      "Read the test tax_tab_is_kernel_exact_not_live_formula: a blanket `!cell.is_formula()` assertion over every cell of both bands \u2014 a direct, faithful, testable restatement of 'kernel-exact...distinct from the Positions live estimate.'"
+    ],
+    "classification": "BD-COHERENT",
+    "finding": "All three A-direction attempts and all three B-direction attempts converge on the same core requirement (no live formulas anywhere on the Tax tab; every figure is a kernel-computed value, physically separated into two typed bands) modulo one pre-existing, untouched ambiguity in the spec's own wording ('stacked' \u2014 layout vs. cumulative-figure semantics). The code (render_tax, all-Cell::Value), its doc comments, and the test's blanket !cell.is_formula() assertion all agree with each other and with the spec text; this ID was not modified in this session and this same-style audit finds no drift here."
+  }
+}

@@ -1,0 +1,114 @@
+diff --git a/crates/runtime/src/adapters.rs b/crates/runtime/src/adapters.rs
+index 228852d..bee6f79 100644
+--- a/crates/runtime/src/adapters.rs
++++ b/crates/runtime/src/adapters.rs
+@@ -178,6 +178,10 @@ pub struct ViewSheetsAdapter<A: SheetsApi> {
+     api: A,
+     /// The Positions tab name, whose `Price` column the settle pass reads back.
+     positions_tab: String,
++    /// How many settle-pass polls this adapter instance has served, so
++    /// successive polls can pause a little longer before re-reading (see
++    /// [`settle_poll_delay`]).
++    settle_polls: std::cell::Cell<u32>,
+ }
+ 
+ impl<A: SheetsApi> ViewSheetsAdapter<A> {
+@@ -187,6 +191,7 @@ impl<A: SheetsApi> ViewSheetsAdapter<A> {
+         ViewSheetsAdapter {
+             api,
+             positions_tab: positions_tab.into(),
++            settle_polls: std::cell::Cell::new(0),
+         }
+     }
+ 
+@@ -201,6 +206,19 @@ impl<A: SheetsApi> ViewSheetsAdapter<A> {
+     }
+ }
+ 
++/// The pause before a settle-pass poll on this adapter instance: none on the
++/// first poll of a pass, then a small pause that doubles each poll after
++/// (50ms, 100ms, 200ms, …), capped at 400ms — so a still-recalculating
++/// `GOOGLEFINANCE` column isn't re-read on every tick of the settle loop.
++/// `poll_index` is 0-based (the count of polls already served).
++pub fn settle_poll_delay(poll_index: u32) -> std::time::Duration {
++    if poll_index == 0 {
++        return std::time::Duration::ZERO;
++    }
++    let shift = (poll_index - 1).min(3);
++    std::time::Duration::from_millis(50u64 << shift).min(std::time::Duration::from_millis(400))
++}
++
+ impl<A: SheetsApi> sheets_view::SheetsViewClient for ViewSheetsAdapter<A> {
+     fn batch_update_view(
+         &mut self,
+@@ -252,6 +270,16 @@ impl<A: SheetsApi> sheets_view::SheetsViewClient for ViewSheetsAdapter<A> {
+         // Positions header order (Symbol col 0, Price col 4, with the companion quote
+         // date carried alongside); a non-numeric Price cell is a transient/permanent
+         // reading the settle loop interprets.
++        //
++        // Successive polls of the same settle pass pause first (settle_poll_delay),
++        // so a caller retrying a still-transient symbol doesn't hammer the API every
++        // tick of the settle loop.
++        let poll_index = self.settle_polls.get();
++        self.settle_polls.set(poll_index + 1);
++        let pause = settle_poll_delay(poll_index);
++        if !pause.is_zero() {
++            std::thread::sleep(pause);
++        }
+         let range = format!(
+             "'{}'!A{}:Z",
+             self.positions_tab,
+diff --git a/crates/runtime/tests/adapters.rs b/crates/runtime/tests/adapters.rs
+index 22f2a7b..d5c7d61 100644
+--- a/crates/runtime/tests/adapters.rs
++++ b/crates/runtime/tests/adapters.rs
+@@ -260,6 +260,49 @@ fn view_offline_primitive_surfaces_publish_failed() {
+     );
+ }
+ 
++// @spec RUNTIME-SHEETS-002
++#[test]
++fn settle_poll_delay_is_zero_then_doubles_capped() {
++    use runtime::adapters::settle_poll_delay;
++    use std::time::Duration;
++
++    // No pause on the first poll of a pass; a small pause that doubles each
++    // poll after, capped at 400ms.
++    assert_eq!(settle_poll_delay(0), Duration::ZERO);
++    assert_eq!(settle_poll_delay(1), Duration::from_millis(50));
++    assert_eq!(settle_poll_delay(2), Duration::from_millis(100));
++    assert_eq!(settle_poll_delay(3), Duration::from_millis(200));
++    assert_eq!(settle_poll_delay(4), Duration::from_millis(400));
++    assert_eq!(settle_poll_delay(10), Duration::from_millis(400));
++}
++
++// @spec RUNTIME-SHEETS-002
++#[test]
++fn view_settle_pass_pauses_between_successive_polls() {
++    // A second read_price_pass call on the same adapter instance pauses first
++    // (settle_poll_delay), so a settle loop retrying a still-transient symbol
++    // doesn't re-read on every tick. (RUNTIME-SHEETS-002)
++    let fake = FakeSheetsApi::new();
++    let adapter = ViewSheetsAdapter::new(fake, POS_TAB);
++
++    let start = std::time::Instant::now();
++    adapter.read_price_pass().expect("first poll");
++    let first = start.elapsed();
++
++    let start2 = std::time::Instant::now();
++    adapter.read_price_pass().expect("second poll");
++    let second = start2.elapsed();
++
++    assert!(
++        first < std::time::Duration::from_millis(50),
++        "no pause on the first poll of a pass"
++    );
++    assert!(
++        second >= std::time::Duration::from_millis(50),
++        "the second poll pauses at least the first backoff step, took {second:?}"
++    );
++}
++
+ // ---------------------------------------------------------------------------
+ // config::ConfigStore over the one primitive.
+ // ---------------------------------------------------------------------------

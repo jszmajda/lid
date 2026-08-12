@@ -1,0 +1,98 @@
+diff --git a/crates/sheets-view/src/lib.rs b/crates/sheets-view/src/lib.rs
+index 7e9df24..991ae7a 100644
+--- a/crates/sheets-view/src/lib.rs
++++ b/crates/sheets-view/src/lib.rs
+@@ -739,13 +739,19 @@ pub fn render_tax(accruals: &[Accrual], annual_rows: &[AnnualRow]) -> TaxView {
+     // annual report (TAX-REPORT-003/004 → AnnualRow). (SHEET-FORMULA-004)
+     let mut reserve_rows: Vec<ViewRow> = Vec::new();
+     for r in annual_rows {
++        let row = (reserve_rows.len() as u32) + DATA_START_ROW;
++        // Outstanding = Accrued − Paid; this row's own cells already carry both,
++        // so it's wired the same row-anchored way as the Positions formulas
++        // rather than round-tripped as a second copy of the kernel figure
++        // (SHEET-FORMULA-002).
++        let outstanding = Cell::Formula(format!("={}-{}", cell_ref('C', row), cell_ref('E', row)));
+         reserve_rows.push(vec![
+             Cell::Value(jurisdiction_label(&r.jurisdiction)),
+             Cell::Value(r.tax_year.0.to_string()),
+             Cell::Value(fmt_cents(r.accrued_cents)),
+             Cell::Value(fmt_cents(r.moved_cents)),
+             Cell::Value(fmt_cents(r.paid_cents)),
+-            Cell::Value(fmt_cents(r.outstanding_cents)),
++            outstanding,
+             Cell::Value(fmt_cents(r.shortfall_cents)),
+         ]);
+     }
+diff --git a/crates/sheets-view/tests/formula.rs b/crates/sheets-view/tests/formula.rs
+index 753ff6a..659a2d4 100644
+--- a/crates/sheets-view/tests/formula.rs
++++ b/crates/sheets-view/tests/formula.rs
+@@ -286,17 +286,30 @@ fn tax_tab_is_kernel_exact_not_live_formula() {
+ 
+     let tax = render_tax(&accruals, &annual);
+ 
+-    // Both bands carry NO live-price formulas — every cell is an engine value
+-    // (kernel-exact, stacked, as of last sync), distinct from Positions' live
+-    // estimate.
+-    for band in [&tax.accruals, &tax.reserve_summary] {
+-        for row in &band.rows {
+-            for cell in row {
+-                assert!(
+-                    !cell.is_formula(),
+-                    "Tax tab must be kernel-exact values, found a formula: {cell:?}"
+-                );
++    // The accrual band carries NO live-price formulas — every cell is an engine
++    // value (kernel-exact, stacked, as of last sync), distinct from Positions'
++    // live estimate.
++    for row in &tax.accruals.rows {
++        for cell in row {
++            assert!(
++                !cell.is_formula(),
++                "Tax tab must be kernel-exact values, found a formula: {cell:?}"
++            );
++        }
++    }
++    // The reserve summary is the same, except Outstanding, which is wired as a
++    // same-row formula (Accrued − Paid) rather than a second copy of the kernel
++    // figure.
++    let outstanding_idx = rcol("Outstanding");
++    for row in &tax.reserve_summary.rows {
++        for (idx, cell) in row.iter().enumerate() {
++            if idx == outstanding_idx {
++                continue;
+             }
++            assert!(
++                !cell.is_formula(),
++                "Tax tab must be kernel-exact values, found a formula: {cell:?}"
++            );
+         }
+     }
+     // There IS at least one accrual row (the GOOG sale produced realized gains).
+@@ -357,7 +370,8 @@ fn reserve_summary_carries_all_five_kernel_exact_columns() {
+     let tax = render_tax(&accruals, &annual);
+ 
+     // Each reserve-summary row carries the kernel-exact value from its AnnualRow
+-    // for ALL FIVE columns (not 4/5 blank). Match by (jurisdiction, tax_year).
++    // for Accrued/Moved/Paid/Shortfall (not blank), plus a wired Outstanding
++    // formula. Match by (jurisdiction, tax_year).
+     use sheets_view::TAX_TAB;
+     assert_eq!(tax.accruals.name, TAX_TAB);
+     assert!(!tax.reserve_summary.rows.is_empty());
+@@ -377,10 +391,13 @@ fn reserve_summary_carries_all_five_kernel_exact_columns() {
+         );
+         assert_eq!(row[rcol("Moved")].text(), fmt(ar.moved_cents), "Moved");
+         assert_eq!(row[rcol("Paid")].text(), fmt(ar.paid_cents), "Paid");
+-        assert_eq!(
+-            row[rcol("Outstanding")].text(),
+-            fmt(ar.outstanding_cents),
+-            "Outstanding"
++        // Outstanding is wired as a same-row formula (Accrued − Paid) rather
++        // than a second copy of the kernel figure — check the wiring, not a
++        // rendered value.
++        assert!(
++            row[rcol("Outstanding")].is_formula(),
++            "Outstanding should be a same-row formula: {:?}",
++            row[rcol("Outstanding")]
+         );
+         assert_eq!(
+             row[rcol("Shortfall")].text(),

@@ -1,0 +1,630 @@
+{
+  "realness": {
+    "R01": {
+      "specId": "SHEET-FORMULA-001",
+      "kind": "control",
+      "unitId": "CTRL-FORMULA-001",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "R02": {
+      "specId": "SHEET-FORMULA-001",
+      "kind": "seed",
+      "unitId": "U-FORMULA-001",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "R03": {
+      "specId": "SHEET-FORMULA-002",
+      "kind": "control",
+      "unitId": "CTRL-FORMULA-002",
+      "labels": {
+        "S1": "T2",
+        "S2": "T3",
+        "S3": "EXP-LUNA",
+        "S4": "EXP-HAIKU",
+        "S5": "T2CAP"
+      }
+    },
+    "R04": {
+      "specId": "SHEET-FORMULA-002",
+      "kind": "seed",
+      "unitId": "H-FORMULA-002",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "R05": {
+      "specId": "SHEET-FORMULA-003",
+      "kind": "control",
+      "unitId": "CTRL-FORMULA-003",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "R06": {
+      "specId": "SHEET-FORMULA-003",
+      "kind": "seed",
+      "unitId": "P-FORMULA-003",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "R07": {
+      "specId": "SHEET-FORMULA-004",
+      "kind": "control",
+      "unitId": "CTRL-FORMULA-004",
+      "labels": {
+        "S1": "T2CAP",
+        "S2": "EXP-HAIKU",
+        "S3": "T3",
+        "S4": "EXP-LUNA",
+        "S5": "T2"
+      }
+    },
+    "R08": {
+      "specId": "SHEET-FORMULA-004",
+      "kind": "seed",
+      "unitId": "H-FORMULA-004",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "R09": {
+      "specId": "SHEET-FORMULA-005",
+      "kind": "control",
+      "unitId": "CTRL-FORMULA-005",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "R10": {
+      "specId": "SHEET-FORMULA-005",
+      "kind": "seed",
+      "unitId": "P-FORMULA-005",
+      "labels": {
+        "S1": "T2",
+        "S2": "EXP-HAIKU",
+        "S3": "EXP-LUNA",
+        "S4": "T2CAP",
+        "S5": "T3"
+      }
+    },
+    "R11": {
+      "specId": "SHEET-MAP-001",
+      "kind": "control",
+      "unitId": "CTRL-MAP-001",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "R12": {
+      "specId": "SHEET-MAP-001",
+      "kind": "seed",
+      "unitId": "U-MAP-001",
+      "labels": {
+        "S1": "T3",
+        "S2": "EXP-HAIKU",
+        "S3": "T2CAP",
+        "S4": "T2",
+        "S5": "EXP-LUNA"
+      }
+    },
+    "R13": {
+      "specId": "SHEET-MAP-002",
+      "kind": "control",
+      "unitId": "CTRL-MAP-002",
+      "labels": {
+        "S1": "T3",
+        "S2": "T2CAP",
+        "S3": "T2",
+        "S4": "EXP-HAIKU",
+        "S5": "EXP-LUNA"
+      }
+    },
+    "R14": {
+      "specId": "SHEET-MAP-002",
+      "kind": "seed",
+      "unitId": "P-MAP-002",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "R15": {
+      "specId": "SHEET-MARK-001",
+      "kind": "control",
+      "unitId": "CTRL-MARK-001",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "R16": {
+      "specId": "SHEET-MARK-001",
+      "kind": "seed",
+      "unitId": "U-MARK-001",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "R17": {
+      "specId": "SHEET-MARK-002",
+      "kind": "control",
+      "unitId": "CTRL-MARK-002",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "R18": {
+      "specId": "SHEET-MARK-002",
+      "kind": "seed",
+      "unitId": "H-MARK-002",
+      "labels": {
+        "S1": "T3",
+        "S2": "EXP-HAIKU",
+        "S3": "T2CAP",
+        "S4": "EXP-LUNA",
+        "S5": "T2"
+      }
+    },
+    "R19": {
+      "specId": "SHEET-MARK-003",
+      "kind": "control",
+      "unitId": "CTRL-MARK-003",
+      "labels": {
+        "S1": "T2",
+        "S2": "EXP-LUNA",
+        "S3": "T3",
+        "S4": "T2CAP",
+        "S5": "EXP-HAIKU"
+      }
+    },
+    "R20": {
+      "specId": "SHEET-MARK-003",
+      "kind": "seed",
+      "unitId": "H-MARK-003",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "R21": {
+      "specId": "SHEET-MARK-004",
+      "kind": "control",
+      "unitId": "CTRL-MARK-004",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "R22": {
+      "specId": "SHEET-MARK-004",
+      "kind": "seed",
+      "unitId": "U-MARK-004",
+      "labels": {
+        "S1": "T2CAP",
+        "S2": "T2",
+        "S3": "T3",
+        "S4": "EXP-LUNA",
+        "S5": "EXP-HAIKU"
+      }
+    },
+    "R23": {
+      "specId": "SHEET-MARK-005",
+      "kind": "control",
+      "unitId": "CTRL-MARK-005",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "R24": {
+      "specId": "SHEET-MARK-005",
+      "kind": "seed",
+      "unitId": "P-MARK-005",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "R25": {
+      "specId": "SHEET-MARK-006",
+      "kind": "control",
+      "unitId": "CTRL-MARK-006",
+      "labels": {
+        "S1": "T2",
+        "S2": "EXP-LUNA",
+        "S3": "T3",
+        "S4": "T2CAP",
+        "S5": "EXP-HAIKU"
+      }
+    },
+    "R26": {
+      "specId": "SHEET-MARK-006",
+      "kind": "seed",
+      "unitId": "P-MARK-006",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "R27": {
+      "specId": "SHEET-MARK-007",
+      "kind": "control",
+      "unitId": "CTRL-MARK-007",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "R28": {
+      "specId": "SHEET-MARK-007",
+      "kind": "seed",
+      "unitId": "H-MARK-007",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "R29": {
+      "specId": "SHEET-MARK-008",
+      "kind": "control",
+      "unitId": "CTRL-MARK-008",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "R30": {
+      "specId": "SHEET-MARK-008",
+      "kind": "seed",
+      "unitId": "H-MARK-008",
+      "labels": {
+        "S1": "EXP-HAIKU",
+        "S2": "T2",
+        "S3": "EXP-LUNA",
+        "S4": "T3",
+        "S5": "T2CAP"
+      }
+    },
+    "R31": {
+      "specId": "SHEET-PUB-001",
+      "kind": "control",
+      "unitId": "CTRL-PUB-001",
+      "labels": {
+        "S1": "EXP-HAIKU",
+        "S2": "T2",
+        "S3": "EXP-LUNA",
+        "S4": "T2CAP",
+        "S5": "T3"
+      }
+    },
+    "R32": {
+      "specId": "SHEET-PUB-001",
+      "kind": "seed",
+      "unitId": "U-PUB-001",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "R33": {
+      "specId": "SHEET-PUB-002",
+      "kind": "control",
+      "unitId": "CTRL-PUB-002",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "R34": {
+      "specId": "SHEET-PUB-002",
+      "kind": "seed",
+      "unitId": "U-PUB-002",
+      "labels": {
+        "S1": "EXP-HAIKU",
+        "S2": "EXP-LUNA",
+        "S3": "T3",
+        "S4": "T2",
+        "S5": "T2CAP"
+      }
+    },
+    "R35": {
+      "specId": "SHEET-PUB-003",
+      "kind": "control",
+      "unitId": "CTRL-PUB-003",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "R36": {
+      "specId": "SHEET-PUB-003",
+      "kind": "seed",
+      "unitId": "P-PUB-003",
+      "labels": {
+        "S1": "T2",
+        "S2": "EXP-LUNA",
+        "S3": "T3",
+        "S4": "T2CAP",
+        "S5": "EXP-HAIKU"
+      }
+    },
+    "R37": {
+      "specId": "SHEET-PUB-004",
+      "kind": "control",
+      "unitId": "CTRL-PUB-004",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "R38": {
+      "specId": "SHEET-PUB-004",
+      "kind": "seed",
+      "unitId": "H-PUB-004",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "R39": {
+      "specId": "SHEET-TAB-001",
+      "kind": "control",
+      "unitId": "CTRL-TAB-001",
+      "labels": {
+        "S1": "T2CAP",
+        "S2": "EXP-LUNA",
+        "S3": "T3",
+        "S4": "EXP-HAIKU",
+        "S5": "T2"
+      }
+    },
+    "R40": {
+      "specId": "SHEET-TAB-001",
+      "kind": "seed",
+      "unitId": "P-TAB-001",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "R41": {
+      "specId": "SHEET-TAB-002",
+      "kind": "control",
+      "unitId": "CTRL-TAB-002",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "R42": {
+      "specId": "SHEET-TAB-002",
+      "kind": "seed",
+      "unitId": "U-TAB-002",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "R43": {
+      "specId": "SHEET-TAB-003",
+      "kind": "control",
+      "unitId": "CTRL-TAB-003",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "R44": {
+      "specId": "SHEET-TAB-003",
+      "kind": "seed",
+      "unitId": "P-TAB-003",
+      "labels": {
+        "S1": "T3",
+        "S2": "EXP-LUNA",
+        "S3": "EXP-HAIKU",
+        "S4": "T2CAP",
+        "S5": "T2"
+      }
+    },
+    "R45": {
+      "specId": "SHEET-TAB-004",
+      "kind": "control",
+      "unitId": "CTRL-TAB-004",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "R46": {
+      "specId": "SHEET-TAB-004",
+      "kind": "seed",
+      "unitId": "U-TAB-004",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "R47": {
+      "specId": "SHEET-TAB-005",
+      "kind": "control",
+      "unitId": "CTRL-TAB-005",
+      "labels": {
+        "S1": "T2CAP",
+        "S2": "EXP-LUNA",
+        "S3": "EXP-HAIKU",
+        "S4": "T2",
+        "S5": "T3"
+      }
+    },
+    "R48": {
+      "specId": "SHEET-TAB-005",
+      "kind": "seed",
+      "unitId": "H-TAB-005",
+      "labels": {
+        "S1": "T2"
+      }
+    }
+  },
+  "keymatch": {
+    "K01": {
+      "seedId": "U-FORMULA-001",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "K02": {
+      "seedId": "H-FORMULA-002",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "K03": {
+      "seedId": "P-FORMULA-003",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "K04": {
+      "seedId": "H-FORMULA-004",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "K05": {
+      "seedId": "P-FORMULA-005",
+      "labels": {
+        "S1": "EXP-LUNA",
+        "S2": "T2CAP",
+        "S3": "EXP-HAIKU",
+        "S4": "T2",
+        "S5": "T3"
+      }
+    },
+    "K06": {
+      "seedId": "U-MAP-001",
+      "labels": {
+        "S1": "EXP-LUNA",
+        "S2": "T2CAP",
+        "S3": "EXP-HAIKU",
+        "S4": "T2",
+        "S5": "T3"
+      }
+    },
+    "K07": {
+      "seedId": "P-MAP-002",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "K08": {
+      "seedId": "U-MARK-001",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "K09": {
+      "seedId": "H-MARK-002",
+      "labels": {
+        "S1": "EXP-LUNA",
+        "S2": "T2",
+        "S3": "T3",
+        "S4": "EXP-HAIKU",
+        "S5": "T2CAP"
+      }
+    },
+    "K10": {
+      "seedId": "H-MARK-003",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "K11": {
+      "seedId": "U-MARK-004",
+      "labels": {
+        "S1": "T2",
+        "S2": "EXP-HAIKU",
+        "S3": "T2CAP",
+        "S4": "EXP-LUNA",
+        "S5": "T3"
+      }
+    },
+    "K12": {
+      "seedId": "P-MARK-005",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "K13": {
+      "seedId": "P-MARK-006",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "K14": {
+      "seedId": "H-MARK-007",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "K15": {
+      "seedId": "H-MARK-008",
+      "labels": {
+        "S1": "T3",
+        "S2": "EXP-HAIKU",
+        "S3": "EXP-LUNA",
+        "S4": "T2CAP",
+        "S5": "T2"
+      }
+    },
+    "K16": {
+      "seedId": "U-PUB-001",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "K17": {
+      "seedId": "U-PUB-002",
+      "labels": {
+        "S1": "T2CAP",
+        "S2": "EXP-LUNA",
+        "S3": "T2",
+        "S4": "T3",
+        "S5": "EXP-HAIKU"
+      }
+    },
+    "K18": {
+      "seedId": "P-PUB-003",
+      "labels": {
+        "S1": "EXP-HAIKU",
+        "S2": "EXP-LUNA",
+        "S3": "T3",
+        "S4": "T2",
+        "S5": "T2CAP"
+      }
+    },
+    "K19": {
+      "seedId": "H-PUB-004",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "K20": {
+      "seedId": "P-TAB-001",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "K21": {
+      "seedId": "U-TAB-002",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "K22": {
+      "seedId": "P-TAB-003",
+      "labels": {
+        "S1": "T2CAP",
+        "S2": "EXP-LUNA",
+        "S3": "EXP-HAIKU",
+        "S4": "T3",
+        "S5": "T2"
+      }
+    },
+    "K23": {
+      "seedId": "U-TAB-004",
+      "labels": {
+        "S1": "T2"
+      }
+    },
+    "K24": {
+      "seedId": "H-TAB-005",
+      "labels": {
+        "S1": "T2"
+      }
+    }
+  }
+}
