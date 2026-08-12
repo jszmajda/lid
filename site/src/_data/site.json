@@ -1,14 +1,15 @@
 {
   "title": "Linked-Intent Development",
-  "tagline": "How to write code when your compiler speaks English.",
+  "tagline": "How do you know your agent built what you meant?",
   "framing": [
-    "LID is the language.",
-    "Your agent is the compiler.",
-    "Code is the output."
+    "Because you wrote it down — a design, in plain English.",
+    "Because everything the agent builds comes from that design.",
+    "Because you can check: one ID grep returns the requirement, its tests, and its code.",
+    "Because LID helped you get there."
   ],
   "repoUrl": "https://github.com/jszmajda/lid",
   "repoSlug": "jszmajda/lid",
-  "description": "Linked-Intent Development for agentic coding — structure the English your agent compiles so design, specs, tests, and code stay in sync. Claude Code plugins; rule-file adapters for Cursor, Windsurf, Copilot, and other tools.",
+  "description": "Linked-Intent Development for agentic coding — write the design in plain English; your agent derives one-line requirements with greppable IDs, then tests and code that cite them. Claude Code plugins; rule-file adapters for Cursor, Windsurf, Copilot, and other tools.",
   "quickstart": [
     {
       "cmd": "/plugin marketplace add jszmajda/lid",
@@ -20,7 +21,7 @@
     },
     {
       "cmd": "/plugin install arrow-maintenance@jszmajda-lid",
-      "note": "Install the arrow-maintenance overlay for spec-to-code coherence audits."
+      "note": "Install arrow-maintenance, which tracks the links between specs and code in projects too big for one context window."
     },
     {
       "cmd": "/linked-intent-dev",
