@@ -4,10 +4,10 @@ eleventyNavigation:
   key: Home
   order: 1
 permalink: /
-description: Linked-Intent Development — treat your coding agent as an English compiler. Intent is the source; code is the output. Claude Code plugins plus rule-file adapters for Cursor, Windsurf, Copilot, Aider, and other agentic coding tools.
+description: Linked-Intent Development — how do you know your agent built what you meant? Write the design in plain English; the agent derives one-line requirements with greppable IDs, then tests and code that cite them. Claude Code plugins plus rule-file adapters for Cursor, Windsurf, Copilot, Aider, and other agentic coding tools.
 ---
 
-<!-- @spec MKT-SITE-007 (home page section ordering), MKT-SITE-061 (show-then-name vocabulary, page-wide) -->
+<!-- @spec MKT-SITE-007 (home page section ordering), MKT-SITE-061 (show-then-name vocabulary, page-wide), MKT-SITE-068 (heading register, page-wide), MKT-SITE-071 (antithesis budget, site-wide) -->
 <!-- @spec MKT-SITE-001, MKT-SITE-002, MKT-SITE-004, MKT-SITE-005, MKT-SITE-040, MKT-SITE-060 -->
 <section class="hero">
   <div class="container hero-grid">
@@ -19,17 +19,17 @@ description: Linked-Intent Development — treat your coding agent as an English
       </div>
 
       <h1 class="pitch">
-        How to write code when your compiler speaks <em>English</em>.
+        How do you know your agent built what you <em>meant</em>?
       </h1>
 
-      <ol class="framing" aria-label="Three-line framing">
+      <ol class="framing" aria-label="Four-line framing">
         {% for line in site.framing %}
-          <li>{{ line }}</li>
+          <li>{{ line | safe }}</li>
         {% endfor %}
       </ol>
 
       <p class="hero-lede">
-        Modern coding agents write code that runs. What they miss is what you <em>meant</em> — the agent assumed one thing, you had another in mind, and the next session starts over with no memory of why. LID closes that gap: you put the design down in plain English, the agent compiles specs, tests, and code from it — and when something's off, you fix the design once and everything downstream rewrites itself to match.
+        Code that runs can still miss what you meant. Somewhere in there, the agent made a judgment call you never saw — and by the next session, nobody remembers why. With LID (Linked-Intent Development), the design stays linked to everything built from it: fix it once, the agent cascades the change, and you sign off or push back at every step. You'd type these sentences into the chat anyway — LID keeps them where the next session can find them.
       </p>
 
       <div class="cta-row">
@@ -48,25 +48,25 @@ description: Linked-Intent Development — treat your coding agent as an English
   </div>
 </section>
 
-<!-- @spec MKT-SITE-038, MKT-SITE-039, MKT-SITE-041, MKT-SITE-044, MKT-SITE-045, MKT-SITE-046, MKT-SITE-055, MKT-SITE-056, MKT-SITE-057, MKT-SITE-058 -->
+<!-- @spec MKT-SITE-038, MKT-SITE-039, MKT-SITE-041, MKT-SITE-044, MKT-SITE-045, MKT-SITE-046, MKT-SITE-055, MKT-SITE-056, MKT-SITE-057, MKT-SITE-058, MKT-SITE-067, MKT-SITE-069, MKT-SITE-070 -->
 <section class="howitworks section" id="howitworks" aria-labelledby="howitworks-heading">
   <div class="container howit-stack">
     <header class="howit-head">
       <span class="plate">Plate 01 / How it works</span>
-      <h2 id="howitworks-heading">You design. <em>The agent writes the rest.</em></h2>
+      <h2 id="howitworks-heading">Design first. <em>Everything below it cites an ID.</em></h2>
       <p class="lede">
-        LID treats your whole repository as a graph rooted in intent. Every code file reachable, by name, from a test; every test from a spec; every spec from a low-level design (LLD); every design from the high-level design (HLD) at the top. <em>Checking that the code still matches the design is just a walk through the graph</em> — and when an agent writes most of the code, that's the difference between taking what landed on faith and being able to check it.
+        In a LID repo, every code file cites, by ID, the spec it implements; every test, the spec it asserts; every spec traces to a low-level design (LLD), and every design to the high-level design (HLD) at the top — one graph, rooted in your design docs. <em>Checking that code still traces to design is a walk through that graph</em> — mechanical enough to put in CI. Whether the design says what you <em>mean</em> stays your call. And green tests can't catch a misreading on their own: they may come from the same misreading as the code.
       </p>
     </header>
 
     <!-- @spec MKT-SITE-039, MKT-SITE-045, MKT-SITE-047, MKT-SITE-048 -->
     <div class="howit-trace" aria-label="One intent, traced from HLD through code">
-      <figure class="trace-legend" aria-hidden="true">
+      <figure class="trace-legend">
         <figcaption class="trace-legend-cap">
           <span class="num">FIG · 001</span>
-          <strong>Legend.</strong> The HLD names the <em>why</em>; the LLD shapes the <em>how</em>; a spec makes one atomic claim in structured English — one line, one greppable ID (the format is called <em>EARS</em>, Easy Approach to Requirements Syntax); a failing-first test asserts that claim before code exists; code carries matching <code>@spec</code> annotations. The IDs — <code>AUTH-UI-001</code>, <code>AUTH-UI-002</code>, and so on — are what make the graph navigable, and checkable, by name.
+          <strong>Legend.</strong> The HLD names the <em>why</em>; the LLD shapes the <em>how</em>; a spec makes one atomic claim in structured English — one line, one greppable ID (the format is called <em>EARS</em>, Easy Approach to Requirements Syntax); a failing-first test asserts that claim before code exists; code carries matching <code>@spec</code> annotations. The IDs — <code>AUTH-UI-001</code> and so on — make the graph navigable, and checkable, by name.
         </figcaption>
-        {% include "arrow-inset-schematic.svg" %}
+        <div aria-hidden="true">{% include "arrow-inset-schematic.svg" %}</div>
       </figure>
 
       <ol class="trace-strip" role="list" aria-label="One worked example at five levels of resolution">
@@ -124,14 +124,14 @@ description: Linked-Intent Development — treat your coding agent as an English
       </ol>
 
       <p class="trace-outro">
-        Every implementation file carries <code>@spec</code> comments pointing back at the EARS claims it satisfies. A spec ID is a grep target: run <code>grep -r AUTH-UI-001</code> and you get everything that cites it — the spec text, the failing-first tests asserting it, and the code implementing it. That's more than navigation; it's how the work gets verified: "this code does what the design says" stops being something you take on faith and becomes something you — or an auditing agent — can check.
+        A spec ID is a grep target: run <code>grep -r AUTH-UI-001</code> and you get everything that cites it — the spec text, the failing-first tests asserting it, and the code implementing it. "This code does what the design says" stops being something you take on faith and becomes something you — or an auditing agent — can check.
       </p>
     </div>
 
     <div class="howit-bridge">
       <span class="howit-bridge-label">Scale <span class="howit-bridge-sep" aria-hidden="true">/</span> one <span class="howit-bridge-arr" aria-hidden="true">→</span> every</span>
       <p>
-        That whole traced path — one thought, HLD down to code — is what LID calls an <em>arrow</em>. Now do that for every design, every spec, and every test in your repository — not in a binder somewhere, in the code itself. Your whole codebase looks like this:
+        That whole traced path — one thought, HLD down to code — is what LID calls an <em>arrow</em>. Now do that for every design, every spec, every test — all in the repo, next to the code. Your whole codebase looks like this:
       </p>
     </div>
 
@@ -147,11 +147,25 @@ description: Linked-Intent Development — treat your coding agent as an English
       <div class="howit-outro-col">
         <span class="howit-outro-label">In practice</span>
         <p class="howit-outro">
-          The diagram reads top-down, but nothing here is a one-way phase: every level stays editable for the life of the project, and an edit at any level recompiles what's below it. It looks like a waterfall; it behaves like source code. You spend your time in the HLD and, more often, in the LLDs. That's where the design work lives. The agent handles the specs, the tests, and most of the code from your design — you read, you nod, you move on. Your review lands on intent and the deltas the agent proposes; the linkage underneath is what lets you — or an audit pass, or a fresh agent with no context — verify that everything below still traces to what you meant. When something needs to change — a new feature, a bug, a shift in direction — you almost always go back to an LLD, edit it, and let everything built on the old answer rewrite itself to match the new one. The demo below is what that loop looks like live.
+          <strong>It looks like a waterfall; it behaves like source code.</strong> Nothing here is a one-way phase: every level stays editable for the life of the project, and an edit at any level recompiles what's below it.
+        </p>
+        <p class="howit-outro">
+          <strong>Your time goes into the design.</strong> The HLD and, more often, the LLDs — the agent drafts the specs, the tests, and most of the code, and your review lands on the deltas, stop by stop.
+        </p>
+        <p class="howit-outro">
+          <strong>Almost every change is an LLD edit, cascaded.</strong> A new feature, a bug, a shift in direction — you edit the design. The linkage underneath lets you — or an audit pass, or a fresh agent with no context — verify that everything below still traces to what you wrote down. The demo below is that loop, live.
         </p>
         <span class="howit-outro-label">The price</span>
+        <ul class="howit-costs">
+          <li>Every change walks design → specs → tests → code; you review at each step before code lands.</li>
+          <li>More design diffs to read, fewer generated lines.</li>
+          <li>Extra agent tokens spent keeping the links current.</li>
+        </ul>
         <p class="howit-outro">
-          None of this is free, and it's worth saying plainly: every change walks design → specs → tests → code, and you review at each step before code lands. You'll read more design diffs and fewer generated lines, and the agent spends extra tokens keeping the links current. That's the trade — minutes of review per change, bought back as a codebase you can hand to any agent, or any teammate, without a tour guide.
+          That's the trade — minutes of review per change, bought back as a codebase you can hand to any agent or teammate without a tour guide.
+        </p>
+        <p class="howit-outro">
+          I run LID on everything I build — the largest is a public <a href="https://github.com/jszmajda/portfolio-tracker">63k-line Rust project</a>, ~350 specs, with a CI gate that fails the build when a spec goes uncited — and these days it runs on plenty of projects that aren't mine.
         </p>
       </div>
     </div>
@@ -163,9 +177,9 @@ description: Linked-Intent Development — treat your coding agent as an English
   <div class="container demo-grid">
     <div class="section-head demo-head">
       <span class="plate">Plate 02 / Demonstration</span>
-      <h2 id="demo-heading">See the <em style="font-style:italic;color:var(--nib)">cascade</em>.</h2>
+      <h2 id="demo-heading">Watch one edit <em style="font-style:italic;color:var(--nib)">reach the code</em>.</h2>
       <p class="lede">
-        The most persuasive thing about LID isn't the prose — it's watching intent propagate. Describe a change in English. The agent updates the LLD, cascades through the specs, regenerates the tests, and rewrites the code. Two minutes, one real project.
+        Change one sentence of the design and watch it arrive in the specs, the tests, and the code. Two minutes, one real project.
       </p>
     </div>
 
@@ -212,10 +226,10 @@ description: Linked-Intent Development — treat your coding agent as an English
 
       <ol class="teams-beats" role="list">
         <li>
-          <strong>The design conversation happens in the PR.</strong> Intent is files in the repo, so a teammate proposes a change to an HLD or LLD the same way they'd propose code. The deep conversation — the one about what the system should <em>be</em> — happens on a one-page design diff, before implementation, instead of surfacing halfway through a 500-line code review. Once the intent lands, anyone on the team can cascade it to working code.
+          <strong>The design conversation happens in the PR.</strong> Intent is files in the repo, so a teammate proposes a change to an HLD or LLD the same way they'd propose code. The deep conversation — what should the system <em>be</em> — happens on a one-page design diff before implementation, instead of halfway through a 500-line code review. Once the intent lands, anyone can cascade it to working code.
         </li>
         <li>
-          <strong>The intent tree is your onboarding doc.</strong> Every design doc is written to be read cold, rationale on the page — which is exactly what a new teammate needs. The <em>why</em> travels with the repo, not with whoever wrote it.
+          <strong>The intent tree is your onboarding doc.</strong> Every design doc is written to be read cold, rationale on the page — exactly what a new teammate needs. The <em>why</em> stays in the repo after its author moves on.
         </li>
         <li>
           <strong>Mixed tools, one source of truth.</strong> The tree is plain markdown. One teammate on Claude Code, another on Cursor, a third in a JetBrains IDE — everyone reads and cascades the same intent. No per-tool lock-in.
@@ -224,7 +238,7 @@ description: Linked-Intent Development — treat your coding agent as an English
           <strong>A sub-team can adopt alone.</strong> Scoped mode draws an explicit boundary around your service or subsystem; inside it you get the full discipline, and the rest of the org doesn't have to care yet.
         </li>
         <li>
-          <strong>And at 3am, ship the fix.</strong> Hotfixes go out outside the workflow. When the fire's out, walk the change back through the design so the intent catches up. LID is a source-of-truth discipline, not a deployment gate.
+          <strong>And at 3am, ship the fix.</strong> Hotfixes go out outside the workflow. When the fire's out, walk the change back through the design so the intent catches up. Nothing in LID gates a deploy.
         </li>
       </ol>
     </div>
@@ -293,7 +307,7 @@ description: Linked-Intent Development — treat your coding agent as an English
       <span class="plate plate--annex">Annex 04A / Experimental</span>
       <h2 id="experimental-heading">Beyond the core: <em style="font-style:italic;color:var(--nib)">experimental skills</em>.</h2>
       <p class="lede">
-        The <code>lid-experimental</code> plugin bundles techniques that have earned their place but aren't yet promoted into the core workflow. Right now it ships with <code>bidirectional-differential</code> — a way to check whether your specs and your code still agree on what the system does. It runs two fresh AI sessions in parallel: one writes naive code from your spec alone; the other reconstructs a spec from your code alone. When both reconstructions match what you already have, intent and implementation are coherent. When they don't, the differences point at drift worth investigating — unstated rules the code enforces, edge cases the spec doesn't pin down, or genuine bugs.
+        The <code>lid-experimental</code> plugin bundles techniques that work in practice but aren't yet part of the core workflow. Right now it ships with <code>bidirectional-differential</code>, which checks whether your specs and your code still agree: two fresh AI sessions run in parallel — one writes naive code from your spec alone, the other reconstructs a spec from your code alone. Matches are evidence the two agree; differences point at drift worth investigating — unstated rules the code enforces, edge cases the spec misses, or genuine bugs.
       </p>
     </div>
     <div class="annex bracketed">
@@ -317,9 +331,9 @@ description: Linked-Intent Development — treat your coding agent as an English
   <div class="container">
     <div class="section-head">
       <span class="plate plate--annex">Annex 04B / Ecosystem</span>
-      <h2 id="ecosystem-heading">Built on <em style="font-style:italic;color:var(--nib)">LID</em>.</h2>
+      <h2 id="ecosystem-heading">What people have <em style="font-style:italic;color:var(--nib)">built on it</em>.</h2>
       <p class="lede">
-        The core stays deliberately small, so the tooling that makes LID pleasant day to day comes from an independent, third-party ecosystem — editor plugins, language servers, CLIs, CI coherence checkers, MCP servers. Discovery is by an open convention: tag a repository <code>linked-intent-development</code> and link back, and it appears on the <a href="https://github.com/topics/linked-intent-development">topic page</a> — no submission, no gatekeeping.
+        The core stays deliberately small; the day-to-day tooling comes from an independent, third-party ecosystem — editor plugins, language servers, CLIs, CI checkers, MCP servers. Discovery is an open convention: tag a repository <code>linked-intent-development</code> and link back, and it appears on the <a href="https://github.com/topics/linked-intent-development">topic page</a> — no submission, no gatekeeping.
       </p>
     </div>
     <div class="annex bracketed">
@@ -327,7 +341,7 @@ description: Linked-Intent Development — treat your coding agent as an English
         <span class="annex-status" aria-hidden="true">Third-party · community</span>
       </header>
       <p class="annex-aside">
-        Listed projects are independent — <em>surfaced, not vetted or endorsed</em>. Evaluate any extension yourself before use.
+        Listed projects are independent and <em>unvetted</em> — evaluate any extension yourself before use.
       </p>
       <a class="annex-readmore" href="{{ extensionsUrl }}">
         Browse projects built on LID<span class="arr" aria-hidden="true">↗</span>

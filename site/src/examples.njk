@@ -8,16 +8,16 @@ permalink: /examples/
 description: Three example LID projects — one small and clean, one complete and end-to-end, one real and messy — plus the repository itself as the canonical mature example.
 ---
 
-<!-- @spec MKT-SITE-013, MKT-SITE-014, MKT-SITE-015, MKT-SITE-016, MKT-SITE-065 -->
+<!-- @spec MKT-SITE-013, MKT-SITE-014, MKT-SITE-015, MKT-SITE-016, MKT-SITE-065, MKT-SITE-068 -->
 <div class="page">
   <div class="container">
 
     <header class="page-header">
       <div class="page-header-main">
         <span class="plate">Sheet 03 / Examples</span>
-        <h1>See LID in <em>three different lights</em>.</h1>
+        <h1>Three projects. <em>Two you can grep today.</em></h1>
         <p class="lede">
-          One example is small, clean, intent-only — try to regenerate the code from the docs alone. One is a complete, working project — the whole chain from design to verified code, public and clonable. And one is real, long-running, and messier than any pedagogical example could honestly be. Three lenses; they answer different questions.
+          One example is small, clean, intent-only — try to regenerate the code from the docs alone. One is a complete, working project — the whole chain from design through tests to code, public and clonable. And one is real, long-running, and messier than any pedagogical example could honestly be. Three lenses; they answer different questions.
         </p>
       </div>
       <aside class="page-header-aside" aria-label="Sheet notes">
@@ -33,22 +33,22 @@ description: Three example LID projects — one small and clean, one complete an
     <div class="example-grid">
 
       <article class="example-card bracketed">
-        <span class="tag">Clean · 5-minute read</span>
+        <span class="tag">Clean · minimal · 5-minute read</span>
         <h2>URL shortener</h2>
         <p>
-          A deliberately small fictional project. HLD, a handful of LLDs, EARS specs — no implementation. The challenge: delete the intent tree, regenerate it; delete the code, regenerate that too. When the docs are the source of truth, either can be recreated from either.
+          A deliberately small fictional project. HLD, a handful of LLDs, EARS specs — no implementation. The challenge: hand the docs to a fresh agent and ask it to build the system. Run it twice and you may get two languages — when docs are the source of truth, code is output.
         </p>
         <div class="foot">
           <a class="cross" href="{{ site.repoUrl }}/tree/main/examples/urlshort">Browse <code>examples/urlshort/</code></a>
-          <p class="muted" style="margin-top: var(--s-3); font-size: 0.85rem;">This example may not exist yet — check the repo tree. It ships alongside the plugins.</p>
+          <p class="muted" style="margin-top: var(--s-3); font-size: 0.85rem;">Ships in the repo alongside the plugins.</p>
         </div>
       </article>
 
       <article class="example-card bracketed">
-        <span class="tag">Complete · end-to-end</span>
+        <span class="tag">Complete · real · end-to-end</span>
         <h2>Portfolio-tracker</h2>
         <p>
-          A real, public project built with LID end-to-end: an HLD, eleven LLDs, 350 EARS specs, and the tests and code that cite them. A CI gate makes the linkage mechanical — the build fails unless every spec is cited by at least one test and every citation resolves to a defined spec. The verification story the home page describes, enforced in public.
+          A real, public project built with LID end-to-end: an HLD, eleven LLDs, 350 EARS specs, and the tests and code that cite them. A CI gate makes the linkage mechanical — the build fails unless every spec is cited by at least one test and every citation resolves to a defined spec. The linkage the home page describes, enforced in public.
         </p>
         <div class="foot">
           <a class="cross" href="https://github.com/jszmajda/portfolio-tracker">Browse portfolio-tracker</a>
@@ -57,10 +57,10 @@ description: Three example LID projects — one small and clean, one complete an
       </article>
 
       <article class="example-card bracketed">
-        <span class="tag">Real · long-running</span>
+        <span class="tag">Messy · real · instructive</span>
         <h2>Threadkeeper</h2>
         <p>
-          A working project that has used LID for months. The LLDs are striated — multiple generations, uneven coherence, the honest shape any living system acquires. Not a teaching example. A stress test for cascade discipline, and a proof that LID survives real conditions.
+          A working project that has used LID for months. The LLDs are striated — multiple generations, uneven coherence, the honest shape any living system acquires. A stress test for cascade discipline, and evidence of how LID ages under real conditions.
         </p>
         <div class="foot">
           <a class="cross" href="https://threadkeeper.app/">Visit threadkeeper.app</a>

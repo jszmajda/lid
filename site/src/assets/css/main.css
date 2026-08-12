@@ -1321,6 +1321,28 @@ hr {
   max-width: 54ch;
 }
 
+/* The price as a literal price list — three line-item costs under the label. */
+.howit-costs {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-width: 54ch;
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-2);
+}
+.howit-costs li {
+  color: var(--ink);
+  position: relative;
+  padding-left: 1.1em;
+}
+.howit-costs li::before {
+  content: "–";
+  position: absolute;
+  left: 0;
+  color: var(--nib);
+}
+
 /* DAG schematic — shares the drafting visual language with .hero-schematic
  * but uses its own classes so styling can diverge as the diagram evolves. */
 .dag-schematic,
