@@ -1,6 +1,6 @@
 ---
 name: arrow-maintenance
-description: Navigation and audit overlay for linked-intent development. Use when working with docs/arrows/ — orienting via index.yaml, auditing spec-to-code coherence, detecting reverse orphans and drift, splitting/merging/renaming/re-parenting segments. Dual-mode: ambient guidance when the overlay is present (catch-and-recommend), or explicit /arrow-maintenance command for a directed audit-and-update pass.
+description: "Navigation and audit overlay for linked-intent development. Use when working with docs/arrows/ — orienting via index.yaml, auditing spec-to-code coherence, detecting reverse orphans and drift, splitting/merging/renaming/re-parenting segments. Dual-mode: ambient guidance when the overlay is present (catch-and-recommend), or explicit /arrow-maintenance command for a directed audit-and-update pass."
 ---
 
 # Arrow Maintenance
