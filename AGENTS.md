@@ -10,7 +10,7 @@ This is the **Linked-Intent Development (LID)** project — a methodology for ke
 - **Two Claude Code plugins** under `plugins/` — richest integration, with auto-invoking skills and slash commands.
 - Rule-file adapters for other agentic coding tools (Cursor, Windsurf, GitHub Copilot, Aider, Continue, JetBrains Junie, Zed, Codex, and any tool that reads `AGENTS.md`). See `docs/setup.md` for per-tool setup.
 
-There is no build system, test suite, or application code. The repo is simultaneously the distribution source for the plugins and the canonical LID-on-LID reference — its own `docs/` tree is LID applied to LID.
+There is no build system or application code. The plugins are prose (skills, references, templates); the only executable code is maintainer tooling under `tools/`, which ships in no plugin. The repo is simultaneously the distribution source for the plugins and the canonical LID-on-LID reference — its own `docs/` tree is LID applied to LID.
 
 ## Structure
 
@@ -20,6 +20,7 @@ There is no build system, test suite, or application code. The repo is simultane
 - **`.claude-plugin/marketplace.json`**: Claude Code plugin manifest (technical file — users install via `/plugin marketplace add jszmajda/lid`)
 - **`docs/setup.md`**: Per-tool setup instructions for non-Claude-Code agents
 - **`docs/`**: The HLD, LLDs, and EARS specs that define the project
+- **`tools/`**: Maintainer tooling that ships in no plugin — `tools/alt-model-evals/` runs the skills' eval suites on non-Claude models (optional evidence, never a merge gate; see `docs/intent/alt-model-evals/`)
 
 ## Plugin Architecture (Claude Code)
 

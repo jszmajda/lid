@@ -11,6 +11,8 @@ taxonomy:
     - marketing-site
     - project-structure
     - extensions
+  tooling:
+    - alt-model-evals
 
 arrows:
   linked-intent-dev:
@@ -153,7 +155,7 @@ arrows:
     blockedBy: [linked-intent-dev]
     detail: project-structure.md
     next: "Wire build-time structural checks for the three deferred specs (PROJ-STRUCT-039 link-check, 040 marketplace.json validity, 041 CLAUDE.md symlink integrity), most cheaply via a CI workflow extending marketing-site's."
-    drift: "59 of 62 specs [x]; 3 [ ] (build-time checks 039-041, deferred to CI). Grew substantially this cycle: community-health artifacts (047-053: CODE_OF_CONDUCT/SECURITY/CITATION/.github templates), release-publication ritual (054), EXTENSIONS.md ownership pointer (055), and Cursor first-class plugin-host support (056-062: .cursor-plugin manifests, .gitignore, name-identity, No-Version-Update policy, docs/setup.md hosts). PROJ-STRUCT-014 retired; -018 revised to a motivation-first PR shape. Cursor specs renumbered 047-053 -> 056-062 to resolve a merge-time ID collision with the community-health specs."
+    drift: "65 of 68 specs [x]; 3 [ ] (build-time checks 039-041, deferred to CI). 064-069 added as a cascade from alt-model-evals: tracked .claude/settings.json (three first-party plugins + the runner allow rule), its .gitignore exception, AGENTS.md tools/ description. Grew substantially this cycle: community-health artifacts (047-053: CODE_OF_CONDUCT/SECURITY/CITATION/.github templates), release-publication ritual (054), EXTENSIONS.md ownership pointer (055), and Cursor first-class plugin-host support (056-062: .cursor-plugin manifests, .gitignore, name-identity, No-Version-Update policy, docs/setup.md hosts). PROJ-STRUCT-014 retired; -018 revised to a motivation-first PR shape. Cursor specs renumbered 047-053 -> 056-062 to resolve a merge-time ID collision with the community-health specs."
 
   extensions:
     status: AUDITED
@@ -165,6 +167,17 @@ arrows:
     detail: extensions.md
     next: "Wire EXT-007 (broken-link check on EXTENSIONS.md) into CI alongside the PROJ-STRUCT-039-041 build-check backlog; firm up the link-back marker and EXTENSIONS.md inclusion bar as the ecosystem grows."
     drift: "New leaf segment (PR #34). 6 of 7 specs [x]; EXT-007 (link-check) deferred [ ]. Convention: GitHub topic linked-intent-development + link-back; EXTENSIONS.md curated showcase (currently EtaCassiopeia/lid-tooling)."
+
+  alt-model-evals:
+    status: MAPPED
+    sampled: 2026-09-27
+    audited: null
+    audited_sha: null
+    blocks: []
+    blockedBy: [linked-intent-dev]
+    detail: alt-model-evals.md
+    next: "Record the first alternate-model results in tested_with following ALT-EVAL-REC-001..004 (a fuller GLM batch is the natural first), then flip the REC process specs."
+    drift: "New leaf segment (#78). 69 specs: 65 [x], 4 [ ] (ALT-EVAL-REC process specs, satisfied when the first result is recorded). 62 runner tests green; end-to-end container runs graded 3/3 (lid-coach 2) and 5/5 (update-lid 1) on z-ai/glm-5.3-flash."
 
 unmapped:
   docs:
