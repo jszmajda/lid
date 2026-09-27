@@ -139,20 +139,21 @@ plugins/<plugin>/skills/<skill>-workspace/alt-model-<YYYY-MM-DD>-<model-slug>/
 
 `timing.json` records: `model` (the OpenRouter ID), `harness` (`opencode-ai@<version>`), `status`, `duration_ms`, `total_cost_usd` and token counts summed from the event stream (`null` when the stream carries none), the number of tool calls, `exit_code`, and `error_message`.
 
-`batch.json` records the skill, eval IDs, model, harness, sandbox mode (`container` or `none`), timeout, run count, the repository's `HEAD` commit, the **git tree ID of `plugins/` as staged**, whether that tree matches `HEAD`'s, and the batch state (`running`, then `complete` or `aborted`).
+`batch.json` records the skill, eval IDs, model, variant, harness, sandbox mode (`container` or `none`), timeout, run count, the repository's `HEAD` commit, the **git tree ID of `plugins/` as staged**, whether that tree matches `HEAD`'s, and the batch state (`running`, then `complete` or `aborted`).
 
 The tree ID identifies exactly the skill text a batch ran against, whether or not it was committed. The runner computes it with a temporary git index over the on-disk `plugins/` directory (tracked and untracked files, gitignored ones excluded), leaving the repository's own index, working tree, and history untouched. Running on uncommitted skill edits is normal — it is how a skill change is tried out — and the runner never refuses it.
 
 ## Invocation
 
 ```
-tools/alt-model-evals/run_eval.py <skill> <eval-ids> <model> [--runs N] [--timeout SECONDS] [--no-container]
+tools/alt-model-evals/run_eval.py <skill> <eval-ids> <model> [--runs N] [--timeout SECONDS] [--variant NAME] [--no-container]
 ```
 
 - `<skill>` is a skill directory name (`lid-coach`, `update-lid`, `arrow-maintenance`, `map-codebase`, …). The runner finds it under `plugins/*/skills/` and stops if the name matches zero or several.
 - `<eval-ids>` is `all`, or a comma list whose items are single IDs or inclusive ranges (`0-4`), e.g. `1,3-5,9`. A single ID must exist in the suite; a range selects the existing IDs within its bounds and must match at least one. Otherwise the runner stops before running anything.
 - `<model>` is an OpenRouter model ID (`z-ai/glm-5.3-flash`).
 - `--runs N` (default 1) runs each eval N times, for noise studies and capability-flag evidence (which needs at least 10 runs per model configuration).
+- `--variant NAME` passes NAME through to the harness's own `--variant` option, which selects the provider's reasoning effort for the model (for example `high`, or `minimal`). Omitted, the harness uses the model's default. The runner does not validate NAME; the harness and provider decide which values a model accepts. The variant is part of what was tested, so `batch.json` records it and the batch directory name carries it.
 
 Runs are sequential. On completion the runner prints one line per run (eval, run number, status, cost) and the batch directory.
 
@@ -164,7 +165,7 @@ The runner does not grade. A frontier-model session grades each `completed` run 
 
 The pass rate is computed over `completed` runs only; `timeout` runs are reported beside it as a count; `harness_error` and `interrupted` runs appear in neither.
 
-Graded results are recorded in the suite's `tested_with` list like any other run. Each entry names the exact OpenRouter model ID and the harness (`"harness": "opencode-ai@<version>"`). The field's schema belongs to the `linked-intent-dev` sub-HLD, which defines `tested_with`. A batch is recordable when:
+Graded results are recorded in the suite's `tested_with` list like any other run. Each entry names the exact OpenRouter model ID and the harness (`"harness": "opencode-ai@<version>"`), plus the variant (`"variant": "<name>"`) when the batch ran with one, since a model at a different reasoning effort is a different configuration. The field's schema belongs to the `linked-intent-dev` sub-HLD, which defines `tested_with`. A batch is recordable when:
 
 - it has at least one `completed` run, and
 - its `plugins/` tree ID is the `plugins/` tree of some commit in history (`git rev-parse <commit>:plugins`).

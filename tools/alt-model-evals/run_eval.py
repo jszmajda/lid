@@ -109,10 +109,11 @@ def opencode_config():
     }
 
 
-# @spec ALT-EVAL-BOX-001
-def harness_argv(model, prompt):
-    return ["opencode", "run", "--pure", "--auto", "--format", "json",
-            "-m", "openrouter/" + model, prompt]
+# @spec ALT-EVAL-BOX-001, ALT-EVAL-CLI-011
+def harness_argv(model, prompt, variant=None):
+    return (["opencode", "run", "--pure", "--auto", "--format", "json",
+             "-m", "openrouter/" + model]
+            + (["--variant", variant] if variant else []) + [prompt])
 
 
 # @spec ALT-EVAL-STAGE-008, ALT-EVAL-STAGE-009
@@ -382,7 +383,7 @@ def hardening_argv(scratch):
 
 
 # @spec ALT-EVAL-BOX-005, ALT-EVAL-BOX-007, ALT-EVAL-BOX-008, ALT-EVAL-BOX-012, ALT-EVAL-KEY-003
-def docker_run_argv(name, image, scratch, model, prompt):
+def docker_run_argv(name, image, scratch, model, prompt, variant=None):
     return [
         "docker", "run", "--rm", "--name", name,
         "-v", "%s:/work/project" % (scratch / "project"),
@@ -399,7 +400,7 @@ def docker_run_argv(name, image, scratch, model, prompt):
         "-e", "GIT_COMMITTER_EMAIL=%s" % GIT_EMAIL,
         "-e", "LANG=C.UTF-8",
         image,
-    ] + harness_argv(model, prompt)
+    ] + harness_argv(model, prompt, variant)
 
 
 # @spec ALT-EVAL-BOX-014
@@ -591,12 +592,12 @@ def run_one(ctx, ev, n, run_dir):
         with open(out / "events.jsonl", "wb") as stdout, open(out / "stderr.log", "wb") as stderr:
             if ctx["bare"]:
                 home = Path(tempfile.mkdtemp(prefix="lid-alt-eval-home-"))
-                argv = ["npx", "-y", HARNESS] + harness_argv(ctx["model"], prompt)[1:]
+                argv = ["npx", "-y", HARNESS] + harness_argv(ctx["model"], prompt, ctx["variant"])[1:]
                 harness = Harness(argv, stdout, stderr, cwd=str(scratch / "project"),
                                   env=bare_env(ctx["key"], home, scratch / "opencode.json"))
             else:
                 name = "lid-alt-eval-" + secrets.token_hex(6)
-                argv = docker_run_argv(name, ctx["image"], scratch, ctx["model"], prompt)
+                argv = docker_run_argv(name, ctx["image"], scratch, ctx["model"], prompt, ctx["variant"])
                 harness = Harness(argv, stdout, stderr, container=name)
             started = harness.started
             timed_out = False
@@ -678,6 +679,9 @@ def parse_args(argv):
     p.add_argument("--runs", type=positive, default=1, help="runs per eval (default 1)")
     p.add_argument("--timeout", type=positive, default=DEFAULT_TIMEOUT,
                    help="per-run limit on the harness, in seconds (default %d)" % DEFAULT_TIMEOUT)
+    p.add_argument("--variant", default=None,
+                   help="reasoning-effort variant passed through to the harness's --variant, "
+                        "e.g. high or minimal (default: the model's own)")
     p.add_argument("--no-container", action="store_true",
                    help="run the harness directly on this machine, without a sandbox")
     return p.parse_args(argv)
@@ -709,13 +713,16 @@ def main(argv):
 
     date = datetime.date.today().isoformat()
     workspace = skill_dir.parent / (skill_dir.name + "-workspace")
-    batch_dir = claim_batch_dir(workspace, date, sanitize(args.model))
+    # @spec ALT-EVAL-OUT-014
+    slug = sanitize(args.model) + ("-" + sanitize(args.variant) if args.variant else "")
+    batch_dir = claim_batch_dir(workspace, date, slug)
     head, head_tree = head_info(REPO_ROOT)
     tree = plugins_tree(REPO_ROOT)
     batch = {
         "skill": args.skill,
         "eval_ids": eval_ids,
         "model": args.model,
+        "variant": args.variant,
         "harness": HARNESS,
         "sandbox": "none" if args.no_container else "container",
         "timeout": args.timeout,
@@ -727,7 +734,7 @@ def main(argv):
     }
     write_json(batch_dir / "batch.json", batch)
 
-    ctx = {"key": key, "model": args.model, "skill_dir": skill_dir, "date": date,
+    ctx = {"key": key, "model": args.model, "variant": args.variant, "skill_dir": skill_dir, "date": date,
            "timeout": args.timeout, "bare": args.no_container, "image": image}
     results, consecutive_errors, state = [], 0, "complete"
     try:

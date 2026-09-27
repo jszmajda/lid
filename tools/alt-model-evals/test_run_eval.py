@@ -215,6 +215,15 @@ class PureFunctionTests(unittest.TestCase):
             ["opencode", "run", "--pure", "--auto", "--format", "json",
              "-m", "openrouter/z-ai/glm-5.3-flash", "do $(rm -rf /) `x`"])
 
+    # @spec ALT-EVAL-CLI-011
+    def test_harness_argv_variant(self):
+        self.assertEqual(
+            run_eval.harness_argv("z-ai/glm-5.3", "p", variant="high"),
+            ["opencode", "run", "--pure", "--auto", "--format", "json",
+             "-m", "openrouter/z-ai/glm-5.3", "--variant", "high", "p"])
+        self.assertEqual(run_eval.harness_argv("z-ai/glm-5.3", "p", variant=None),
+                         run_eval.harness_argv("z-ai/glm-5.3", "p"))
+
     # @spec ALT-EVAL-BOX-002
     def test_single_harness_version_constant(self):
         self.assertEqual(run_eval.HARNESS, "opencode-ai@" + run_eval.HARNESS_VERSION)
@@ -361,6 +370,26 @@ class CliTests(RepoTest):
             self.assertIn(str(n), line)
             self.assertIn("0.75", line)
         self.assertIn(str(self.repo.batch()), res.stdout)
+
+    # @spec ALT-EVAL-CLI-011, ALT-EVAL-OUT-014
+    def test_variant_passed_and_recorded(self):
+        self.ok_run("demo-skill", "1", "m/x", "--runs", "2", "--variant", "minimal")
+        harness_calls = [c for c in self.repo.calls("docker-run") if c["cmd"][:1] == ["opencode"]]
+        self.assertEqual(len(harness_calls), 2)
+        for call in harness_calls:
+            i = call["cmd"].index("--variant")
+            self.assertEqual(call["cmd"][i + 1], "minimal")
+        b = self.repo.batch()
+        self.assertTrue(b.name.endswith("-m_x-minimal"), b.name)
+        self.assertEqual(json.loads((b / "batch.json").read_text())["variant"], "minimal")
+
+    # @spec ALT-EVAL-CLI-011, ALT-EVAL-OUT-014
+    def test_no_variant_by_default(self):
+        self.ok_run("demo-skill", "1", "m/x")
+        self.assertNotIn("--variant", self.repo.calls("docker-run")[0]["cmd"])
+        b = self.repo.batch()
+        self.assertTrue(b.name.endswith("-m_x"), b.name)
+        self.assertIsNone(json.loads((b / "batch.json").read_text())["variant"])
 
     # @spec ALT-EVAL-CLI-010
     def test_runs_from_any_directory(self):
