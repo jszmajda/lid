@@ -1,7 +1,9 @@
 .DS_Store
 
-# Local Claude Code session data
-.claude/
+# Local Claude Code session data, worktrees, and each contributor's
+# settings.local.json. The shared .claude/settings.json is tracked.
+/.claude/*
+!/.claude/settings.json
 
 # Playwright review artifacts
 .playwright-mcp/

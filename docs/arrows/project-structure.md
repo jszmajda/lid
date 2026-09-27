@@ -4,7 +4,7 @@ The repo-meta segment — owns the artifacts that describe the project itself ra
 
 ## Status
 
-**AUDITED** — last audited 2026-06-07 (git SHA `527cf08c9150`). 58 of 61 active specs implemented; the 3 active gaps are build-time structural checks (`PROJ-STRUCT-039`–`041`) deferred until CI scope is decided.
+**AUDITED** — last audited 2026-06-07 (git SHA `527cf08c9150`). 65 of 68 active specs implemented; the 3 active gaps are build-time structural checks (`PROJ-STRUCT-039`–`041`) deferred until CI scope is decided.
 
 ## References
 
@@ -51,24 +51,25 @@ The repo-meta segment — owns the artifacts that describe the project itself ra
 | Category (per LLD groupings) | Implemented | Active gap | Deferred |
 |---|---|---|---|
 | CONTRIBUTING.md (audience, trivial, out-of-scope, variants, gate, mechanics) | 17 `[x]` | 0 | 0 |
-| AGENTS.md / CLAUDE.md | 5 `[x]` | 0 | 0 |
+| AGENTS.md / CLAUDE.md (incl. `tools/` description `-068`) | 6 `[x]` | 0 | 0 |
 | docs/setup.md (incl. first-class plugin hosts, `-062`) | 5 `[x]` | 0 | 0 |
 | .claude-plugin/marketplace.json | 3 `[x]` | 0 | 0 |
 | .cursor-plugin manifests (`-056`–`-058`, `-060`) | 4 `[x]` | 0 | 0 |
 | Repo-root file pointers (README `-031`, EXTENSIONS `-055`, CONTRIBUTING links `-032`) | 3 `[x]` | 0 | 0 |
-| .gitignore (`-059`) | 1 `[x]` | 0 | 0 |
+| .gitignore (`-059`, `.claude/` exception `-067`) | 2 `[x]` | 0 | 0 |
+| .claude/settings.json (`-064`–`-066`) | 3 `[x]` | 0 | 0 |
 | LICENSE | 1 `[x]` | 0 | 0 |
 | CODE_OF_CONDUCT.md (`-047`) | 1 `[x]` | 0 | 0 |
 | SECURITY.md (`-048`, `-049`) | 2 `[x]` | 0 | 0 |
 | CITATION.cff (`-050`) | 1 `[x]` | 0 | 0 |
 | .github/ contribution templates (`-051`–`-053`) | 3 `[x]` | 0 | 0 |
 | CHANGELOG.md (incl. release ritual `-054`, No-Version policy `-061`) | 6 `[x]` | 0 | 0 |
-| Cascade obligations | 5 `[x]` | 0 | 0 |
+| Cascade obligations (incl. runner allow rule `-069`) | 6 `[x]` | 0 | 0 |
 | Build-time checks | 0 | 3 `[ ]` | 0 |
 | Arrow registration | 1 `[x]` | 0 | 0 |
-| **Total** | **58** | **3** | **0** |
+| **Total** (recounted from the spec file) | **65** | **3** | **0** |
 
-**Summary:** 58 of 61 active specs implemented; 3 active gaps (build-time structural checks `PROJ-STRUCT-039`–`041`, deferred until a CI workflow lands). `PROJ-STRUCT-014` was retired (redundant with the revised `-018`). The segment grew this cycle by three independent bodies of work: community-health artifacts (`047`–`053`), the release-publication ritual + No-Version-Update policy (`054`, `061`), and Cursor first-class plugin-host support (`056`–`060`, `062`) — the Cursor specs were renumbered from `047`–`053` to `056`–`062` to resolve a merge-time ID collision with the community-health specs.
+**Summary:** 65 of 68 active specs implemented (`064`–`069` added for the shared `.claude/settings.json`, its `.gitignore` exception, and `AGENTS.md`'s `tools/` description, as a cascade from `alt-model-evals`); 3 active gaps (build-time structural checks `PROJ-STRUCT-039`–`041`, deferred until a CI workflow lands). `PROJ-STRUCT-014` was retired (redundant with the revised `-018`). The segment grew this cycle by three independent bodies of work: community-health artifacts (`047`–`053`), the release-publication ritual + No-Version-Update policy (`054`, `061`), and Cursor first-class plugin-host support (`056`–`060`, `062`) — the Cursor specs were renumbered from `047`–`053` to `056`–`062` to resolve a merge-time ID collision with the community-health specs.
 
 ## Key Findings
 
