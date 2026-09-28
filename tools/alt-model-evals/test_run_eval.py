@@ -202,8 +202,9 @@ class PureFunctionTests(unittest.TestCase):
 
     # @spec ALT-EVAL-STAGE-007
     def test_opencode_config(self):
-        cfg = run_eval.opencode_config()
-        self.assertEqual(sorted(cfg), ["autoupdate", "provider", "share"])
+        cfg = run_eval.opencode_config("/work/plugins")
+        self.assertEqual(sorted(cfg), ["autoupdate", "provider", "share", "skills"])
+        self.assertEqual(cfg["skills"], {"paths": ["/work/plugins"]})
         self.assertIs(cfg["autoupdate"], False)
         self.assertEqual(cfg["share"], "disabled")
         self.assertEqual(cfg["provider"], {"openrouter": {"options": {"apiKey": "{env:OPENROUTER_API_KEY}"}}})
@@ -232,9 +233,10 @@ class PureFunctionTests(unittest.TestCase):
 
     # @spec ALT-EVAL-STAGE-008, ALT-EVAL-STAGE-009
     def test_prompt_template(self):
-        prompt = run_eval.build_prompt("/work/plugins/p/skills/s/SKILL.md", "/work/plugins",
+        prompt = run_eval.build_prompt("my-skill", "/work/plugins",
                                        "Run /thing on this.", "2026-09-26")
-        parts = ["one eval run of an agent skill", "/work/plugins/p/skills/s/SKILL.md",
+        self.assertNotIn("SKILL.md", prompt)
+        parts = ["one eval run of an agent skill", "skill named `my-skill`", "skill tool",
                  "/work/plugins", '"Run /thing on this."', "non-interactive",
                  "final response which defaults", "2026-09-26", "exact user-facing response"]
         positions = [prompt.find(p) for p in parts]
@@ -494,16 +496,24 @@ class StagingTests(RepoTest):
     def test_config_file(self):
         self.ok_run("demo-skill", "1", "m/x")
         cfg = json.loads(self.repo.calls("harness")[0]["config"])
-        self.assertEqual(cfg, run_eval.opencode_config())
+        self.assertEqual(cfg, run_eval.opencode_config("/work/plugins"))
 
     # @spec ALT-EVAL-STAGE-008, ALT-EVAL-STAGE-009
     def test_prompt_sent(self):
         self.ok_run("demo-skill", "4242", "m/x")
         prompt = self.repo.calls("harness")[0]["argv"][-1]
         self.assertIn('"Handle the special case."', prompt)
-        self.assertIn("/work/plugins/demo-plugin/skills/demo-skill/SKILL.md", prompt)
+        self.assertIn("skill named `demo-skill`", prompt)
+        self.assertNotIn("SKILL.md", prompt)
         for leak in ("4242", "secret-name-flagged", "ASSERTION-SECRET-TEXT"):
             self.assertNotIn(leak, prompt)
+
+    # @spec ALT-EVAL-STAGE-008
+    def test_prompt_uses_frontmatter_name(self):
+        write(self.repo.root / "plugins/demo-plugin/skills/demo-skill/SKILL.md",
+              "---\nname: demo-renamed\ndescription: d\n---\n# Demo skill\n")
+        self.ok_run("demo-skill", "1", "m/x")
+        self.assertIn("skill named `demo-renamed`", self.repo.calls("harness")[0]["argv"][-1])
 
     # @spec ALT-EVAL-STAGE-011, ALT-EVAL-OUT-011
     def test_plugins_tree_id(self):
@@ -718,10 +728,11 @@ class NoContainerTests(RepoTest):
         self.assertEqual(env["npm_config_cache"], str(self.repo.home / ".npm"))
         self.assertFalse(Path(env["HOME"]).exists())
         prompt = h["argv"][-1]
-        skill_path = re.search(r"Read the skill at (\S+SKILL\.md)", prompt).group(1)
-        self.assertEqual(os.path.realpath(os.path.dirname(skill_path)),
-                         os.path.realpath(scratch / "plugins" / "demo-plugin/skills/demo-skill"))
+        self.assertIn("skill named `demo-skill`", prompt)
         self.assertNotIn("/work/plugins", prompt)
+        cfg = json.loads(h["config"])
+        self.assertEqual([os.path.realpath(p) for p in cfg["skills"]["paths"]],
+                         [os.path.realpath(scratch / "plugins")])
         batch = json.loads((self.repo.batch() / "batch.json").read_text())
         self.assertEqual(batch["sandbox"], "none")
 

@@ -101,11 +101,13 @@ def sanitize(text):
 
 
 # @spec ALT-EVAL-STAGE-007
-def opencode_config():
+def opencode_config(plugins_dir):
     return {
         "autoupdate": False,
         "share": "disabled",
         "provider": {"openrouter": {"options": {"apiKey": "{env:OPENROUTER_API_KEY}"}}},
+        # The harness's own skill tool delivers SKILL.md whole; its file-read tool cuts long lines.
+        "skills": {"paths": [plugins_dir]},
     }
 
 
@@ -116,13 +118,26 @@ def harness_argv(model, prompt, variant=None):
             + (["--variant", variant] if variant else []) + [prompt])
 
 
+# @spec ALT-EVAL-STAGE-008
+def skill_name(skill_dir):
+    """The frontmatter `name` of the skill's SKILL.md, else its directory name."""
+    text = (skill_dir / "SKILL.md").read_text()
+    if text.startswith("---\n"):
+        for line in text[4:].split("\n---", 1)[0].splitlines():
+            key, _, value = line.partition(":")
+            if key.strip() == "name" and value.strip():
+                return value.strip().strip("'\"")
+    return skill_dir.name
+
+
 # @spec ALT-EVAL-STAGE-008, ALT-EVAL-STAGE-009
-def build_prompt(skill_md, plugins_dir, prompt, date):
+def build_prompt(name, plugins_dir, prompt, date):
     return (
         "You are executing one eval run of an agent skill. The current directory is the "
         "project root; treat it as the entire repository.\n"
         "\n"
-        "1. Read the skill at %s and any references/ files it directs you to. "
+        "1. Load the skill named `%s` with your skill tool, and read any references/ files it "
+        "directs you to. "
         "Sibling skills live under %s.\n"
         "2. The user's request: \"%s\"\n"
         "   Execute it per the skill against the current directory, making any file changes yourself.\n"
@@ -130,7 +145,7 @@ def build_prompt(skill_md, plugins_dir, prompt, date):
         "stated default, and state in your final response which defaults you took. "
         "Today's date is %s.\n"
         "4. Your final message must be the exact user-facing response and nothing else.\n"
-    ) % (skill_md, plugins_dir, prompt, date)
+    ) % (name, plugins_dir, prompt, date)
 
 
 # @spec ALT-EVAL-RUN-001, ALT-EVAL-RUN-002, ALT-EVAL-RUN-003, ALT-EVAL-RUN-004
@@ -581,13 +596,10 @@ def run_one(ctx, ev, n, run_dir):
     try:
         fixture_sha = stage_fixture(ev.get("files", []), scratch / "project")
         stage_plugins(REPO_ROOT, scratch / "plugins")
-        (scratch / "opencode.json").write_text(json.dumps(opencode_config(), indent=2) + "\n")
-
-        rel_skill = ctx["skill_dir"].relative_to(REPO_ROOT / "plugins")
         # @spec ALT-EVAL-BOX-015
         plugins_dir = str(scratch / "plugins") if ctx["bare"] else "/work/plugins"
-        prompt = build_prompt("%s/%s/SKILL.md" % (plugins_dir, rel_skill.as_posix()), plugins_dir,
-                              ev["prompt"], ctx["date"])
+        (scratch / "opencode.json").write_text(json.dumps(opencode_config(plugins_dir), indent=2) + "\n")
+        prompt = build_prompt(skill_name(ctx["skill_dir"]), plugins_dir, ev["prompt"], ctx["date"])
 
         with open(out / "events.jsonl", "wb") as stdout, open(out / "stderr.log", "wb") as stderr:
             if ctx["bare"]:
