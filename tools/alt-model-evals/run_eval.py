@@ -112,6 +112,8 @@ def opencode_config(plugins_dir, model, effort):
     return {
         "autoupdate": False,
         "share": "disabled",
+        # The title agent calls a second "small model"; a headless run has no use for a title.
+        "agent": {"title": {"disable": True}},
         "provider": {"openrouter": openrouter},
         # The harness's own skill tool delivers SKILL.md whole; its file-read tool cuts long lines.
         "skills": {"paths": [plugins_dir]},

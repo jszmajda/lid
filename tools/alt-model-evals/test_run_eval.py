@@ -204,7 +204,8 @@ class PureFunctionTests(unittest.TestCase):
     # @spec ALT-EVAL-STAGE-007
     def test_opencode_config(self):
         cfg = run_eval.opencode_config("/work/plugins", "z-ai/glm-5.3", "medium")
-        self.assertEqual(sorted(cfg), ["autoupdate", "provider", "share", "skills"])
+        self.assertEqual(sorted(cfg), ["agent", "autoupdate", "provider", "share", "skills"])
+        self.assertEqual(cfg["agent"], {"title": {"disable": True}})
         self.assertEqual(cfg["provider"]["openrouter"]["models"],
                          {"z-ai/glm-5.3": {"options": {"reasoning": {"effort": "medium"}}}})
         bare = run_eval.opencode_config("/work/plugins", "z-ai/glm-5.3", "default")
