@@ -137,7 +137,9 @@ def harness(project, plugins, config_path, argv, pidfile):
     sys.stderr.write("debug: key is %s\n" % key)
 
     if mode != "nocost":
-        emit({"type": "step_finish", "part": {"cost": 0.25, "tokens": {"input": 10, "output": 5, "cache": {"read": 3, "write": 0}}}})
+        rpath = os.path.join(STATE, "reasoning")
+        reasoning = int(open(rpath).read()) if os.path.exists(rpath) else 0
+        emit({"type": "step_finish", "part": {"cost": 0.25, "tokens": {"input": 10, "output": 5, "reasoning": reasoning, "cache": {"read": 3, "write": 0}}}})
         emit({"type": "step_finish", "part": {"cost": 0.5, "tokens": {"input": 1, "output": 2, "cache": {"read": 0, "write": 1}}}})
     if mode == "plant":
         # Last act: a model trying to get code executed by whoever runs git here next.

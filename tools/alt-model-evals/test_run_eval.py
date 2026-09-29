@@ -99,6 +99,7 @@ class FakeRepo:
         self.workspace = p / "skills/demo-skill-workspace"
 
     STUB_SETTINGS = {"STUB_MODE": "mode", "STUB_DOCKER_INFO_FAIL": "docker-info-fail",
+                     "STUB_REASONING": "reasoning",
                      "STUB_BUILD_SLEEP": "build-sleep", "STUB_MEM_TOTAL": "mem-total"}
 
     def env(self, **extra):
@@ -202,12 +203,16 @@ class PureFunctionTests(unittest.TestCase):
 
     # @spec ALT-EVAL-STAGE-007
     def test_opencode_config(self):
-        cfg = run_eval.opencode_config("/work/plugins")
+        cfg = run_eval.opencode_config("/work/plugins", "z-ai/glm-5.3", "medium")
         self.assertEqual(sorted(cfg), ["autoupdate", "provider", "share", "skills"])
+        self.assertEqual(cfg["provider"]["openrouter"]["models"],
+                         {"z-ai/glm-5.3": {"options": {"reasoning": {"effort": "medium"}}}})
+        bare = run_eval.opencode_config("/work/plugins", "z-ai/glm-5.3", "default")
+        self.assertNotIn("models", bare["provider"]["openrouter"])
         self.assertEqual(cfg["skills"], {"paths": ["/work/plugins"]})
         self.assertIs(cfg["autoupdate"], False)
         self.assertEqual(cfg["share"], "disabled")
-        self.assertEqual(cfg["provider"], {"openrouter": {"options": {"apiKey": "{env:OPENROUTER_API_KEY}"}}})
+        self.assertEqual(bare["provider"], {"openrouter": {"options": {"apiKey": "{env:OPENROUTER_API_KEY}"}}})
 
     # @spec ALT-EVAL-BOX-001
     def test_harness_argv(self):
@@ -393,6 +398,45 @@ class CliTests(RepoTest):
         self.assertTrue(b.name.endswith("-m_x"), b.name)
         self.assertIsNone(json.loads((b / "batch.json").read_text())["variant"])
 
+    # @spec ALT-EVAL-CLI-012, ALT-EVAL-OUT-014
+    def test_effort_default_is_medium(self):
+        self.ok_run("demo-skill", "1", "m/x", STUB_REASONING="900")
+        cfg = json.loads(self.repo.calls("harness")[0]["config"])
+        self.assertEqual(cfg["provider"]["openrouter"]["models"]["m/x"]["options"]["reasoning"],
+                         {"effort": "medium"})
+        b = self.repo.batch()
+        self.assertTrue(b.name.endswith("-m_x"), b.name)
+        self.assertEqual(json.loads((b / "batch.json").read_text())["effort"], "medium")
+
+    # @spec ALT-EVAL-CLI-012, ALT-EVAL-OUT-014
+    def test_effort_level_and_default_keyword(self):
+        self.ok_run("demo-skill", "1", "m/x", "--effort", "high", STUB_REASONING="900")
+        cfg = json.loads(self.repo.calls("harness")[0]["config"])
+        self.assertEqual(cfg["provider"]["openrouter"]["models"]["m/x"]["options"]["reasoning"],
+                         {"effort": "high"})
+        self.assertTrue(self.repo.batch().name.endswith("-m_x-high"))
+        shutil.rmtree(self.repo.workspace)
+        (self.repo.state / "calls.jsonl").unlink()
+        self.ok_run("demo-skill", "1", "m/x", "--effort", "default")
+        cfg = json.loads(self.repo.calls("harness")[0]["config"])
+        self.assertNotIn("models", cfg["provider"]["openrouter"])
+        b = self.repo.batch()
+        self.assertTrue(b.name.endswith("-m_x-default"), b.name)
+        self.assertEqual(json.loads((b / "batch.json").read_text())["effort"], "default")
+
+    # @spec ALT-EVAL-OUT-015
+    def test_reasoning_report_and_warning(self):
+        res = self.ok_run("demo-skill", "1", "m/x", "--runs", "2")
+        self.assertIn("median reasoning tokens: 0", res.stdout)
+        self.assertIn("WARNING", res.stdout + res.stderr)
+        shutil.rmtree(self.repo.workspace)
+        res = self.ok_run("demo-skill", "1", "m/x", STUB_REASONING="900")
+        self.assertIn("median reasoning tokens: 900", res.stdout)
+        self.assertNotIn("WARNING", res.stdout + res.stderr)
+        shutil.rmtree(self.repo.workspace)
+        res = self.ok_run("demo-skill", "1", "m/x", "--effort", "default")
+        self.assertNotIn("WARNING", res.stdout + res.stderr)
+
     # @spec ALT-EVAL-CLI-010
     def test_runs_from_any_directory(self):
         res = self.repo.run("demo-skill", "1", "m/x", cwd=self.repo.tmp)
@@ -496,7 +540,7 @@ class StagingTests(RepoTest):
     def test_config_file(self):
         self.ok_run("demo-skill", "1", "m/x")
         cfg = json.loads(self.repo.calls("harness")[0]["config"])
-        self.assertEqual(cfg, run_eval.opencode_config("/work/plugins"))
+        self.assertEqual(cfg, run_eval.opencode_config("/work/plugins", "m/x", "medium"))
 
     # @spec ALT-EVAL-STAGE-008, ALT-EVAL-STAGE-009
     def test_prompt_sent(self):
@@ -895,7 +939,7 @@ class OutputTests(RepoTest):
                                   "tokens", "tool_calls", "exit_code", "error_message"})
         self.assertEqual(t["model"], "m/x")
         self.assertAlmostEqual(t["total_cost_usd"], 0.75)
-        self.assertEqual(t["tokens"], {"input": 11, "output": 7, "cache": {"read": 3, "write": 1}})
+        self.assertEqual(t["tokens"], {"input": 11, "output": 7, "reasoning": 0, "cache": {"read": 3, "write": 1}})
         self.assertEqual(t["tool_calls"], 1)
         self.assertEqual(t["exit_code"], 0)
         self.assertIsInstance(t["duration_ms"], int)

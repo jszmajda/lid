@@ -32,6 +32,8 @@ from pathlib import Path
 
 HARNESS_VERSION = "1.18.32"
 HARNESS = "opencode-ai@" + HARNESS_VERSION
+DEFAULT_EFFORT = "medium"
+REASONING_WARN_BELOW = 500
 
 # @spec ALT-EVAL-CLI-010
 RUNNER_DIR = Path(__file__).resolve().parent
@@ -101,11 +103,16 @@ def sanitize(text):
 
 
 # @spec ALT-EVAL-STAGE-007
-def opencode_config(plugins_dir):
+# @spec ALT-EVAL-CLI-012
+def opencode_config(plugins_dir, model, effort):
+    openrouter = {"options": {"apiKey": "{env:OPENROUTER_API_KEY}"}}
+    if effort != "default":
+        # Pinned as the model's own option: opencode's variant tables skip some model families.
+        openrouter["models"] = {model: {"options": {"reasoning": {"effort": effort}}}}
     return {
         "autoupdate": False,
         "share": "disabled",
-        "provider": {"openrouter": {"options": {"apiKey": "{env:OPENROUTER_API_KEY}"}}},
+        "provider": {"openrouter": openrouter},
         # The harness's own skill tool delivers SKILL.md whole; its file-read tool cuts long lines.
         "skills": {"paths": [plugins_dir]},
     }
@@ -598,7 +605,7 @@ def run_one(ctx, ev, n, run_dir):
         stage_plugins(REPO_ROOT, scratch / "plugins")
         # @spec ALT-EVAL-BOX-015
         plugins_dir = str(scratch / "plugins") if ctx["bare"] else "/work/plugins"
-        (scratch / "opencode.json").write_text(json.dumps(opencode_config(plugins_dir), indent=2) + "\n")
+        (scratch / "opencode.json").write_text(json.dumps(opencode_config(plugins_dir, ctx["model"], ctx["effort"]), indent=2) + "\n")
         prompt = build_prompt(skill_name(ctx["skill_dir"]), plugins_dir, ev["prompt"], ctx["date"])
 
         with open(out / "events.jsonl", "wb") as stdout, open(out / "stderr.log", "wb") as stderr:
@@ -691,6 +698,9 @@ def parse_args(argv):
     p.add_argument("--runs", type=positive, default=1, help="runs per eval (default 1)")
     p.add_argument("--timeout", type=positive, default=DEFAULT_TIMEOUT,
                    help="per-run limit on the harness, in seconds (default %d)" % DEFAULT_TIMEOUT)
+    p.add_argument("--effort", default=DEFAULT_EFFORT,
+                   help="reasoning effort pinned for the model, e.g. low, medium, high, max; "
+                        "'default' leaves the model's own default (default: %s)" % DEFAULT_EFFORT)
     p.add_argument("--variant", default=None,
                    help="reasoning-effort variant passed through to the harness's --variant, "
                         "e.g. high or minimal (default: the model's own)")
@@ -726,7 +736,9 @@ def main(argv):
     date = datetime.date.today().isoformat()
     workspace = skill_dir.parent / (skill_dir.name + "-workspace")
     # @spec ALT-EVAL-OUT-014
-    slug = sanitize(args.model) + ("-" + sanitize(args.variant) if args.variant else "")
+    slug = (sanitize(args.model)
+            + ("-" + sanitize(args.effort) if args.effort != DEFAULT_EFFORT else "")
+            + ("-" + sanitize(args.variant) if args.variant else ""))
     batch_dir = claim_batch_dir(workspace, date, slug)
     head, head_tree = head_info(REPO_ROOT)
     tree = plugins_tree(REPO_ROOT)
@@ -734,6 +746,7 @@ def main(argv):
         "skill": args.skill,
         "eval_ids": eval_ids,
         "model": args.model,
+        "effort": args.effort,
         "variant": args.variant,
         "harness": HARNESS,
         "sandbox": "none" if args.no_container else "container",
@@ -746,7 +759,7 @@ def main(argv):
     }
     write_json(batch_dir / "batch.json", batch)
 
-    ctx = {"key": key, "model": args.model, "variant": args.variant, "skill_dir": skill_dir, "date": date,
+    ctx = {"key": key, "model": args.model, "effort": args.effort, "variant": args.variant, "skill_dir": skill_dir, "date": date,
            "timeout": args.timeout, "bare": args.no_container, "image": image}
     results, consecutive_errors, state = [], 0, "complete"
     try:
@@ -761,7 +774,8 @@ def main(argv):
                     "prompt": ev["prompt"], "assertions": ev["assertions"]})
             for n in range(1, args.runs + 1):
                 status, timing = run_one(ctx, ev, n, eval_dir / "with_skill" / ("run-%d" % n))
-                results.append((eval_id, n, status, timing["total_cost_usd"]))
+                results.append((eval_id, n, status, timing["total_cost_usd"],
+                                (timing.get("tokens") or {}).get("reasoning", 0) or 0))
                 consecutive_errors = consecutive_errors + 1 if status == "harness_error" else 0
                 if consecutive_errors >= 2:
                     state = "aborted"
@@ -771,7 +785,7 @@ def main(argv):
         pass
     except Interrupted:
         state = "aborted"
-        results.append((eval_id, n, "interrupted", None))
+        results.append((eval_id, n, "interrupted", None, None))
     except BaseException:
         state = "aborted"
         raise
@@ -779,9 +793,19 @@ def main(argv):
         batch["state"] = state
         write_json(batch_dir / "batch.json", batch)
 
-    for eval_id, n, status, cost in results:
+    for eval_id, n, status, cost, _ in results:
         print("eval %s run %d: %s  cost %s" % (
             eval_id, n, status, "n/a" if cost is None else "$%.4f" % cost))
+    # @spec ALT-EVAL-OUT-015
+    reasoning = sorted(r for _, _, status, _, r in results if status == "completed")
+    if reasoning:
+        mid = len(reasoning) // 2
+        median = reasoning[mid] if len(reasoning) % 2 else (reasoning[mid - 1] + reasoning[mid]) / 2
+        print("median reasoning tokens: %g" % median)
+        if args.effort != "default" and median < REASONING_WARN_BELOW:
+            print("WARNING: effort %r was requested but the model barely reasoned (median %g "
+                  "reasoning tokens, under %d); the provider may be ignoring the setting."
+                  % (args.effort, median, REASONING_WARN_BELOW))
     print("batch: %s" % batch_dir)
     if state == "aborted":
         return 130 if results and results[-1][2] == "interrupted" else 1

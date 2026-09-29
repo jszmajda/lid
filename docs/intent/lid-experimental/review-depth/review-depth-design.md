@@ -20,7 +20,7 @@ The declaration is **user-authored prose**, not LID-written configuration. LID d
 > Review depth: I review through LLD; below that, consolidate to one review.
 > Judgment areas: naming and API shapes; anything touching auth.
 
-Depth values follow the phases: *through HLD*, *through LLD*, *through EARS*, *through tests* — "through X" means phases at or above X stop per-phase; deeper phases consolidate. **Judgment areas** name the kinds of judgment the human wants routed to them immediately regardless of depth — specification forks of the kinds they list, plus any area the core's capability-flag list (`linked-intent-dev` `references/capability-flags.md`) flags for the executing model's class. A capability-flagged area is a judgment area without the user declaring it.
+Depth values follow the phases: *through HLD*, *through LLD*, *through EARS*, *through tests* — "through X" means phases at or above X stop per-phase; deeper phases consolidate. **Judgment areas** name the kinds of judgment the human wants routed to them immediately regardless of depth — specification forks of the kinds they list, plus any area the core's capability-flag list (`linked-intent-dev` `references/capability-flags.md`) flags for the executing model's configuration. A capability-flagged area is a judgment area without the user declaring it.
 
 This keeps the core decision (`docs/decisions/inspection-instrument-selection.md`) fully intact: LID still writes no inspection configuration anywhere; the user's own prose is the declaration, exactly as that decision anticipated for standing preferences.
 
@@ -36,7 +36,7 @@ This keeps the core decision (`docs/decisions/inspection-instrument-selection.md
 Specification forks — a spec or draft admitting more than one reading (LID-CORE-050 territory) — are latent-intent questions only the human can answer. Depth changes when the human *reviews*; it never changes who resolves a fork.
 
 - **In a declared judgment area → interrupt immediately**, whatever the depth.
-- **Capability-flagged work → interrupt immediately**, whatever the depth, even when no fork is involved: when a phase's work touches an area flagged for the executing model's class, the agent stops, names the area and what to check, and resumes consolidation after the user rules.
+- **Capability-flagged work → interrupt immediately**, whatever the depth, even when no fork is involved: when a phase's work touches an area flagged for the executing model's configuration, the agent stops, names the area and what to check, and resumes consolidation after the user rules.
 - **Outside judgment areas → park, never resolve.** The fork is written to the **fork log at detection, before work routes around it** — externalized so retention never depends on the model holding state across the change. An entry is lean: the spec line, the divergent readings, area classification, status.
 - **Dependency rule:** no tests or code land against a spec whose fork is unresolved; the agent does the independent work first.
 - **Critical-path escape:** a fork that blocks all remaining work interrupts immediately regardless of classification.

@@ -140,25 +140,30 @@ plugins/<plugin>/skills/<skill>-workspace/alt-model-<YYYY-MM-DD>-<model-slug>/
 
 `timing.json` records: `model` (the OpenRouter ID), `harness` (`opencode-ai@<version>`), `status`, `duration_ms`, `total_cost_usd` and token counts summed from the event stream (`null` when the stream carries none), the number of tool calls, `exit_code`, and `error_message`.
 
-`batch.json` records the skill, eval IDs, model, variant, harness, sandbox mode (`container` or `none`), timeout, run count, the repository's `HEAD` commit, the **git tree ID of `plugins/` as staged**, whether that tree matches `HEAD`'s, and the batch state (`running`, then `complete` or `aborted`).
+`batch.json` records the skill, eval IDs, model, effort, variant, harness, sandbox mode (`container` or `none`), timeout, run count, the repository's `HEAD` commit, the **git tree ID of `plugins/` as staged**, whether that tree matches `HEAD`'s, and the batch state (`running`, then `complete` or `aborted`).
 
 The tree ID identifies exactly the skill text a batch ran against, whether or not it was committed. The runner computes it with a temporary git index over the on-disk `plugins/` directory (tracked and untracked files, gitignored ones excluded), leaving the repository's own index, working tree, and history untouched. Running on uncommitted skill edits is normal — it is how a skill change is tried out — and the runner never refuses it.
 
 ## Invocation
 
 ```
-tools/alt-model-evals/run_eval.py <skill> <eval-ids> <model> [--runs N] [--timeout SECONDS] [--variant NAME] [--no-container]
+tools/alt-model-evals/run_eval.py <skill> <eval-ids> <model> [--runs N] [--timeout SECONDS] [--effort LEVEL] [--variant NAME] [--no-container]
 ```
 
 - `<skill>` is a skill directory name (`lid-coach`, `update-lid`, `arrow-maintenance`, `map-codebase`, …). The runner finds it under `plugins/*/skills/` and stops if the name matches zero or several.
 - `<eval-ids>` is `all`, or a comma list whose items are single IDs or inclusive ranges (`0-4`), e.g. `1,3-5,9`. A single ID must exist in the suite; a range selects the existing IDs within its bounds and must match at least one. Otherwise the runner stops before running anything.
 - `<model>` is an OpenRouter model ID (`z-ai/glm-5.3-flash`).
 - `--runs N` (default 1) runs each eval N times, for noise studies and capability-flag evidence (which needs at least 10 runs per model configuration).
-- `--variant NAME` passes NAME through to the harness's own `--variant` option, which selects the provider's reasoning effort for the model (for example `high`, or `minimal`). Omitted, the harness uses the model's default. The runner does not validate NAME; the harness and provider decide which values a model accepts. The variant is part of what was tested, so `batch.json` records it and the batch directory name carries it.
+- `--effort LEVEL` (default `medium`) pins the model's reasoning effort, written into the run's `opencode.json` as the model's `reasoning.effort` option for OpenRouter. `medium` is the effort LID's capability evidence is measured at (see the `linked-intent-dev` sub-HLD's *Capability Flags*). It is pinned rather than left to the model because OpenRouter's defaults differ by model family (no reasoning for Claude 4.x, `medium` for GPT and Gemini, `max` for GLM 5.3 and Kimi K3), and effort moves results as much as the model does. `--effort default` sends no effort, so the model's own default applies.
+- `--variant NAME` passes NAME through to the harness's own `--variant` option, for provider-specific settings `--effort` does not cover. The runner does not validate NAME.
 
 Runs are sequential. On completion the runner prints one line per run (eval, run number, status, cost) and the batch directory.
 
 The runner is stdlib-only Python, executed from the repository root. Its tests replace the container and harness with a stub command, so they need no network, key, container runtime, or model. The event-stream parser is also tested against a trimmed stream recorded from the pinned harness version, so a harness bump that changes the stream's shape fails a test.
+
+### Observed reasoning
+
+Asking for an effort does not guarantee the model reasons: a provider can ignore the setting, and `claude-sonnet-4.5` through OpenRouter at `high` produced about 80 reasoning tokens per run. Each run's `timing.json` already records its reasoning tokens. The run summary reports the batch's median reasoning tokens, and when an effort was requested but that median is under 500 tokens it prints a warning, so a batch that did not reason is visible before anyone grades it.
 
 ## Grading and recording
 
@@ -166,7 +171,7 @@ The runner does not grade. A frontier-model session grades each `completed` run 
 
 The pass rate is computed over `completed` runs only; `timeout` runs are reported beside it as a count; `harness_error` and `interrupted` runs appear in neither.
 
-Graded results are recorded in the suite's `tested_with` list like any other run. Each entry names the exact OpenRouter model ID and the harness (`"harness": "opencode-ai@<version>"`), plus the variant (`"variant": "<name>"`) when the batch ran with one, since a model at a different reasoning effort is a different configuration. The field's schema belongs to the `linked-intent-dev` sub-HLD, which defines `tested_with`. A batch is recordable when:
+Graded results are recorded in the suite's `tested_with` list like any other run. Each entry names the exact OpenRouter model ID and the harness (`"harness": "opencode-ai@<version>"`), plus the effort (`"effort": "medium"`) and the variant when one was given, since a model at a different reasoning effort is a different configuration. The field's schema belongs to the `linked-intent-dev` sub-HLD, which defines `tested_with`. A batch is recordable when:
 
 - it has at least one `completed` run, and
 - its `plugins/` tree ID is the `plugins/` tree of some commit in history (`git rev-parse <commit>:plugins`).

@@ -275,9 +275,9 @@ These numbers stay in this section. Findings do **not** turn them into grades �
 
 #### 4. Capability-flag note
 
-Read the core skill's `references/capability-flags.md` (sibling skill `linked-intent-dev`). Place yourself by your own model name first, then by size tier and release year; if you cannot place yourself, treat the flags as applying. When a flag applies to you and its area falls within this review — e.g., noticing that a design contradicts the project's own tenets — add one line naming the review dimensions involved and asking the user to check them themselves:
+Read the core skill's `references/capability-flags.md` (sibling skill `linked-intent-dev`). Find your own model name and reasoning effort in its rows; if there is no row for your configuration, or you cannot tell your configuration, treat the flag as applying. When a flag applies to you and its area falls within this review — e.g., noticing that a design contradicts the project's own tenets — add one line naming the review dimensions involved and asking the user to check them themselves:
 
-> **Worth a second look:** models in my class are known to miss designs that contradict the project's own tenets. Please check the leaf designs against your HLD tenets yourself.
+> **Worth a second look:** models configured like me are known to miss designs that contradict the project's own tenets. Please check the leaf designs against your HLD tenets yourself.
 
 Say it once, plainly. It does not qualify the rest of the report. Omit this section when no flag applies.
 

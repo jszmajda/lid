@@ -82,7 +82,7 @@ Two rules are invariants, not defaults:
 
 **Delegation changes *who inspects at a stop*, never *how many stops there are*.** Every phase boundary still stops; what changes is whether the human rules on raw output or on an inspector's findings. The human can still override anything — skip a stop, skip inspection — per *the user is always right, with warning*: warn about the drift risk, honor the choice.
 
-**Capability flags reach the human.** When a phase's work touches an area the capability-flag list (`references/capability-flags.md`; see the sub-HLD's *Capability Flags*) flags for the executing model's class, the stop presentation names that area and what to check — e.g., "check this LLD's mechanisms against the HLD tenets; models in my class are flagged for missing such contradictions." The flagged judgment goes to the human even when they have authorized another inspector at that stop, since an inspector running on the same model class inherits the same gap.
+**Capability flags reach the human.** When a phase's work touches an area the capability-flag list (`references/capability-flags.md`; see the sub-HLD's *Capability Flags*) flags for the executing model's configuration, the stop presentation names that area and what to check — e.g., "check this LLD's mechanisms against the HLD tenets; models configured like me are flagged for missing such contradictions." The flagged judgment goes to the human even when they have authorized another inspector at that stop, since an inspector running on the same model inherits the same gap.
 
 ### Delegation discipline
 
