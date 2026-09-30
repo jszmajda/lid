@@ -62,11 +62,7 @@ Build the review from these sources:
 - **Sampled** code and test files — `@spec` annotation placement (entry-point convention) and coverage of behavioral specs. Do not attempt exhaustive reading; sample strategically.
 - `docs/arrows/index.yaml` and arrow docs when the overlay is present — status markers and drift flags feed cascade-health findings.
 
-**Sampling strategy.** Two rules:
-
-1. **Arrow-path sampling for large projects.** When the project has **more than 15 LLDs OR more than 200 files carrying `@spec` annotations**, sample at least one complete arrow path per arrow segment — HLD section → LLD → at least one EARS spec → at least one test citing that spec → at least one code file citing that spec. End-to-end sampling is the only way to catch drift where one level of an arrow disagrees with another (specs that read well but have no implementation; code that exists for behaviors that have no spec; LLD claims contradicted by the code that's supposed to satisfy them). Below those thresholds, sampling depth is judgment — skim broadly, dig where the principle body suggests drift might live.
-
-2. **`docs/arrows/index.yaml` is your guide when present.** When the arrow-maintenance overlay is installed, the index enumerates segments and carries `status`, `audited`, `audited_sha`, `next`, and `drift` fields per segment — direct evidence of what the project itself thinks is in flight. **Read the index first.** Use it to pick which segments to arrow-path-sample, and which segments to dig into for cascade-health findings. The index's drift fields feed directly into findings — a segment whose `drift` field has been non-null across multiple samplings is itself a signal worth surfacing.
+**Sampling.** On a small project, sample by judgment: skim broadly and dig where the principles suggest drift. When the project has **more than 15 LLDs or more than 200 files carrying `@spec` annotations**, or when `docs/arrows/index.yaml` exists, read `references/sampling.md` before reading inputs: it says how to sample complete arrow paths and how the overlay's index guides where to look.
 
 ## How to run the review
 
@@ -89,20 +85,9 @@ The coach evaluates drift *relative to what the project declared it is*, not aga
 
 Do not nag about shape choices the project has deliberately made. The coach's job is to surface drift *relative to declared intent*, not to enforce a canonical shape against the user's wishes.
 
-## Conversational guidance — when the user asks how to use LID
+## When the user asks how to use LID
 
-`/lid-coach` is also reachable when the user isn't asking for a review but is asking how to *use* LID for a specific situation — multi-repo organization, where PRDs fit, when to switch modes, what to do when an arrow segment outgrows its boundaries, why the upstream-ownership shift feels uncomfortable. Two entry points:
-
-- **Direct invocation.** The user invokes `/lid-coach` with a question rather than a review request. Engage conversationally instead of producing the review report.
-- **From the report's offer-to-help.** The user runs `/lid-coach` for a review, then takes the second invitation in the offer-to-help and asks an adoption question. Engage conversationally without re-running the review.
-
-In both cases, the conversational engagement draws on the FAQ as substrate.
-
-The knowledge base for these conversations lives in `references/lid-faq.md`. **Load that file on demand** when the user's prompt looks like an adoption / pattern / how-do-I question, draw on its framings, and answer in your own voice. Don't lecture from the FAQ — use it as the substrate, not the script. The FAQ covers the *shape* of good answers (multi-repo as a container repo with sub-repos as gitignored siblings; PRDs upstream of HLD; mode-fit cues; the upstream-ownership reframe; segment splitting) without prescribing specific tools or filesystem layouts the user must adopt.
-
-If a question doesn't fit any FAQ topic, reason from the principle body below. If you're genuinely unsure, say so and offer to think through the project's specifics with the user rather than guessing.
-
----
+If `/lid-coach` is invoked with a question about using LID rather than a request for a review, or the user takes the report's second invitation, do not run or re-run the review. Read `references/conversational-guidance.md` and `references/lid-faq.md`, and engage conversationally.
 
 ## LID principles — the body of theory this skill reasons from
 
@@ -120,7 +105,9 @@ These principles are a downstream artifact of LID's own high-level design. When 
 
 - **Intent leads; code is compiled output.** Specs are the source of truth; code is the compiled result. Code may be regenerated from specs — the reverse is not supported. *Why it matters:* when spec and code disagree, updating the spec to match the code hides the drift — the system pretends intent changed when really implementation did. The gap compounds session over session, and eventually the project loses the ability to reason about its own behavior at the spec level. *Audit signal:* code that contradicts specs without either being flagged or updating the spec; specs that are written to describe code after the fact rather than drive it.
 
-- **Docs carry current intent, written to be read cold.** A doc carries the current intent as if authored fresh today, by someone who knew only that intent and nothing of the conversations, revisions, or debates that produced it. The test for any line: would that fresh author put it on the page? *Why it matters:* git already preserves history; when a doc also carries residue, every future agent has to sort live intent from leftovers before it can act, and the tax compounds every session. Three residues fail the fresh-author test, and they fail differently — name which one when you find it: (1) **change-narration** — "was X, now Y", "we will eventually…", `[obsolete]`-marked specs beside replacements, changelog or "Previous architecture" sections; (2) **in-conversation-only meaning** — content that only resolves for someone who was in the chat ("of course", "as discussed", an unstated assumption the author carried in their head); (3) **conversational fossils** — answers or rebuttals that exist only because a past discussion raised the question, even when cleanly phrased in the present tense (e.g. "there is no separate X" written only because someone once proposed X). *Keep-side (load-bearing):* the same test protects content, it does not only cut. Rationale, considered alternatives, and constraints that a fresh author would independently write from current intent stay — they are present intent, not residue. The discriminator for residue (3) is **locality**: a rejected alternative and why it was trimmed is present intent *in the LLD's Decisions & Alternatives table* (a fresh author choosing the current design records it there) and a fossil *as a defensive aside in body prose* (a fresh author would not write it). Surface the inline aside; do not flag the Decisions-table row. That keep-side has a ceiling: a decision doc — or even a Decisions-table row — that records a choice reading as **obvious or native once it landed** is itself accumulation, not live intent. The test is forward from the landed result (would a cold reader still question the choice or be tempted to reverse it?), not whether it was hard to decide; decision docs are rare, so a node accreting them is a signal — the default capture for a live decision is a fuller Decisions-table row; a doc is reserved for choices that warrant a debate on the record — researched options weighed against criteria, at a resolution a future reader could re-run — where the memory of that deep work shapes the intent of the rest of the system. *Audit signal — cheap first pass:* the change-narration patterns above are mechanically detectable; use them as the fast screen. *Audit signal — deeper pass:* perform a **cold-read pass** through each LID doc — read it as if you have no conversation context — and surface anything unclear, ambiguous, or evidently dependent on context not on the page; this is what catches residues (2) and (3), which rarely use telltale phrases. **Don't reduce the cold-read pass to grepping for "obviously"/"of course"; a checklist trains the agent to pattern-match and miss the deeper pattern.**
+- **Docs carry current intent, written to be read cold.** A doc carries the current intent as if authored fresh today, by someone who knew only that intent and nothing of the conversations, revisions, or debates that produced it. The test for any line: would that fresh author put it on the page? *Why it matters:* git already preserves history; when a doc also carries residue, every future agent has to sort live intent from leftovers before it can act, and the tax compounds every session. Three residues fail the fresh-author test, and they fail differently — name which one when you find it: (1) **change-narration** — "was X, now Y", "we will eventually…", `[obsolete]`-marked specs beside replacements, changelog or "Previous architecture" sections; (2) **in-conversation-only meaning** — content that only resolves for someone who was in the chat ("of course", "as discussed", an unstated assumption the author carried in their head); (3) **conversational fossils** — answers or rebuttals that exist only because a past discussion raised the question, even when cleanly phrased in the present tense (e.g. "there is no separate X" written only because someone once proposed X).
+  *Keep-side (load-bearing):* the same test protects content, it does not only cut. Rationale, considered alternatives, and constraints that a fresh author would independently write from current intent stay — they are present intent, not residue. The discriminator for residue (3) is **locality**: a rejected alternative and why it was trimmed is present intent *in the LLD's Decisions & Alternatives table* (a fresh author choosing the current design records it there) and a fossil *as a defensive aside in body prose* (a fresh author would not write it). Surface the inline aside; do not flag the Decisions-table row. That keep-side has a ceiling: a decision doc — or even a Decisions-table row — that records a choice reading as **obvious or native once it landed** is itself accumulation, not live intent.
+  The test is forward from the landed result (would a cold reader still question the choice or be tempted to reverse it?), not whether it was hard to decide; decision docs are rare, so a node accreting them is a signal — the default capture for a live decision is a fuller Decisions-table row; a doc is reserved for choices that warrant a debate on the record — researched options weighed against criteria, at a resolution a future reader could re-run — where the memory of that deep work shapes the intent of the rest of the system. *Audit signal — cheap first pass:* the change-narration patterns above are mechanically detectable; use them as the fast screen. *Audit signal — deeper pass:* perform a **cold-read pass** through each LID doc — read it as if you have no conversation context — and surface anything unclear, ambiguous, or evidently dependent on context not on the page; this is what catches residues (2) and (3), which rarely use telltale phrases. **Don't reduce the cold-read pass to grepping for "obviously"/"of course"; a checklist trains the agent to pattern-match and miss the deeper pattern.**
 
 - **User is always right — with warning.** The coach's job is to surface the cost of current patterns, not to enforce. *Why it matters:* enforcement erodes the trust users place in advisory tools; a coach that overrides user judgment becomes a linter, which competes with the fast-moving harness layer LID deliberately sits apart from. *Audit signal:* (applies to the coach's own behavior — never make changes without the user's direction.)
 
@@ -295,40 +282,9 @@ Close the report with **two distinct invitations**, so both pathways are discove
 
 This is the handshake into the conversation that follows. The second sentence makes the FAQ pathway visible without forcing the user to know to ask; if they want review detail, they take the first invitation; if they want adoption advice, they take the second.
 
-### Subsequent user-driven turns — detail or working session
+### After the report
 
-After the user responds to the offer, the coach engages. Possible shapes:
-
-- **Walk through findings** (or a subset). Render detailed finding paragraphs (the form below) for the requested subset — all, the high-priority ones, a specific theme, etc. **Don't re-render the inventory, audit content, or executive summary** — those were in the report.
-- **Focus on a theme or priority.** Render only the relevant subset.
-- **Working session on a specific finding.** Engage on that finding directly — discuss, refine, or plan a fix — without re-rendering the broader report.
-- **Skip detail, jump to action.** Surface concrete next steps for the highest-impact findings without restating each.
-
-When the user picks no specific direction, default to walking through findings in priority order.
-
-### Detailed finding paragraph form (subsequent turns)
-
-When detailed findings are rendered, each finding is **one paragraph**, not a sub-bullet form. The paragraph weaves four elements together:
-
-- The **observation** — concrete, naming files or lines where useful, with evidence inline where the reader needs it to see the pattern. Findings *may* cite specific counts when the count is the observation itself (e.g., "the spec file has 3 IDs in the legacy 1000-block alongside semantic-naming IDs"), but never as a numeric grade.
-- The **LID principle** the finding relates to, cited by name with a plain-English gloss appended inline.
-- **Why this matters** — a sentence or two explaining the consequence of leaving the drift in place, or the benefit of fixing it. Draw from the principle's motivation (in the principle body below) grounded in *this* user's project — what gets harder, what compounds, what gets more reliable. The coach teaches while correcting.
-- A closing **recommended action** — concrete, naming files or commands. See *Recommended-action targets* below.
-
-**Example of the paragraph form** — showing how observation, principle-with-gloss, *why this matters*, and action weave as prose:
-
-> **F2 — Medium. A few superseded LLDs are still living in `docs/intent/` alongside current ones.** `keeper-three-phase-orchestration.md`, `keeper-orchestration-integration-testing-strategy.2025-08-01.md`, and `bedrock-throttling-retry-system.2025-01-31.md` all describe themselves (or are marked in the arrow index) as superseded; `docs/intent/old/mobile-app-architecture-ux.md` sits in an `old/` subdirectory. Under *mutation, not accumulation* — docs reflect current intent and git preserves history — this is the pattern LID is specifically designed to remove. The cost of leaving them in place is that every future agent session has to figure out which LLD is live and which is historical before it can reason about the current design; that overhead compounds as more sessions touch the same segment, and eventually the current LLD gets harder to find than the outdated one. The git tag `three-phase-working` already holds the old narrative; removing the files will make the live arrow the obvious one to walk. Try deleting these four (run `git log` on each first if you want to confirm the replacement narrative is in place).
-
-Use bullet lists within a finding only when enumerating genuinely parallel items — e.g., "the following four files…" — not as the finding's structural backbone.
-
-### Recommended-action targets
-
-When a finding implies a configuration change, the recommended action is **`/update-lid`**. The skill state-dispatches: unconfigured projects get bootstrap, configured projects get reconciliation. One command for both cases — there's no separate setup command.
-
-Two callouts:
-
-- **Fresh-project users with a code change in mind** should typically be pointed at **`/linked-intent-dev`** (with a description of what they want to build) rather than `/update-lid` standalone. The workflow's Phase 1 calls the bootstrap branch as a sub-step and then walks the change forward.
-- When a finding's follow-up is **structural** (orphans, reverse orphans, adjacent-level drift enumeration), point at **`/arrow-maintenance`** instead — the coach surfaces the pattern; arrow-maintenance enumerates it precisely.
+When the user takes up the offer to help, read `references/follow-up-turns.md`. It covers the shapes the follow-up conversation takes, the detailed paragraph form findings use from then on, and which command to point each kind of finding at.
 
 ### Calibration notes
 
@@ -342,11 +298,3 @@ Two callouts:
 This skill does not edit project files. Recommendations are surfaced; the user applies them by editing directly, by running `/update-lid` for configuration changes, or by invoking `/arrow-maintenance` when a structural audit would answer a specific finding faster.
 
 If the user asks you to "fix" issues found by the coach in the same prompt, explain the advisory posture, produce the report, and point them at the relevant commands for application. Do not apply fixes inside a coach invocation — silent edits would bypass user review on exactly the decisions where review matters most.
-
-## Relationship to sibling skills
-
-- `/update-lid` reconciles **configuration**: the instruction file's directives, mode marker, directory layout. Deterministic. A coach finding about configuration points here.
-- `/arrow-maintenance` (overlay installed) does **deterministic structural audit**: orphans, reverse orphans, adjacent-level coherence, `index.yaml` drift. A coach finding about structural drift points here.
-- `/lid-coach` (this skill) does **interpretive principle review**: the dimensions above, reasoning from the principle body.
-
-The three are complementary and non-duplicative. A coach finding may overlap *in subject* with something `arrow-maintenance` would enumerate (e.g., the coach notices an `@spec`-pointing-to-nothing pattern from sampling; arrow-maintenance would enumerate every instance). Surface the pattern at the coach level; delegate enumeration to `arrow-maintenance`.

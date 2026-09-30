@@ -3,6 +3,10 @@
 **LLD**: docs/intent/linked-intent-dev/lid-coach/lid-coach-design.md
 **Implementing artifacts**:
 - plugins/linked-intent-dev/skills/lid-coach/SKILL.md
+- plugins/linked-intent-dev/skills/lid-coach/references/lid-faq.md
+- plugins/linked-intent-dev/skills/lid-coach/references/follow-up-turns.md
+- plugins/linked-intent-dev/skills/lid-coach/references/conversational-guidance.md
+- plugins/linked-intent-dev/skills/lid-coach/references/sampling.md
 
 Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 

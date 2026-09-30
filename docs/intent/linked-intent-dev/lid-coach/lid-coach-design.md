@@ -26,6 +26,11 @@ The coach lives at `plugins/linked-intent-dev/skills/lid-coach/` with this shape
 
 - `SKILL.md` — principle content embedded directly (description, *why it matters*, audit signal per principle), dispatch table, review flow, scorecard format, advisory posture, conversational-guidance pointer. The principle body stays in `SKILL.md` because it's needed on every review; if total SKILL.md size approaches the skill-creator progressive-disclosure budget (~500 lines), Open Question 1 covers extracting it.
 - `references/lid-faq.md` — load-on-demand conversational guidance covering common LID adoption patterns (multi-repo organization, PRDs upstream of HLD, mode-fit changes, the upstream-ownership reframe, promoting an outgrown leaf LLD into a sub-HLD). Read by the coach when the user invokes `/lid-coach` with an adoption / pattern question rather than a project review.
+- `references/follow-up-turns.md` — the turns after the report: walking through findings, the detailed finding paragraph form, and which command each kind of finding points to. Read when the user takes up the report's offer to help.
+- `references/conversational-guidance.md` — how to engage when `/lid-coach` is asked how to use LID rather than for a review; read with `lid-faq.md`.
+- `references/sampling.md` — arrow-path sampling for large projects and index-guided sampling when the overlay is present. Read before the inputs when the project has more than 15 LLDs or 200 `@spec` files, or carries the overlay.
+
+What stays in `SKILL.md` is what every review uses: dispatch, inputs, the principle body, the review dimensions, the review steps, and the report format. Material needed only in some situations lives in `references/`, which keeps `SKILL.md` within the plugin's size limit (see the sub-HLD's *Plugin Structure*).
 - `evals/evals.json` — per the eval-metadata convention specified in `docs/intent/linked-intent-dev/linked-intent-dev-design.md § Eval Metadata Conventions`.
 
 The skill is directly invokable as `/lid-coach` — no command stub is needed. Per Claude Code's skills model, a skill named `lid-coach` is reachable as `/lid-coach` from the slash menu, and a separate command file would be shadowed by the skill anyway.

@@ -32,6 +32,12 @@ The `linked-intent-dev` workflow skill is pure prose — its `SKILL.md` is the a
 - `[ ]` **LID-CORE-058**: When a phase's work touches an area the capability-flag list flags for the executing model's configuration, the system SHALL name that area and what to check at the phase's stop, and SHALL route that judgment to the human even when the human has authorized another inspector at that stop.
 - `[ ]` **LID-CORE-059**: When determining whether a capability flag applies, the system SHALL place the executing model by its own name and reasoning effort, and SHALL treat the flag as applying when the flag list has no row for that configuration or when it cannot tell its configuration.
 - `[ ]` **LID-CORE-060**: When raising a capability flag, the system SHALL state the flagged area and the request for review once, plainly, without qualifying the rest of its work.
+- `[x]` **LID-CORE-061**: When phase work meets a judgment the human should make or check — one of the recurring kinds in the core design's list, or any other call recognizably the human's — the system SHALL bring it to the human at that phase's stop, or immediately when the work cannot proceed without it, unless the user has let that kind of judgment go for the current work.
+- `[x]` **LID-CORE-062**: While inspection is delegated, consolidated, or relocated, the system SHALL NOT settle a judgment covered by LID-CORE-061 on the human's behalf, and SHALL NOT leave it only inside a delegated inspector's findings.
+- `[x]` **LID-CORE-063**: When the user lets a kind of judgment go for a stream of work, the system SHALL apply that release only to that work and SHALL NOT carry it into other work.
+- `[x]` **LID-CORE-064**: The system SHALL NOT treat a general wish for fewer interruptions as letting go spec forks or hard-to-undo changes; it SHALL treat either as let go only when the user names it.
+- `[x]` **LID-CORE-065**: When the conversation shows a consistent pattern in which kinds of judgment the user wants brought to them or waves through, the system SHALL name the pattern and ask whether to treat it as the user's preference, rather than applying it unasked.
+- `[ ]` **LID-CORE-066**: When a capability flag applies to a kind of judgment the user has let go, the system SHALL still bring that judgment to the human and say why, unless the user, knowing the flag, has said to let it go.
 - `[x]` **LID-CORE-052**: When dispatching phase work to a subagent, the system SHALL embed in the dispatch prompt the obligations that phase carries — for implementation work, the EARS IDs in scope, the tests-first gate, and the `@spec` annotation requirement — and, for every dispatch regardless of phase, the obligation to surface rather than resolve ambiguity: a spec admitting more than one reading returns to the dispatcher as a question, never as a silently chosen reading.
 
 ## Phase 1 — HLD Check
@@ -56,6 +62,10 @@ The `linked-intent-dev` workflow skill is pure prose — its `SKILL.md` is the a
 - `[x]` **LID-CORE-044**: When the parts of a node are categories or requirement types of a single intent, the system SHALL fold them into within-leaf type/area facets of one leaf rather than child nodes.
 - `[x]` **LID-CORE-040**: When a concern spans multiple components and carries design decisions of its own, the system SHALL model it as its own design node, referenced by dependent nodes from their own design docs, rather than spread as labels across nodes or catalogued in a side structure.
 - `[x]` **LID-CORE-016**: After drafting or substantially revising an LLD, the system SHALL run an LLD-level edge-case probe targeting that LLD's own internal gaps and present the gap list for the user to triage.
+- `[x]` **LID-CORE-067**: When drafting or revising a design node, the system SHALL place each decision at the lowest design node whose subtree contains everything the decision affects.
+- `[x]` **LID-CORE-068**: When drafting or revising a design node, the system SHALL define each term at the lowest design node that dominates every node that uses the term.
+- `[x]` **LID-CORE-069**: When a new concept could be named by a plain descriptive phrase, the system SHALL use the phrase rather than coin a term, unless several design nodes need the same exact concept.
+- `[x]` **LID-CORE-070**: When placing a decision or term correctly would move it across a segment boundary, the system SHALL raise the move with the user rather than make it silently.
 
 ## Phase 3 — EARS Spec Draft or Update
 

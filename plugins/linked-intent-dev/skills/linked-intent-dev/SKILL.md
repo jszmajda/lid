@@ -35,7 +35,27 @@ Three rules hold whatever the instruments:
 - A spec or draft that admits more than one reading always goes back to the user — only they hold the latent intent — at whatever phase the fork is discovered, before further tests or code land against either reading. A fork found after tests exist is surfaced with the affected tests named.
 - Delegation changes *who inspects at a stop*, never *how many stops there are*. The user can still override anything, per *the user is always right — with warning*.
 
-**Capability flags — bring the user in where your model is known to miss things.** `references/capability-flags.md` lists kinds of judgment that eval evidence shows some models reliably miss at a given reasoning effort. Check whether a flag applies to you: find your own model name and reasoning effort in its rows; if there is no row for your configuration, or you cannot tell your configuration, treat the flag as applying. When a phase's work touches a flagged area, do your best work there as usual, then at that phase's stop name the area and what the user should check — e.g., "Please check this LLD's mechanisms against the HLD tenets yourself; models configured like me are known to miss contradictions like that." Send that judgment to the user even if they have authorized another inspector at that stop, because an inspector running on the same model has the same gap. Say it once, plainly — it routes one judgment to the user; it does not qualify the rest of your work.
+**Judgment still reaches the user, however inspection is set up.** Judgment is what the user brings to the pair. When they delegate inspection, consolidate stops, lean on out-of-band review, or let work run largely on its own, the moments that need their judgment still happen; they just stop being shown by default. So when you meet one, bring it to them at that phase's stop, or right away if you cannot proceed without it. Do not settle it on their behalf, and do not leave it buried in an inspector's findings.
+
+These kinds come up often. The list is not complete: any call that is recognizably the user's (a preference, a priority, a risk only they can weigh) goes to them too.
+
+- **Spec fork**: a spec or draft admits more than one reading.
+- **Unsettled choice**: the change needs a decision no document makes.
+- **Tenet or goal conflict**: a mechanism works against one of the project's own tenets or goals.
+- **Cross-node contradiction**: two design nodes say incompatible things.
+- **Rung mismatch**: an EARS spec says more or less than its design node.
+- **Code drifts from spec**: code or tests do something no spec says, or miss something one does.
+- **Missed cascade**: an upstream change leaves downstream intent stale.
+- **Wrong attachment level**: a decision or term sits below some of the nodes that use it.
+- **Under-captured decision**: a choice a cold reader would question has no record they could reconstruct it from.
+- **Hard to undo**: the change moves or deletes data, migrates a schema, or has an external effect that cannot simply be reverted.
+- **Unpinned invariant**: a rule the design depends on has no test (or proof) holding it.
+
+By default, bring all of these to the user; when unsure, ask. The user decides how much of this they want to check, based on the risk as they see it. A tool that handles their money may need everything checked; a game made for fun may need very little. They usually say so in conversation, sometimes as prose in their instruction file. Follow what they said, and keep it to the work they said it about: letting some judgment go for a research prototype does not carry over to the product it will join. If you notice a pattern, such as them waving through every cascade question, name it and ask whether to treat it as their preference; do not start applying it on your own.
+
+Spec forks and hard-to-undo changes need more than that. Treat either as let go only when the user says so about that kind specifically, never because they want fewer interruptions in general.
+
+**Capability flags — bring the user in where your model is known to miss things.** `references/capability-flags.md` lists kinds of judgment that eval evidence shows some models reliably miss at a given reasoning effort. Check whether a flag applies to you: find your own model name and reasoning effort in its rows; if there is no row for your configuration, or you cannot tell your configuration, treat the flag as applying. When a phase's work touches a flagged area, do your best work there as usual, then at that phase's stop name the area and what the user should check — e.g., "Please check this LLD's mechanisms against the HLD tenets yourself; models configured like me are known to miss contradictions like that." Send that judgment to the user even if they have authorized another inspector at that stop, because an inspector running on the same model has the same gap, and even if they had let that kind of judgment go, telling them why. If they have seen the flag and still prefer to let it go, follow that. Say it once, plainly — it routes one judgment to the user; it does not qualify the rest of your work.
 
 ## Delegation discipline
 
@@ -81,6 +101,8 @@ When a node looks like it holds more than one thing, choose its shape by the *ki
 In complex projects multiple LLDs may look semantically relevant. Do not silently pick — surface the candidate leaf LLDs with their scopes and ask the user which applies.
 
 If a leaf LLD exists, confirm coherence with the change and update as needed.
+
+**Put each decision and term where everything that uses it can see it.** A decision belongs at the lowest design node whose subtree contains everything it affects: if it would force a sibling node to change, it rises to their shared parent; if it only creates a downstream obligation, it stays put and you cascade a note to the sibling. Terms follow the same rule, and they flow down the arrow, never up. If a parent or sibling needs a term a leaf coined, move its definition up to their shared ancestor (the HLD, for a term the whole project uses). Before coining a term at all, prefer a plain descriptive phrase: a coined term is worth its definition only when several nodes need the same exact concept, and a reader who skips the definition will misread it. If a move crosses a segment boundary, raise it with the user instead of moving it silently.
 
 After drafting or substantially revising an LLD, run an **LLD-level edge-case probe**: a list of "what happens when..." questions pointed at *this LLD's own gaps* — missing state transitions, unstated invariants, unspecified API error shapes, ordering assumptions inside the component. (Cross-component and cross-spec interactions come later in Phase 4, not here.) When a subagent is available, delegate the probe to the subagent for cleaner, less-biased coverage. Present the gap list; the user triages which gaps to fix in the LLD vs. defer as open questions.
 

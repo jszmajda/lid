@@ -14,7 +14,7 @@ The declaration is the **user's own prose** — in their instruction file or sta
 > Review depth: I review through LLD; below that, consolidate to one review.
 > Judgment areas: naming and API shapes; anything touching auth.
 
-Depth values track the phases — *through HLD*, *through LLD*, *through EARS*, *through tests*. "Through X": phases at and above X stop per-phase as usual; deeper phases consolidate. **Judgment areas** name the fork kinds the user wants routed to them immediately (see below). Any area the core `linked-intent-dev` skill's `references/capability-flags.md` flags for your model and reasoning effort is a judgment area too, without the user declaring it. No declaration means no change: full per-phase stops.
+Depth values track the phases — *through HLD*, *through LLD*, *through EARS*, *through tests*. "Through X": phases at and above X stop per-phase as usual; deeper phases consolidate. **Judgment areas** name the fork kinds the user wants routed to them immediately (see below). Judgment areas start from the kinds of judgment the core `linked-intent-dev` skill lists under *Judgment still reaches the user*: every kind the user has not let go is a judgment area, with or without a declaration. Any kind that skill's `references/capability-flags.md` flags for your model and reasoning effort is a judgment area too, even if the user let it go, unless they said otherwise knowing the flag. No declaration means no change: full per-phase stops.
 
 ## Entering a change
 
