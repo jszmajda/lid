@@ -115,6 +115,8 @@ For behavioral skills, `evals/evals.json` and per-eval `eval_metadata.json` carr
 }
 ```
 
+An eval may add a scripted second turn as `"follow_up": {"prompt": "...", "assertions": [...]}`: the harness sends the follow-up prompt in the same session after the first response, and grades its assertions against the reply. It exists for behavior a skill reserves for later turns, such as the coach's remedies, which its first report does not give.
+
 `spec_ids` is per-assertion, not per-eval — different assertions in one eval typically verify different specs. The grader produces `grading.json` with the standard `text`/`passed`/`evidence` fields; `spec_ids` travels with the assertion through grading so the benchmark viewer can display which specs an eval actually exercised.
 
 Coverage audit: every behavioral EARS spec should appear in at least one assertion's `spec_ids` across the eval suite. The `arrow-maintenance` overlay runs this audit when present. The pure-prose `linked-intent-dev` workflow skill (`LID-CORE`) has no eval suite — its behaviors are guidance the agent consults, not a deterministic harness run — so the coverage audit applies only to the behavioral leaves (`LID-UPDATE`, `LID-COACH`).
