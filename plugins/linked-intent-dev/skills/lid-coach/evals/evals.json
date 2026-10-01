@@ -253,11 +253,19 @@
       ],
       "assertions": [
         { "text": "The report does NOT flag the journal storage-model decision (append-only event journal, row rationale 'Auditability') as under-captured and does NOT recommend a decision doc for it: append-only reads as the natural choice for a bookkeeping ledger, so it does not meet the cold-reader-would-question test, and other designs leaning on it does not by itself make it flaggable or doc-worthy.", "spec_ids": ["LID-COACH-058", "LID-COACH-061"] },
-        { "text": "For the reporting node's currency-handling decision (original invoice currency only, rationale 'Simplicity'), the report recommends an expanded Decisions-table row naming the rejected alternative (e.g. currency conversion at report time) and the accepted cost (e.g. no cross-currency totals) — and does NOT recommend a decision doc for this decision.", "spec_ids": ["LID-COACH-060", "LID-COACH-061"] },
+        { "text": "The report flags the reporting node's currency-handling decision (original invoice currency only, rationale 'Simplicity') as an under-captured decision, and does NOT recommend a decision doc for it.", "spec_ids": ["LID-COACH-058", "LID-COACH-061"] },
         { "text": "The report does NOT recommend a decision doc for the export-date-format decision, even though its row records that the team debated it at length across two sessions — a debate having occurred is not, by itself, grounds for a doc. The report also does not flag this row as under-captured: the rejected alternative (locale-dependent formats) is already named and a cold reader would not question ISO 8601.", "spec_ids": ["LID-COACH-061", "LID-COACH-058"] },
         { "text": "The report does not flag the settled or already-adequate rows — event serialization (JSON Lines), journal file rotation (monthly), report date basis (issue date), correction mechanism (compensating entries), reversal visibility (struck-through pairs) — as under-captured decisions.", "spec_ids": ["LID-COACH-058"] },
         { "text": "No project files are created or modified", "spec_ids": ["LID-COACH-039"] }
-      ]
+      ],
+      "follow_up": {
+        "prompt": "Walk me through your finding about how reports handle currency, and what you'd recommend doing.",
+        "assertions": [
+          { "text": "The reply recommends an expanded Decisions-table row for the currency-handling decision naming the rejected alternative (e.g. currency conversion at report time) and the accepted cost (e.g. no cross-currency totals), and does NOT recommend a decision doc for it.", "spec_ids": ["LID-COACH-060", "LID-COACH-061"] },
+          { "text": "No project files are created or modified", "spec_ids": ["LID-COACH-039"] }
+        ]
+      },
+      "notes": "Revised 2026-10-01: the currency remedy moved to a scripted follow-up turn (LID-COACH-067: the first report names findings only)."
     },
     {
       "id": 13,
