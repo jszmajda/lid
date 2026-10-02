@@ -113,6 +113,12 @@ Outputs are captured for every status, including partial project state from erro
 
 On timeout, on an interrupt, and on any runner failure, the runner stops the container (or, without a container, the harness's whole process group) with a termination signal, kills whatever remains after 10 seconds, captures what exists (the capture step clears any stale git lock the kill left behind), and removes the scratch directory. After two consecutive `harness_error` runs anywhere in the batch, the runner stops the batch: a bad key or model ID would otherwise fail every remaining run.
 
+### Follow-up turns
+
+An eval may carry a scripted second turn (`follow_up`, see the `linked-intent-dev` sub-HLD's eval conventions) for behavior a skill reserves for later turns. When the first turn completes, the runner starts the harness a second time with the follow-up prompt and opencode's `--continue`, so the model answers in the same session with its first turn in context. The second turn has its own wall-clock limit and its own status. When the first turn does not complete, the follow-up is not run and its status is `skipped`. The run's own status is the first turn's.
+
+Session state must outlive the first harness process. The container's home directory is an in-memory filesystem discarded when the container exits, so the runner points opencode's data directory (`XDG_DATA_HOME`) at a `state/` folder in the run's scratch directory, mounted read-write at `/work/state`; without a container, the run's private home already persists across both turns. Either way the state is deleted with the scratch directory. Project changes are captured once, after the last turn.
+
 ## Outputs
 
 Runs land in the skill's gitignored workspace, beside the Claude runs, in the per-eval shape `skill-creator`'s grader reads:

@@ -49,6 +49,7 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 - `[x]` **ALT-EVAL-STAGE-009**: The run prompt SHALL NOT contain the eval's ID, the eval's name, or any assertion text.
 - `[x]` **ALT-EVAL-STAGE-010**: When a run's outputs have been captured, the runner SHALL delete that run's scratch directory, whatever the run's status.
 - `[x]` **ALT-EVAL-STAGE-011**: When a batch starts, the runner SHALL compute the git tree ID of the repository's `plugins/` directory as it exists on disk (tracked and untracked files, excluding gitignored ones) using a temporary index, without modifying the repository's own index, working tree, or history.
+- `[x]` **ALT-EVAL-STAGE-012**: The runner SHALL keep the harness's session state inside the run's scratch directory, persisting between the run's turns: in container mode by setting `XDG_DATA_HOME` to a `state/` folder mounted read-write at `/work/state`, and without a container in the run's private home.
 
 ## Harness and sandbox
 
@@ -58,12 +59,12 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 - `[x]` **ALT-EVAL-BOX-004**: The runner SHALL tag the image with the harness version and a hash of the Dockerfile's contents, and SHALL build the image when no image with that tag exists.
 - `[x]` **ALT-EVAL-BOX-005**: Unless `--no-container` is given, the runner SHALL execute each run's harness inside a new container started through the `docker` command.
 - `[x]` **ALT-EVAL-BOX-006**: When `--no-container` is not given and `docker info` fails, the runner SHALL exit non-zero before staging anything, stating that no container runtime is reachable and naming `--no-container` as the unsandboxed alternative.
-- `[x]` **ALT-EVAL-BOX-007**: The container SHALL mount the run's `project/` read-write at `/work/project` as its working directory, the run's `plugins/` read-only at `/work/plugins`, the run's `opencode.json` read-only at `/work/opencode.json` with `OPENCODE_CONFIG` set to that path, and a generated `passwd` file and `group` file read-only at `/etc/passwd` and `/etc/group`, each holding one entry for the invoking user's UID and GID with home directory `/home/eval`.
+- `[x]` **ALT-EVAL-BOX-007**: The container SHALL mount the run's `project/` read-write at `/work/project` as its working directory, the run's `plugins/` read-only at `/work/plugins`, the run's `opencode.json` read-only at `/work/opencode.json` with `OPENCODE_CONFIG` set to that path, the run's `state/` read-write at `/work/state` with `XDG_DATA_HOME` set to that path, and a generated `passwd` file and `group` file read-only at `/etc/passwd` and `/etc/group`, each holding one entry for the invoking user's UID and GID with home directory `/home/eval`.
 - `[x]` **ALT-EVAL-BOX-008**: The container SHALL have no host mounts other than those named in ALT-EVAL-BOX-007.
 - `[x]` **ALT-EVAL-BOX-009**: The container SHALL run with a read-only root filesystem, and with `/home/eval` and `/tmp` on in-memory filesystems writable by the invoking user's UID.
 - `[x]` **ALT-EVAL-BOX-010**: The container SHALL run as the invoking user's UID and GID.
 - `[x]` **ALT-EVAL-BOX-011**: The container SHALL run with all Linux capabilities dropped, with privilege escalation disabled, with a memory limit of 2 GiB, and with a limit of 512 processes.
-- `[x]` **ALT-EVAL-BOX-012**: The container's environment SHALL contain only `OPENROUTER_API_KEY`, `HOME=/home/eval`, `OPENCODE_CONFIG`, `GIT_AUTHOR_NAME` and `GIT_COMMITTER_NAME` set to `eval`, `GIT_AUTHOR_EMAIL` and `GIT_COMMITTER_EMAIL` set to `eval@localhost`, and locale variables, in addition to what the image defines.
+- `[x]` **ALT-EVAL-BOX-012**: The container's environment SHALL contain only `OPENROUTER_API_KEY`, `HOME=/home/eval`, `OPENCODE_CONFIG`, `XDG_DATA_HOME=/work/state`, `GIT_AUTHOR_NAME` and `GIT_COMMITTER_NAME` set to `eval`, `GIT_AUTHOR_EMAIL` and `GIT_COMMITTER_EMAIL` set to `eval@localhost`, and locale variables, in addition to what the image defines.
 - `[x]` **ALT-EVAL-BOX-016**: When `--no-container` is not given and the container runtime reports less total memory (`docker info` `MemTotal`) than the container memory limit of ALT-EVAL-BOX-011, the runner SHALL exit non-zero before staging anything, stating both amounts and that the runtime needs more memory.
 - `[x]` **ALT-EVAL-BOX-017**: Unless `--no-container` is given, the runner SHALL produce `changes.patch` and `git-log.txt` by running git inside a second container started from the same image, with the settings of ALT-EVAL-BOX-009 through ALT-EVAL-BOX-011, no network, the run's project mounted read-write at `/work/project`, an empty output directory mounted read-write at `/work/out`, the `passwd` and `group` files of ALT-EVAL-BOX-007, and no `OPENROUTER_API_KEY` in its environment.
 - `[x]` **ALT-EVAL-BOX-018**: Unless `--no-container` is given, once a run's harness has started the runner SHALL NOT run git on the host in, or on any path inside, that run's project directory, and SHALL NOT read, write, or delete any path inside the project's `.git`.
@@ -82,6 +83,9 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 - `[x]` **ALT-EVAL-RUN-006**: The runner SHALL capture outputs for every run, whatever its status, including partial project state from runs that errored, timed out, or were interrupted.
 - `[x]` **ALT-EVAL-RUN-007**: When two runs in a row within a batch end as `harness_error`, counted across eval boundaries, the runner SHALL run nothing further in the batch and record the batch as `aborted`.
 - `[x]` **ALT-EVAL-RUN-008**: When the runner receives an interrupt, it SHALL stop the current run, record it as `interrupted`, capture its outputs, delete its scratch directory, record the batch as `aborted`, and exit non-zero.
+- `[x]` **ALT-EVAL-RUN-009**: When an eval has a `follow_up` and the run's first turn completed, the runner SHALL run the follow-up prompt as a second harness invocation that continues the first turn's session, with its own wall-clock limit.
+- `[x]` **ALT-EVAL-RUN-010**: When an eval has a `follow_up` and the run's first turn did not complete, the runner SHALL NOT run the follow-up and SHALL record the follow-up's status as `skipped`.
+- `[x]` **ALT-EVAL-RUN-011**: The runner SHALL record a run's status as its first turn's status, whatever the follow-up turn's status.
 
 ## Outputs
 
@@ -98,6 +102,9 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 - `[x]` **ALT-EVAL-OUT-011**: The runner SHALL write `batch.json` in the batch directory when the batch starts, recording the skill, the selected eval IDs, the model, the harness, the sandbox mode (`container` or `none`), the timeout, the run count, the repository's `HEAD` commit, the `plugins/` tree ID from ALT-EVAL-STAGE-011, whether that tree ID equals `HEAD`'s `plugins/` tree, and the state `running`.
 - `[x]` **ALT-EVAL-OUT-014**: The runner SHALL record the batch's effort and variant in `batch.json` (the variant null when none was given) and SHALL append to the batch directory name the effort when it is not `medium`, then the variant when one was given.
 - `[x]` **ALT-EVAL-OUT-015**: When a batch finishes, the runner SHALL report the median reasoning tokens of its completed runs and, where an effort other than `default` was requested and that median is below 500, SHALL print a warning that the model did not reason at the requested effort.
+- `[x]` **ALT-EVAL-OUT-016**: For a run whose eval has a `follow_up`, the runner SHALL write the follow-up's final message to `response2.md` and its event stream to `events2.jsonl`, and SHALL record the follow-up's status, duration, cost, tokens, and tool calls under `follow_up` in `timing.json`.
+- `[x]` **ALT-EVAL-OUT-017**: The runner SHALL capture a run's project changes once, after its last turn.
+- `[x]` **ALT-EVAL-OUT-018**: When an eval has a `follow_up`, the runner SHALL include its prompt and assertions in that eval's `eval_metadata.json`.
 - `[x]` **ALT-EVAL-OUT-012**: When a batch finishes, the runner SHALL update `batch.json`'s state to `complete`, or to `aborted` when the batch was stopped early.
 - `[x]` **ALT-EVAL-OUT-013**: The runner's event-stream parsing SHALL produce the expected response, cost, token, tool-call, and error values from event streams recorded from the pinned harness version and committed as `tools/alt-model-evals/testdata/opencode-events-*.jsonl`.
 

@@ -171,6 +171,79 @@ class RepoTest(unittest.TestCase):
         return res
 
 
+FOLLOW_UP_SUITE = {
+    "skill_name": "demo-skill",
+    "evals": [
+        {"id": 1, "eval_name": "first-eval", "prompt": "Do the first thing.",
+         "files": [{"path": "CLAUDE.md", "content": "# Fixture\n"}],
+         "assertions": [{"text": "ASSERTION-ONE-TEXT", "spec_ids": ["DEMO-001"]}],
+         "follow_up": {"prompt": "Now tell me more about it.",
+                       "assertions": [{"text": "FOLLOW-UP-TEXT", "spec_ids": ["DEMO-009"]}]}},
+    ],
+}
+
+
+class FollowUpTests(RepoTest):
+    def setUp(self):
+        self.repo = FakeRepo(suite=FOLLOW_UP_SUITE)
+
+    def harness_calls(self):
+        return [c for c in self.repo.calls("docker-run") if c["cmd"][:1] == ["opencode"]]
+
+    # @spec ALT-EVAL-RUN-009, ALT-EVAL-OUT-016, ALT-EVAL-OUT-018
+    def test_second_turn_continues_session(self):
+        self.ok_run("demo-skill", "1", "m/x", STUB_REASONING="900")
+        calls = self.harness_calls()
+        self.assertEqual(len(calls), 2)
+        self.assertNotIn("--continue", calls[0]["cmd"])
+        self.assertIn("--continue", calls[1]["cmd"])
+        self.assertEqual(calls[1]["cmd"][-1], "Now tell me more about it.")
+        for c in calls:
+            self.assertIn("XDG_DATA_HOME=/work/state", c["envs"])
+        d = self.repo.run_dir("eval-1-first-eval")
+        self.assertTrue((d / "response2.md").exists())
+        self.assertTrue((d / "events2.jsonl").exists())
+        t = json.loads((d / "timing.json").read_text())
+        self.assertEqual(t["status"], "completed")
+        self.assertEqual(t["follow_up"]["status"], "completed")
+        for k in ("duration_ms", "total_cost_usd", "tokens", "tool_calls"):
+            self.assertIn(k, t["follow_up"])
+        meta = json.loads((self.repo.batch() / "eval-1-first-eval" / "eval_metadata.json").read_text())
+        self.assertEqual(meta["follow_up"]["prompt"], "Now tell me more about it.")
+        self.assertEqual(meta["follow_up"]["assertions"][0]["text"], "FOLLOW-UP-TEXT")
+
+    # @spec ALT-EVAL-RUN-010, ALT-EVAL-RUN-011
+    def test_no_second_turn_after_failed_first(self):
+        self.repo.run("demo-skill", "1", "m/x", STUB_MODE="exit1")
+        self.assertEqual(len(self.harness_calls()), 1)
+        t = json.loads((self.repo.run_dir("eval-1-first-eval") / "timing.json").read_text())
+        self.assertEqual(t["status"], "harness_error")
+        self.assertEqual(t["follow_up"]["status"], "skipped")
+        self.assertFalse((self.repo.run_dir("eval-1-first-eval") / "response2.md").exists())
+
+    # @spec ALT-EVAL-RUN-011
+    def test_run_status_is_first_turns(self):
+        self.ok_run("demo-skill", "1", "m/x", STUB_MODE="ok,exit1")
+        t = json.loads((self.repo.run_dir("eval-1-first-eval") / "timing.json").read_text())
+        self.assertEqual(t["status"], "completed")
+        self.assertEqual(t["follow_up"]["status"], "harness_error")
+
+    # @spec ALT-EVAL-OUT-017
+    def test_changes_captured_once_after_last_turn(self):
+        self.ok_run("demo-skill", "1", "m/x")
+        captures = [c for c in self.repo.calls("docker-run") if c["cmd"][:1] != ["opencode"]]
+        self.assertEqual(len(captures), 1)
+        patch = (self.repo.run_dir("eval-1-first-eval") / "changes.patch").read_text()
+        self.assertIn("second-turn.txt", patch)
+
+    # @spec ALT-EVAL-STAGE-012
+    def test_state_persists_without_container(self):
+        self.ok_run("demo-skill", "1", "m/x", "--no-container")
+        homes = [c["env"]["HOME"] for c in self.repo.calls("harness")]
+        self.assertEqual(len(homes), 2)
+        self.assertEqual(homes[0], homes[1])
+
+
 # ---------------------------------------------------------------- unit tests
 
 class SelectorTests(unittest.TestCase):
@@ -623,8 +696,10 @@ class ContainerTests(RepoTest):
             parts = m.split(":")
             targets[parts[1]] = parts[2:] if len(parts) > 2 else []
         self.assertEqual(set(targets), {"/work/project", "/work/plugins", "/work/opencode.json",
-                                        "/etc/passwd", "/etc/group"})
+                                        "/work/state", "/etc/passwd", "/etc/group"})
         self.assertEqual(targets["/work/project"], [])
+        self.assertEqual(targets["/work/state"], [])
+        self.assertIn("XDG_DATA_HOME=/work/state", call["envs"])
         for ro in ("/work/plugins", "/work/opencode.json", "/etc/passwd", "/etc/group"):
             self.assertEqual(targets[ro], ["ro"], ro)
         self.assertEqual(call["workdir"], "/work/project")
@@ -654,7 +729,7 @@ class ContainerTests(RepoTest):
         call = self.run_call()
         names = {e.split("=", 1)[0] for e in call["envs"]}
         locale = {n for n in names if n in ("LANG", "LC_ALL")}
-        self.assertEqual(names - locale, {"OPENROUTER_API_KEY", "HOME", "OPENCODE_CONFIG",
+        self.assertEqual(names - locale, {"OPENROUTER_API_KEY", "HOME", "OPENCODE_CONFIG", "XDG_DATA_HOME",
                                           "GIT_AUTHOR_NAME", "GIT_AUTHOR_EMAIL",
                                           "GIT_COMMITTER_NAME", "GIT_COMMITTER_EMAIL"})
         self.assertIn("HOME=/home/eval", call["envs"])

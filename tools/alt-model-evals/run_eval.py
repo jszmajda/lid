@@ -121,10 +121,11 @@ def opencode_config(plugins_dir, model, effort):
 
 
 # @spec ALT-EVAL-BOX-001, ALT-EVAL-CLI-011
-def harness_argv(model, prompt, variant=None):
+def harness_argv(model, prompt, variant=None, cont=False):
     return (["opencode", "run", "--pure", "--auto", "--format", "json",
              "-m", "openrouter/" + model]
-            + (["--variant", variant] if variant else []) + [prompt])
+            + (["--variant", variant] if variant else [])
+            + (["--continue"] if cont else []) + [prompt])
 
 
 # @spec ALT-EVAL-STAGE-008
@@ -407,24 +408,27 @@ def hardening_argv(scratch):
 
 
 # @spec ALT-EVAL-BOX-005, ALT-EVAL-BOX-007, ALT-EVAL-BOX-008, ALT-EVAL-BOX-012, ALT-EVAL-KEY-003
-def docker_run_argv(name, image, scratch, model, prompt, variant=None):
+# @spec ALT-EVAL-STAGE-012
+def docker_run_argv(name, image, scratch, model, prompt, variant=None, cont=False):
     return [
         "docker", "run", "--rm", "--name", name,
         "-v", "%s:/work/project" % (scratch / "project"),
         "-v", "%s:/work/plugins:ro" % (scratch / "plugins"),
         "-v", "%s:/work/opencode.json:ro" % (scratch / "opencode.json"),
+        "-v", "%s:/work/state" % (scratch / "state"),
         "-w", "/work/project",
     ] + hardening_argv(scratch) + [
         "-e", "OPENROUTER_API_KEY",
         "-e", "HOME=%s" % CONTAINER_HOME,
         "-e", "OPENCODE_CONFIG=/work/opencode.json",
+        "-e", "XDG_DATA_HOME=/work/state",
         "-e", "GIT_AUTHOR_NAME=%s" % GIT_NAME,
         "-e", "GIT_AUTHOR_EMAIL=%s" % GIT_EMAIL,
         "-e", "GIT_COMMITTER_NAME=%s" % GIT_NAME,
         "-e", "GIT_COMMITTER_EMAIL=%s" % GIT_EMAIL,
         "-e", "LANG=C.UTF-8",
         image,
-    ] + harness_argv(model, prompt, variant)
+    ] + harness_argv(model, prompt, variant, cont)
 
 
 # @spec ALT-EVAL-BOX-014
@@ -610,37 +614,58 @@ def run_one(ctx, ev, n, run_dir):
         (scratch / "opencode.json").write_text(json.dumps(opencode_config(plugins_dir, ctx["model"], ctx["effort"]), indent=2) + "\n")
         prompt = build_prompt(skill_name(ctx["skill_dir"]), plugins_dir, ev["prompt"], ctx["date"])
 
-        with open(out / "events.jsonl", "wb") as stdout, open(out / "stderr.log", "wb") as stderr:
-            if ctx["bare"]:
-                home = Path(tempfile.mkdtemp(prefix="lid-alt-eval-home-"))
-                argv = ["npx", "-y", HARNESS] + harness_argv(ctx["model"], prompt, ctx["variant"])[1:]
-                harness = Harness(argv, stdout, stderr, cwd=str(scratch / "project"),
-                                  env=bare_env(ctx["key"], home, scratch / "opencode.json"))
-            else:
-                name = "lid-alt-eval-" + secrets.token_hex(6)
-                argv = docker_run_argv(name, ctx["image"], scratch, ctx["model"], prompt, ctx["variant"])
-                harness = Harness(argv, stdout, stderr, container=name)
-            started = harness.started
-            timed_out = False
-            try:
-                harness.proc.wait(timeout=ctx["timeout"])
-            except subprocess.TimeoutExpired:
-                timed_out = True
-                harness.stop()
-            except KeyboardInterrupt:
-                interrupted = True
-                signal.signal(signal.SIGINT, signal.SIG_IGN)
-                harness.stop()
-            finished = time.monotonic()
-            exit_code = harness.proc.returncode
+        (scratch / "state").mkdir()
+        if ctx["bare"]:
+            home = Path(tempfile.mkdtemp(prefix="lid-alt-eval-home-"))
 
-        with open(out / "events.jsonl", encoding="utf-8", errors="replace") as f:
-            summary = summarize_events(f)
-        status = classify(exit_code, summary["has_error"], timed_out, interrupted)
-        error_message = summary["error_message"]
-        if status == "harness_error" and not error_message:
-            error_message = "harness exited with code %s" % exit_code
+        def turn(text, cont, suffix):
+            """Run the harness once; returns (status, summary, exit_code, (start, end), error, interrupted)."""
+            nonlocal harness
+            with open(out / ("events%s.jsonl" % suffix), "wb") as stdout, \
+                    open(out / ("stderr%s.log" % suffix), "wb") as stderr:
+                if ctx["bare"]:
+                    argv = ["npx", "-y", HARNESS] + harness_argv(ctx["model"], text, ctx["variant"], cont)[1:]
+                    harness = Harness(argv, stdout, stderr, cwd=str(scratch / "project"),
+                                      env=bare_env(ctx["key"], home, scratch / "opencode.json"))
+                else:
+                    name = "lid-alt-eval-" + secrets.token_hex(6)
+                    argv = docker_run_argv(name, ctx["image"], scratch, ctx["model"], text,
+                                           ctx["variant"], cont)
+                    harness = Harness(argv, stdout, stderr, container=name)
+                begun, timed_out, stopped = harness.started, False, False
+                try:
+                    harness.proc.wait(timeout=ctx["timeout"])
+                except subprocess.TimeoutExpired:
+                    timed_out = True
+                    harness.stop()
+                except KeyboardInterrupt:
+                    stopped = True
+                    signal.signal(signal.SIGINT, signal.SIG_IGN)
+                    harness.stop()
+                ended = time.monotonic()
+                code = harness.proc.returncode
+            with open(out / ("events%s.jsonl" % suffix), encoding="utf-8", errors="replace") as f:
+                summ = summarize_events(f)
+            st = classify(code, summ["has_error"], timed_out, stopped)
+            err = summ["error_message"]
+            if st == "harness_error" and not err:
+                err = "harness exited with code %s" % code
+            return st, summ, code, (begun, ended), err, stopped
+
+        status, summary, exit_code, (started, finished), error_message, interrupted = turn(prompt, False, "")
         (out / "response.md").write_text(summary["response"])
+        follow_up = None
+        if ev.get("follow_up"):
+            # @spec ALT-EVAL-RUN-009, ALT-EVAL-RUN-010, ALT-EVAL-OUT-016
+            if status == "completed" and not interrupted:
+                st2, summ2, code2, (b2, e2), err2, interrupted = turn(ev["follow_up"]["prompt"], True, "2")
+                (out / "response2.md").write_text(summ2["response"])
+                follow_up = {"status": st2, "duration_ms": int(round((e2 - b2) * 1000)),
+                             "total_cost_usd": summ2["total_cost_usd"], "tokens": summ2["tokens"],
+                             "tool_calls": summ2["tool_calls"], "exit_code": code2, "error_message": err2}
+            else:
+                follow_up = {"status": "skipped"}
+        # @spec ALT-EVAL-OUT-017
         if ctx["bare"]:
             capture_on_host(scratch / "project", fixture_sha, out)
         else:
@@ -657,6 +682,8 @@ def run_one(ctx, ev, n, run_dir):
             "exit_code": exit_code,
             "error_message": error_message,
         }
+        if follow_up is not None:
+            timing["follow_up"] = follow_up  # @spec ALT-EVAL-RUN-011: status stays the first turn's
         (out / "timing.json").write_text(json.dumps(timing, indent=2) + "\n")
         redact_tree(out, ctx["key"])
         run_dir.parent.mkdir(parents=True, exist_ok=True)
@@ -773,7 +800,9 @@ def main(argv):
                 eval_dir.mkdir(parents=True, exist_ok=True)
                 write_json(eval_dir / "eval_metadata.json", {
                     "eval_id": eval_id, "eval_name": ev["eval_name"],
-                    "prompt": ev["prompt"], "assertions": ev["assertions"]})
+                    "prompt": ev["prompt"], "assertions": ev["assertions"],
+                    # @spec ALT-EVAL-OUT-018
+                    **({"follow_up": ev["follow_up"]} if ev.get("follow_up") else {})})
             for n in range(1, args.runs + 1):
                 status, timing = run_one(ctx, ev, n, eval_dir / "with_skill" / ("run-%d" % n))
                 results.append((eval_id, n, status, timing["total_cost_usd"],

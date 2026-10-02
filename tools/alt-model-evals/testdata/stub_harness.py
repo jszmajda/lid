@@ -97,6 +97,13 @@ def harness(project, plugins, config_path, argv, pidfile):
     if mode == "error_event":
         emit({"type": "error", "error": {"name": "APIError", "data": {"message": "Missing Authentication header"}}})
         sys.exit(0)
+    if "--continue" in argv:
+        # A follow-up turn: answer in the same session and leave one more file behind.
+        with open(os.path.join(project, "second-turn.txt"), "w") as f:
+            f.write("written in the follow-up turn\n")
+        emit({"type": "text", "part": {"type": "text", "text": "SECOND ANSWER"}})
+        emit({"type": "step_finish", "part": {"cost": 0.1, "tokens": {"input": 4, "output": 3, "reasoning": 0, "cache": {"read": 0, "write": 0}}}})
+        sys.exit(0)
     if mode == "gitlink":
         # Replace .git with a symlink to a directory outside the project.
         decoy = os.path.join(STATE, "decoy-git")
