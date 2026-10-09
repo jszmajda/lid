@@ -231,6 +231,15 @@ class FollowUpTests(RepoTest):
         self.assertEqual(t["status"], "completed")
         self.assertEqual(t["follow_up"]["status"], "harness_error")
 
+    # @spec ALT-EVAL-STAGE-013
+    def test_follow_up_eval_gets_conversational_prompt(self):
+        self.ok_run("demo-skill", "1", "m/x")
+        first = self.harness_calls()[0]["cmd"]
+        self.assertTrue(any("ask in your final message and stop" in a for a in first))
+        self.ok_run("demo-skill", "2", "m/x")
+        plain = self.harness_calls()[-1]["cmd"]
+        self.assertTrue(any("non-interactive" in a for a in plain))
+
     # @spec ALT-EVAL-OUT-017
     def test_changes_captured_after_each_turn(self):
         self.ok_run("demo-skill", "1", "m/x")
@@ -332,6 +341,15 @@ class PureFunctionTests(unittest.TestCase):
         positions = [prompt.find(p) for p in parts]
         self.assertTrue(all(i >= 0 for i in positions), list(zip(parts, positions)))
         self.assertEqual(positions, sorted(positions))
+
+    # @spec ALT-EVAL-STAGE-013
+    def test_prompt_template_conversational(self):
+        prompt = run_eval.build_prompt("my-skill", "/work/plugins",
+                                       "Run /thing on this.", "2026-09-26", conversational=True)
+        self.assertIn("ask in your final message and stop", prompt)
+        self.assertNotIn("non-interactive", prompt)
+        self.assertNotIn("defaults you took", prompt)
+        self.assertLess(prompt.find("stop"), prompt.find("2026-09-26"))
 
     # @spec ALT-EVAL-RUN-001, ALT-EVAL-RUN-002, ALT-EVAL-RUN-003
     def test_classify(self):

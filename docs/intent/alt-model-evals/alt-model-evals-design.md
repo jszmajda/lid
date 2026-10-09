@@ -96,6 +96,8 @@ The model receives one message, built from a fixed template shared by every run:
 4. The run is non-interactive: where the skill would ask the user, take the skill's stated default and state in the final response which defaults were taken. Today's date is the run date.
 5. The final message is the exact user-facing response and nothing else.
 
+An eval with a scripted `follow_up` replaces line 4 with: the user will read the final message and reply; where the skill directs you to ask the user, ask in your final message and stop, without answering for them. A real user is about to answer, so taking a default would put words in their mouth, and it would contradict evals that check whether the model asks (a decision-doc offer, for instance). Asked to state which defaults it took, a model also narrates choices it was told not to raise.
+
 This follows the prompt the Claude pilot runs use, with two differences: it names an "agent skill" rather than a Claude Code skill, and it loads the skill through the harness's own skill mechanism rather than by file path. `<skill>` is the `name` in the skill's frontmatter, falling back to its directory name. In `--no-container` mode the plugin path, in the prompt and in `skills.paths`, is the scratch directory's `plugins/`.
 
 ## Run lifecycle and status

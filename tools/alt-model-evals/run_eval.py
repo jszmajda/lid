@@ -141,7 +141,18 @@ def skill_name(skill_dir):
 
 
 # @spec ALT-EVAL-STAGE-008, ALT-EVAL-STAGE-009
-def build_prompt(name, plugins_dir, prompt, date):
+NON_INTERACTIVE = (
+    "3. This run is non-interactive. Where the skill would ask the user, take the skill's "
+    "stated default, and state in your final response which defaults you took. "
+)
+# @spec ALT-EVAL-STAGE-013
+CONVERSATIONAL = (
+    "3. The user will read your final message and reply. Where the skill directs you to ask "
+    "the user, ask in your final message and stop; do not answer for them. "
+)
+
+
+def build_prompt(name, plugins_dir, prompt, date, conversational=False):
     return (
         "You are executing one eval run of an agent skill. The current directory is the "
         "project root; treat it as the entire repository.\n"
@@ -151,11 +162,10 @@ def build_prompt(name, plugins_dir, prompt, date):
         "Sibling skills live under %s.\n"
         "2. The user's request: \"%s\"\n"
         "   Execute it per the skill against the current directory, making any file changes yourself.\n"
-        "3. This run is non-interactive. Where the skill would ask the user, take the skill's "
-        "stated default, and state in your final response which defaults you took. "
+        "%s"
         "Today's date is %s.\n"
         "4. Your final message must be the exact user-facing response and nothing else.\n"
-    ) % (name, plugins_dir, prompt, date)
+    ) % (name, plugins_dir, prompt, CONVERSATIONAL if conversational else NON_INTERACTIVE, date)
 
 
 # @spec ALT-EVAL-RUN-001, ALT-EVAL-RUN-002, ALT-EVAL-RUN-003, ALT-EVAL-RUN-004
@@ -611,7 +621,8 @@ def run_one(ctx, ev, n, run_dir):
         # @spec ALT-EVAL-BOX-015
         plugins_dir = str(scratch / "plugins") if ctx["bare"] else "/work/plugins"
         (scratch / "opencode.json").write_text(json.dumps(opencode_config(plugins_dir, ctx["model"], ctx["effort"]), indent=2) + "\n")
-        prompt = build_prompt(skill_name(ctx["skill_dir"]), plugins_dir, ev["prompt"], ctx["date"])
+        prompt = build_prompt(skill_name(ctx["skill_dir"]), plugins_dir, ev["prompt"], ctx["date"],
+                              conversational=bool(ev.get("follow_up")))
 
         (scratch / "state").mkdir()
         if ctx["bare"]:
