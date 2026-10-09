@@ -179,6 +179,9 @@ FOLLOW_UP_SUITE = {
          "assertions": [{"text": "ASSERTION-ONE-TEXT", "spec_ids": ["DEMO-001"]}],
          "follow_up": {"prompt": "Now tell me more about it.",
                        "assertions": [{"text": "FOLLOW-UP-TEXT", "spec_ids": ["DEMO-009"]}]}},
+        {"id": 2, "eval_name": "second-eval", "prompt": "Do the second thing.",
+         "files": [{"path": "CLAUDE.md", "content": "# Fixture\n"}],
+         "assertions": [{"text": "ASSERTION-TWO-TEXT", "spec_ids": ["DEMO-002"]}]},
     ],
 }
 
@@ -229,12 +232,20 @@ class FollowUpTests(RepoTest):
         self.assertEqual(t["follow_up"]["status"], "harness_error")
 
     # @spec ALT-EVAL-OUT-017
-    def test_changes_captured_once_after_last_turn(self):
+    def test_changes_captured_after_each_turn(self):
         self.ok_run("demo-skill", "1", "m/x")
         captures = [c for c in self.repo.calls("docker-run") if c["cmd"][:1] != ["opencode"]]
+        self.assertEqual(len(captures), 2)
+        d = self.repo.run_dir("eval-1-first-eval")
+        self.assertIn("second-turn.txt", (d / "changes.patch").read_text())
+        self.assertNotIn("second-turn.txt", (d / "changes1.patch").read_text())
+
+    # @spec ALT-EVAL-OUT-017
+    def test_no_first_turn_capture_without_follow_up(self):
+        self.ok_run("demo-skill", "2", "m/x")
+        captures = [c for c in self.repo.calls("docker-run") if c["cmd"][:1] != ["opencode"]]
         self.assertEqual(len(captures), 1)
-        patch = (self.repo.run_dir("eval-1-first-eval") / "changes.patch").read_text()
-        self.assertIn("second-turn.txt", patch)
+        self.assertFalse((self.repo.run_dir("eval-2-second-eval") / "changes1.patch").exists())
 
     # @spec ALT-EVAL-STAGE-012
     def test_state_persists_without_container(self):

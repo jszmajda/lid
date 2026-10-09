@@ -4,6 +4,7 @@
 **Implementing artifacts**:
 - plugins/linked-intent-dev/skills/linked-intent-dev/SKILL.md
 - plugins/linked-intent-dev/skills/linked-intent-dev/references/capability-flags.md
+- plugins/linked-intent-dev/skills/linked-intent-dev/evals/evals.json (scenario evals)
 
 Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 

@@ -514,8 +514,7 @@ CAPTURE_TIMEOUT = 120
 # @spec ALT-EVAL-BOX-017, ALT-EVAL-BOX-018, ALT-EVAL-BOX-019, ALT-EVAL-OUT-007, ALT-EVAL-OUT-008
 def capture_in_container(image, scratch, fixture_sha, out):
     """Produce changes.patch and git-log.txt without running git on the host."""
-    capture_out = scratch / "capture"
-    capture_out.mkdir()
+    capture_out = Path(tempfile.mkdtemp(prefix="capture-", dir=str(scratch)))
     name = "lid-alt-eval-capture-" + secrets.token_hex(6)
     argv = [
         "docker", "run", "--rm", "--name", name, "--network", "none",
@@ -654,10 +653,21 @@ def run_one(ctx, ev, n, run_dir):
 
         status, summary, exit_code, (started, finished), error_message, interrupted = turn(prompt, False, "")
         (out / "response.md").write_text(summary["response"])
+
+        def capture(dest):
+            if ctx["bare"]:
+                capture_on_host(scratch / "project", fixture_sha, dest)
+            else:
+                capture_in_container(ctx["image"], scratch, fixture_sha, dest)
+
         follow_up = None
         if ev.get("follow_up"):
             # @spec ALT-EVAL-RUN-009, ALT-EVAL-RUN-010, ALT-EVAL-OUT-016
             if status == "completed" and not interrupted:
+                # @spec ALT-EVAL-OUT-017
+                first = Path(tempfile.mkdtemp(prefix="turn1-", dir=str(scratch)))
+                capture(first)
+                shutil.move(str(first / "changes.patch"), str(out / "changes1.patch"))
                 st2, summ2, code2, (b2, e2), err2, interrupted = turn(ev["follow_up"]["prompt"], True, "2")
                 (out / "response2.md").write_text(summ2["response"])
                 follow_up = {"status": st2, "duration_ms": int(round((e2 - b2) * 1000)),
@@ -666,10 +676,7 @@ def run_one(ctx, ev, n, run_dir):
             else:
                 follow_up = {"status": "skipped"}
         # @spec ALT-EVAL-OUT-017
-        if ctx["bare"]:
-            capture_on_host(scratch / "project", fixture_sha, out)
-        else:
-            capture_in_container(ctx["image"], scratch, fixture_sha, out)
+        capture(out)
         copy_project(scratch / "project", out)
         timing = {
             "model": ctx["model"],

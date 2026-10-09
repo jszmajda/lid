@@ -117,7 +117,7 @@ On timeout, on an interrupt, and on any runner failure, the runner stops the con
 
 An eval may carry a scripted second turn (`follow_up`, see the `linked-intent-dev` sub-HLD's eval conventions) for behavior a skill reserves for later turns. When the first turn completes, the runner starts the harness a second time with the follow-up prompt and opencode's `--continue`, so the model answers in the same session with its first turn in context. The second turn has its own wall-clock limit and its own status. When the first turn does not complete, the follow-up is not run and its status is `skipped`. The run's own status is the first turn's.
 
-Session state must outlive the first harness process. The container's home directory is an in-memory filesystem discarded when the container exits, so the runner points opencode's data directory (`XDG_DATA_HOME`) at a `state/` folder in the run's scratch directory, mounted read-write at `/work/state`; without a container, the run's private home already persists across both turns. Either way the state is deleted with the scratch directory. Project changes are captured once, after the last turn.
+Session state must outlive the first harness process. The container's home directory is an in-memory filesystem discarded when the container exits, so the runner points opencode's data directory (`XDG_DATA_HOME`) at a `state/` folder in the run's scratch directory, mounted read-write at `/work/state`; without a container, the run's private home already persists across both turns. Either way the state is deleted with the scratch directory. Project changes are captured after the last turn and, when a follow-up runs, also after the first turn, so a grader can tell which turn made a change: whether a file was written before the user's second message, for instance.
 
 ## Outputs
 
@@ -134,6 +134,7 @@ plugins/<plugin>/skills/<skill>-workspace/alt-model-<YYYY-MM-DD>-<model-slug>/
       timing.json
       stderr.log
       changes.patch           ← every difference from the fixture commit, untracked files included
+      changes1.patch          ← the same, as of the end of the first turn (only when a follow-up ran)
       git-log.txt             ← the project's history, including any commits the model made
       project/                ← the fixture directory's final state, without .git
 ```
