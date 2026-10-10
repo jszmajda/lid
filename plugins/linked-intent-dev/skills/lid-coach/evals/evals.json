@@ -12,7 +12,20 @@
     { "model": "openai/gpt-5.6-sol", "date": "2026-09-29", "evals": "16", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "28/30" },
     { "model": "openai/gpt-5.6-terra", "date": "2026-09-29", "evals": "16", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "30/30" },
     { "model": "z-ai/glm-5.3", "date": "2026-09-29", "evals": "16", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "30/30" },
-    { "model": "z-ai/glm-5.3-flash", "date": "2026-09-29", "evals": "16", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "25/30" }
+    { "model": "z-ai/glm-5.3-flash", "date": "2026-09-29", "evals": "16", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "25/30" },
+    { "model": "claude-haiku-4-5", "date": "2026-10-10", "evals": "10,11,15,16", "effort": "medium", "passed": "110/180" },
+    { "model": "claude-haiku-5-5", "date": "2026-10-10", "evals": "10,11,15,16", "effort": "medium", "passed": "153/180" },
+    { "model": "claude-opus-4-8", "date": "2026-10-10", "evals": "10,11,15,16", "effort": "medium", "passed": "178/180" },
+    { "model": "claude-opus-5-5", "date": "2026-10-10", "evals": "10,11,15,16", "effort": "medium", "passed": "171/180" },
+    { "model": "claude-sonnet-4-5", "date": "2026-10-10", "evals": "10,11,15,16", "effort": "medium", "passed": "128/180" },
+    { "model": "claude-sonnet-4-6", "date": "2026-10-10", "evals": "10,11,15,16", "effort": "medium", "passed": "172/180" },
+    { "model": "claude-sonnet-5-5", "date": "2026-10-10", "evals": "10,11,15,16", "effort": "medium", "passed": "171/180" },
+    { "model": "deepseek/deepseek-v4.1-flash", "date": "2026-10-10", "evals": "10,11,15,16", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "173/180" },
+    { "model": "openai/gpt-5.6-sol", "date": "2026-10-10", "evals": "10,11,15,16", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "177/180" },
+    { "model": "openai/gpt-5.6-terra", "date": "2026-10-10", "evals": "10,11,15,16", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "160/180" },
+    { "model": "openai/gpt-6.1-sol", "date": "2026-10-10", "evals": "10,11,15,16", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "180/180" },
+    { "model": "z-ai/glm-5.3", "date": "2026-10-10", "evals": "10,11,15,16", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "173/180" },
+    { "model": "z-ai/glm-5.3-flash", "date": "2026-10-10", "evals": "10,11,15,16", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "145/180" }
   ],
   "evals": [
     {

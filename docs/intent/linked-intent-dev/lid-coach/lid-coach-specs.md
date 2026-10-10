@@ -85,7 +85,7 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 - `[ ]` **LID-COACH-036**: When a finding's recommended follow-up is structural in character (orphans, reverse orphans, adjacent-level drift enumeration), the recommended action SHALL point the user at `/arrow-maintenance` rather than attempt to enumerate the structural instances from the coach's sampled read.
 - `[x]` **LID-COACH-037**: The "what was audited" section SHALL name the files read, the areas sampled, and the depth of sampling, to allow the user to judge breadth. This section MAY include quantitative signals about scope of inspection (e.g., counts of `@spec` references, LLDs reviewed, arrow segments sampled, files read).
 - `[ ]` **LID-COACH-038**: The system SHALL NOT persist the report to disk by default; persistence happens only when the user explicitly requests a saved report.
-- `[ ]` **LID-COACH-063**: When the core capability-flag list flags, for the executing model's configuration, an area the review covers, the system SHALL include one report line after the audited-scope section naming the review dimensions involved and asking the user to check them; when no flag applies, the system SHALL omit the line.
+- `[x]` **LID-COACH-063**: When the core capability-flag list flags, for the executing model's configuration, an area the review covers, the system SHALL include one report line after the audited-scope section naming the review dimensions involved and asking the user to check them; when no flag applies, the system SHALL omit the line.
 - `[x]` **LID-COACH-067**: The system SHALL NOT state remedies in the first report's findings inventory, and SHALL give a finding's remedy when the user asks about that finding in a follow-up turn.
 
 ## Advisory Posture

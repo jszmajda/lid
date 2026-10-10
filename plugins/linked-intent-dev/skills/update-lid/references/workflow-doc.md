@@ -41,6 +41,28 @@ Three rules hold whatever the instruments:
 - A spec or draft that admits more than one reading always goes back to the user — only they hold the latent intent — at whatever phase the fork is discovered, before further tests or code land against either reading. A fork found after tests exist is surfaced with the affected tests named.
 - Delegation changes *who inspects at a stop*, never *how many stops there are*. The user can still override anything, per *the user is always right — with warning*.
 
+**Judgment still reaches the user, however inspection is set up.** Judgment is what the user brings to the pair. When they delegate inspection, consolidate stops, lean on out-of-band review, or let work run largely on its own, the moments that need their judgment still happen; they just stop being shown by default. So when you meet one, bring it to them at that phase's stop, or right away if you cannot proceed without it. Do not settle it on their behalf, and do not leave it buried in an inspector's findings.
+
+These kinds come up often. The list is not complete: any call that is recognizably the user's (a preference, a priority, a risk only they can weigh) goes to them too.
+
+- **Spec fork**: a spec or draft admits more than one reading.
+- **Unsettled choice**: the change needs a decision no document makes.
+- **Tenet or goal conflict**: a mechanism works against one of the project's own tenets or goals.
+- **Cross-node contradiction**: two design nodes say incompatible things.
+- **Rung mismatch**: an EARS spec says more or less than its design node.
+- **Code drifts from spec**: code or tests do something no spec says, or miss something one does.
+- **Missed cascade**: an upstream change leaves downstream intent stale.
+- **Wrong attachment level**: a decision or term sits below some of the nodes that use it.
+- **Under-captured decision**: a choice a cold reader would question has no record they could reconstruct it from.
+- **Hard to undo**: the change moves or deletes data, migrates a schema, or has an external effect that cannot simply be reverted.
+- **Unpinned invariant**: a rule the design depends on has no test (or proof) holding it.
+
+By default, bring all of these to the user; when unsure, ask. The user decides how much of this they want to check, based on the risk as they see it. A tool that handles their money may need everything checked; a game made for fun may need very little. They usually say so in conversation, sometimes as prose in their instruction file. Follow what they said, and keep it to the work they said it about: letting some judgment go for a research prototype does not carry over to the product it will join. If you notice a pattern, such as them waving through every cascade question, name it and ask whether to treat it as their preference; do not start applying it on your own.
+
+Spec forks and hard-to-undo changes need more than that. Treat either as let go only when the user says so about that kind specifically, never because they want fewer interruptions in general.
+
+**Capability flags — bring the user in where your model is known to miss things.** `references/capability-flags.md` lists kinds of judgment that eval evidence shows some models reliably miss at a given reasoning effort. Check whether a flag applies to you: find your own model name and reasoning effort in its rows; if there is no row for your configuration, or you cannot tell your configuration, treat the flag as applying. When a phase's work touches a flagged area, do your best work there as usual, then at that phase's stop name the area and what the user should check — e.g., "Please check this LLD's mechanisms against the HLD tenets yourself; models configured like me are known to miss contradictions like that." Send that judgment to the user even if they have authorized another inspector at that stop, because an inspector running on the same model has the same gap, and even if they had let that kind of judgment go, telling them why. If they have seen the flag and still prefer to let it go, follow that. Say it once, plainly — it routes one judgment to the user; it does not qualify the rest of your work. If the file lists a tendency for your configuration (a lean in something the user already decides, such as offering decision docs too readily), mention it once when that behavior comes up. When no flag applies to you, including when the file lists none, say nothing about capability flags.
+
 ## Delegation discipline
 
 Discipline does not travel by ambient context. A subagent dispatched to perform phase work receives only its prompt — not this skill, not the instruction file, not the conversation. Embed the phase's obligations in the dispatch prompt itself.
@@ -62,7 +84,7 @@ Every LID project declares its mode in its instruction file (the project's `AGEN
 
 Once configured, proceed with the HLD check: does a top-level HLD exist at `docs/high-level-design.md`? Does it cover the domain of the change? If the change alters the project's architecture, update the HLD first. If no HLD exists (fresh project), draft one from the user's description.
 
-For consequential architectural changes (a new approach, a significant trade-off, a new mode) — and on a fresh-project HLD draft — before committing to a full HLD **sketch 2–3 competing options** (~200 words each, naming downstream consequences) and present them for user selection. Surfacing decisions as *choices among alternatives* — rather than as the agent's best guess — is the primary edge-detection mechanism at the HLD level.
+For consequential architectural changes (a new approach, a significant trade-off, a new mode) — and on a fresh-project HLD draft — before committing to a full HLD **sketch 2–3 competing options** (~200 words each, naming downstream consequences) and present them for user selection. When they select, decide how the choice is recorded (see *Decision docs*). Surfacing decisions as *choices among alternatives* — rather than as the agent's best guess — is the primary edge-detection mechanism at the HLD level.
 
 When drafting or revising the HLD, **elicit tenets**: surface the few decisions that could reasonably go more than one acceptable way, ask the user which way to lean, and record each as a one-line tie-breaker under `## Tenets`. Apply the defensible-opposite test before proposing one — if the reverse of the tenet is absurd rather than a choice a different project could reasonably make, it is a platitude and resolves nothing; drop it. Apply a second test too: a tenet leans a class of decisions no spec anticipates — if the candidate reads as a triggered action (*when X, do Y* with a definite outcome), it is a spec, not a tenet; route it to EARS rather than the tenet list, even when its opposite is defensible. Apply a third rule to the survivors — form: a tenet stays a one-line lean. When a genuine tenet carries operational elaboration (how to apply it, steps to run), record only the lean under `## Tenets` and route the elaboration into workflow guidance — a user project's instruction file, or the governing skill when editing LID itself. Apply the three in order: platitude test, spec test, form rule. A tenet is edge detection for choices no spec will anticipate. Surface the load-bearing ones you can see and invite more; do not interrogate the user for an exhaustive set.
 
@@ -85,6 +107,10 @@ When a node looks like it holds more than one thing, choose its shape by the *ki
 In complex projects multiple LLDs may look semantically relevant. Do not silently pick — surface the candidate leaf LLDs with their scopes and ask the user which applies.
 
 If a leaf LLD exists, confirm coherence with the change and update as needed.
+
+When the change needs an LLD-level choice with real tradeoffs that no document settles, sketch 2–3 options naming their downstream consequences, as in Phase 1, and let the user select before drafting the LLD around it. When they select, decide how the choice is recorded (see *Decision docs*).
+
+**Put each decision and term where everything that uses it can see it.** A decision belongs at the lowest design node whose subtree contains everything it affects: if it would force a sibling node to change, it rises to their shared parent; if it only creates a downstream obligation, it stays put and you cascade a note to the sibling. Terms follow the same rule, and they flow down the arrow, never up. If a parent or sibling needs a term a leaf coined, move its definition up to their shared ancestor (the HLD, for a term the whole project uses). Before coining a term at all, prefer a plain descriptive phrase: a coined term is worth its definition only when several nodes need the same exact concept, and a reader who skips the definition will misread it. If a move crosses a segment boundary, raise it with the user instead of moving it silently.
 
 After drafting or substantially revising an LLD, run an **LLD-level edge-case probe**: a list of "what happens when..." questions pointed at *this LLD's own gaps* — missing state transitions, unstated invariants, unspecified API error shapes, ordering assumptions inside the component. (Cross-component and cross-spec interactions come later in Phase 4, not here.) When a subagent is available, delegate the probe to the subagent for cleaner, less-biased coverage. Present the gap list; the user triages which gaps to fix in the LLD vs. defer as open questions.
 
@@ -169,9 +195,11 @@ Re-read each adjacent level of the arrow for the changed segment and produce a s
 
 ## Decision docs
 
-Most design decisions are recorded as a row in the relevant LLD's Decisions & Alternatives table. A few earn a full **decision doc** — a standalone artifact laying out a decision's context, criteria, options, and selection at enough resolution that a future cold reader can re-run the judgment.
+Most design decisions are recorded as a row in the relevant LLD's Decisions & Alternatives table. A few earn a full **decision doc** — a standalone artifact laying out a decision's context, criteria, options, and selection at enough resolution that a future cold reader can re-run the judgment. A decision doc lives two lives: drafted, it is a position built to structure debate — through the PR that carries it on a team, or with the agent in a solo session; finalized, it memorializes that deep work so the rest of the system's intent can lean on it.
 
 Apply the test from the **landed** state, not the deliberation: *would a cold reader of the result find the choice non-obvious — question it, or be tempted to reverse it?* — not *was it hard to decide?* A decision that was contested while you worked but reads as obvious or native once it lands needs **neither a doc nor a row**; the structure documents itself, and recording a settled-obvious choice is the residue the *docs carry current intent* tenet strips. Add a **table row** when a cold reader would wonder "why this?" and a line settles it. Write a **full decision doc** only when the choice stays genuinely live — a reader would re-litigate it without the competing options and criteria. Decision docs are rare; a directory full of them is a smell.
+
+**When to offer one.** Run this test when the user settles a choice among options you sketched (Phase 1 or Phase 2), judging the design as it will land. If the choice will stay live for a cold reader (credible options traded against more than one criterion, and other design nodes about to be sized around the result), offer once to record it as a decision doc, with a Decisions row as the alternative. For a choice the HLD owns, the "row" is an entry in the HLD's Key Design Decisions section; add the section if it is missing. Write the doc only if the user accepts, then link it from the owning node's Decisions row. Do not offer one for a choice one option dominates, that an inherited constraint settles, or that affects only its own node, however long the debate ran. People who are offered a doc tend to say yes whether or not they need it, so keep the offer for choices that clear this bar; otherwise record the row, or nothing, without asking.
 
 A decision doc lives in the owning node's `decisions/` directory (`docs/intent/<segment>/decisions/` for a segment-level decision, `docs/decisions/` for a project-level one), is owned by that node, and carries no EARS IDs. See `references/decision-doc-template.md` for structure, the earns-its-place heuristic, and the fit-verdict format.
 
@@ -236,6 +264,7 @@ it('validates email format before submission', () => { ... });
 - `references/lld-templates.md` — LLD structure template.
 - `references/hld-template.md` — HLD standard sections template.
 - `references/decision-doc-template.md` — decision-doc structure, the earns-its-place heuristic, and the fit-verdict format.
+- `references/capability-flags.md` — kinds of judgment some models are known to miss, and at which configurations; read when checking whether to bring the user in.
 
 
 ---
@@ -744,9 +773,9 @@ That yields three outcomes, not two:
 
 - **Record nothing.** The choice is obvious or native once it lands; the structure documents itself. Writing down a settled-and-obvious decision is the same residue the *docs carry current intent* tenet strips — a fresh author of the landed system would not explain why the natural shape is natural.
 - **A Decisions & Alternatives row.** A cold reader would plausibly wonder "why this?", and one line of rationale settles it (one option clearly dominates, or an inherited constraint eliminated the rest).
-- **A full decision doc.** The choice stays genuinely *live*: a cold reader would re-litigate it without the full tradeoffs laid out — competing options weighed against criteria.
+- **A full decision doc.** The choice stays genuinely *live*: a cold reader would re-litigate it without the full tradeoffs laid out — competing options weighed against criteria — and the decision required deep work whose memory the rest of the system's intent leans on.
 
-Competitive options scored against weighted criteria are a *symptom* that a doc may be warranted, not the test itself — the test is the reader's forward-looking need. A directory full of decision docs is a smell.
+Competitive options scored against weighted criteria are a *symptom* that a doc may be warranted, not the test itself — the test is the reader's forward-looking need. A debate having happened is likewise a symptom, not the test — a table row can come out of a long argument. A directory full of decision docs is a smell.
 
 ## Where it lives
 
@@ -761,7 +790,7 @@ A decision belongs where its **substance** lives, even when implementing it casc
 
 ## Lifecycle
 
-While the decision is open it is a **plan-space working artifact** — options live, discussion present. When the decision is made, its durable reasoning lands here and the transient deliberation is shed. Like every LID doc, it is **written to be read cold**: present tense, no narration of how the discussion unfolded, no "we decided X after Y raised Z." "Options in the domain" means *the options that exist in this problem space*, not a chronology of what was proposed when.
+While the decision is open it is a **plan-space working artifact** — options live, discussion present. Its first life is to *facilitate* that debate: on a team, drafted as a position and argued in the PR that carries it; solo, argued in the working session with the agent. Finalizing — merging, or committing the settled doc — begins its second life: the durable reasoning lands here, the transient deliberation is shed, and the doc memorializes the decision made. Like every LID doc, it is **written to be read cold**: present tense, no narration of how the discussion unfolded, no "we decided X after Y raised Z." "Options in the domain" means *the options that exist in this problem space*, not a chronology of what was proposed when.
 
 ## Frontmatter
 
@@ -771,7 +800,7 @@ node: {owning-segment}        # the node whose decision this is — a segment, o
 ---
 ```
 
-A decision doc carries no `status` field. Its presence in `docs/` *is* its acceptance — deliberation happens in plan-space, so a doc only lands here once the decision is made. A superseded decision is deleted and replaced, not flagged (mutation, not accumulation; git preserves the history).
+A decision doc carries no `status` field. Its presence in `docs/` *is* its acceptance — deliberation happens in plan-space, so a doc only lands here once the decision is made (a doc on a branch under review is still in its first life — merging is the acceptance). A superseded decision is deleted and replaced, not flagged (mutation, not accumulation; git preserves the history).
 
 When a decision builds on or relates to another — when it would be unintelligible without that premise — say so in **Context**: open with a one-line pointer to the decision it depends on. Keep this as freeform prose, not a fixed field; what a decision relates to varies too much to bind to a schema.
 
@@ -857,3 +886,105 @@ strongly preferred to arise from the analysis above rather than override it. If 
 recommendation contradicts the criteria, say so plainly — don't quietly reshape the
 analysis to fit.
 ```
+
+
+---
+
+<!-- Appended reference: capability-flags.md -->
+
+# Capability flags
+
+This file answers one question for the person pairing with you: **can they use LID with this model, and will it be effective?** LID's guidance runs on whatever model the user chooses. Most of it holds on any model, but some kinds of judgment depend on the model and on how much it reasons. LID's evals measure those kinds of judgment across the model configurations listed here. Where a configuration is known to miss one, LID brings that judgment to the user instead of letting the model settle it alone.
+
+## How to use this file
+
+1. Find your configuration: your model name and the reasoning effort you run at. Each section below lists every configuration tested for that kind of judgment, flagged or not.
+2. If your configuration is **flagged** for a kind of judgment, bring that judgment to the user whenever your work touches it, even if they have let that kind of judgment go. Tell them why, once and plainly. If they have seen the flag and still prefer to let it go, follow that.
+3. If your configuration **passed**, handle that kind of judgment as the user has asked.
+4. If there is **no row** for your configuration (an untested model, a different reasoning effort, or you cannot tell what you run at), treat every flag in this file as applying to you.
+
+A flag says where to look harder. It does not limit what you do: do your best work everywhere, and bring the flagged judgment to the user as well.
+
+5. If your configuration is listed under **Tendencies**, the behavior still reaches the user, so nothing changes about who decides. When the behavior comes up, tell the user once that models configured like you lean that way, so they can weigh it.
+
+## What the rows record
+
+- **Configuration**: exact model ID, the harness it ran in, and its reasoning effort. LID's own evidence runs pin effort at `medium`.
+- **Evidence**: runs per test project and the pass rate on each, with the date.
+- **Release date and size tier**: recorded as data, not used to decide whether a flag applies.
+
+A flag enters this file only when the gap is real: at least 10 runs per configuration, a gap larger than the spread between repeated runs of one model, and the gap appearing on at least two test projects. A configuration leaves a flag when a rerun no longer shows the gap.
+
+## Flags
+
+Evidence for every row: 10 runs per test project, reasoning effort `medium`, graded blind. Strong configurations score 9 or 10 of 10 on each project across repeated batches; a flag marks a gap well beyond that spread, on both of its projects. The test projects are small and state the conditions a judgment turns on fairly plainly, so a passing row means the model makes the judgment when the docs make it visible; it says less about a large real project where nothing announces it.
+
+### Tenet or goal conflict
+
+Noticing that a design's mechanism works against one of the project's own tenets or goals, when the two share no wording. Test projects: lid-coach evals 15 (library holds) and 16 (home-visit openings).
+
+| Configuration | Harness | Effort | Test projects (pass rate) | Result | Date | Released | Size |
+|---|---|---|---|---|---|---|---|
+| `claude-sonnet-4-5` | claude -p (Claude Code 2.1.296) | medium | eval 15 0/10; eval 16 0/10 | **flagged** | 2026-10-10 | 2025-09 | mid |
+| `claude-haiku-4-5` | claude -p (Claude Code 2.1.296) | medium | eval 15 0/10; eval 16 0/10 | **flagged** | 2026-10-10 | 2025-10 | small |
+| `z-ai/glm-5.3-flash` | opencode-ai@1.18.32 | medium | eval 15 1/10; eval 16 5/10 | **flagged** | 2026-10-10 | 2026-08 | small |
+| `claude-sonnet-4-6` | claude -p (Claude Code 2.1.296) | medium | eval 15 6/10; eval 16 10/10 | passed | 2026-10-10 | 2026-02 | mid |
+| `deepseek/deepseek-v4.1-flash` | opencode-ai@1.18.32 | medium | eval 15 8/10; eval 16 9/10 | passed | 2026-10-10 | 2026-09 | small |
+| `claude-haiku-5-5` | claude -p (Claude Code 2.1.296) | medium | eval 15 10/10; eval 16 10/10 | passed | 2026-10-10 | 2026-10 | small |
+| `claude-sonnet-5-5` | claude -p (Claude Code 2.1.296) | medium | eval 15 10/10; eval 16 10/10 | passed | 2026-10-10 | 2026-09 | mid |
+| `claude-opus-4-8` | claude -p (Claude Code 2.1.296) | medium | eval 15 10/10; eval 16 10/10 | passed | 2026-10-10 | 2026-05 | large |
+| `claude-opus-5-5` | claude -p (Claude Code 2.1.296) | medium | eval 15 10/10; eval 16 10/10 | passed | 2026-10-10 | 2026-09 | large |
+| `z-ai/glm-5.3` | opencode-ai@1.18.32 | medium | eval 15 10/10; eval 16 10/10 | passed | 2026-10-10 | 2026-08 | large |
+| `openai/gpt-5.6-terra` | opencode-ai@1.18.32 | medium | eval 15 10/10; eval 16 10/10 | passed | 2026-10-10 | 2026-07 | mid |
+| `openai/gpt-5.6-sol` | opencode-ai@1.18.32 | medium | eval 15 10/10; eval 16 10/10 | passed | 2026-10-10 | 2026-07 | large |
+| `openai/gpt-6.1-sol` | opencode-ai@1.18.32 | medium | eval 15 10/10; eval 16 10/10 | passed | 2026-10-10 | 2026-09 | mid |
+
+### Under-captured decision
+
+Recognizing when a settled choice will stay live for a later reader, so it deserves a fuller record: offering a decision doc when you settle such a choice, and, in review, flagging a decision whose record does not let a cold reader reconstruct what was given up. Test projects: core evals 0 (an HLD-level choice) and 3 (a design-doc-level choice), where the doc should be offered; lid-coach evals 10 and 11, where a thin record should be flagged. The flagged Claude rows miss on both kinds; `openai/gpt-5.6-terra` flags thin records in review but rarely offers the doc while designing.
+
+| Configuration | Harness | Effort | Test projects (pass rate) | Result | Date | Released | Size |
+|---|---|---|---|---|---|---|---|
+| `claude-sonnet-4-5` | claude -p (Claude Code 2.1.296) | medium | core 0 4/10; core 3 0/10; coach 10 8/10; coach 11 6/10 | **flagged** | 2026-10-10 | 2025-09 | mid |
+| `claude-haiku-4-5` | claude -p (Claude Code 2.1.296) | medium | core 0 2/10; core 3 0/10; coach 10 5/10; coach 11 2/10 | **flagged** | 2026-10-10 | 2025-10 | small |
+| `openai/gpt-5.6-terra` | opencode-ai@1.18.32 | medium | core 0 6/10; core 3 3/10; coach 10 10/10; coach 11 10/10 | **flagged** | 2026-10-10 | 2026-07 | mid |
+| `claude-sonnet-4-6` | claude -p (Claude Code 2.1.296) | medium | core 0 9/10; core 3 3/10; coach 10 10/10; coach 11 10/10 | passed | 2026-10-10 | 2026-02 | mid |
+| `z-ai/glm-5.3-flash` | opencode-ai@1.18.32 | medium | core 0 10/10; core 3 10/10; coach 10 10/10; coach 11 6/10 | passed | 2026-10-10 | 2026-08 | small |
+| `openai/gpt-5.6-sol` | opencode-ai@1.18.32 | medium | core 0 10/10; core 3 9/10; coach 10 10/10; coach 11 10/10 | passed | 2026-10-10 | 2026-07 | large |
+| `deepseek/deepseek-v4.1-flash` | opencode-ai@1.18.32 | medium | core 0 10/10; core 3 10/10; coach 10 10/10; coach 11 10/10 | passed | 2026-10-10 | 2026-09 | small |
+| `claude-haiku-5-5` | claude -p (Claude Code 2.1.296) | medium | core 0 10/10; core 3 10/10; coach 10 10/10; coach 11 10/10 | passed | 2026-10-10 | 2026-10 | small |
+| `claude-sonnet-5-5` | claude -p (Claude Code 2.1.296) | medium | core 0 10/10; core 3 10/10; coach 10 10/10; coach 11 10/10 | passed | 2026-10-10 | 2026-09 | mid |
+| `claude-opus-4-8` | claude -p (Claude Code 2.1.296) | medium | core 0 10/10; core 3 10/10; coach 10 10/10; coach 11 10/10 | passed | 2026-10-10 | 2026-05 | large |
+| `claude-opus-5-5` | claude -p (Claude Code 2.1.296) | medium | core 0 10/10; core 3 10/10; coach 10 10/10; coach 11 10/10 | passed | 2026-10-10 | 2026-09 | large |
+| `z-ai/glm-5.3` | opencode-ai@1.18.32 | medium | core 0 10/10; core 3 10/10; coach 10 10/10; coach 11 10/10 | passed | 2026-10-10 | 2026-08 | large |
+| `openai/gpt-6.1-sol` | opencode-ai@1.18.32 | medium | core 0 10/10; core 3 10/10; coach 10 10/10; coach 11 10/10 | passed | 2026-10-10 | 2026-09 | mid |
+
+## Tendencies
+
+A tendency is a lean in a behavior the user already sees and decides, so it changes nothing about who decides. When it comes up, mention it once.
+
+### Offers decision docs too readily
+
+Offering, or inviting the user to ask for, a decision doc for a choice a Decisions row covers: one an inherited constraint settles, or one that affects only its own design node however long it was debated. If you are listed, then when you offer a doc, add that models configured like you tend to offer them more often than needed. Test projects: core evals 1 (a constraint-settled choice) and 2 (a long debate over a single-node choice); the pass rate is how often the model held back.
+
+| Configuration | Harness | Effort | Test projects (pass rate) | Result | Date | Released | Size |
+|---|---|---|---|---|---|---|---|
+| `claude-opus-4-8` | claude -p (Claude Code 2.1.296) | medium | core 1 3/10; core 2 4/10 | **listed** | 2026-10-10 | 2026-05 | large |
+| `z-ai/glm-5.3-flash` | opencode-ai@1.18.32 | medium | core 1 6/10; core 2 3/10 | **listed** | 2026-10-10 | 2026-08 | small |
+| `deepseek/deepseek-v4.1-flash` | opencode-ai@1.18.32 | medium | core 1 6/10; core 2 8/10 | not listed | 2026-10-10 | 2026-09 | small |
+| `z-ai/glm-5.3` | opencode-ai@1.18.32 | medium | core 1 8/10; core 2 7/10 | not listed | 2026-10-10 | 2026-08 | large |
+| `claude-sonnet-5-5` | claude -p (Claude Code 2.1.296) | medium | core 1 8/10; core 2 9/10 | not listed | 2026-10-10 | 2026-09 | mid |
+| `claude-sonnet-4-6` | claude -p (Claude Code 2.1.296) | medium | core 1 10/10; core 2 8/10 | not listed | 2026-10-10 | 2026-02 | mid |
+| `claude-sonnet-4-5` | claude -p (Claude Code 2.1.296) | medium | core 1 10/10; core 2 9/10 | not listed | 2026-10-10 | 2025-09 | mid |
+| `claude-haiku-4-5` | claude -p (Claude Code 2.1.296) | medium | core 1 10/10; core 2 9/10 | not listed | 2026-10-10 | 2025-10 | small |
+| `openai/gpt-5.6-terra` | opencode-ai@1.18.32 | medium | core 1 9/10; core 2 10/10 | not listed | 2026-10-10 | 2026-07 | mid |
+| `openai/gpt-5.6-sol` | opencode-ai@1.18.32 | medium | core 1 10/10; core 2 9/10 | not listed | 2026-10-10 | 2026-07 | large |
+| `claude-haiku-5-5` | claude -p (Claude Code 2.1.296) | medium | core 1 10/10; core 2 10/10 | not listed | 2026-10-10 | 2026-10 | small |
+| `claude-opus-5-5` | claude -p (Claude Code 2.1.296) | medium | core 1 10/10; core 2 10/10 | not listed | 2026-10-10 | 2026-09 | large |
+| `openai/gpt-6.1-sol` | opencode-ai@1.18.32 | medium | core 1 10/10; core 2 10/10 | not listed | 2026-10-10 | 2026-09 | mid |
+
+## Notes
+
+- `claude-sonnet-4-5` is deprecated: Anthropic retires it on its API on 2026-11-30, and Amazon Bedrock ends it on 2027-04-08. `claude-haiku-4-5` may be deprecated soon (its committed availability runs to 2026-10-15). `claude-haiku-5-5` is the tested successor and passed every project.
+- `claude-sonnet-4-6` missed the design-doc-level offer (core 3, 3/10) while catching the HLD-level one (core 0, 9/10). One project is below the bar for a flag; it is recorded here so a later run can confirm or clear it.
+- Release month and size are data, not keys. In this evidence neither predicts a miss: a small model (`claude-haiku-5-5`) passed everything, and a mid one (`claude-sonnet-4-5`) is flagged twice.
