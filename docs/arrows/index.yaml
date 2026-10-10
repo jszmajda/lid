@@ -49,7 +49,7 @@ arrows:
     blockedBy: []
     detail: linked-intent-dev/update-lid.md
     next: null
-    drift: "53 of 53 LID-UPDATE specs [x]; no gaps. 1.4.0's workflow-doc vendoring (048-053: bootstrap offer, shipped-asset copy, template variants, version-walk re-sync, hand-edit surfacing, Aider bridge) is eval-covered by fixtures 8-13. Suite: 14 fixtures; iteration-4 (2026-08-08) 52/52 with-skill assertions, new-fixture baseline 63% — discrimination strongest on shipped-asset fidelity and the do-not-overwrite gate. Grew in 1.3.0: AGENTS.md-canonical instruction file + Windows symlink fallback (045/046) and the tool-agnostic memory->intent directive (047)."
+    drift: "53 of 53 LID-UPDATE specs [x]; no gaps. 1.4.0's workflow-doc vendoring (048-053: no update-lid offer with a preserved decline bullet, shipped-asset copy, single workflow-section shape, version-walk re-sync, hand-edit surfacing, Aider bridge) is eval-covered by fixtures 8-13. Suite: 14 fixtures; iteration-4 (2026-08-08) 52/52 with-skill assertions, new-fixture baseline 63% — discrimination strongest on shipped-asset fidelity and the do-not-overwrite gate. Grew in 1.3.0: AGENTS.md-canonical instruction file + Windows symlink fallback (045/046) and the tool-agnostic memory->intent directive (047)."
 
   lid-coach:
     status: AUDITED
