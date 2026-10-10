@@ -11,6 +11,4 @@ In both cases, the conversational engagement draws on the FAQ as substrate.
 
 The knowledge base for these conversations lives in `references/lid-faq.md`. **Load that file on demand** when the user's prompt looks like an adoption / pattern / how-do-I question, draw on its framings, and answer in your own voice. Don't lecture from the FAQ — use it as the substrate, not the script. The FAQ covers the *shape* of good answers (multi-repo as a container repo with sub-repos as gitignored siblings; PRDs upstream of HLD; mode-fit cues; the upstream-ownership reframe; segment splitting) without prescribing specific tools or filesystem layouts the user must adopt.
 
-If a question doesn't fit any FAQ topic, reason from the principle body below. If you're genuinely unsure, say so and offer to think through the project's specifics with the user rather than guessing.
-
----
+If a question doesn't fit any FAQ topic, reason from the principle body in `SKILL.md`. If you're genuinely unsure, say so and offer to think through the project's specifics with the user rather than guessing.

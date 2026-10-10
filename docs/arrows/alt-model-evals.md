@@ -4,7 +4,7 @@ The alternate-model eval runner — runs LID's existing behavioral eval suites o
 
 ## Status
 
-**MAPPED** — new leaf segment (#78), sampled 2026-09-27, not yet audited. 65 of 69 specs implemented; the 4 open lines are `ALT-EVAL-REC` process specs, satisfied when the first alternate-model result is recorded in `tested_with`.
+**MAPPED** — new leaf segment (#78), sampled 2026-09-27, not yet audited. 81 of 81 specs implemented; the `ALT-EVAL-REC` process specs were satisfied by the 1.4.0 capability roster's `tested_with` entries.
 
 ## References
 
@@ -15,10 +15,10 @@ The alternate-model eval runner — runs LID's existing behavioral eval suites o
 - `docs/intent/alt-model-evals/alt-model-evals-design.md`
 
 ### EARS
-- `docs/intent/alt-model-evals/alt-model-evals-specs.md` (69 specs, prefix `ALT-EVAL-*`, facets `CLI`, `KEY`, `STAGE`, `BOX`, `RUN`, `OUT`, `REC`)
+- `docs/intent/alt-model-evals/alt-model-evals-specs.md` (81 specs, prefix `ALT-EVAL-*`, facets `CLI`, `KEY`, `STAGE`, `BOX`, `RUN`, `OUT`, `REC`)
 
 ### Tests
-- `tools/alt-model-evals/test_run_eval.py` — 62 tests against a stub `docker`/`npx`/`git` (`testdata/stub_harness.py`), plus recorded opencode 1.18.32 event streams (`testdata/opencode-events-*.jsonl`). Run: `python3 tools/alt-model-evals/test_run_eval.py`.
+- `tools/alt-model-evals/test_run_eval.py` — 77 tests against a stub `docker`/`npx`/`git` (`testdata/stub_harness.py`), plus recorded opencode 1.18.32 event streams (`testdata/opencode-events-*.jsonl`). Run: `python3 tools/alt-model-evals/test_run_eval.py`.
 
 ### Code
 - `tools/alt-model-evals/run_eval.py` — the runner (stdlib Python, 3.9+)
@@ -38,14 +38,14 @@ The alternate-model eval runner — runs LID's existing behavioral eval suites o
 
 | Category | Spec IDs | Implemented | Gaps |
 |---|---|---|---|
-| Invocation | ALT-EVAL-CLI-001 to 010 | 10 | 0 |
+| Invocation | ALT-EVAL-CLI-001 to 012 | 12 | 0 |
 | Credentials | ALT-EVAL-KEY-001 to 004 | 4 | 0 |
-| Staging | ALT-EVAL-STAGE-001 to 011 | 11 | 0 |
+| Staging | ALT-EVAL-STAGE-001 to 013 | 13 | 0 |
 | Harness and sandbox | ALT-EVAL-BOX-001 to 019 | 19 | 0 |
-| Run lifecycle | ALT-EVAL-RUN-001 to 008 | 8 | 0 |
-| Outputs | ALT-EVAL-OUT-001 to 013 | 13 | 0 |
-| Recording (process) | ALT-EVAL-REC-001 to 004 | 0 | 4 |
-| **Total** | | **65** | **4** |
+| Run lifecycle | ALT-EVAL-RUN-001 to 011 | 11 | 0 |
+| Outputs | ALT-EVAL-OUT-001 to 018 | 18 | 0 |
+| Recording (process) | ALT-EVAL-REC-001 to 004 | 4 | 0 |
+| **Total** | | **81** | **0** |
 
 ## Key Findings
 

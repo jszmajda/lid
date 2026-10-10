@@ -8,7 +8,7 @@
 
 Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 
-The `linked-intent-dev` workflow skill is pure prose — its `SKILL.md` is the artifact, and per the LID-on-LID linkage inversion this file carries the artifact pointer. These specs have no automated eval suite (the skill is guidance the agent consults, not a deterministic harness run); `[x]` marks behavior the `SKILL.md` embodies.
+The `linked-intent-dev` workflow skill is pure prose — its `SKILL.md` is the artifact, and per the LID-on-LID linkage inversion this file carries the artifact pointer. The skill is verified mainly by dogfooding (it is guidance the agent consults across a whole change, not one checkable run); a small scenario-eval suite covers the moments with a checkable output, such as the decision-doc offer. `[x]` marks behavior the `SKILL.md` embodies.
 
 ---
 

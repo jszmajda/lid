@@ -2,7 +2,7 @@
 
 A **decision doc** records a single design decision at high enough resolution that a future reader can *re-run the judgment* if circumstances change — not just learn what was chosen. It is the expanded form of a Decisions & Alternatives table row, reserved for the few decisions that earn it. Decision docs are **rare**.
 
-## When to write one (the earns-its-place heuristic)
+## When one earns its place (the earns-its-place heuristic)
 
 > **Apply the test from the landed state, looking forward — not from the deliberation, looking back.** The question is *not* "was this hard to decide?" Plenty of decisions are contested while the work is in flight and then read as **obvious, even native, once they land** — the structure ends up self-evidently the way it had to be. The question is: **once this lands, would a cold reader of the result find the choice non-obvious — would they question it, or be tempted to reverse it, not knowing why it went this way?**
 

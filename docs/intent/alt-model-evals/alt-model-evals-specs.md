@@ -111,7 +111,7 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 
 ## Recording results
 
-- `[ ]` **ALT-EVAL-REC-001**: A `tested_with` entry recording alternate-model results SHALL name the exact OpenRouter model ID and the harness as `opencode-ai@<version>`, taken from the graded runs' `timing.json`.
-- `[ ]` **ALT-EVAL-REC-002**: A batch SHALL be recorded in `tested_with` only when its `batch.json` `plugins/` tree ID equals the `plugins/` tree of a commit in the repository's history.
-- `[ ]` **ALT-EVAL-REC-003**: Only `completed` runs SHALL be graded; the pass rate SHALL be computed over completed runs only; `timeout` runs SHALL be reported beside the pass rate as a count; and `harness_error` and `interrupted` runs SHALL be excluded from both.
-- `[ ]` **ALT-EVAL-REC-004**: A batch with no `completed` runs SHALL NOT be recorded in `tested_with`.
+- `[x]` **ALT-EVAL-REC-001**: A `tested_with` entry recording alternate-model results SHALL name the exact OpenRouter model ID and the harness as `opencode-ai@<version>`, taken from the graded runs' `timing.json`.
+- `[x]` **ALT-EVAL-REC-002**: A batch SHALL be recorded in `tested_with` only when its `batch.json` `plugins/` tree ID equals the `plugins/` tree of a commit in the repository's history.
+- `[x]` **ALT-EVAL-REC-003**: Only `completed` runs SHALL be graded; the pass rate SHALL be computed over completed runs only; `timeout` runs SHALL be reported beside the pass rate as a count; and `harness_error` and `interrupted` runs SHALL be excluded from both.
+- `[x]` **ALT-EVAL-REC-004**: A batch with no `completed` runs SHALL NOT be recorded in `tested_with`.

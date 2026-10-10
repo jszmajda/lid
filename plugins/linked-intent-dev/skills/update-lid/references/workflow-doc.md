@@ -197,7 +197,7 @@ Re-read each adjacent level of the arrow for the changed segment and produce a s
 
 Most design decisions are recorded as a row in the relevant LLD's Decisions & Alternatives table. A few earn a full **decision doc** — a standalone artifact laying out a decision's context, criteria, options, and selection at enough resolution that a future cold reader can re-run the judgment. A decision doc lives two lives: drafted, it is a position built to structure debate — through the PR that carries it on a team, or with the agent in a solo session; finalized, it memorializes that deep work so the rest of the system's intent can lean on it.
 
-Apply the test from the **landed** state, not the deliberation: *would a cold reader of the result find the choice non-obvious — question it, or be tempted to reverse it?* — not *was it hard to decide?* A decision that was contested while you worked but reads as obvious or native once it lands needs **neither a doc nor a row**; the structure documents itself, and recording a settled-obvious choice is the residue the *docs carry current intent* tenet strips. Add a **table row** when a cold reader would wonder "why this?" and a line settles it. Write a **full decision doc** only when the choice stays genuinely live — a reader would re-litigate it without the competing options and criteria. Decision docs are rare; a directory full of them is a smell.
+Apply the test from the **landed** state, not the deliberation: *would a cold reader of the result find the choice non-obvious — question it, or be tempted to reverse it?* — not *was it hard to decide?* A decision that was contested while you worked but reads as obvious or native once it lands needs **neither a doc nor a row**; the structure documents itself, and recording a settled-obvious choice is the residue the *docs carry current intent* tenet strips. Add a **table row** when a cold reader would wonder "why this?" and a line settles it. Offer a **full decision doc** only when the choice stays genuinely live — a reader would re-litigate it without the competing options and criteria. Decision docs are rare; a directory full of them is a smell.
 
 **When to offer one.** Run this test when the user settles a choice among options you sketched (Phase 1 or Phase 2), judging the design as it will land. If the choice will stay live for a cold reader (credible options traded against more than one criterion, and other design nodes about to be sized around the result), offer once to record it as a decision doc, with a Decisions row as the alternative. For a choice the HLD owns, the "row" is an entry in the HLD's Key Design Decisions section; add the section if it is missing. Write the doc only if the user accepts, then link it from the owning node's Decisions row. Do not offer one for a choice one option dominates, that an inherited constraint settles, or that affects only its own node, however long the debate ran. People who are offered a doc tend to say yes whether or not they need it, so keep the offer for choices that clear this bar; otherwise record the row, or nothing, without asking.
 
@@ -765,7 +765,7 @@ Leaving a section unfilled is better than filling it with placeholder prose — 
 
 A **decision doc** records a single design decision at high enough resolution that a future reader can *re-run the judgment* if circumstances change — not just learn what was chosen. It is the expanded form of a Decisions & Alternatives table row, reserved for the few decisions that earn it. Decision docs are **rare**.
 
-## When to write one (the earns-its-place heuristic)
+## When one earns its place (the earns-its-place heuristic)
 
 > **Apply the test from the landed state, looking forward — not from the deliberation, looking back.** The question is *not* "was this hard to decide?" Plenty of decisions are contested while the work is in flight and then read as **obvious, even native, once they land** — the structure ends up self-evidently the way it had to be. The question is: **once this lands, would a cold reader of the result find the choice non-obvious — would they question it, or be tempted to reverse it, not knowing why it went this way?**
 
@@ -903,9 +903,9 @@ This file answers one question for the person pairing with you: **can they use L
 3. If your configuration **passed**, handle that kind of judgment as the user has asked.
 4. If there is **no row** for your configuration (an untested model, a different reasoning effort, or you cannot tell what you run at), treat every flag in this file as applying to you.
 
-A flag says where to look harder. It does not limit what you do: do your best work everywhere, and bring the flagged judgment to the user as well.
+If your configuration is listed under **Tendencies**, the behavior still reaches the user, so nothing changes about who decides. When the behavior comes up, tell the user once that models configured like you lean that way, so they can weigh it.
 
-5. If your configuration is listed under **Tendencies**, the behavior still reaches the user, so nothing changes about who decides. When the behavior comes up, tell the user once that models configured like you lean that way, so they can weigh it.
+A flag says where to look harder. It does not limit what you do: do your best work everywhere, and bring the flagged judgment to the user as well.
 
 ## What the rows record
 
@@ -965,7 +965,7 @@ A tendency is a lean in a behavior the user already sees and decides, so it chan
 
 ### Offers decision docs too readily
 
-Offering, or inviting the user to ask for, a decision doc for a choice a Decisions row covers: one an inherited constraint settles, or one that affects only its own design node however long it was debated. If you are listed, then when you offer a doc, add that models configured like you tend to offer them more often than needed. Test projects: core evals 1 (a constraint-settled choice) and 2 (a long debate over a single-node choice); the pass rate is how often the model held back.
+Offering, or inviting the user to ask for, a decision doc for a choice a Decisions row covers: one an inherited constraint settles, or one that affects only its own design node however long it was debated. If you are listed, then when you offer a doc, add that models configured like you tend to offer them more often than needed. Test projects: core evals 1 (a constraint-settled choice) and 2 (a long debate over a single-node choice); the pass rate is how often the model held back. A configuration is listed when it held back in 6 or fewer of 10 runs on both projects; strong configurations hold back in 8 to 10.
 
 | Configuration | Harness | Effort | Test projects (pass rate) | Result | Date | Released | Size |
 |---|---|---|---|---|---|---|---|
@@ -986,6 +986,6 @@ Offering, or inviting the user to ask for, a decision doc for a choice a Decisio
 ## Notes
 
 - `claude-sonnet-4-5` is deprecated: Anthropic retires it on its API on 2026-11-30, and Amazon Bedrock ends it on 2027-04-08. `claude-haiku-4-5` may be deprecated soon (its committed availability runs to 2026-10-15). `claude-haiku-5-5` is the tested successor and passed every project.
-- `claude-sonnet-4-6` missed the design-doc-level offer (core 3, 3/10) while catching the HLD-level one (core 0, 9/10). One project is below the bar for a flag; it is recorded here so a later run can confirm or clear it.
+- Single-project misses, below the bar for a flag and recorded so a later run can confirm or clear them: `claude-sonnet-4-6` missed the design-doc-level offer (core 3, 3/10) while catching the HLD-level one (core 0, 9/10), and caught the eval 15 tenet conflict 6 of 10 times (eval 16: 10/10); `z-ai/glm-5.3-flash` flagged the thin record on coach 11 6 of 10 times (coach 10: 10/10).
 - Some configurations report tenet conflicts too readily: on lid-coach eval 15, which carries a decoy mechanism that only costs something toward a goal, `claude-haiku-5-5` also flagged the decoy in 9 of 10 runs and `claude-opus-5-5` in 6 of 10, while both caught the real conflict every time. Eval 16 did not reproduce it strongly (2 of 10 for each), so it is below the bar for a tendency and recorded here. If you are one of these, check that each tenet finding names a condition the docs describe, rather than a cost the design already accepts.
 - Release month and size are data, not keys. In this evidence neither predicts a miss: a small model (`claude-haiku-5-5`) passed everything, and a mid one (`claude-sonnet-4-5`) is flagged twice.

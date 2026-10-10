@@ -37,7 +37,7 @@ arrows:
     blockedBy: []
     detail: linked-intent-dev/core.md
     next: null
-    drift: "57 of 57 LID-CORE specs [x] (workflow skill; pure-prose guidance, no eval harness). No gaps."
+    drift: "76 of 76 LID-CORE specs [x] (workflow skill; pure-prose guidance verified mainly by dogfooding, plus a 4-eval scenario suite for the decision-doc offer). No gaps."
 
   update-lid:
     status: AUDITED
@@ -61,7 +61,7 @@ arrows:
     blockedBy: []
     detail: linked-intent-dev/lid-coach.md
     next: "Author next-round fixtures covering the 35 unexercised LID-COACH specs (invocation 001-002, inputs 008-012, principle-body 014-015, review dims 016-032 less 019/023, 036/038/041/042/047/048/051, 053 tenet-quality) plus the 3 new tenet-cascade specs (054 verticalize-intent, 055 granularity-as-tree, 056 nested-arrow-validity); 048 needs a >15-LLD fixture project; 053 needs a fixture with a tenet-less HLD and one with platitude tenets; 054 needs a fixture carrying a cross-cutting index/tag registry beside the tree; 055 needs a fixture with an outgrown leaf LLD (promotion candidate) and one bundling several share-design separable-behavior concerns (sub-HLD candidate); 056 needs a fixture whose design layer nests sub-HLDs with a subtree-gathering intermediate prefix (must NOT be flagged) alongside a genuine phase deviation (must be flagged). Also tighten fixture 10's discriminators (drop the expanded-rationale escape hatch in assertion 2; pin assertion 3 to missing-decision-doc grounds)."
-    drift: "27 of 62 LID-COACH specs [x]; 35 remain [ ] — unexercised by the current 15 fixtures, not skill-body gaps. Iteration-3 (2026-08-08): 51/51 with-skill assertions. LID-COACH-057 (spec-shaped tenet) covered by fixtures 8-9. Decision capture is now 058-062 (under-captured-decision flag with landed-state test; displacement guard — a design critique never absorbs the capture finding; row-as-default remedy; decision-doc recommendation reserved for debate-on-the-record deep work whose memory shapes wider intent; a decision doc named as an option, not a recommendation, when other nodes rely on the flagged decision's reasoning), realized in the skill as the mechanical Decisions-table sweep (review step 5) and covered by fixture 10 in disposition form and blind-authored fixtures 11-14 (14 carries a documented known gap: no assertion requires a doc recommendation). Floor-executor pilots (claude-sonnet-4-5, lid-coach-workspace/pilot-sonnet-floor*/): the sweep carries the capture disposition at the floor (A1 0/3 pre-sweep to 3/3 with it) while holding the no-rationale-inflation restraint 3/3. LID-COACH-053/054/055/056: spec + principle body in place, eval fixtures pending. LID-COACH-026 (cascade health) reworded to the lowest-node-that-dominates framing — body and spec match."
+    drift: "33 of 69 LID-COACH specs [x] ([x] here means exercised by an eval assertion); 36 remain [ ], in the skill body but unexercised. 1.4.0 roster (13 configurations, effort medium, 10 runs per project on evals 10, 11, 15, 16): see capability-flags.md. LID-COACH-062 (doc named as an option when other nodes rely on a decision) lost its only fixture when eval 14's cadence assertions were retired."
 
   arrow-maintenance:
     status: MAPPED
@@ -176,8 +176,8 @@ arrows:
     blocks: []
     blockedBy: [linked-intent-dev]
     detail: alt-model-evals.md
-    next: "Record the first alternate-model results in tested_with following ALT-EVAL-REC-001..004 (a fuller GLM batch is the natural first), then flip the REC process specs."
-    drift: "New leaf segment (#78). 69 specs: 65 [x], 4 [ ] (ALT-EVAL-REC process specs, satisfied when the first result is recorded). 62 runner tests green; end-to-end container runs graded 3/3 (lid-coach 2) and 5/5 (update-lid 1) on z-ai/glm-5.3-flash."
+    next: null
+    drift: "81 specs, all [x] (CLI to 012, STAGE to 013, RUN to 011, OUT to 018, REC 001-004 satisfied by the 1.4.0 roster entries in tested_with). 77 runner tests green. Used for the 1.4.0 capability roster on six OpenRouter models."
 
 unmapped:
   docs:

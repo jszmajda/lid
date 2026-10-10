@@ -1,7 +1,7 @@
 {
   "skill_name": "lid-coach",
   "tested_with": [
-    { "model": "claude-fable-5", "date": "2026-08-08", "evals": "0-10", "passed": "51/51" },
+    { "model": "claude-fable-5", "date": "2026-08-08", "evals": "0-10", "effort": "unrecorded", "passed": "51/51" },
     { "model": "claude-sonnet-4-5", "date": "2026-09-28", "evals": "11,15", "effort": "medium", "passed": "51/90" },
     { "model": "z-ai/glm-5.3", "date": "2026-09-28", "evals": "11,15", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "77/90" },
     { "model": "deepseek/deepseek-v4.1-flash", "date": "2026-09-28", "evals": "11,15", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "79/90" },

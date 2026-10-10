@@ -19,7 +19,7 @@ When detailed findings are rendered, each finding is **one paragraph**, not a su
 
 - The **observation** — concrete, naming files or lines where useful, with evidence inline where the reader needs it to see the pattern. Findings *may* cite specific counts when the count is the observation itself (e.g., "the spec file has 3 IDs in the legacy 1000-block alongside semantic-naming IDs"), but never as a numeric grade.
 - The **LID principle** the finding relates to, cited by name with a plain-English gloss appended inline.
-- **Why this matters** — a sentence or two explaining the consequence of leaving the drift in place, or the benefit of fixing it. Draw from the principle's motivation (in the principle body below) grounded in *this* user's project — what gets harder, what compounds, what gets more reliable. The coach teaches while correcting.
+- **Why this matters** — a sentence or two explaining the consequence of leaving the drift in place, or the benefit of fixing it. Draw from the principle's motivation (in the principle body in `SKILL.md`) grounded in *this* user's project — what gets harder, what compounds, what gets more reliable. The coach teaches while correcting.
 - A closing **recommended action** — concrete, naming files or commands. See *Recommended-action targets* below.
 
 **Example of the paragraph form** — showing how observation, principle-with-gloss, *why this matters*, and action weave as prose:
