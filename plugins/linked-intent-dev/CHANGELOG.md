@@ -8,7 +8,7 @@ All notable changes to LID (Linked-Intent Development) are recorded here. The fo
 
 *(empty — folds into the next numbered version)*
 
-## [1.4.0] — 2026-07-05
+## [1.4.0] — 2026-10-10
 
 The plural-instruments release: intent work splits into **specifying** (spec against latent intent) and **inspecting the cascade** (cascade against spec), each with more than one instrument; phase discipline travels into subagent dispatches; and the full workflow reaches instruction-file-only hosts as a vendored doc instead of an always-loaded summary.
 

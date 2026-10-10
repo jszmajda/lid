@@ -141,7 +141,8 @@
         { "text": "The instruction file's workflow section is the compact core (Variant A): it contains the capability-conditional pointer (consult the linked-intent-dev skill if the harness provides it; otherwise read docs/lid/workflow.md) and does NOT contain the Variant-B six-phase compressed-summary bullets", "spec_ids": ["LID-UPDATE-050"] },
         { "text": "No template variant comment markers (e.g. '<!-- Variant') leaked into the written instruction file", "spec_ids": ["LID-UPDATE-050"] },
         { "text": "The agent's response presents the vendoring choice with its tradeoff (compact core + pointer vs. fuller compressed summary in the instruction file) rather than vendoring silently — stated even though the default was taken", "spec_ids": ["LID-UPDATE-048"] }
-      ]
+      ],
+      "notes": "Known gap (2026-10-10): the tradeoff assertion failed in all 19 roster runs across 11 models. In a one-turn run the model takes the vendoring default without presenting the choice; a follow_up turn that asks before writing would test the offer itself. Excluded from capability evidence."
     },
     {
       "id": 9,
