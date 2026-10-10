@@ -201,11 +201,10 @@
       ],
       "assertions": [
         { "text": "The report carries a decision-capture finding on the conflict-resolution choice as its own entry — the tradeoffs behind last-writer-wins by device wall-clock survive only as the compressed row 'Simpler.', which a cold reader cannot reconstruct — citing the decision-capture dimension or the *docs carry current intent* principle, and this finding appears ALONGSIDE any design-defect or coherence finding about clock unreliability rather than being absorbed into it", "spec_ids": ["LID-COACH-058", "LID-COACH-059"] },
-        { "text": "Wherever the report states a remedy for the under-captured decision (inventory line, detail section, or recommendations), it defaults to expanding the Decisions-table row — naming the rejected alternative and the accepted cost — rather than leading with 'write a decision doc'; a report that states no remedy passes provided no finding leads with a decision-doc recommendation (the coach's one-line inventory format legitimately defers actions)", "spec_ids": ["LID-COACH-060"] },
-        { "text": "If the report suggests a decision doc at all, the suggestion is justified against the reserve bar — researched options weighed against criteria at a resolution a future reader could re-run, deep work whose memory shapes the intent of the rest of the system — and not offered as the default remedy or on the grounds that the choice is contested (no doc suggestion passes vacuously)", "spec_ids": ["LID-COACH-061"] },
         { "text": "The 'SQLite on device' storage row is NOT flagged on decision-capture grounds — no under-captured-decision finding names it (findings about it on other grounds do not fail this) — so the coach distinguishes a still-live decision from a settled-obvious one", "spec_ids": ["LID-COACH-058"] },
         { "text": "No project files are created or modified", "spec_ids": ["LID-COACH-039"] }
-      ]
+      ],
+      "notes": "Retired 2026-10-10: the remedy-default and doc-justification assertions. The first report names findings only (LID-COACH-067), so they passed vacuously; remedies are tested in the follow-up turns of evals 11 and 12."
     },
     {
       "id": 11,
