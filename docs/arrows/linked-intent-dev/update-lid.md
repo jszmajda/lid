@@ -21,7 +21,7 @@ The behavioral `update-lid` skill (invokable as `/update-lid`) — bootstraps a 
 
 ### Tests / Evals
 - `plugins/linked-intent-dev/skills/update-lid/evals/evals.json` — 14 fixtures; 8–13 cover workflow-doc vendoring (LID-UPDATE-048–053: no offer at bootstrap, user-requested vendoring, a preserved decline, version-walk re-sync, modified-doc surfacing, Aider bridge)
-- `plugins/linked-intent-dev/skills/update-lid-workspace/` (skill-creator iteration outputs; latest: iteration-4, 2026-08-08, 52/52 with-skill assertions, new-fixture baseline 63%)
+- `plugins/linked-intent-dev/skills/update-lid-workspace/` (skill-creator iteration outputs; iteration-4, 2026-08-08, 52/52 with-skill assertions, new-fixture baseline 63%; the 1.4.0 roster ran 11 configurations on the fixtures unchanged since, and fixtures 2, 6 and 8-10, revised afterward for on-demand vendoring, were piloted on claude-sonnet-5-5)
 
 ### Code (skill prompt and references)
 - `plugins/linked-intent-dev/skills/update-lid/SKILL.md` + `references/claude-md-template.md`

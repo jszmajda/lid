@@ -1,5 +1,5 @@
 schema_version: 2
-last_updated: 2026-07-05
+last_updated: 2026-10-10
 
 taxonomy:
   core:
@@ -49,7 +49,7 @@ arrows:
     blockedBy: []
     detail: linked-intent-dev/update-lid.md
     next: null
-    drift: "53 of 53 LID-UPDATE specs [x]; no gaps. 1.4.0's workflow-doc vendoring (048-053: no update-lid offer with a preserved decline bullet, shipped-asset copy, single workflow-section shape, version-walk re-sync, hand-edit surfacing, Aider bridge) is eval-covered by fixtures 8-13. Suite: 14 fixtures; iteration-4 (2026-08-08) 52/52 with-skill assertions, new-fixture baseline 63% — discrimination strongest on shipped-asset fidelity and the do-not-overwrite gate. Grew in 1.3.0: AGENTS.md-canonical instruction file + Windows symlink fallback (045/046) and the tool-agnostic memory->intent directive (047)."
+    drift: "53 of 53 LID-UPDATE specs [x]; no gaps. 1.4.0's workflow-doc vendoring (048-053: no update-lid offer with a preserved decline bullet, shipped-asset copy, single workflow-section shape, version-walk re-sync, hand-edit surfacing, Aider bridge) is eval-covered by fixtures 8-13. Fixtures 2, 6 and 8-10 were revised for on-demand vendoring after the 1.4.0 roster (piloted on claude-sonnet-5-5 only); the roster's tested_with rows cover the other nine. Suite: 14 fixtures; iteration-4 (2026-08-08) 52/52 with-skill assertions, new-fixture baseline 63% — discrimination strongest on shipped-asset fidelity and the do-not-overwrite gate. Grew in 1.3.0: AGENTS.md-canonical instruction file + Windows symlink fallback (045/046) and the tool-agnostic memory->intent directive (047)."
 
   lid-coach:
     status: AUDITED
@@ -133,7 +133,7 @@ arrows:
     blockedBy: [linked-intent-dev]
     detail: lid-experimental/review-depth.md
     next: "Dogfood on real declared-depth changes (this repo, Threadkeeper); fork taxonomy accretes from real logs. Promotion bar in the LLD."
-    drift: "10 of 10 EXP-DEPTH specs [x] (pure-prose experiment skill; dogfooding verification). No gaps."
+    drift: "12 of 12 EXP-DEPTH specs [x] (pure-prose experiment skill; dogfooding verification). No gaps."
 
   marketing-site:
     status: AUDITED

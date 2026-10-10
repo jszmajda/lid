@@ -25,7 +25,7 @@
     },
     {
       "name": "lid-experimental",
-      "description": "Experimental LID skills with opt-in installation and explicit promotion/retirement lifecycle. Current experiment: bidirectional-differential \u2014 audits EARS\u2194code coherence via parallel fresh-context LLM reconstructions. Layers on top of linked-intent-dev and arrow-maintenance; requires both.",
+      "description": "Experimental LID skills with opt-in installation and explicit promotion/retirement lifecycle. Current experiments: review-depth (a declared review depth with consolidated reviews) and bidirectional-differential \u2014 audits EARS\u2194code coherence via parallel fresh-context LLM reconstructions. Layers on top of linked-intent-dev and arrow-maintenance; requires both.",
       "source": "./plugins/lid-experimental",
       "version": "0.3.0",
       "category": "development",

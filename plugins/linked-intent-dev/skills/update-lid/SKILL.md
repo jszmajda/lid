@@ -40,7 +40,7 @@ Inspect the project and take exactly one of these actions:
 
 | Detected state | Action |
 |---|---|
-| No instruction file, no `docs/` | **Full bootstrap** — create required directories, create the instruction file (`AGENTS.md` + `CLAUDE.md` symlink, per *Instruction-file anchor*) with LID directives + `## LID` block (`- Mode:` + `- Version:` set to the installed `linked-intent-dev` version), and offer the vendored workflow doc (see *Workflow-doc vendoring*). |
+| No instruction file, no `docs/` | **Full bootstrap** — create required directories, create the instruction file (`AGENTS.md` + `CLAUDE.md` symlink, per *Instruction-file anchor*) with LID directives + `## LID` block (`- Mode:` + `- Version:` set to the installed `linked-intent-dev` version). No workflow-doc offer (see *Workflow-doc vendoring*). |
 | Instruction file exists, no LID directives | **Append directives** — append the LID directives block to the existing instruction file without overwriting existing content. Create `docs/` if missing. |
 | LID directives present, no `## LID` block (or no `- Mode:` bullet) | **Add or normalize the LID block** — default mode Full, `- Version:` set to the installed version. If a malformed `## LID` heading already exists (mode merged into the heading, e.g. `## LID Mode: Full`, or stray non-template bullets), rewrite it in place to the canonical `## LID` + `- Mode:` + `- Version:` form rather than appending a second block. |
 | Project `- Version:` lower than the installed version (or `- Version:` absent → predating versioned conventions) | **Version-walk** (see below) — propose the intervening CHANGELOG migrations, confirm, apply mechanical / surface judgment, refresh `- Version:`. |

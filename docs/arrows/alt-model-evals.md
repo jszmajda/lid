@@ -56,7 +56,7 @@ The alternate-model eval runner — runs LID's existing behavioral eval suites o
 ## Work Required
 
 ### Should Fix
-1. Record the first alternate-model results in `tested_with` (flips `ALT-EVAL-REC-001`–`004`).
+1. Stage every run of a batch from one frozen snapshot, so the recorded `plugins/` tree ID always matches what ran (today each run copies the live checkout; pinned worktrees avoid the drift in practice).
 
 ### Nice to Have
 2. Deferred in the LLD: parallel runs, baseline (without-skill) runs, a second harness, a per-batch minted key, egress limited to OpenRouter.

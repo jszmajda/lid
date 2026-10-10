@@ -32,7 +32,7 @@ A specification fork — a spec or draft line admitting more than one reading �
 
 - **In a declared judgment area — or plausibly in one:** surface immediately, whatever the depth. Classification doubt resolves toward surfacing.
 - **Outside judgment areas:** park it — **write it to the fork log at detection, before routing around it.** Never resolve it silently. Entry shape: the spec line, the divergent readings, kind, status.
-- **Capability-flagged work:** when a phase's work touches an area flagged for your configuration (your model name and reasoning effort; if the flag list has no row for it, or you cannot tell, treat the flag as applying), stop immediately whatever the depth, even with no fork involved. Name the area and what the user should check; resume consolidation after they rule.
+- **Capability-flagged work:** when a phase's work touches an area flagged for your configuration (your model name and reasoning effort; if the flag list has no row for it, or you cannot tell, treat the flag as applying), stop immediately whatever the depth, even with no fork involved. Name the area and what the user should check; resume consolidation after they rule. The exception is a user who, knowing the flag, has let that kind of judgment go.
 - **Dependency rule:** write no tests or code against an unresolved fork's spec line; do the independent work first.
 - **Critical-path escape:** a fork blocking all remaining work surfaces immediately.
 - **After the boundary:** a fork discovered once the consolidated review has passed surfaces immediately — the log has already been read.

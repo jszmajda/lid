@@ -5,7 +5,7 @@
 
 # LID Workflow (vendored)
 
-The full linked-intent-development workflow, vendored for agent harnesses without a plugin system. Read this before making code changes in this project. The reference material this workflow cites (`references/...` paths) is appended as sections at the end of this document — the content is here, not in a references directory. References to `docs/decisions/` and `docs/intent/...` paths inside LID-specific passages describe LID's own repository — consult them at the LID repo, not in this project.
+The full linked-intent-development workflow, vendored for agent harnesses without a plugin system. Read this before making code changes in this project. The reference material this workflow cites (`references/...` paths) is appended as sections at the end of this document — the content is here, not in a references directory. References to `docs/decisions/` and `docs/intent/...` paths inside LID-specific passages describe LID's own repository — consult them at the LID repo, not in this project. Mentions of the `update-lid` skill, `/arrow-maintenance`, and `/lid-coach` name LID plugin skills a harness without a plugin system does not have; this project is already set up, so treat them as pointers to the LID repository rather than steps to run.
 
 ---
 

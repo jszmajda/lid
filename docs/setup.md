@@ -16,7 +16,7 @@ Every tool below assumes your project has:
 1. An `AGENTS.md` at the root that describes the LID workflow for your project.
 2. A `docs/` tree with `high-level-design.md` and `intent/`.
 
-Claude Code users get both for free: `/linked-intent-dev` (the workflow skill) bootstraps them as part of Phase 1 on a fresh project — invoke it with a description of what you want to build. Non-Claude-Code users can copy [this repo's `AGENTS.md`](../AGENTS.md) and `docs/` layout as a starting point — and vendor the workflow doc per the note in the next section — or run Claude Code once just to scaffold; the artifacts themselves are tool-agnostic.
+Claude Code users get both for free: `/linked-intent-dev` (the workflow skill) bootstraps them as part of Phase 1 on a fresh project — invoke it with a description of what you want to build. Non-Claude-Code users can start from the [instruction-file template](../plugins/linked-intent-dev/skills/update-lid/references/agents-md-template.md) (fill in the `## LID` block and the version in the workflow-doc URL, and drop the sections its header marks as conditional) plus a `docs/` layout like this repo's — your agent then offers the workflow doc on first use, per the note in the next section — or run Claude Code once just to scaffold; the artifacts themselves are tool-agnostic.
 
 ---
 
@@ -65,11 +65,7 @@ Richest integration. The plugins automate phase gates, auto-invoke the workflow 
 
 When invoking `/linked-intent-dev` on a fresh project, describe what you want to build — the workflow handles LID setup as part of Phase 1, then walks the design forward. On an established LID project, `/update-lid` reconciles drift, refreshes conventions, or runs a mode transition.
 
-**Claude Code reads `CLAUDE.md`, not `AGENTS.md` directly.** The workflow's bootstrap creates `CLAUDE.md` only. If you want a single source of truth across both filenames so that Claude Code and other AGENTS.md-honoring tools see the same content, pick one:
-
-1. **Symlink `AGENTS.md → CLAUDE.md`** — content lives in `CLAUDE.md`, `AGENTS.md` is a symlink pointing at it. From your project root: `ln -s CLAUDE.md AGENTS.md`. Other tools open `AGENTS.md`; the OS resolves the symlink and they see `CLAUDE.md`'s content.
-2. **Reverse direction — content in `AGENTS.md`, `CLAUDE.md` imports it.** Move the content into `AGENTS.md`, then make `CLAUDE.md` a one-line file: `@AGENTS.md` (Claude Code's import syntax pulls in the sibling file). This is the direction *this repository* uses — `AGENTS.md` is canonical because it's the cross-tool convention.
-3. **Claude-Code-only?** Just keep `CLAUDE.md` and skip `AGENTS.md`. Add it later if you pick up a second tool.
+**Claude Code reads `CLAUDE.md`, not `AGENTS.md` directly.** The bootstrap writes the content to `AGENTS.md` (the cross-tool convention) and makes `CLAUDE.md` a symlink to it, so Claude Code and every AGENTS.md-honoring tool see one file. Where symlinks are unavailable (for example Windows without Developer Mode), `CLAUDE.md` is instead a one-line file, `@AGENTS.md`, which Claude Code's import syntax resolves to the same content. Claude-Code-only projects can keep it that way; nothing else needs setting up.
 
 Claude Code also reads `.claude/CLAUDE.local.md` (local, uncommitted overrides) and `~/.claude/CLAUDE.md` (user-global instructions) — both additive, both optional.
 

@@ -44,7 +44,7 @@ The plural-instruments release: intent work splits into **specifying** (spec aga
 - **Expect new finding classes (informational).** The arrow-maintenance audit gained check 6 (misplaced EARS) and `/lid-coach` gained review dimensions 18 (decision capture) and 19 (tenet cascade); first runs after upgrading may surface findings in previously-quiet projects. All three are findings-only — nothing is auto-repaired.
 - **Judgment reaches you by default (informational).** Expect the agent to bring the listed kinds of judgment to you at phase stops. To let some go, say so in your own words, for the project or for one stream of work; a standing preference can be written as prose in your instruction file.
 - **Capability flags (informational).** If your model is flagged in `references/capability-flags.md`, expect it to ask you to check that kind of judgment yourself.
-- **Stale `.lid/` working files (mechanical, rare).** A `.lid/map-codebase/` directory exists only where a capacity-constrained mapping run was interrupted; it is stale working state — delete it. New runs use `docs/arrows/_map-codebase/`.
+- **Old `.lid/` working files (judgment, rare).** A `.lid/map-codebase/` directory exists only where a capacity-constrained mapping run was interrupted. If that sweep is still wanted, move it to `docs/arrows/_map-codebase/`, where new runs look for it; otherwise delete it.
 
 ### Plugin versions
 `linked-intent-dev` 1.4.0 · `arrow-maintenance` 1.3.0 · `lid-experimental` 0.3.0
