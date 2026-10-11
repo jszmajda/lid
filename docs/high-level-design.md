@@ -122,7 +122,7 @@ The operating principles that tie the preceding approaches to day-to-day work:
 - **LID runs on the agent, not a runtime.** Deterministic work is specified in prose for the agent to perform, not shipped as tooling the project must run; helpers may accelerate but are never required.
 - **The user is always right — with warning.** A user may override a phase requirement; the skill warns about the drift risk and honors the override.
 - **Every phase is inspected — by the human, or an inspector the human has authorized.** Alignment with intent is verified, never assumed; what varies is the instrument, not whether inspection happens.
-- **Design for the pair, not the model.** LID's guidance is written for the user and model working together. It carries discipline that holds on any model. Judgment that depends on the model's capability goes to the pair's review; LID does not reword itself to coax a model through it. LID's evals can only ever sample the models that execute it.
+- **Design for the pair, not the model.** Where a judgment depends on the model's capability, bring it to the human rather than rewording LID to coax the model through it.
 
 ## Goals
 
@@ -239,7 +239,7 @@ The pragmatic test: does the skill support both auto-trigger and explicit slash-
 1. **Dogfooding** (continuous). LID-on-LID is the integration test. Every change to a LID skill is tested implicitly by the next LID operation performed in this repository. If LID cannot specify LID, LID is broken.
 2. **Behavioral evals** (per-skill gate). `skill-creator`'s eval harness runs scenario-based tests on behavioral skills: with-skill vs. baseline runs, graded assertions, HTML review, and description-optimization for trigger accuracy. Evals run whenever an LLD change mutates a behavioral skill; a passing eval suite is the gate for merging the change.
 
-   **Alternate-model runs** (optional evidence). The same eval suites — same fixtures, same assertions, graded the same way — can also run on models from other providers, through a repository runner that drives a non-Claude coding agent against any model OpenRouter serves. These runs widen the set of models a suite's results speak for (*Design for the pair, not the model*: evals only sample the models that execute them). They are evidence, never part of the merge gate: a contributor may run them, and none is required to. The runner is a helper for LID's own maintainers, never something a LID user's project needs (*LID runs on the agent, not a runtime*). Detail lives in the `alt-model-evals` segment.
+   **Alternate-model runs** (optional evidence). The same eval suites — same fixtures, same assertions, graded the same way — can also run on models from other providers, through a repository runner that drives a non-Claude coding agent against any model OpenRouter serves. These runs widen the set of models a suite's results speak for: an eval says something only about the models it ran on. They are evidence, never part of the merge gate: a contributor may run them, and none is required to. The runner is a helper for LID's own maintainers, never something a LID user's project needs (*LID runs on the agent, not a runtime*). Detail lives in the `alt-model-evals` segment.
 
 ### Linkage without prompt pollution (LID-on-LID only)
 

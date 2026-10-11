@@ -5,22 +5,22 @@ description: Experimental declared review depth for linked-intent development. U
 
 # Review Depth (experiment)
 
-An experimental overlay on the `linked-intent-dev` workflow: the user declares the phase depth they personally review; deeper phases still run in full, but their outputs consolidate into **one review at the declared boundary** instead of stopping per phase. Per-phase stops remain LID's default — this skill changes nothing unless the user has declared a review depth. An active declaration is the user's express authorization to suspend the per-phase stop default (LID-CORE-005) below the declared depth.
+An experimental overlay on the `linked-intent-dev` workflow: the user declares the design phases they personally review, and whether they review the tests before code; deeper phases still run in full, but their outputs consolidate into **one review** instead of stopping per phase. Per-phase stops remain LID's default — this skill changes nothing unless the user has declared a review depth. An active declaration is the user's express authorization to suspend the per-phase stop default (LID-CORE-005) below the declared depth.
 
 ## Recognizing the declaration
 
 The declaration is the **user's own prose** — in their instruction file or stated in-session. LID writes no configuration for it. Recommended shape (offer it to users who want a standing declaration):
 
-> Review depth: I review through LLD; below that, consolidate to one review.
+> Review depth: I review through LLD; below that, consolidate to one review. I don't need to see the tests before code.
 > Judgment areas: naming and API shapes; anything touching auth.
 
-Depth values track the phases — *through HLD*, *through LLD*, *through EARS*, *through tests*. "Through X": phases at and above X stop per-phase as usual; deeper phases consolidate. **Judgment areas** name the fork kinds the user wants routed to them immediately (see below). Judgment areas start from the kinds of judgment the core `linked-intent-dev` skill lists under *Judgment still reaches the user*: every kind the user has not let go is a judgment area, with or without a declaration. Any kind that skill's `references/capability-flags.md` flags for your model and reasoning effort is a judgment area too, even if the user let it go, unless they said otherwise knowing the flag. No declaration means no change: full per-phase stops.
+The declaration has two parts. **Depth** tracks the design phases — *through HLD*, *through LLD*, *through EARS*: phases at and above X stop per-phase as usual; the design phases below consolidate. **The tests gate** is whether the user reviews the failing tests before you write code. Tests always come first, failing, before any code; the gate decides only whether the user sees them then. It is on unless the user says otherwise. With it on, the consolidated review comes at the tests gate, before code. With it off, write the failing tests, go on to code without stopping, and present the consolidated review after code, with the core workflow's coherence verification. *Through EARS* with the gate on is the ordinary per-phase workflow. If the user turns the gate off mid-change, continue from where you are. **Judgment areas** name the fork kinds the user wants routed to them immediately (see below). Judgment areas start from the kinds of judgment the core `linked-intent-dev` skill lists under *Judgment still reaches the user*: every kind the user has not let go is a judgment area, with or without a declaration. Any kind that skill's `references/capability-flags.md` flags for your model and reasoning effort is a judgment area too, even if the user let it go, unless they said otherwise knowing the flag. No declaration means no change: full per-phase stops.
 
 ## Entering a change
 
 Declare eligibility before consolidating — never decide it silently:
 
-> This change qualifies for consolidated review: segment-local, no HLD or structural LLD work anticipated. Proceeding under your through-LLD declaration — per-phase for HLD/LLD, one consolidated review after tests. OK?
+> This change qualifies for consolidated review: segment-local, no HLD or structural LLD work anticipated. Proceeding under your through-LLD declaration — per-phase for HLD/LLD, one consolidated review after tests (or, since you don't review tests before code, after code). OK?
 
 Confirm the fork-log location as part of entry — create the file if it does not exist — so the first fork has somewhere to land before it arrives.
 
@@ -41,14 +41,15 @@ A specification fork — a spec or draft line admitting more than one reading �
 
 ## The consolidated review
 
-At the declared boundary, present one review containing:
+At the tests gate (or, with the gate off, after code), present one review containing:
 
 1. The LLD delta and spec delta.
 2. **Parked forks, read from the fork log** — grouped by kind, never reconstructed from memory. The user rules on each; resolutions land as narrowing edits or new atomic spec lines (per the core Phase 4 rule).
 3. An offer to update the declared judgment areas when the rulings reveal a pattern ("both forks were naming calls — add naming to your judgment areas?"). The judgment map is living.
 4. The failing tests, per tests-first.
+5. With the gate off, the code and the core workflow's Phase 6 coherence verification.
 
-Then proceed to code with the core workflow's normal Phase 6 coherence verification.
+With the gate on, proceed to code after the review, with the core workflow's normal Phase 6 coherence verification. With the gate off, work on a forked spec line waits for this review.
 
 ## Standing rules
 

@@ -133,7 +133,7 @@ arrows:
     blockedBy: [linked-intent-dev]
     detail: lid-experimental/review-depth.md
     next: "Dogfood on real declared-depth changes (this repo, Threadkeeper); fork taxonomy accretes from real logs. Promotion bar in the LLD."
-    drift: "12 of 12 EXP-DEPTH specs [x] (pure-prose experiment skill; dogfooding verification). No gaps."
+    drift: "13 of 13 EXP-DEPTH specs [x] (pure-prose experiment skill; dogfooding verification). No gaps."
 
   marketing-site:
     status: AUDITED

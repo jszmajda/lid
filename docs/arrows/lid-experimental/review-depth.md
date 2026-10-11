@@ -14,7 +14,7 @@ Experimental declared review depth — the user declares, in their own prose, th
 
 | Spec | Status | Verified by |
 |---|---|---|
-| EXP-DEPTH-001 … -012 | `[x]` | SKILL.md body coverage; dogfooding (pure-prose experiment, no eval harness) |
+| EXP-DEPTH-001 … -013 | `[x]` | SKILL.md body coverage; dogfooding (pure-prose experiment, no eval harness) |
 
 ## Notes
 

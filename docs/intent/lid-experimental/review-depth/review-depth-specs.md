@@ -12,7 +12,8 @@ Pure-prose experiment skill — no eval harness; `[x]` marks behavior the SKILL.
 
 ## Declaration and Depth
 
-- `[x]` **EXP-DEPTH-001**: When the user has declared a review depth (in their instruction file or in-session), the system SHALL run every workflow phase, stopping per-phase at and above the declared depth and consolidating deeper phases' outputs into one review at the declared boundary — a user-declared behavior that suspends the per-phase stop default of LID-CORE-005 for the phases below the declared depth.
+- `[x]` **EXP-DEPTH-001**: When the user has declared a review depth (in their instruction file or in-session), the system SHALL run every workflow phase, stopping per-phase at and above the declared design phase (HLD, LLD, or EARS) and consolidating the deeper phases' outputs into one review — a user-declared behavior that suspends the per-phase stop default of LID-CORE-005 for the phases below the declared depth.
+- `[x]` **EXP-DEPTH-013**: While a review depth is declared, the system SHALL write the failing tests before any code, and SHALL stop for the user's review of those tests before writing code unless the user has said they do not review tests before code; when they have, the system SHALL proceed to code without that stop and present the consolidated review after code, with the core workflow's coherence verification.
 - `[x]` **EXP-DEPTH-002**: When entering a change under a declared review depth, the system SHALL state the change's eligibility — segment-local, no HLD or structural LLD work anticipated — and confirm the fork-log location (creating the file if absent), and SHALL proceed consolidated only on the user's go.
 - `[x]` **EXP-DEPTH-003**: If work under a declared review depth touches the HLD, restructures an LLD, or cascades across a segment boundary, the system SHALL revert to per-phase stops for the remainder of the change.
 
@@ -24,6 +25,6 @@ Pure-prose experiment skill — no eval harness; `[x]` marks behavior the SKILL.
 - `[x]` **EXP-DEPTH-007**: If an unresolved fork blocks all remaining work in the change, the system SHALL surface it to the user immediately.
 - `[x]` **EXP-DEPTH-011**: When work under a declared review depth touches a kind of judgment the core capability-flag list flags for the executing model's configuration, the system SHALL interrupt immediately, whatever the declared depth and whether or not a fork is involved, naming the judgment and what to check, unless the user, knowing the flag, has let it go.
 - `[x]` **EXP-DEPTH-012**: While a review depth is declared, the system SHALL treat every kind of judgment in the core design's list that the user has not let go as a judgment area.
-- `[x]` **EXP-DEPTH-008**: At the consolidated boundary, the system SHALL present parked forks by reading the fork log — grouped by kind, never reconstructed from memory — alongside the LLD delta, spec delta, and failing tests.
+- `[x]` **EXP-DEPTH-008**: At the consolidated review, the system SHALL present parked forks by reading the fork log — grouped by kind, never reconstructed from memory — alongside the LLD delta, spec delta, and failing tests, and the code when the tests gate is off.
 - `[x]` **EXP-DEPTH-009**: When the user rules on parked forks, the system SHALL offer an update to the declared judgment areas reflecting the revealed pattern.
 - `[x]` **EXP-DEPTH-010**: The system SHALL keep the fork log under `docs/arrows/_experiments/review-depth/` when the arrow-maintenance overlay is present, and otherwise at a location the user names once in their depth declaration.
