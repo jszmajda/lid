@@ -52,7 +52,7 @@ Phases:
    - **Role** — how this file fits into the larger system (UI component, API handler, background job, pure utility, etc.).
    - **Observations** — anything unusual, deprecated-looking, or flagged by comments.
 
-   Output: a flat list of observed behaviors with file/line references. No segmentation attempted here. When sweep output exceeds the orchestrator's context window, each subagent writes its sweep to a per-subagent file (e.g., `.lid/map-codebase/sweep-{N}.md`); the orchestrator processes them in chunks during the next phase. The file format is left to implementation; the file-based handoff is the mechanism.
+   Output: a flat list of observed behaviors with file/line references. No segmentation attempted here. When sweep output exceeds the orchestrator's context window, each subagent writes its sweep to a per-subagent file (e.g., `docs/arrows/_map-codebase/sweep-{N}.md`); the orchestrator processes them in chunks during the next phase. The file format is left to implementation; the file-based handoff is the mechanism.
 
 2. **Seam identification — lens selection.** The agent proposes **3–5 fundamentally different clusterings** of the swept behaviors, each using a *different lens*. Good lenses include:
    - **Data flow** — what data originates where, how it moves between modules.
@@ -132,7 +132,7 @@ This is enough for `linked-intent-dev` to start operating immediately on subsequ
 ### Deferred to implementation
 
 1. **Subagent output reconciliation format.** When parallel subagents report their mapping results, what exact structure does the top-level agent consume to identify seams? Likely a JSON schema with observed behaviors, dependencies, and entry points; specifics pend the first real `/map-codebase` run on a non-trivial codebase.
-2. **Sweep-file format.** The file-based handoff is the mechanism; the exact schema of each `.lid/map-codebase/sweep-{N}.md` file is left to implementation. Likely YAML front matter plus markdown sections, but shape should follow from what subagents naturally produce.
+2. **Sweep-file format.** The file-based handoff is the mechanism; the exact schema of each `docs/arrows/_map-codebase/sweep-{N}.md` file is left to implementation. Likely YAML front matter plus markdown sections, but shape should follow from what subagents naturally produce.
 
 ## References
 

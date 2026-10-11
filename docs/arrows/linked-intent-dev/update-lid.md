@@ -4,7 +4,7 @@ The behavioral `update-lid` skill (invokable as `/update-lid`) — bootstraps a 
 
 ## Status
 
-**AUDITED** — last audited 2026-06-07 (git SHA `65a143750760`). `update-lid` complete (47/47 specs `[x]`).
+**AUDITED** — last audited 2026-06-07 (git SHA `65a143750760`). `update-lid` complete (53/53 specs `[x]`; workflow-doc vendoring 048-053 added after the last audit).
 
 ## References
 
@@ -16,11 +16,12 @@ The behavioral `update-lid` skill (invokable as `/update-lid`) — bootstraps a 
 - `docs/intent/linked-intent-dev/linked-intent-dev-design.md` — parent `LID` sub-HLD for plugin-level concerns (mode detection, spec ID format, eval-metadata schema).
 
 ### EARS
-- `docs/intent/linked-intent-dev/update-lid/update-lid-specs.md` (47 specs, prefix `LID-UPDATE-*`)
+- `docs/intent/linked-intent-dev/update-lid/update-lid-specs.md` (53 specs, prefix `LID-UPDATE-*`)
+- `plugins/linked-intent-dev/skills/update-lid/references/workflow-doc.md` (shipped vendoring asset, release-assembled)
 
 ### Tests / Evals
-- `plugins/linked-intent-dev/skills/update-lid/evals/evals.json`
-- `plugins/linked-intent-dev/skills/update-lid-workspace/` (skill-creator iteration outputs; iterations 1 and 2)
+- `plugins/linked-intent-dev/skills/update-lid/evals/evals.json` — 14 fixtures; 8–13 cover workflow-doc vendoring (LID-UPDATE-048–053: no offer at bootstrap, user-requested vendoring, a preserved decline, version-walk re-sync, modified-doc surfacing, Aider bridge)
+- `plugins/linked-intent-dev/skills/update-lid-workspace/` (skill-creator iteration outputs; iteration-4, 2026-08-08, 52/52 with-skill assertions, new-fixture baseline 63%; the 1.4.0 roster ran 11 configurations on the fixtures unchanged since, and fixtures 2, 6 and 8-10, revised afterward for on-demand vendoring, were piloted on claude-sonnet-5-5)
 
 ### Code (skill prompt and references)
 - `plugins/linked-intent-dev/skills/update-lid/SKILL.md` + `references/claude-md-template.md`

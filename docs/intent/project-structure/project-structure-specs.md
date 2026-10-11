@@ -9,6 +9,7 @@
 - .cursor-plugin/marketplace.json
 - CHANGELOG.md (canonical at plugins/linked-intent-dev/CHANGELOG.md, root symlink)
 - .gitignore
+- .claude/settings.json
 - LICENSE
 - CODE_OF_CONDUCT.md
 - SECURITY.md
@@ -61,6 +62,7 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 - `[x]` **PROJ-STRUCT-020**: A `CLAUDE.md` file SHALL exist at the repository root as a symlink resolving to `AGENTS.md`, so Claude Code (which reads `CLAUDE.md`) and tools that honor `AGENTS.md` natively read identical content with zero drift surface.
 - `[x]` **PROJ-STRUCT-021**: `AGENTS.md` SHALL describe the LID workflow (`HLD → LLDs → EARS → Tests → Code`) and SHALL point at `docs/high-level-design.md` as the canonical methodology document.
 - `[x]` **PROJ-STRUCT-022**: `AGENTS.md` SHALL include the project-level `## LID` block with a `- Mode:` bullet (e.g., `- Mode: Full`) so the workflow skill can detect the project's mode on entry.
+- `[x]` **PROJ-STRUCT-068**: `AGENTS.md` SHALL state that the repository holds repository tooling under `tools/` — maintainer helpers such as the alternate-model eval runner — in addition to the plugins and the methodology docs, and that this tooling ships in no plugin.
 - `[x]` **PROJ-STRUCT-023**: `AGENTS.md` SHALL provide a navigation table or equivalent index pointing at the canonical paths for the HLD, the LLDs directory, the EARS specs directory, the arrows index, and `docs/setup.md`.
 
 ## docs/setup.md
@@ -98,12 +100,21 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 
 - `[x]` **PROJ-STRUCT-059**: A `.gitignore` SHALL exclude the per-skill eval run-output trees (`plugins/*/skills/*-workspace/`) from version control, so these regenerable skill-creator outputs are absent from the repository and from both hosts' plugin bundles. The eval *definitions* (`plugins/*/skills/*/evals/evals.json`) SHALL NOT be ignored.
 
+- `[x]` **PROJ-STRUCT-067**: The `.gitignore` SHALL ignore the `.claude/` directory except `.claude/settings.json`, so each contributor's `.claude/settings.local.json`, session data, and worktrees stay untracked while the shared settings file is tracked.
+
+## .claude/settings.json
+
+- `[x]` **PROJ-STRUCT-064**: A `.claude/settings.json` file SHALL be tracked in the repository, holding only Claude Code settings shared by everyone working in the repository.
+- `[x]` **PROJ-STRUCT-065**: `.claude/settings.json` SHALL enable exactly the three first-party plugins from this repository's marketplace (`linked-intent-dev@jszmajda-lid`, `arrow-maintenance@jszmajda-lid`, `lid-experimental@jszmajda-lid`), and no other plugin.
+- `[x]` **PROJ-STRUCT-066**: `.claude/settings.json` SHALL grant exactly one permission, the allow rule `Bash(tools/alt-model-evals/run_eval.py:*)` for the alternate-model eval runner, and no other.
+
 ## Cascade
 
 - `[x]` **PROJ-STRUCT-034**: When HLD Goal 2 (minimum-system) is modified, the maintainer SHALL review `CONTRIBUTING.md`'s *Out of scope* and *Minimum-surface gate* sections for claim drift before the HLD change is considered complete.
 - `[x]` **PROJ-STRUCT-035**: When HLD Goal 4 (dogfooding) is modified, the maintainer SHALL review `CONTRIBUTING.md`'s *Tests, or justify* framing and *Arrow variant by change type* section.
 - `[x]` **PROJ-STRUCT-036**: When HLD § Key Design Decisions / *The arrow for LID itself* is modified — for example, a new variant is added or an existing one is revised — the maintainer SHALL update `CONTRIBUTING.md`'s arrow-variant decision tree to absorb the change.
 - `[x]` **PROJ-STRUCT-037**: When a new plugin is added under `plugins/`, removed, or renamed, the maintainer SHALL update both marketplace manifests (`.claude-plugin/marketplace.json` and `.cursor-plugin/marketplace.json`), both per-plugin manifests (`.claude-plugin/plugin.json` and `.cursor-plugin/plugin.json`), and any install commands in `README.md` and `docs/setup.md` to match.
+- `[x]` **PROJ-STRUCT-069**: When the alternate-model eval runner's entry point (`tools/alt-model-evals/run_eval.py`) moves or is renamed, the maintainer SHALL update the allow rule in `.claude/settings.json` in the same change.
 - `[x]` **PROJ-STRUCT-038**: When a new agentic coding tool is added to the supported set, the maintainer SHALL update `docs/setup.md`; if the tool is a first-class plugin host, the maintainer SHALL additionally add its marketplace manifest, its per-plugin manifests, and a plugin-host section in `docs/setup.md`; if it is rule-file-only, the maintainer SHALL add either a simple-path table row (native `AGENTS.md`) or a per-tool adapter section.
 
 ## Build-Time Checks
@@ -118,6 +129,7 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 - `[x]` **PROJ-STRUCT-044**: `CHANGELOG.md` SHALL follow semantic versioning and the Keep a Changelog format, and each release entry SHALL include a `### Migration (vX → vY)` section that `update-lid`'s version-walk reads to drive a guided upgrade.
 - `[x]` **PROJ-STRUCT-045**: The most recent *versioned* entry in `CHANGELOG.md` (the first `## [X.Y.Z]` heading, below any `## [No Version Update Required]` section) SHALL be the canonical LID conventions version and SHALL equal the `version` field of `plugins/linked-intent-dev/.claude-plugin/plugin.json`.
 - `[x]` **PROJ-STRUCT-046**: When a release is cut, the three plugin `version` fields (in each plugin's `.claude-plugin/plugin.json`) and their three corresponding entries in `.claude-plugin/marketplace.json` SHALL all be bumped together and SHALL equal the version of the matching plugin, with the `CHANGELOG.md` top version equal to `linked-intent-dev`'s version; this release-step invariant is maintained by the discipline documented in `CONTRIBUTING.md` rather than by a CI gate, per the HLD Non-Goal that LID is not a linter/validator. The Cursor manifests carry no `version` and are excluded from this sync.
+- `[x]` **PROJ-STRUCT-063**: When a release is cut, the shipped workflow-doc asset (`plugins/linked-intent-dev/skills/update-lid/references/workflow-doc.md`) SHALL be regenerated from the core skill source — `SKILL.md` plus its reference files, with the LID-on-LID exception section stripped and a repository-reference note added — and stamped with the released `linked-intent-dev` version. Like `PROJ-STRUCT-046`, maintained by the documented release discipline rather than a CI gate.
 - `[x]` **PROJ-STRUCT-054**: When a release is cut, a git tag and a GitHub Release matching the new version SHALL be published with release notes drawn from that version's `CHANGELOG.md` entry, and the Release SHALL create a linked discussion in the repository's Discussions **Announcements** category (for example, `gh release create vX.Y.Z --discussion-category Announcements`). Like `PROJ-STRUCT-046`, this step is maintained by the documented release discipline rather than by a CI gate.
 - `[x]` **PROJ-STRUCT-061**: `CHANGELOG.md` MAY carry a `## [No Version Update Required]` section above the most recent versioned entry, holding changes that warrant no version bump per the policy in HLD § Architecture / Distribution / *What warrants a version change* (e.g. additive host/platform support, internal refactors, docs); these fold into the next numbered version's entry when one is cut. Changes recorded only under that section SHALL NOT advance any plugin `version`, any project's `## LID` `- Version:` marker, or trigger a `/update-lid` version-walk.
 

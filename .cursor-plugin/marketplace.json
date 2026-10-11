@@ -23,7 +23,7 @@
     },
     {
       "name": "lid-experimental",
-      "description": "Experimental LID skills with opt-in installation and explicit promotion/retirement lifecycle. Current experiment: bidirectional-differential — audits EARS↔code coherence via parallel fresh-context LLM reconstructions. Layers on top of linked-intent-dev and arrow-maintenance; requires both.",
+      "description": "Experimental LID skills with opt-in installation and explicit promotion/retirement lifecycle. Current experiments: review-depth (a declared review depth with consolidated reviews) and bidirectional-differential — audits EARS↔code coherence via parallel fresh-context LLM reconstructions. Layers on top of linked-intent-dev and arrow-maintenance; requires both.",
       "source": "./plugins/lid-experimental",
       "category": "development",
       "license": "MIT"

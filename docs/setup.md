@@ -16,7 +16,7 @@ Every tool below assumes your project has:
 1. An `AGENTS.md` at the root that describes the LID workflow for your project.
 2. A `docs/` tree with `high-level-design.md` and `intent/`.
 
-Claude Code users get both for free: `/linked-intent-dev` (the workflow skill) bootstraps them as part of Phase 1 on a fresh project — invoke it with a description of what you want to build. Non-Claude-Code users can copy [this repo's `AGENTS.md`](../AGENTS.md) and `docs/` layout as a starting point, or run Claude Code once just to scaffold — the artifacts themselves are tool-agnostic.
+Claude Code users get both for free: `/linked-intent-dev` (the workflow skill) bootstraps them as part of Phase 1 on a fresh project — invoke it with a description of what you want to build. Non-Claude-Code users can start from the [instruction-file template](../plugins/linked-intent-dev/skills/update-lid/references/agents-md-template.md) (fill in the `## LID` block and the version in the workflow-doc URL, and drop the sections its header marks as conditional) plus a `docs/` layout like this repo's — your agent then offers the workflow doc on first use, per the note in the next section — or run Claude Code once just to scaffold; the artifacts themselves are tool-agnostic.
 
 ---
 
@@ -43,7 +43,12 @@ Other tools that honor `AGENTS.md` per the [spec](https://agents.md/) and should
 
 Nearest-wins nesting is part of the spec; Codex and Amp implement hierarchical merge, while Zed and Cline pick a single file.
 
-**If you use only tools from this list and an `AGENTS.md` at your root, you are done.** The sections below cover tools that need something extra, or that benefit from an explicit adapter.
+**The workflow doc.** An `AGENTS.md` alone carries only LID's compact core — the arrow mandate, the inspection invariant, and navigation. The full workflow ships as `docs/lid/workflow.md`, a generated file vendored only into projects a harness without plugins works in. Your `AGENTS.md` tells such a harness to offer it: when the doc is missing, the agent asks once and, on a yes, fetches it from the LID release matching your project's `- Version:`; a no is recorded as `- Workflow doc: declined` in the `## LID` block. Projects on plugin hosts don't need it, and skipping it keeps them on the plugin's upgrade path: a vendored doc stays at the release that wrote it until someone re-syncs it. **Adding it by hand:** copy `plugins/linked-intent-dev/skills/update-lid/references/workflow-doc.md` from the LID repository (a clone, or the file as published at the release tag) to `docs/lid/workflow.md`. Re-syncing after a LID upgrade is the same copy at the newer version, or `/update-lid` where a plugin host is available. Edit it upstream or in `AGENTS.md`, never in place. Your `AGENTS.md` points to it: harnesses with plugin support load the skill instead; everything else should read the doc before making changes. Two notes on making that pointer reliable:
+
+- **Prose pointers are best-effort on most tools** — the model chooses whether to follow them. That is why the compact core in `AGENTS.md` carries the invariants that must survive an ignored pointer.
+- **Use deterministic loading where your tool has it:** Amp users can `@`-mention the doc from `AGENTS.md` (guaranteed inclusion, globs supported); Aider users should commit a `.aider.conf.yml` with `read: AGENTS.md` (see the [Aider section](#aider)); Claude Code and Cursor need nothing extra — the plugins carry the workflow.
+
+**If you use only tools from this list, with an `AGENTS.md` at your root and the vendored workflow doc, you are done.** The sections below cover tools that need something extra, or that benefit from an explicit adapter.
 
 ---
 
@@ -60,11 +65,7 @@ Richest integration. The plugins automate phase gates, auto-invoke the workflow 
 
 When invoking `/linked-intent-dev` on a fresh project, describe what you want to build — the workflow handles LID setup as part of Phase 1, then walks the design forward. On an established LID project, `/update-lid` reconciles drift, refreshes conventions, or runs a mode transition.
 
-**Claude Code reads `CLAUDE.md`, not `AGENTS.md` directly.** The workflow's bootstrap creates `CLAUDE.md` only. If you want a single source of truth across both filenames so that Claude Code and other AGENTS.md-honoring tools see the same content, pick one:
-
-1. **Symlink `AGENTS.md → CLAUDE.md`** — content lives in `CLAUDE.md`, `AGENTS.md` is a symlink pointing at it. From your project root: `ln -s CLAUDE.md AGENTS.md`. Other tools open `AGENTS.md`; the OS resolves the symlink and they see `CLAUDE.md`'s content.
-2. **Reverse direction — content in `AGENTS.md`, `CLAUDE.md` imports it.** Move the content into `AGENTS.md`, then make `CLAUDE.md` a one-line file: `@AGENTS.md` (Claude Code's import syntax pulls in the sibling file). This is the direction *this repository* uses — `AGENTS.md` is canonical because it's the cross-tool convention.
-3. **Claude-Code-only?** Just keep `CLAUDE.md` and skip `AGENTS.md`. Add it later if you pick up a second tool.
+**Claude Code reads `CLAUDE.md`, not `AGENTS.md` directly.** The bootstrap writes the content to `AGENTS.md` (the cross-tool convention) and makes `CLAUDE.md` a symlink to it, so Claude Code and every AGENTS.md-honoring tool see one file. Where symlinks are unavailable (for example Windows without Developer Mode), `CLAUDE.md` is instead a one-line file, `@AGENTS.md`, which Claude Code's import syntax resolves to the same content. Claude-Code-only projects can keep it that way; nothing else needs setting up.
 
 Claude Code also reads `.claude/CLAUDE.local.md` (local, uncommitted overrides) and `~/.claude/CLAUDE.md` (user-global instructions) — both additive, both optional.
 
@@ -192,22 +193,20 @@ Sources: [Copilot repository instructions](https://docs.github.com/en/copilot/ho
 
 ## Aider
 
-Aider does **not** read `AGENTS.md` automatically — you have to wire it in via `.aider.conf.yml`. Aider's canonical conventions filename is `CONVENTIONS.md`; symlink `AGENTS.md` to `CONVENTIONS.md` if you want a single source of truth.
-
-**`CONVENTIONS.md`** (symlink to `AGENTS.md`, or a standalone file)
+Aider does **not** read `AGENTS.md` automatically — wire it in via `.aider.conf.yml`, which Aider auto-reads from the repo root. List `AGENTS.md` directly: `read:` takes any path, so no `CONVENTIONS.md` file or symlink is needed (that filename is only Aider's documentation convention).
 
 **`.aider.conf.yml`**
 ```yaml
 read:
-  - CONVENTIONS.md
+  - AGENTS.md
   - docs/high-level-design.md
 ```
 
-`read:` loads files as read-only context on every session (and caches them if prompt caching is on). The list takes explicit paths — no glob support. Add specific LLDs when working in a particular arrow segment:
+`read:` loads files as read-only context on every session (and caches them if prompt caching is on). The list takes explicit paths — no glob support. Do **not** add the vendored `docs/lid/workflow.md` here — it is the full workflow and `read:` would pay for it on every session; when the model asks to see it (following the `AGENTS.md` pointer), approve adding it for that session instead. Add specific LLDs when working in a particular arrow segment:
 
 ```yaml
 read:
-  - CONVENTIONS.md
+  - AGENTS.md
   - docs/high-level-design.md
   - docs/intent/auth/auth-design.md
   - docs/intent/auth/auth-specs.md

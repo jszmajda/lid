@@ -7,19 +7,21 @@ Project instructions for coding agents working in this repository. The file is n
 This is the **Linked-Intent Development (LID)** project — a methodology for keeping intent and code coherent in agentic codebases. The repo ships:
 
 - The methodology itself (this document plus `docs/`).
-- **Two Claude Code plugins** under `plugins/` — richest integration, with auto-invoking skills and slash commands.
+- **Three Claude Code plugins** under `plugins/` (two core, one opt-in experimental) — richest integration, with auto-invoking skills and slash commands. Cursor reads the same plugins through its own manifests.
 - Rule-file adapters for other agentic coding tools (Cursor, Windsurf, GitHub Copilot, Aider, Continue, JetBrains Junie, Zed, Codex, and any tool that reads `AGENTS.md`). See `docs/setup.md` for per-tool setup.
 
-There is no build system, test suite, or application code. The repo is simultaneously the distribution source for the plugins and the canonical LID-on-LID reference — its own `docs/` tree is LID applied to LID.
+There is no build system or application code. The plugins are prose (skills, references, templates); the only executable code is maintainer tooling under `tools/`, which ships in no plugin. The repo is simultaneously the distribution source for the plugins and the canonical LID-on-LID reference — its own `docs/` tree is LID applied to LID.
 
 ## Structure
 
-- **`plugins/`**: Two installable Claude Code plugins
+- **`plugins/`**: Three installable plugins (Claude Code and Cursor)
   - **`linked-intent-dev/`**: Core LID workflow skill (`/linked-intent-dev`), configuration skill (`/update-lid`), and principle-review coach (`/lid-coach`)
   - **`arrow-maintenance/`**: Arrow tracking overlay + `/map-codebase` command for brownfield bootstrap
+  - **`lid-experimental/`**: Opt-in experiments under evaluation (`review-depth`, `bidirectional-differential`)
 - **`.claude-plugin/marketplace.json`**: Claude Code plugin manifest (technical file — users install via `/plugin marketplace add jszmajda/lid`)
 - **`docs/setup.md`**: Per-tool setup instructions for non-Claude-Code agents
 - **`docs/`**: The HLD, LLDs, and EARS specs that define the project
+- **`tools/`**: Maintainer tooling that ships in no plugin — `tools/alt-model-evals/` runs the skills' eval suites on non-Claude models (optional evidence, never a merge gate; see `docs/intent/alt-model-evals/`)
 
 ## Plugin Architecture (Claude Code)
 
@@ -33,7 +35,7 @@ Users install via:
 
 The plugins form a layered system:
 
-1. **linked-intent-dev** is the core workflow — consult for ALL code changes. Every change walks the full arrow (HLD → LLD → EARS → Tests → Code) with a stop at each phase boundary. Bug fixes walk the same arrow — find where intent diverged and cascade from there; no short-circuit. Fresh projects start with `/linked-intent-dev` + a description of what to build (the workflow bootstraps LID inline). Established projects use `/update-lid` to reconcile drift, change modes, or refresh conventions.
+1. **linked-intent-dev** is the core workflow — consult for ALL code changes. Every change walks the full arrow (HLD → LLD → EARS → Tests → Code); each phase's output is inspected — by the user or an inspector they name — before the next begins, and ambiguous spec readings go back to the user. Bug fixes walk the same arrow — find where intent diverged and cascade from there; no short-circuit. Fresh projects start with `/linked-intent-dev` + a description of what to build (the workflow bootstraps LID inline). Established projects use `/update-lid` to reconcile drift, change modes, or refresh conventions.
 
 2. **arrow-maintenance** overlays on top — adds navigation (`index.yaml`) and tracking (arrow docs) for projects too large to hold in one context window. Includes `/map-codebase` for brownfield codebase mapping.
 
@@ -54,19 +56,20 @@ The methodology is identical across tools — only the invocation differs. Claud
 
 ## LID
 - Mode: Full
-- Version: 1.3.0
+- Version: 1.4.0
 
 ## Linked-Intent Development (MANDATORY)
 
-**Consult the `linked-intent-dev` skill (Claude Code) or follow the workflow below (other tools) for ALL code changes.** All changes start with intent:
+**Consult the `linked-intent-dev` skill for ALL code changes.** All changes start with intent:
 
 ```
 HLD → LLDs → EARS → Tests → Code
 ```
 
-- **New features**: Full workflow (HLD → LLD → EARS → Tests → Code)
-- **Bug fixes**: Walk the arrow like any other change — find where intent diverged, cascade from there. No short-circuit.
-- **If unsure**: Use the full workflow.
+- **All changes**: consult the `linked-intent-dev` skill if your harness provides it; otherwise read `plugins/linked-intent-dev/skills/update-lid/references/workflow-doc.md` before making changes (in this repository the workflow doc is the shipped asset itself, so there is nothing to vendor). The workflow in one line: HLD check → LLD → EARS specs → edge audit → failing tests first → code — inspected at each phase.
+- **Bug fixes**: walk the arrow like any other change — find where behavior diverged from intent and cascade from there. No short-circuit.
+
+Each phase's output is inspected — by the user or an inspector they name — before the next begins; ambiguous spec readings go back to the user.
 
 **Docs carry current intent, written to be read cold.** Write each doc as if authored fresh today, from current intent alone — no narration of how it changed, no meaning that needs the conversation that produced it, no rebuttals to questions only a past discussion raised. Rationale, considered alternatives, and constraints a fresh author would independently write stay; record rejected alternatives and why in the LLD's Decisions & Alternatives table, not as asides in body prose.
 

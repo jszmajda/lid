@@ -5,6 +5,8 @@ Append this block to the project's instruction file — `AGENTS.md` (canonical; 
 - The `## LID` block is mandatory. Substitute the user's chosen mode into `- Mode:` and the `linked-intent-dev` plugin version the project's docs conform to into `- Version:`.
 - The `## LID Scope` section is **included only** when mode is Scoped, and follows the `## LID` block. When mode is Full, omit the section entirely — its absence means "entire project in scope." For Scoped mode, substitute the user's declared include/exclude patterns into the bulleted lists below.
 - The "Arrow of intent overlay" row in the navigation table is **included only** when `docs/arrows/` exists in the project root at invocation time. When absent, omit that row entirely — do not write the parenthetical note to the user's file.
+- The `- Workflow doc: declined` bullet is **included only** when a user declined the offer to vendor the workflow doc. Never write it otherwise; preserve it when present.
+- Substitute the project's `- Version:` into the workflow-doc URL in the pointer bullet.
 - The `## LID Tooling` section is **included only** when the project has tooling to declare (most commonly a coherence-check script). Omit entirely when there is nothing to declare; the skill falls back to in-prompt audit when the section is missing or empty.
 
 ---
@@ -12,6 +14,7 @@ Append this block to the project's instruction file — `AGENTS.md` (canonical; 
 ## LID
 - Mode: {Full|Scoped}
 - Version: {linked-intent-dev plugin version}
+- Workflow doc: declined *(only when a user declined the workflow doc; omit otherwise)*
 
 ## LID Scope
 
@@ -32,11 +35,10 @@ Paths explicitly excluded:
 HLD → LLDs → EARS → Tests → Code
 ```
 
-- **New features and refactors**: full six-phase workflow (HLD check → LLD check/draft → EARS → intent-narrowing edge audit → tests-first → code).
+- **All changes**: consult the `linked-intent-dev` skill if your harness provides it; otherwise read `docs/lid/workflow.md` before making changes, and if it is missing and `## LID` records no decline, offer the user once to add it from https://raw.githubusercontent.com/jszmajda/lid/v{Version}/plugins/linked-intent-dev/skills/update-lid/references/workflow-doc.md (on decline, add `- Workflow doc: declined` to `## LID`). The workflow in one line: HLD check → LLD → EARS specs → edge audit → failing tests first → code — inspected at each phase.
 - **Bug fixes**: walk the arrow like any other change — find where behavior diverged from intent and cascade from there. No short-circuit.
-- **If unsure**: use the full workflow.
 
-Stop after each phase for user review. **Docs carry current intent, written to be read cold** — write each doc as if authored fresh today, from current intent alone: no narration of how it changed, no meaning that needs the conversation that produced it, no rebuttals to questions only a past discussion raised. Rationale, considered alternatives, and constraints a fresh author would independently write stay; record rejected alternatives and why in the LLD's Decisions & Alternatives table, not as asides in body prose.
+Each phase's output is inspected — by the user or an inspector they name — before the next begins; ambiguous spec readings go back to the user. **Docs carry current intent, written to be read cold** — write each doc as if authored fresh today, from current intent alone: no narration of how it changed, no meaning that needs the conversation that produced it, no rebuttals to questions only a past discussion raised. Rationale, considered alternatives, and constraints a fresh author would independently write stay; record rejected alternatives and why in the LLD's Decisions & Alternatives table, not as asides in body prose.
 
 **Memory vs. intent.** Before saving durable project knowledge to agent or tool memory, test whether it is project *intent* — would a fresh agent, in any tool, next session, need it to build this system correctly? If yes, record it in the arrow (HLD / LLD / EARS / decision doc), which travels and cascades — not in private, per-tool memory, where intent escapes the arrow. Knowledge about the user or how they like to work stays in memory.
 

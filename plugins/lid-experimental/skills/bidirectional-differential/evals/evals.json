@@ -1,5 +1,6 @@
 {
   "skill_name": "bidirectional-differential",
+  "tested_with": [],
   "notes": "Iteration 1 covers 3 of the 10 baseline fixtures from the LLD — maximum-spread across outcomes (BD-COHERENT, BIDIRECTIONAL-DRIFT, B-ONLY-DRIFT). Edge-case and stress fixtures (7–10 in the LLD) defer to iteration 2.",
   "evals": [
     {

@@ -1,5 +1,6 @@
 {
   "skill_name": "arrow-maintenance",
+  "tested_with": [{ "model": "claude-fable-5", "date": "2026-08-08", "evals": "0-3", "passed": "15/15" }],
   "evals": [
     {
       "id": 0,
@@ -17,7 +18,7 @@
         { "text": "docs/arrows/index.yaml has its auth entry's 'audited' field updated to today's date", "spec_ids": ["SCALE-MAINT-024"] },
         { "text": "docs/arrows/index.yaml has its auth entry's 'audited_sha' field populated (non-null)", "spec_ids": ["SCALE-MAINT-024"] },
         { "text": "The agent's response is a structured report of findings (at minimum distinguishing resolved from pending)", "spec_ids": ["SCALE-MAINT-021", "SCALE-MAINT-022"] },
-        { "text": "The audit checks the five classes (reference coherence, coverage, staleness, drift signals, orphan artifacts) either explicitly in prose or via findings listed", "spec_ids": ["SCALE-MAINT-004", "SCALE-MAINT-005", "SCALE-MAINT-006", "SCALE-MAINT-008", "SCALE-MAINT-010"] }
+        { "text": "The audit checks the six classes (reference coherence, coverage, staleness, drift signals, orphan artifacts, misplaced EARS) either explicitly in prose or via findings listed", "spec_ids": ["SCALE-MAINT-004", "SCALE-MAINT-005", "SCALE-MAINT-006", "SCALE-MAINT-008", "SCALE-MAINT-010", "SCALE-MAINT-031"] }
       ]
     },
     {
@@ -48,6 +49,25 @@
       "assertions": [
         { "text": "No changes were made to the project (no docs/ directory created, no CLAUDE.md created, no index.yaml)", "spec_ids": ["SCALE-MAINT-003"] },
         { "text": "The agent's response explicitly recommends the user try /map-codebase (brownfield) or /linked-intent-dev (greenfield) instead", "spec_ids": ["SCALE-MAINT-003"] }
+      ]
+    },
+    {
+      "id": 3,
+      "eval_name": "misplaced-ears-flagged",
+      "prompt": "/arrow-maintenance",
+      "files": [
+        { "path": "CLAUDE.md", "content": "## LID\n- Mode: Full\n- Version: 1.4.0\n\n## Linked-Intent Development (MANDATORY)\n\nConsult the linked-intent-dev skill for ALL code changes.\n" },
+        { "path": "docs/high-level-design.md", "content": "# High-Level Design\n\n## Problem\n\nUsers authenticate against a session service.\n\n## Architecture\n\nA single auth component: login, logout, session expiry.\n" },
+        { "path": "docs/intent/auth/auth-design.md", "content": "---\nparent: high-level-design\nprefix: AUTH\n---\n# LLD: Auth\n\n## Context\n\nAuthentication and session lifecycle. Login and logout behavior is specified in AUTH-001 and AUTH-002.\n\n## Session expiry\n\nSessions are bounded. The expiry requirement:\n\n- `[x]` **AUTH-003**: When a session exceeds 30 minutes of inactivity, the system SHALL invalidate the session token and require re-authentication on the next request.\n\n## Decisions & Alternatives\n\n| Decision | Chosen | Rationale |\n|---|---|---|\n| Session store | Server-side table | Revocable, auditable. |\n" },
+        { "path": "docs/intent/auth/auth-specs.md", "content": "# auth specs\n\n**LLD**: docs/intent/auth/auth-design.md\n\n- `[x]` **AUTH-001**: When a user submits valid credentials, the system SHALL create a session and return a session token.\n- `[x]` **AUTH-002**: When a user logs out, the system SHALL invalidate the session token.\n" },
+        { "path": "docs/arrows/index.yaml", "content": "schema_version: 2\nlast_updated: 2026-06-01\n\narrows:\n  auth:\n    status: MAPPED\n    sampled: 2026-06-01\n    audited: null\n    audited_sha: null\n    parent: null\n    children: []\n    blocks: []\n    blockedBy: []\n    detail: auth.md\n    next: null\n    drift: null\n\nunmapped:\n  docs:\n    llds: []\n    specs: []\n" },
+        { "path": "docs/arrows/auth.md", "content": "# Arrow: auth\n\nAuthentication and session lifecycle.\n\n## Status\n\nMAPPED\n\n## References\n\n### LLD\n- docs/intent/auth/auth-design.md\n\n### EARS\n- docs/intent/auth/auth-specs.md\n" }
+      ],
+      "assertions": [
+        { "text": "The audit surfaces a misplaced-EARS finding naming AUTH-003 as EARS requirement content defined inside docs/intent/auth/auth-design.md, with the suggested resolution of extracting it to auth-specs.md", "spec_ids": ["SCALE-MAINT-031"] },
+        { "text": "The audit does NOT auto-move the content: after the run, docs/intent/auth/auth-design.md still contains the AUTH-003 requirement line and auth-specs.md was not given an AUTH-003 entry by the audit itself", "spec_ids": ["SCALE-MAINT-031"] },
+        { "text": "The bare references to AUTH-001 and AUTH-002 in the design doc's Context section are NOT flagged as misplaced EARS (reference vs. definition — navigation mentions add no normative content)", "spec_ids": ["SCALE-MAINT-031"] },
+        { "text": "The misplaced-EARS finding is listed in the report's findings-requiring-user-decision category, not silently repaired", "spec_ids": ["SCALE-MAINT-022", "SCALE-MAINT-031"] }
       ]
     }
   ]

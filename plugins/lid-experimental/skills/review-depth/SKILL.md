@@ -1,0 +1,58 @@
+---
+name: review-depth
+description: Experimental declared review depth for linked-intent development. Use when a LID project's instruction file declares a review depth in prose (e.g. "Review depth - I review through LLD; below that, consolidate to one review") or the user asks to batch phase reviews, consolidate stops, or let go below a phase depth. Overlays the linked-intent-dev workflow — every phase still runs; interrupts consolidate. Never activates on its own judgment.
+---
+
+# Review Depth (experiment)
+
+An experimental overlay on the `linked-intent-dev` workflow: the user declares the design phases they personally review, and whether they review the tests before code; deeper phases still run in full, but their outputs consolidate into **one review** instead of stopping per phase. Per-phase stops remain LID's default — this skill changes nothing unless the user has declared a review depth. An active declaration is the user's express authorization to suspend the per-phase stop default (LID-CORE-005) below the declared depth.
+
+## Recognizing the declaration
+
+The declaration is the **user's own prose** — in their instruction file or stated in-session. LID writes no configuration for it. Recommended shape (offer it to users who want a standing declaration):
+
+> Review depth: I review through LLD; below that, consolidate to one review. I don't need to see the tests before code.
+> Judgment areas: naming and API shapes; anything touching auth.
+
+The declaration has two parts. **Depth** tracks the design phases — *through HLD*, *through LLD*, *through EARS*: phases at and above X stop per-phase as usual; the design phases below consolidate. **The tests gate** is whether the user reviews the failing tests before you write code. Tests always come first, failing, before any code; the gate decides only whether the user sees them then. It is on unless the user says otherwise. With it on, the consolidated review comes at the tests gate, before code. With it off, write the failing tests, go on to code without stopping, and present the consolidated review after code, with the core workflow's coherence verification. *Through EARS* with the gate on is the ordinary per-phase workflow. If the user turns the gate off mid-change, continue from where you are. **Judgment areas** name the fork kinds the user wants routed to them immediately (see below). Judgment areas start from the kinds of judgment the core `linked-intent-dev` skill lists under *Judgment still reaches the user*: every kind the user has not let go is a judgment area, with or without a declaration. Any kind that skill's `references/capability-flags.md` flags for your model and reasoning effort is a judgment area too, even if the user let it go, unless they said otherwise knowing the flag. No declaration means no change: full per-phase stops.
+
+## Entering a change
+
+Declare eligibility before consolidating — never decide it silently:
+
+> This change qualifies for consolidated review: segment-local, no HLD or structural LLD work anticipated. Proceeding under your through-LLD declaration — per-phase for HLD/LLD, one consolidated review after tests (or, since you don't review tests before code, after code). OK?
+
+Confirm the fork-log location as part of entry — create the file if it does not exist — so the first fork has somewhere to land before it arrives.
+
+**Fail-open.** If the work turns out to touch the HLD, restructure an LLD, or cascade across a segment boundary, revert to per-phase stops for the remainder of the change and say so.
+
+## Fork protocol
+
+A specification fork — a spec or draft line admitting more than one reading — is a latent-intent question. Depth changes how the user *reviews*; it never changes who *resolves* a fork:
+
+- **In a declared judgment area — or plausibly in one:** surface immediately, whatever the depth. Classification doubt resolves toward surfacing.
+- **Outside judgment areas:** park it — **write it to the fork log at detection, before routing around it.** Never resolve it silently. Entry shape: the spec line, the divergent readings, kind, status.
+- **Capability-flagged work:** when a phase's work touches an area flagged for your configuration (your model name and reasoning effort; if the flag list has no row for it, or you cannot tell, treat the flag as applying), stop immediately whatever the depth, even with no fork involved. Name the area and what the user should check; resume consolidation after they rule. The exception is a user who, knowing the flag, has let that kind of judgment go.
+- **Dependency rule:** write no tests or code against an unresolved fork's spec line; do the independent work first.
+- **Critical-path escape:** a fork blocking all remaining work surfaces immediately.
+- **After the boundary:** a fork discovered once the consolidated review has passed surfaces immediately — the log has already been read.
+
+**Fork log location:** `docs/arrows/_experiments/review-depth/<segment>/fork-log.md` when `docs/arrows/` exists; otherwise ask the user once and record the answer in their declaration prose. The log is externalized state — retention must never depend on holding forks in working memory across the change.
+
+## The consolidated review
+
+At the tests gate (or, with the gate off, after code), present one review containing:
+
+1. The LLD delta and spec delta.
+2. **Parked forks, read from the fork log** — grouped by kind, never reconstructed from memory. The user rules on each; resolutions land as narrowing edits or new atomic spec lines (per the core Phase 4 rule).
+3. An offer to update the declared judgment areas when the rulings reveal a pattern ("both forks were naming calls — add naming to your judgment areas?"). The judgment map is living.
+4. The failing tests, per tests-first.
+5. With the gate off, the code and the core workflow's Phase 6 coherence verification.
+
+With the gate on, proceed to code after the review, with the core workflow's normal Phase 6 coherence verification. With the gate off, work on a forked spec line waits for this review.
+
+## Standing rules
+
+- Every phase runs; only the interrupt count collapses. The consolidated review must preserve per-phase edge detection — if it can't (too much accumulated), say so and fall back to per-phase.
+- The user may override in either direction at any time (*the user is always right — with warning*).
+- This is an **experiment** (`lid-experimental`). Promotion target and evidence bar live in `docs/intent/lid-experimental/review-depth/review-depth-design.md`.

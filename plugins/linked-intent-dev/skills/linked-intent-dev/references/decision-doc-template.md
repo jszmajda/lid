@@ -2,7 +2,7 @@
 
 A **decision doc** records a single design decision at high enough resolution that a future reader can *re-run the judgment* if circumstances change — not just learn what was chosen. It is the expanded form of a Decisions & Alternatives table row, reserved for the few decisions that earn it. Decision docs are **rare**.
 
-## When to write one (the earns-its-place heuristic)
+## When one earns its place (the earns-its-place heuristic)
 
 > **Apply the test from the landed state, looking forward — not from the deliberation, looking back.** The question is *not* "was this hard to decide?" Plenty of decisions are contested while the work is in flight and then read as **obvious, even native, once they land** — the structure ends up self-evidently the way it had to be. The question is: **once this lands, would a cold reader of the result find the choice non-obvious — would they question it, or be tempted to reverse it, not knowing why it went this way?**
 
@@ -10,9 +10,9 @@ That yields three outcomes, not two:
 
 - **Record nothing.** The choice is obvious or native once it lands; the structure documents itself. Writing down a settled-and-obvious decision is the same residue the *docs carry current intent* tenet strips — a fresh author of the landed system would not explain why the natural shape is natural.
 - **A Decisions & Alternatives row.** A cold reader would plausibly wonder "why this?", and one line of rationale settles it (one option clearly dominates, or an inherited constraint eliminated the rest).
-- **A full decision doc.** The choice stays genuinely *live*: a cold reader would re-litigate it without the full tradeoffs laid out — competing options weighed against criteria.
+- **A full decision doc.** The choice stays genuinely *live*: a cold reader would re-litigate it without the full tradeoffs laid out — competing options weighed against criteria — and the decision required deep work whose memory the rest of the system's intent leans on.
 
-Competitive options scored against weighted criteria are a *symptom* that a doc may be warranted, not the test itself — the test is the reader's forward-looking need. A directory full of decision docs is a smell.
+Competitive options scored against weighted criteria are a *symptom* that a doc may be warranted, not the test itself — the test is the reader's forward-looking need. A debate having happened is likewise a symptom, not the test — a table row can come out of a long argument. A directory full of decision docs is a smell.
 
 ## Where it lives
 
@@ -27,7 +27,7 @@ A decision belongs where its **substance** lives, even when implementing it casc
 
 ## Lifecycle
 
-While the decision is open it is a **plan-space working artifact** — options live, discussion present. When the decision is made, its durable reasoning lands here and the transient deliberation is shed. Like every LID doc, it is **written to be read cold**: present tense, no narration of how the discussion unfolded, no "we decided X after Y raised Z." "Options in the domain" means *the options that exist in this problem space*, not a chronology of what was proposed when.
+While the decision is open it is a **plan-space working artifact** — options live, discussion present. Its first life is to *facilitate* that debate: on a team, drafted as a position and argued in the PR that carries it; solo, argued in the working session with the agent. Finalizing — merging, or committing the settled doc — begins its second life: the durable reasoning lands here, the transient deliberation is shed, and the doc memorializes the decision made. Like every LID doc, it is **written to be read cold**: present tense, no narration of how the discussion unfolded, no "we decided X after Y raised Z." "Options in the domain" means *the options that exist in this problem space*, not a chronology of what was proposed when.
 
 ## Frontmatter
 
@@ -37,7 +37,7 @@ node: {owning-segment}        # the node whose decision this is — a segment, o
 ---
 ```
 
-A decision doc carries no `status` field. Its presence in `docs/` *is* its acceptance — deliberation happens in plan-space, so a doc only lands here once the decision is made. A superseded decision is deleted and replaced, not flagged (mutation, not accumulation; git preserves the history).
+A decision doc carries no `status` field. Its presence in `docs/` *is* its acceptance — deliberation happens in plan-space, so a doc only lands here once the decision is made (a doc on a branch under review is still in its first life — merging is the acceptance). A superseded decision is deleted and replaced, not flagged (mutation, not accumulation; git preserves the history).
 
 When a decision builds on or relates to another — when it would be unintelligible without that premise — say so in **Context**: open with a one-line pointer to the decision it depends on. Keep this as freeform prose, not a fixed field; what a decision relates to varies too much to bind to a schema.
 

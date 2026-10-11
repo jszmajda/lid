@@ -92,6 +92,7 @@ LID is versioned with semver per plugin, and `linked-intent-dev`'s version is th
 When cutting a release:
 
 - Bump the `version` field in each plugin's `.claude-plugin/plugin.json` and the matching entry in [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json) together — six version strings, kept equal per plugin. The Cursor manifests (`.cursor-plugin/marketplace.json` and each `.cursor-plugin/plugin.json`) carry no `version` and are not part of this sync.
+- Regenerate the shipped workflow-doc asset (`plugins/linked-intent-dev/skills/update-lid/references/workflow-doc.md`) from the core skill source — strip the LID-on-LID exception section, keep the repository-reference note — so the vendored copy users receive matches the released skill.
 - Add a [`CHANGELOG.md`](CHANGELOG.md) entry for the release (Keep a Changelog format), including a `### Migration (vX → vY)` section whenever conventions changed so `update-lid` can walk downstream projects through the upgrade.
 - Keep the `CHANGELOG.md` top version equal to `linked-intent-dev`'s `plugin.json` version — that is the canonical LID version.
 - Publish the release: create the git tag and GitHub Release with notes from the new `CHANGELOG.md` entry, announcing it to the community in one step — `gh release create vX.Y.Z --notes-file <entry> --discussion-category Announcements`. This tag-and-Release step is what keeps published releases from falling behind the manifests, and the `--discussion-category` flag posts the announcement to Discussions automatically.

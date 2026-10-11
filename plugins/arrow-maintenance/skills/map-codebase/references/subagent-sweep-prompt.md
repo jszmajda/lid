@@ -36,6 +36,6 @@ Produce one entry per file. Format:
 
 ## Output
 
-Write your report to `{path-given-by-orchestrator}` (typically something like `.lid/map-codebase/sweep-{N}.md`). Do not emit the report inline in the response — the orchestrator will consume your file. The orchestrator may not have room to hold all subagent outputs at once, so file-based handoff is the mechanism.
+Write your report to `{path-given-by-orchestrator}` (typically something like `docs/arrows/_map-codebase/sweep-{N}.md`). Do not emit the report inline in the response — the orchestrator will consume your file. The orchestrator may not have room to hold all subagent outputs at once, so file-based handoff is the mechanism.
 
 End your response with a brief summary: how many files you read, any scope issues (files you couldn't read, unexpected file types, scope boundaries that seemed ambiguous).

@@ -17,6 +17,7 @@ Repo-meta artifacts:
 - `.claude-plugin/marketplace.json` and `.cursor-plugin/marketplace.json` — plugin marketplace manifests, one per first-class plugin host (Claude Code, Cursor)
 - `CHANGELOG.md` — release history and per-version migration notes (canonical inside `plugins/linked-intent-dev/`, repo-root symlink alias)
 - `.gitignore` — repository ignore rules, including the exclusion of regenerable eval run-output trees from version control
+- `.claude/settings.json` — Claude Code settings shared by everyone working in this repository
 - `LICENSE` — MIT license
 
 Community-health artifacts:
@@ -51,9 +52,18 @@ Sections:
 
 ### `AGENTS.md` (with `CLAUDE.md` as symlink alias)
 
-Per-repo invocation of the LID workflow. Names the repository's purpose, the plugin layer, the methodology workflow (`HLD → LLDs → EARS → Tests → Code`), the LID Mode declaration, and a navigation table to canonical doc locations. Read by every coding agent on entry to the repository.
+Per-repo invocation of the LID workflow. Names the repository's purpose, the plugin layer, the repository tooling under `tools/` (maintainer helpers such as the alternate-model eval runner, which ship in no plugin), the methodology workflow (`HLD → LLDs → EARS → Tests → Code`), the LID Mode declaration, and a navigation table to canonical doc locations. Read by every coding agent on entry to the repository.
 
 `AGENTS.md` is canonical because it is the cross-tool convention. `CLAUDE.md` is a symlink resolving to `AGENTS.md`, so Claude Code (which reads `CLAUDE.md`) and tools that honor `AGENTS.md` natively (Codex CLI, Amp, Jules, JetBrains Junie's fallback path, Copilot, etc.) read identical content. A reverse-direction implementation (content in `CLAUDE.md`, `AGENTS.md` as a `@CLAUDE.md` import) is documented in `docs/setup.md` for users whose Claude-Code-first projects prefer it; this repository uses the symlink direction.
+
+### `.claude/settings.json`
+
+The Claude Code settings every contributor's session gets in this repository, and nothing personal. It carries two things:
+
+- **Every first-party plugin enabled** — `linked-intent-dev`, `arrow-maintenance`, and `lid-experimental` from this repository's marketplace. `AGENTS.md` makes the LID workflow mandatory here, so enabling its plugins for every contributor is dogfooding, not preference. `lid-experimental` is opt-in for LID's users, but this repository is where experiments are built and where the evidence for promoting or retiring them should first come from, so it runs them. Each experiment stays dormant or asks before acting: `review-depth` activates only when the instruction file declares a review depth, and the differential audit opens with a scoping conversation before it spends anything.
+- **One permission: the alternate-model eval runner** — `Bash(tools/alt-model-evals/run_eval.py:*)`. The runner launches a coding agent with its tool permissions pre-granted, which a cautious agent-permission policy blocks by default; the committed rule lets any contributor's session run it without setup and records that the launch is intended (see the `alt-model-evals` segment).
+
+Anything else — other plugins, broader permissions, personal tools — belongs in the untracked `.claude/settings.local.json`.
 
 ### `docs/setup.md`
 
@@ -86,7 +96,7 @@ The file follows [Keep a Changelog](https://keepachangelog.com) format and seman
 
 ### `.gitignore`
 
-Repository ignore rules. Beyond conventional ignores, it excludes the per-skill eval run-output trees (`plugins/*/skills/*-workspace/`) from version control: these are regenerable skill-creator outputs, not plugin content or intent, so committing them would only bloat the repository and both hosts' plugin bundles. The intent-bearing eval *definitions* (`plugins/*/skills/*/evals/evals.json`) are not ignored and travel with their skills.
+Repository ignore rules. Beyond conventional ignores, it excludes the per-skill eval run-output trees (`plugins/*/skills/*-workspace/`) from version control: these are regenerable skill-creator outputs, not plugin content or intent, so committing them would only bloat the repository and both hosts' plugin bundles. The intent-bearing eval *definitions* (`plugins/*/skills/*/evals/evals.json`) are not ignored and travel with their skills. It also ignores the `.claude/` directory — local session data, worktrees, and each contributor's `settings.local.json` — with one exception: `.claude/settings.json`, the shared settings above, is tracked.
 
 ### `LICENSE`
 
@@ -119,10 +129,11 @@ GitHub-native templates that meet a contributor at the moment of filing, complem
 - **HLD § Architecture / Methodology** — when the workflow itself changes (rare; itself an HLD-level edit) → `AGENTS.md` updates.
 - **Plugin added under `plugins/`, removed, or renamed** → both marketplace manifests (`.claude-plugin/marketplace.json`, `.cursor-plugin/marketplace.json`) and both per-plugin manifests (`.claude-plugin/plugin.json`, `.cursor-plugin/plugin.json`) add or update the entry; `README.md` and `docs/setup.md` install commands cascade.
 - **New supported coding tool** → if it is a first-class plugin host, add its marketplace manifest, its per-plugin manifests, and a `docs/setup.md` plugin-host section; if it is rule-file-only, add either a simple-path table row (native `AGENTS.md`) or a per-tool adapter section in `docs/setup.md`.
-- **Plugin version bumped / release cut** → `CHANGELOG.md` entry added; the three `.claude-plugin/plugin.json` versions and their `.claude-plugin/marketplace.json` entries bumped together; a matching git tag and GitHub Release are published from the new `CHANGELOG.md` entry, and the Release posts an announcement to the Discussions *Announcements* category (release-step in `CONTRIBUTING.md`). The Cursor manifests carry no `version` and are not part of this sync.
+- **Plugin version bumped / release cut** → `CHANGELOG.md` entry added; the three `.claude-plugin/plugin.json` versions and their `.claude-plugin/marketplace.json` entries bumped together; the shipped workflow-doc asset (`plugins/linked-intent-dev/skills/update-lid/references/workflow-doc.md`) regenerated from the core skill source — SKILL.md plus its reference files, the LID-on-LID exception section stripped, a repository-reference note added — and stamped with the released version; a matching git tag and GitHub Release are published from the new `CHANGELOG.md` entry, and the Release posts an announcement to the Discussions *Announcements* category (release-step in `CONTRIBUTING.md`). The Cursor manifests carry no `version` and are not part of this sync.
 - **HLD Non-Goal *Not adversarial security review* changes** → `SECURITY.md`'s scope and out-of-scope boundary are reviewed for drift.
 - **`CONTRIBUTING.md`'s arrow-variant decision tree changes** → `.github/PULL_REQUEST_TEMPLATE.md`'s arrow-walk checklist is reviewed so the two stay aligned.
 - **Project authorship, title, or canonical URLs change** → `CITATION.cff` is updated to match.
+- **The alternate-model eval runner's entry point moves or is renamed** → the allow rule in `.claude/settings.json` updates in the same change.
 
 The component is a leaf in the arrow graph — nothing downstream depends on it — so its `blocks` list in `docs/arrows/index.yaml` is empty.
 
@@ -133,6 +144,8 @@ The component is a leaf in the arrow graph — nothing downstream depends on it 
 | Component scope | Repo-meta artifacts: CONTRIBUTING, AGENTS (+ CLAUDE symlink), docs/setup.md, marketplace.json, LICENSE | Standalone CONTRIBUTING-only component; fold into marketing-site | One LLD for repo-meta keeps the artifacts coherent with each other (they all describe the project as a whole). A CONTRIBUTING-only LLD is too narrow; folding into marketing-site mixes prospect-facing positioning with contributor-facing operations. |
 | README ownership | Stays with `marketing-site` | Dual-owned; moved to `project-structure` | README's primary job is positioning to new arrivals — that is marketing-site's territory. Project-structure references README's existence but does not duplicate its content; cross-segment cascade pauses at the boundary per HLD tenet. |
 | AGENTS.md ownership | This component owns AGENTS.md | Each plugin owns its own slice; HLD owns it directly | AGENTS.md is the per-repo invocation of the methodology — not the methodology itself (HLD) and not any single plugin's behavior (plugin LLDs). Single owner avoids cross-LLD write contention. |
+| Shared Claude Code settings | Track `.claude/settings.json` with only the first-party plugins and the runner's allow rule | Leave all of `.claude/` untracked and document the rule for contributors to add; track the settings file with every plugin the maintainer uses | A tracked file gives every contributor the dogfooding plugins and the runner permission without setup. Keeping it to what LID itself needs stops one person's tools from becoming everyone's. |
+| `lid-experimental` in this repository | Enabled alongside the core plugins | Left off, keeping contributors on the stable surface | This repository is where experiments are built and first evaluated; their own designs keep them dormant or asking first, so enabling them costs a contributor an occasional offer, not an unrequested action. |
 | `CLAUDE.md` treatment | Symlink to `AGENTS.md` | Adapter file using Claude Code's `@AGENTS.md` import; duplicate maintained content | Symlink resolves identically for both filename conventions with zero drift surface. The `@AGENTS.md`-import alternative is documented in `docs/setup.md` for users whose Claude-Code-first projects prefer it. |
 | Component variant | Content artifact (`HLD → LLD → EARS → content + assets`) | Behavioral skill; standalone variant without EARS | Owned artifacts are content and configuration, not behavior. Matches `marketing-site`'s shape; preserves linkage uniformity per HLD § Key Design Decisions / *Content artifacts*. |
 | EARS prefix | `PROJ-STRUCT-*` | `PROJECT-*`; `META-*`; `REPO-*` | Most descriptive of what the component owns; matches the component name. |

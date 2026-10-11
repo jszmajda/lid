@@ -4,6 +4,7 @@
 **Implementing artifacts**:
 - plugins/linked-intent-dev/skills/update-lid/SKILL.md
 - plugins/linked-intent-dev/skills/update-lid/references/agents-md-template.md
+- plugins/linked-intent-dev/skills/update-lid/references/workflow-doc.md (generated at release from the core skill source)
 
 Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 
@@ -71,6 +72,15 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 ## Memory→Intent Directive
 
 - `[x]` **LID-UPDATE-047**: When generating or updating the LID directives block in the instruction file, the system SHALL include a tool-agnostic memory→intent directive instructing the agent to test, before persisting durable project knowledge to any memory mechanism, whether the knowledge is project intent (would a fresh agent, in any tool, next session, need it to build the system right?) and, if so, to record it in the arrow rather than memory.
+
+## Workflow-Doc Vendoring
+
+- `[x]` **LID-UPDATE-048**: The system SHALL NOT offer to vendor the workflow doc; when the `## LID` block carries a `- Workflow doc: declined` bullet, the system SHALL preserve it on every pass.
+- `[x]` **LID-UPDATE-049**: When vendoring the workflow doc, the system SHALL copy the plugin's shipped `references/workflow-doc.md` asset to `docs/lid/workflow.md`, preserving its generated-file header naming the source plugin version and stating that changes belong upstream or in the instruction file.
+- `[x]` **LID-UPDATE-050**: The system SHALL write the instruction file's workflow section in one shape for every project: a capability-conditional pointer that directs a harness without the `linked-intent-dev` skill to read `docs/lid/workflow.md` and, when it is missing and the `## LID` block records no decline, to offer the user once to add it from the release URL of the shipped asset at the project's recorded `- Version:`; the workflow in one line; and the bug-fix line.
+- `[x]` **LID-UPDATE-051**: During a version-walk on a project where `docs/lid/workflow.md` is present and unmodified from its stamped version, the system SHALL re-copy the current shipped workflow-doc asset as a mechanical step; a locally-modified doc is excluded from the mechanical batch and routed through reconcile surfacing (LID-UPDATE-052) instead.
+- `[x]` **LID-UPDATE-052**: When reconcile-conventions finds a vendored workflow doc whose version stamp or content differs from the shipped asset, the system SHALL surface the difference with a recommended resolution (re-sync; relocate local additions upstream or to the instruction file) and SHALL NOT overwrite a locally-modified doc without confirmation.
+- `[x]` **LID-UPDATE-053**: When the user wants deterministic instruction loading for Aider, the system SHALL offer a committed `.aider.conf.yml` carrying a `read: AGENTS.md` entry rather than any Aider-specific instruction file.
 
 ## Verification / Show-What-Changed
 
