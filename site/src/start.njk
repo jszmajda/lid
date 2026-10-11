@@ -8,14 +8,14 @@ permalink: /start/
 description: Four short paths into LID — evaluating, starting fresh, adding to an existing codebase, or trying it on just one subsystem.
 ---
 
-<!-- @spec MKT-SITE-010, MKT-SITE-011, MKT-SITE-012, MKT-SITE-051, MKT-SITE-052, MKT-SITE-066 -->
+<!-- @spec MKT-SITE-010, MKT-SITE-011, MKT-SITE-012, MKT-SITE-051, MKT-SITE-052, MKT-SITE-066, MKT-SITE-068 -->
 <div class="page">
   <div class="container">
 
     <header class="page-header">
       <div class="page-header-main">
         <span class="plate">Sheet 02 / Entry</span>
-        <h1>Pick the path that <em>matches where you are</em>.</h1>
+        <h1>Where are you <em>starting from</em>?</h1>
         <p class="lede">
           Each path is a short orientation — a couple of paragraphs and the commands you'd run. Depth is a click away in the README.
         </p>
@@ -41,22 +41,22 @@ description: Four short paths into LID — evaluating, starting fresh, adding to
       <div class="audience-body">
         <h2 id="eval-h">I'm evaluating.</h2>
         <p>
-          You've heard of LID and you want to know if it's for you. LID frames itself differently from the spec-driven-development tools you may have looked at: not as an "SDD methodology" but as <strong>a structured way to write what your coding agent compiles</strong> — your design at a few levels of detail, from broad direction down to the granular claims tests verify. Your time goes into the design docs; the agent writes the specs, tests, and code from those.
+          You've heard of LID and you want to know if it's for you. The frame that fits: <strong>a structured way to write what your coding agent compiles</strong> — your design at a few levels of detail, from broad direction down to the granular claims tests verify. Your time goes into the design docs; the agent writes the specs, tests, and code from those.
         </p>
         <p>
           The fastest loop: skim the <a href="{{ site.repoUrl }}/blob/main/docs/high-level-design.md">HLD</a> for the framing, skim the <a href="{{ site.repoUrl }}/blob/main/README.md">README</a> for the mechanics, try the quickstart for the feel. Twenty minutes and you'll know.
         </p>
         <p class="muted">
-          The HLD names the problem (agents guessing at what you meant), the reframe (LID as a structure for the English you give your agent), the mechanisms (specs and tests that pin intent down, greppable IDs that keep it traceable, tests written before code), and the adoption modes. The <a href="{{ '/examples/' | url }}">examples page</a> links to three projects — one clean and minimal, one complete and clonable, one real and messy. The complete one, <a href="https://github.com/jszmajda/portfolio-tracker">portfolio-tracker</a>, is the claims made checkable: clone it and the full arrow — the traceable chain from design docs through <code>@spec</code>-cited tests to code — is enforced by a CI gate that fails unless every spec is cited by a test and every citation resolves.
+          The HLD names the problem (agents guessing at what you meant), the reframe (LID as a structure for the English you give your agent), the mechanisms (specs that pin intent down, greppable IDs, tests written before code), and the adoption modes. The <a href="{{ '/examples/' | url }}">examples page</a> links to three projects — one clean and minimal, one complete and clonable, one real and messy. The complete one, <a href="https://github.com/jszmajda/portfolio-tracker">portfolio-tracker</a>, is the claims made checkable: clone it and the full arrow — design docs through <code>@spec</code>-cited tests to code — is enforced by a CI gate that fails unless every spec is cited and every citation resolves.
         </p>
         <p class="muted">
-          Not sure spec-driven development itself is worth the effort? Fair question. The <a href="{{ '/anti-patterns/' | url }}">anti-patterns page</a> names when LID is the wrong choice — honestly, without overselling.
+          Not sure spec-driven development itself is worth it? Fair question. The <a href="{{ '/anti-patterns/' | url }}">anti-patterns page</a> names when LID is the wrong choice, so you can decide before you invest.
         </p>
         <p class="muted">
-          LID even ships a coach: <code>/lid-coach</code> reads an already-running LID project and reports back — advisory only, never editing — where your usage is drifting from the methodology's principles and where there's more value to capture. A good way to learn the discipline by seeing it applied to your own work. <a href="{{ site.repoUrl }}/blob/main/plugins/linked-intent-dev/skills/lid-coach/SKILL.md">See the coach</a>.
+          LID even ships a coach: <code>/lid-coach</code> reads an already-running LID project and reports back — it edits nothing — where your usage is drifting from the methodology's principles and where there's more value to capture. A good way to learn the discipline by seeing it applied to your own work. <a href="{{ site.repoUrl }}/blob/main/plugins/linked-intent-dev/skills/lid-coach/SKILL.md">See the coach</a>.
         </p>
         <p class="muted">
-          Beyond the core, an opt-in <a href="{{ site.repoUrl }}/blob/main/plugins/lid-experimental/README.md"><code>lid-experimental</code></a> plugin bundles skills that have earned their place but aren't yet promoted into the core workflow — currently <code>bidirectional-differential</code> for auditing EARS↔code coherence. Worth a look once the basics make sense.
+          Beyond the core, an opt-in <a href="{{ site.repoUrl }}/blob/main/plugins/lid-experimental/README.md"><code>lid-experimental</code></a> plugin bundles skills that work in practice but aren't yet part of the core workflow — currently <code>bidirectional-differential</code>, which checks whether your specs and your code still agree. Worth a look once the basics make sense.
         </p>
         <a class="readmore" href="{{ site.repoUrl }}/blob/main/docs/high-level-design.md">Read the HLD</a>
       </div>
@@ -70,13 +70,13 @@ description: Four short paths into LID — evaluating, starting fresh, adding to
       <div class="audience-body">
         <h2 id="green-h">I'm starting a new project.</h2>
         <p>
-          Greenfield is where LID shines hardest — nothing to reconcile, nothing to reverse-engineer. Install the plugin and tell the workflow what you want to build. It takes you through the design phases, stopping for your review each time, and only writes code once the design has settled.
+          Greenfield has nothing to reconcile and nothing to reverse-engineer. Install the plugin, tell the workflow what you want to build, and it only writes code once the design has settled.
         </p>
         <pre class="cmd"><code>/plugin marketplace add jszmajda/lid
 /plugin install linked-intent-dev@jszmajda-lid
 /linked-intent-dev describe what you want to build</code></pre>
         <p>
-          After that, tell your agent what you want to build. You'll see an HLD first (with 2–3 architectural alternatives for big decisions), then LLDs for each component, then EARS specs, then tests-first, then code. Every phase stops for your approval.
+          You'll see an HLD first (with architectural alternatives for the big decisions), then LLDs per component, then EARS specs, then tests, then code — every phase stopping for your approval.
         </p>
         <p class="muted">
           Once a few components exist, <code>/lid-coach</code> reviews how well the project is applying LID's principles and points at the highest-value next steps.
@@ -116,12 +116,12 @@ description: Four short paths into LID — evaluating, starting fresh, adding to
           Solo on a team, or piloting LID on one slice of a larger project? <strong>Scoped LID</strong> is the mode for you. The HLD is still required, but it can mark the rest of the project as "not yet specified" — you own your scope, and the discipline relaxes at the boundary.
         </p>
         <p class="muted">
-          Scoped projects use the same entry point as Full LID; the workflow asks which mode you want, or you can choose later with <code>/update-lid</code>.
+          Scoped uses the same entry point as Full; the workflow asks which mode you want.
         </p>
         <pre class="cmd"><code>/linked-intent-dev describe your scoped feature
 <span class="comment"># answer "Scoped" when prompted for mode</span></code></pre>
         <p>
-          Cascade pauses at the edge of your scope, so you don't accidentally propagate incoherence into teammates' territory. As the team adopts LID or your scope expands, <code>/update-lid</code> supports promoting from Scoped to Full.
+          Cascade pauses at the edge of your scope, so you don't propagate incoherence into teammates' territory. When the team adopts or your scope grows, <code>/update-lid</code> promotes you to Full.
         </p>
         <a class="readmore" href="{{ site.repoUrl }}/blob/main/docs/high-level-design.md#target-users">Read about modes in the HLD</a>
       </div>
