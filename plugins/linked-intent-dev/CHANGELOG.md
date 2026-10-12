@@ -6,7 +6,8 @@ All notable changes to LID (Linked-Intent Development) are recorded here. The fo
 
 *Changes merged since the latest numbered version that did not require a version bump (per the policy in `docs/high-level-design.md` § Architecture / Distribution / What warrants a version change). These fold into the next numbered version's entry when one is cut.*
 
-*(empty — folds into the next numbered version)*
+### Fixed
+- **`arrow-maintenance` skill frontmatter is valid YAML.** The skill's `description` held an unquoted `: `, which strict YAML parsers reject — a host that parses frontmatter strictly would load the skill without its description. The value is now quoted; the wording is unchanged. (#77)
 
 ## [1.4.0] — 2026-10-10
 
