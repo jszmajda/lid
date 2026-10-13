@@ -3,6 +3,7 @@
 **Date**: 2026-08-03
 **Status**: FINAL — the pre-registered Fable↔Sol agreement trigger fired (83.6% < 0.85) and the mandated human pass is complete: all 22 disagreements ruled by Jess on 2026-08-03 (`answer-key/human-adjudication.md`; rulings sided Fable 12 / Sol 10). Numbers below are the adjudicated finals (`scoring-final.json`; pre-human baseline in `scoring.json`).
 **Design**: DESIGN.md in this directory (original + 2026-08-02 pre-registration amendment + pilot-gated adjustments). Pilot shakeout in PILOT.md.
+**Critique**: CRITIQUE.md in this directory (2026-08-07) — an external adversarial review of the design and interpretation. It does not dispute the data below; it constrains what the data may be said to mean. Read the Summary and Verdict with it: there is no comparative arm against human reading (A1), the result is better read as a calibration pilot on a saturated exam (A3), and 23/24 carries a Wilson interval of roughly [0.80, 0.99] rather than a stable 96% (B2).
 
 ## Summary
 
