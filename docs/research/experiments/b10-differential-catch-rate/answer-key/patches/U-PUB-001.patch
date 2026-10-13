@@ -1,0 +1,92 @@
+diff --git a/crates/pt/src/shell.rs b/crates/pt/src/shell.rs
+index 40bb32c..968703e 100644
+--- a/crates/pt/src/shell.rs
++++ b/crates/pt/src/shell.rs
+@@ -36,6 +36,22 @@ pub fn should_autorefresh(elapsed: Duration, entry_open: bool) -> bool {
+     !entry_open && elapsed >= AUTOREFRESH_INTERVAL
+ }
+ 
++/// How soon after a just-landed republish another submit-triggered one is
++/// coalesced into it rather than round-tripping again. (SHEET-PUB-001)
++pub const REPUBLISH_DEBOUNCE: Duration = Duration::from_secs(2);
++
++/// Whether a just-confirmed append should trigger its OWN immediate republish,
++/// given how long has elapsed since the last republish landed (SHEET-PUB-001).
++/// Within [`REPUBLISH_DEBOUNCE`] of the previous one, this append is coalesced
++/// into it — suppressed here, not dropped — rather than firing another
++/// round trip; a rapid run of submits (entering several trades back-to-back)
++/// settles the workbook once the run pauses, not once per submit. The next
++/// submit outside the window, a manual `[r]`, or the ambient hourly refresh
++/// still carries the coalesced append's data forward.
++pub fn should_republish_after_submit(elapsed_since_last_publish: Duration) -> bool {
++    elapsed_since_last_publish >= REPUBLISH_DEBOUNCE
++}
++
+ /// An abstracted key the shell routes — the subset the keymap distinguishes, so the
+ /// routing decision needs no `crossterm` dependency (the binary maps `KeyEvent` →
+ /// `ShellKey`). (TUI-ENTRY-FLOW-008)
+diff --git a/crates/pt/src/tui_app.rs b/crates/pt/src/tui_app.rs
+index bb34d69..6376cf8 100644
+--- a/crates/pt/src/tui_app.rs
++++ b/crates/pt/src/tui_app.rs
+@@ -493,9 +493,15 @@ fn run_form_action(
+             model.entry_submit(port, &aliases);
+             // A confirmed durable append closes the entry context; refresh re-runs
+             // the PUBLISHING cycle so the workbook view reflects the append —
+-            // "republish after each successful event append" — and, succeeding,
+-            // advances the ambient auto-refresh clock (TUI-VIEW-NAV-017). (SHEET-PUB-001)
+-            if model.entry_top().is_none() {
++            // "republish after each successful event append" (SHEET-PUB-001) —
++            // unless one just landed within the debounce window, in which case
++            // this append is coalesced into it rather than round-tripping again
++            // (`shell::should_republish_after_submit`). A refresh that does run,
++            // succeeding, advances the ambient auto-refresh clock
++            // (TUI-VIEW-NAV-017).
++            if model.entry_top().is_none()
++                && shell::should_republish_after_submit(last_refresh.elapsed())
++            {
+                 run_refresh(model, port, last_refresh);
+             }
+         }
+diff --git a/crates/pt/tests/shell_republish_debounce.rs b/crates/pt/tests/shell_republish_debounce.rs
+new file mode 100644
+index 0000000..825871f
+--- /dev/null
++++ b/crates/pt/tests/shell_republish_debounce.rs
+@@ -0,0 +1,36 @@
++//! The post-submit republish **coalescing decision** (SHEET-PUB-001). The binary's
++//! `run_form_action` re-runs the publishing cycle after a confirmed durable append
++//! closes the entry context, asking the pure `pt::shell::should_republish_after_submit`
++//! whether enough time has passed since the last republish landed; these pin the
++//! debounce threshold and that a rapid run of submits coalesces onto one republish
++//! rather than round-tripping once per submit — purely, with no TTY and no network.
++
++use std::time::Duration;
++
++use pt::shell::{should_republish_after_submit, REPUBLISH_DEBOUNCE};
++
++// @spec SHEET-PUB-001
++#[test]
++fn a_submit_within_the_debounce_window_of_the_last_republish_is_coalesced() {
++    assert_eq!(REPUBLISH_DEBOUNCE, Duration::from_secs(2));
++
++    // Back-to-back submits (a rapid run of appends) land well inside the window:
++    // each one after the first is coalesced into the republish that already landed.
++    assert!(!should_republish_after_submit(Duration::ZERO));
++    assert!(!should_republish_after_submit(Duration::from_millis(500)));
++    assert!(!should_republish_after_submit(
++        REPUBLISH_DEBOUNCE - Duration::from_millis(1)
++    ));
++}
++
++// @spec SHEET-PUB-001
++#[test]
++fn a_submit_at_or_past_the_debounce_window_republishes_on_its_own() {
++    // At and past the threshold, the append is far enough from the last republish
++    // to earn its own — the run has paused.
++    assert!(should_republish_after_submit(REPUBLISH_DEBOUNCE));
++    assert!(should_republish_after_submit(
++        REPUBLISH_DEBOUNCE + Duration::from_millis(1)
++    ));
++    assert!(should_republish_after_submit(Duration::from_secs(60)));
++}

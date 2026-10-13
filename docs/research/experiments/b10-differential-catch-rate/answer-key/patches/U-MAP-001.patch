@@ -1,0 +1,48 @@
+diff --git a/crates/sheets-view/src/lib.rs b/crates/sheets-view/src/lib.rs
+index 7e9df24..ea91105 100644
+--- a/crates/sheets-view/src/lib.rs
++++ b/crates/sheets-view/src/lib.rs
+@@ -250,8 +250,15 @@ pub const TAX_RESERVE_HEADER: &[&str] = &[
+ 
+ /// Resolve a ledger `Symbol` to its `GOOGLEFINANCE` ticker via `config`'s alias
+ /// map (identity when unset). (SHEET-MAP-001)
++///
++/// The lookup key is trimmed of surrounding whitespace and upper-cased before
++/// the alias table is consulted, so a symbol that picked up incidental
++/// whitespace or lower-case letters on its way through import/entry still
++/// finds its alias instead of silently falling through to a raw-symbol
++/// identity ticker.
+ pub fn resolve_ticker(aliases: &AliasMap, symbol: &str) -> String {
+-    aliases.resolve(symbol)
++    let normalized = symbol.trim().to_uppercase();
++    aliases.resolve(&normalized)
+ }
+ 
+ /// Build the live `Price` formula for a symbol from its resolved ticker:
+diff --git a/crates/sheets-view/tests/mapping.rs b/crates/sheets-view/tests/mapping.rs
+index 6d0ece3..2272b2d 100644
+--- a/crates/sheets-view/tests/mapping.rs
++++ b/crates/sheets-view/tests/mapping.rs
+@@ -63,6 +63,22 @@ fn positions_price_formula_uses_resolved_ticker() {
+     );
+ }
+ 
++// @spec SHEET-MAP-001
++#[test]
++fn resolve_ticker_normalizes_case_and_whitespace_before_alias_lookup() {
++    let mut map = BTreeMap::new();
++    map.insert("BRK".to_string(), "BRK.B".to_string());
++    let aliases = AliasMap::new(map);
++
++    // Lower-case and stray whitespace still find the alias entry.
++    assert_eq!(resolve_ticker(&aliases, "brk"), "BRK.B");
++    assert_eq!(resolve_ticker(&aliases, "  BRK  "), "BRK.B");
++    assert_eq!(resolve_ticker(&aliases, " brk"), "BRK.B");
++
++    // Identity fallback is likewise normalized.
++    assert_eq!(resolve_ticker(&aliases, " amzn "), "AMZN");
++}
++
+ // @spec SHEET-MAP-002
+ #[test]
+ fn read_back_keyed_by_row_identity_errors_loud_on_duplicate_symbol() {

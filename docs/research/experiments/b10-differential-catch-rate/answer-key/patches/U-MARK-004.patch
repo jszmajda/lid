@@ -1,0 +1,152 @@
+diff --git a/crates/runtime/src/adapters.rs b/crates/runtime/src/adapters.rs
+index 228852d..06dbdb6 100644
+--- a/crates/runtime/src/adapters.rs
++++ b/crates/runtime/src/adapters.rs
+@@ -178,6 +178,11 @@ pub struct ViewSheetsAdapter<A: SheetsApi> {
+     api: A,
+     /// The Positions tab name, whose `Price` column the settle pass reads back.
+     positions_tab: String,
++    /// Per-symbol last successfully-parsed quote date, so a poll whose Quote Date
++    /// cell doesn't parse (e.g. Price has settled numeric but the companion
++    /// formula hasn't recalculated yet) falls back to this symbol's own last
++    /// known-good stamp rather than the epoch.
++    last_quote_dates: std::cell::RefCell<BTreeMap<Symbol, pt_core::Date>>,
+ }
+ 
+ impl<A: SheetsApi> ViewSheetsAdapter<A> {
+@@ -187,6 +192,7 @@ impl<A: SheetsApi> ViewSheetsAdapter<A> {
+         ViewSheetsAdapter {
+             api,
+             positions_tab: positions_tab.into(),
++            last_quote_dates: std::cell::RefCell::new(BTreeMap::new()),
+         }
+     }
+ 
+@@ -264,13 +270,14 @@ impl<A: SheetsApi> sheets_view::SheetsViewClient for ViewSheetsAdapter<A> {
+             r => r.map_err(|_| sheets_view::ViewError::PublishFailed)?,
+         };
+         let mut pass: sheets_view::PricePass = BTreeMap::new();
++        let mut last_quote_dates = self.last_quote_dates.borrow_mut();
+         for cells in grid {
+             let symbol = match cells.first() {
+-                Some(s) if !s.is_empty() => s.clone(),
++                Some(s) if !s.is_empty() => Symbol::from(s.clone()),
+                 _ => continue,
+             };
+-            let reading = price_reading_from_cells(&cells);
+-            pass.insert(Symbol::from(symbol), reading);
++            let reading = price_reading_from_cells(&symbol, &cells, &mut last_quote_dates);
++            pass.insert(symbol, reading);
+         }
+         Ok(pass)
+     }
+@@ -295,7 +302,18 @@ impl<A: SheetsApi> sheets_view::SheetsViewClient for ViewSheetsAdapter<A> {
+ /// the locale-proof integer days-since-1970 the formula contract emits,
+ /// SHEET-MARK-008) is `Numeric`; an empty/`Loading...` cell is `Transient`; an
+ /// `#N/A`/`#ERROR!` cell is `Permanent`. (SHEET-MARK-001/003)
+-fn price_reading_from_cells(cells: &[String]) -> sheets_view::PriceReading {
++///
++/// The Quote Date cell can lag the Price cell's own recalculation by a poll (both
++/// are separate `GOOGLEFINANCE` calls on the same row), so a Price that has already
++/// gone numeric may still see a not-yet-parseable Quote Date cell. Rather than
++/// stamping that poll with the epoch, this keeps `symbol`'s last successfully-parsed
++/// quote date (`last_quote_dates`, owned by the caller across polls) and updates it
++/// whenever a cell does parse.
++fn price_reading_from_cells(
++    symbol: &Symbol,
++    cells: &[String],
++    last_quote_dates: &mut BTreeMap<Symbol, pt_core::Date>,
++) -> sheets_view::PriceReading {
+     use sheets_view::PriceReading;
+     const PRICE_COL: usize = 4;
+     const QUOTE_DATE_COL: usize = 12;
+@@ -314,13 +332,20 @@ fn price_reading_from_cells(cells: &[String]) -> sheets_view::PriceReading {
+     }
+     match price.parse::<f64>() {
+         Ok(price_usd) => {
+-            let quote_days = cells
++            let quote_date = match cells
+                 .get(QUOTE_DATE_COL)
+                 .and_then(|s| s.trim().parse::<i32>().ok())
+-                .unwrap_or(0);
++            {
++                Some(days) => pt_core::Date(days),
++                None => last_quote_dates
++                    .get(symbol)
++                    .copied()
++                    .unwrap_or(pt_core::Date(0)),
++            };
++            last_quote_dates.insert(symbol.clone(), quote_date);
+             PriceReading::Numeric {
+                 price_usd,
+-                quote_date: pt_core::Date(quote_days),
++                quote_date,
+             }
+         }
+         Err(_) => PriceReading::Permanent,
+diff --git a/crates/runtime/tests/adapters.rs b/crates/runtime/tests/adapters.rs
+index 22f2a7b..347c201 100644
+--- a/crates/runtime/tests/adapters.rs
++++ b/crates/runtime/tests/adapters.rs
+@@ -234,6 +234,61 @@ fn view_republish_and_marks_read_back_ride_the_one_primitive() {
+     assert_eq!(DATA_START_ROW, 2);
+ }
+ 
++// @spec RUNTIME-SHEETS-002
++#[test]
++fn view_marks_read_back_keeps_prior_quote_date_when_cell_unparseable() {
++    // The Quote Date formula cell can lag the Price cell by a poll (both are
++    // separate GOOGLEFINANCE calls on the same row): a settle-pass poll can see a
++    // freshly-numeric Price alongside a not-yet-recalculated Quote Date cell. The
++    // read-back keeps the symbol's last successfully-parsed quote date across
++    // polls rather than resetting the stamp to the epoch.
++    let fake = FakeSheetsApi::new();
++    fake.seed(
++        &format!("'{POS_TAB}'!A1:Z"),
++        vec![sheets_view::POSITIONS_HEADER
++            .iter()
++            .map(|s| s.to_string())
++            .collect()],
++    );
++    let mut row: Vec<String> = vec![String::new(); 13];
++    row[0] = "AMZN".to_string();
++    row[4] = "170.25".to_string();
++    row[12] = "19180".to_string();
++    fake.seed(&format!("'{POS_TAB}'!A2:Z"), vec![row]);
++    let adapter = ViewSheetsAdapter::new(fake, POS_TAB);
++
++    // First poll: the Quote Date cell parses; the read-back records Date(19_180).
++    let first = adapter.read_price_pass().expect("first poll");
++    match first.get("AMZN") {
++        Some(PriceReading::Numeric { quote_date, .. }) => {
++            assert_eq!(*quote_date, Date(19_180));
++        }
++        other => panic!("expected a numeric AMZN reading, got {other:?}"),
++    }
++
++    // Second poll: Price has re-settled to a new numeric value, but the Quote
++    // Date cell hasn't recalculated yet (empty).
++    let mut row2: Vec<String> = vec![String::new(); 13];
++    row2[0] = "AMZN".to_string();
++    row2[4] = "171.00".to_string();
++    adapter.api().seed(&format!("'{POS_TAB}'!A2:Z"), vec![row2]);
++    let second = adapter.read_price_pass().expect("second poll");
++    match second.get("AMZN") {
++        Some(PriceReading::Numeric {
++            price_usd,
++            quote_date,
++        }) => {
++            assert!((*price_usd - 171.00).abs() < 1e-9);
++            assert_eq!(
++                *quote_date,
++                Date(19_180),
++                "an unparseable Quote Date cell keeps the prior quote date, not the epoch"
++            );
++        }
++        other => panic!("expected a numeric AMZN reading, got {other:?}"),
++    }
++}
++
+ // @spec RUNTIME-SHEETS-002
+ #[test]
+ fn view_offline_primitive_surfaces_publish_failed() {

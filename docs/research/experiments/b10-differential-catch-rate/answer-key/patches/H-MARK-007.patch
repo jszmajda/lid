@@ -1,0 +1,35 @@
+diff --git a/crates/sheets-view/src/lib.rs b/crates/sheets-view/src/lib.rs
+index 7e9df24..a28520c 100644
+--- a/crates/sheets-view/src/lib.rs
++++ b/crates/sheets-view/src/lib.rs
+@@ -373,7 +373,7 @@ pub fn price_to_cents(price_usd: f64) -> Result<Cents, DegradeReason> {
+     // (price × 100 × SCALE) and round once via round_half_to_even over SCALE, so
+     // the half-to-even rule — not the float's own rounding — decides the cent.
+     const SCALE: i128 = 1_000_000;
+-    if !price_usd.is_finite() {
++    if price_usd.is_nan() {
+         return Err(DegradeReason::Permanent);
+     }
+     // micro = round(price_usd × 100 × SCALE) as an integer numerator. The
+@@ -381,7 +381,7 @@ pub fn price_to_cents(price_usd: f64) -> Result<Cents, DegradeReason> {
+     // the integer round_half_to_even below.
+     let scaled = price_usd * 100.0 * SCALE as f64;
+     if !scaled.is_finite() {
+-        return Err(DegradeReason::Permanent);
++        return Err(DegradeReason::SubCent);
+     }
+     let numerator = scaled.round() as i128;
+     let cents = pt_core::round_half_to_even(numerator, SCALE);
+diff --git a/crates/sheets-view/tests/marks.rs b/crates/sheets-view/tests/marks.rs
+index f34257f..658681b 100644
+--- a/crates/sheets-view/tests/marks.rs
++++ b/crates/sheets-view/tests/marks.rs
+@@ -111,7 +111,7 @@ fn zero_and_negative_price_are_degraded_not_a_zero_or_negative_mark() {
+     assert_eq!(price_to_cents(0.0), Err(DegradeReason::SubCent));
+     assert_eq!(price_to_cents(-5.0), Err(DegradeReason::SubCent));
+     assert_eq!(price_to_cents(f64::NAN), Err(DegradeReason::Permanent));
+-    assert_eq!(price_to_cents(f64::INFINITY), Err(DegradeReason::Permanent));
++    assert_eq!(price_to_cents(f64::INFINITY), Err(DegradeReason::SubCent));
+ 
+     // Driven through read_marks: a 0.0 reading records the symbol degraded, NO mark.
+     let client = InMemorySheetsView::new();

@@ -1,0 +1,74 @@
+diff --git a/crates/sheets-view/src/lib.rs b/crates/sheets-view/src/lib.rs
+index 7e9df24..eabfab5 100644
+--- a/crates/sheets-view/src/lib.rs
++++ b/crates/sheets-view/src/lib.rs
+@@ -1005,8 +1005,21 @@ impl<C: SheetsViewClient> Publisher<C> {
+             }
+         }
+         // Idempotently reassert the tab ordering on republish. (SHEET-TAB-002) A
+-        // failure here does not corrupt truth; it is retried next sync.
+-        let order = workbook_tab_order();
++        // failure here does not corrupt truth; it is retried next sync. A tab name
++        // in this cycle's batch that the canonical ordering doesn't recognize (a
++        // segment publishing ahead of its own ordering entry) is not left for
++        // Sheets to place arbitrarily — it is appended, alphabetically, after the
++        // canonical order so the reassert stays deterministic.
++        let known = workbook_tab_order();
++        let mut extra: Vec<&str> = tabs
++            .iter()
++            .map(|t| t.name.as_str())
++            .filter(|name| !known.contains(name))
++            .collect();
++        extra.sort_unstable();
++        extra.dedup();
++        let mut order = known;
++        order.extend(extra);
+         if self.client.set_tab_order(&order).is_err() {
+             all_ok = false;
+         }
+diff --git a/crates/sheets-view/tests/tabs.rs b/crates/sheets-view/tests/tabs.rs
+index eaf7537..73e0e7d 100644
+--- a/crates/sheets-view/tests/tabs.rs
++++ b/crates/sheets-view/tests/tabs.rs
+@@ -181,6 +181,41 @@ fn republish_idempotently_reasserts_tab_order() {
+     assert_eq!(order2, expected); // idempotent
+ }
+ 
++// @spec SHEET-TAB-002
++#[test]
++fn republish_appends_unrecognized_tabs_alphabetically_after_the_canonical_order() {
++    let client = InMemorySheetsView::new();
++    let mut pub_ = Publisher::new(client);
++
++    let positions = ViewTab {
++        name: POSITIONS_TAB.to_string(),
++        header: vec!["Symbol".to_string()],
++        rows: vec![],
++    };
++    // Two tabs outside the canonical ordering, published in a batch that also
++    // includes a known tab.
++    let zeta = ViewTab {
++        name: "Zeta Extra".to_string(),
++        header: vec!["A".to_string()],
++        rows: vec![],
++    };
++    let alpha = ViewTab {
++        name: "Alpha Extra".to_string(),
++        header: vec!["A".to_string()],
++        rows: vec![],
++    };
++    let _ = pub_.republish(&[positions, zeta, alpha], &NoopLock::new(), "2022-09-01");
++
++    let order = pub_.client().tab_order();
++    let expected: Vec<String> = workbook_tab_order().iter().map(|s| s.to_string()).collect();
++    assert_eq!(&order[..expected.len()], expected.as_slice());
++    // Unrecognized tabs land after the canonical order, alphabetically.
++    assert_eq!(
++        &order[expected.len()..],
++        &["Alpha Extra".to_string(), "Zeta Extra".to_string()]
++    );
++}
++
+ // @spec SHEET-TAB-003
+ #[test]
+ fn republish_regenerates_data_and_never_rewrites_frozen_header() {

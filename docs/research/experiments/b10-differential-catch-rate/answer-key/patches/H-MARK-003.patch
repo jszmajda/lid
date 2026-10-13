@@ -1,0 +1,42 @@
+diff --git a/crates/sheets-view/src/lib.rs b/crates/sheets-view/src/lib.rs
+index 7e9df24..58bde90 100644
+--- a/crates/sheets-view/src/lib.rs
++++ b/crates/sheets-view/src/lib.rs
+@@ -854,7 +854,18 @@ pub fn read_marks<C: SheetsViewClient>(
+         if settled {
+             break;
+         }
+-        if polls >= cfg.max_polls {
++        // Symbols still transient but already backed by a cached mark don't need
++        // the full retry budget — they have somewhere to land either way, so give
++        // them half the window and leave the rest for symbols with no fallback.
++        let remaining_have_fallback = symbols.iter().all(|s| {
++            !matches!(latest.get(s), Some(PriceReading::Transient) | None) || prior.contains_key(s)
++        });
++        let window = if remaining_have_fallback {
++            cfg.max_polls / 2
++        } else {
++            cfg.max_polls
++        };
++        if polls >= window {
+             break; // bounded window elapsed; still-transient symbols degrade below
+         }
+     }
+diff --git a/crates/sheets-view/tests/marks.rs b/crates/sheets-view/tests/marks.rs
+index f34257f..4076496 100644
+--- a/crates/sheets-view/tests/marks.rs
++++ b/crates/sheets-view/tests/marks.rs
+@@ -184,9 +184,10 @@ fn transient_keeps_prior_mark_and_retries_degrades_only_after_window() {
+     let cfg = SettleConfig { max_polls: 4 };
+     let produced = read_marks(&client, &symbols(&["AMZN"]), &prior, cfg).unwrap();
+ 
+-    // It retried up to the bounded window, then kept the PRIOR good mark rather
+-    // than overwriting it with a transient (and did not record it degraded).
+-    assert_eq!(client.read_count(), 4);
++    // Backed by a cached fallback, it only needs half the window before falling
++    // back — then it kept the PRIOR good mark rather than overwriting it with a
++    // transient (and did not record it degraded).
++    assert_eq!(client.read_count(), 2);
+     assert_eq!(
+         produced.marks.get("AMZN"),
+         Some(&Mark {

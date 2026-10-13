@@ -1,0 +1,148 @@
+{
+ "adjudicated": "2026-08-03 by Jess Szmajda (trigger-mandated human pass)",
+ "rulings_sided": {
+  "fable": 12,
+  "sol": 10
+ },
+ "control_verdicts": {
+  "T2": {
+   "CROSSREF": 57,
+   "REAL": 54,
+   "FALSE-ALARM": 9,
+   "total": 120
+  },
+  "T2CAP": {
+   "CROSSREF": 31,
+   "REAL": 44,
+   "FALSE-ALARM": 2,
+   "total": 77
+  },
+  "T3": {
+   "CROSSREF": 20,
+   "REAL": 22,
+   "total": 42
+  },
+  "EXP-LUNA": {
+   "REAL": 20,
+   "CROSSREF": 22,
+   "total": 43,
+   "FALSE-ALARM": 1
+  },
+  "EXP-HAIKU": {
+   "REAL": 6,
+   "CROSSREF": 11,
+   "FALSE-ALARM": 1,
+   "total": 18
+  }
+ },
+ "recall": {
+  "T1": {
+   "U": [
+    2,
+    3
+   ],
+   "P": [
+    3,
+    3
+   ],
+   "H": [
+    2,
+    2
+   ],
+   "total": [
+    7,
+    8
+   ]
+  },
+  "T2": {
+   "U": [
+    7,
+    8
+   ],
+   "P": [
+    8,
+    8
+   ],
+   "H": [
+    8,
+    8
+   ],
+   "total": [
+    23,
+    24
+   ]
+  },
+  "T2CAP": {
+   "U": [
+    2,
+    3
+   ],
+   "P": [
+    3,
+    3
+   ],
+   "H": [
+    2,
+    2
+   ],
+   "total": [
+    7,
+    8
+   ]
+  },
+  "T3": {
+   "U": [
+    2,
+    3
+   ],
+   "P": [
+    3,
+    3
+   ],
+   "H": [
+    2,
+    2
+   ],
+   "total": [
+    7,
+    8
+   ]
+  },
+  "EXP-LUNA": {
+   "U": [
+    2,
+    3
+   ],
+   "P": [
+    3,
+    3
+   ],
+   "H": [
+    2,
+    2
+   ],
+   "total": [
+    7,
+    8
+   ]
+  },
+  "EXP-HAIKU": {
+   "U": [
+    1,
+    3
+   ],
+   "P": [
+    3,
+    3
+   ],
+   "H": [
+    1,
+    2
+   ],
+   "total": [
+    5,
+    8
+   ]
+  }
+ }
+}

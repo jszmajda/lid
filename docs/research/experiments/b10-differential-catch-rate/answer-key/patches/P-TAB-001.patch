@@ -1,0 +1,13 @@
+diff --git a/docs/intent/sheets-view/sheets-view-specs.md b/docs/intent/sheets-view/sheets-view-specs.md
+index a9fbc14..55dbf20 100644
+--- a/docs/intent/sheets-view/sheets-view-specs.md
++++ b/docs/intent/sheets-view/sheets-view-specs.md
+@@ -7,7 +7,7 @@ accounting/tax math.
+ 
+ ## View Tabs & Layout
+ 
+-- [x] **SHEET-TAB-001**: The system shall publish four read-only view tabs — Positions, Open Lots, Realized, Tax — each per-entity data band being one row per entity with typed headers and no among-data summary rows, so native Sheets filtering and sorting work directly.
++- [x] **SHEET-TAB-001**: The system shall publish four read-only view tabs — Positions, Open Lots, Realized, Tax — each per-entity data band being one row per entity with typed headers and no among-data summary rows, so native Sheets filtering and sorting work directly, auto-resizing each tab's columns to fit their content on every republish.
+ - [x] **SHEET-TAB-002**: The system shall order the workbook tabs views → config → event logs, with Positions as the leftmost (landing) tab, reasserting the order idempotently on republish.
+ - [x] **SHEET-TAB-003**: The view tabs shall be read-only and regenerated — only saved Sheets Filter Views survive a republish; a basic filter, a manual sort, or a human-inserted row on a view tab is overwritten by design.
+ - [x] **SHEET-TAB-004**: The Tax tab shall be published as two separate typed ranges — a per-accrual data band (one row per accrual) and a distinct `Tax · Reserve Summary` band (one row per `(Jurisdiction, Tax Year)`) physically separated from the accrual band, so the reserve summary is never an among-data summary row within the accrual band (SHEET-TAB-001).

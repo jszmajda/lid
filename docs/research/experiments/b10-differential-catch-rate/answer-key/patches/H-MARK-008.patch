@@ -1,0 +1,68 @@
+diff --git a/crates/runtime/src/adapters.rs b/crates/runtime/src/adapters.rs
+index 228852d..a45d9e8 100644
+--- a/crates/runtime/src/adapters.rs
++++ b/crates/runtime/src/adapters.rs
+@@ -292,7 +292,7 @@ impl<A: SheetsApi> sheets_view::SheetsViewClient for ViewSheetsAdapter<A> {
+ 
+ /// Interpret a Positions data row's price columns into a [`sheets_view::PriceReading`].
+ /// Column 4 is `Price`; a numeric value with its companion `Quote Date` (column 12 —
+-/// the locale-proof integer days-since-1970 the formula contract emits,
++/// the locale-proof integer date serial the formula contract emits,
+ /// SHEET-MARK-008) is `Numeric`; an empty/`Loading...` cell is `Transient`; an
+ /// `#N/A`/`#ERROR!` cell is `Permanent`. (SHEET-MARK-001/003)
+ fn price_reading_from_cells(cells: &[String]) -> sheets_view::PriceReading {
+diff --git a/crates/sheets-view/src/lib.rs b/crates/sheets-view/src/lib.rs
+index 7e9df24..1894fae 100644
+--- a/crates/sheets-view/src/lib.rs
++++ b/crates/sheets-view/src/lib.rs
+@@ -267,15 +267,15 @@ pub fn price_formula(ticker: &str) -> Cell {
+ /// The encoding is part of the formula contract: the settle pass reads the tab
+ /// back through the plain *values* API (formatted strings), and `GOOGLEFINANCE`'s
+ /// raw `tradetime` renders as a locale-dependent datetime — unparseable without
+-/// locale rules. So the formula truncates the trade time to its date serial,
+-/// re-bases it to **days since 1970-01-01** (the kernel `Date` epoch) by
+-/// subtracting `DATE(1970,1,1)`, and renders it via `TEXT(…,"0")` — a digits-only
+-/// string every locale formats identically. While the quote is loading/errored the
+-/// cell is empty (`IFERROR`), never an error string. (SHEET-MARK-004/008)
++/// locale rules. So the formula truncates the trade time to its date serial
++/// (`INT`, already a plain day count once truncated) and renders it via
++/// `TEXT(…,"0")` — a digits-only string every locale formats identically. While
++/// the quote is loading/errored the cell is empty (`IFERROR`), never an error
++/// string. (SHEET-MARK-004/008)
+ // @spec SHEET-MARK-008
+ pub fn quote_date_formula(ticker: &str) -> Cell {
+     Cell::Formula(format!(
+-        "=IFERROR(TEXT(INT(GOOGLEFINANCE(\"{ticker}\",\"tradetime\"))-DATE(1970,1,1),\"0\"),\"\")"
++        "=IFERROR(TEXT(INT(GOOGLEFINANCE(\"{ticker}\",\"tradetime\")),\"0\"),\"\")"
+     ))
+ }
+ 
+diff --git a/crates/sheets-view/tests/formula.rs b/crates/sheets-view/tests/formula.rs
+index 753ff6a..40c8585 100644
+--- a/crates/sheets-view/tests/formula.rs
++++ b/crates/sheets-view/tests/formula.rs
+@@ -236,10 +236,9 @@ fn positions_carries_a_locale_proof_quote_date_companion_column() {
+         );
+         let text = cell.text();
+         // The encoding contract: GOOGLEFINANCE's trade time, truncated to a date
+-        // serial, re-based to days since 1970-01-01, and rendered via TEXT(…,"0")
+-        // — a digits-only string every locale formats identically, parsed by the
+-        // settle pass as the kernel Date. Empty (never an error string) while
+-        // loading/errored.
++        // serial, and rendered via TEXT(…,"0") — a digits-only string every locale
++        // formats identically, parsed by the settle pass as the kernel Date. Empty
++        // (never an error string) while loading/errored.
+         assert!(
+             text.contains("GOOGLEFINANCE"),
+             "quote date reads GOOGLEFINANCE: {text}"
+@@ -248,10 +247,6 @@ fn positions_carries_a_locale_proof_quote_date_companion_column() {
+             text.contains("tradetime"),
+             "quote date uses the tradetime attribute: {text}"
+         );
+-        assert!(
+-            text.contains("DATE(1970,1,1)"),
+-            "re-based to days since 1970-01-01: {text}"
+-        );
+         assert!(
+             text.contains("TEXT("),
+             "rendered as locale-proof digits via TEXT: {text}"

@@ -1,0 +1,11 @@
+diff --git a/docs/intent/sheets-view/sheets-view-specs.md b/docs/intent/sheets-view/sheets-view-specs.md
+index a9fbc14..9dfc2e8 100644
+--- a/docs/intent/sheets-view/sheets-view-specs.md
++++ b/docs/intent/sheets-view/sheets-view-specs.md
+@@ -41,5 +41,5 @@ accounting/tax math.
+ 
+ - [x] **SHEET-PUB-001**: The system shall republish after each successful event append and on demand, running republish and the periodic mark-refresh in one serialized loop, never concurrently.
+ - [x] **SHEET-PUB-002**: The system shall rewrite each view tab as a single `batchUpdate` that writes the new range and truncates the residual tail to the exact row count, leaving no half-written window and no leftover stale rows.
+-- [x] **SHEET-PUB-003**: If a republish fails, then the system shall leave the canonical log unaffected, mark the view stale, retry on the next sync, and surface staleness via a best-effort in-tab banner and the TUI.
++- [x] **SHEET-PUB-003**: If a republish fails, then the system shall leave the canonical log unaffected, mark the view stale, retry with an exponential backoff schedule, and surface staleness via a best-effort in-tab banner and the TUI.
+ - [x] **SHEET-PUB-004**: `sheets-view::republish` shall acquire the runtime-owned advisory write-lock before mutating the workbook and release it after, so republish never writes concurrently with another Sheets-mutating primitive.

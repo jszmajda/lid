@@ -1,0 +1,74 @@
+diff --git a/crates/sheets-view/src/lib.rs b/crates/sheets-view/src/lib.rs
+index 7e9df24..fb5621a 100644
+--- a/crates/sheets-view/src/lib.rs
++++ b/crates/sheets-view/src/lib.rs
+@@ -48,8 +48,10 @@ pub const TAX_TAB: &str = "Tax";
+ /// The Tax tab's reserve-summary band name — a **distinct typed range** carrying
+ /// the per-`(Jurisdiction, Tax Year)` reserve summary, kept separate from the
+ /// accrual band so neither carries among-data summary rows and both stay natively
+-/// filterable. It is part of the Tax surface, not a fifth entry in [`VIEW_TABS`]
+-/// or [`workbook_tab_order`]. (SHEET-TAB-001, SHEET-FORMULA-004)
++/// filterable. It is part of the Tax surface, not a fifth entry in [`VIEW_TABS`];
++/// `workbook_tab_order` places it immediately after the accrual band so the two
++/// physically-separated ranges still sit together as one Tax surface in the
++/// workbook. (SHEET-TAB-001, SHEET-TAB-004, SHEET-FORMULA-004)
+ pub const TAX_RESERVE_TAB: &str = "Tax · Reserve Summary";
+ 
+ /// The History tab — owned by `reports`, but sits among the views in the
+@@ -72,7 +74,10 @@ pub const VIEW_TABS: [&str; 4] = [POSITIONS_TAB, OPEN_LOTS_TAB, REALIZED_TAB, TA
+ 
+ /// The full workbook tab ordering `sheets-view` owns and idempotently reasserts
+ /// on republish: views → reports(History) → config → event logs, with
+-/// `Positions` leftmost. (SHEET-TAB-002)
++/// `Positions` leftmost. The Tax tab's reserve-summary band immediately follows
++/// its accrual band, so the two physically-separated typed ranges (SHEET-TAB-004)
++/// still read as one adjacent Tax surface rather than landing arbitrarily far
++/// apart in the workbook. (SHEET-TAB-002)
+ pub fn workbook_tab_order() -> Vec<&'static str> {
+     vec![
+         // Views (sheets-view).
+@@ -80,6 +85,9 @@ pub fn workbook_tab_order() -> Vec<&'static str> {
+         OPEN_LOTS_TAB,
+         REALIZED_TAB,
+         TAX_TAB,
++        // The reserve-summary band sits right beside its accrual band.
++        // (SHEET-TAB-004)
++        TAX_RESERVE_TAB,
+         // Reports (History sits among the views in the ordering).
+         HISTORY_TAB,
+         // Config tabs.
+diff --git a/crates/sheets-view/tests/tabs.rs b/crates/sheets-view/tests/tabs.rs
+index eaf7537..a57ad0c 100644
+--- a/crates/sheets-view/tests/tabs.rs
++++ b/crates/sheets-view/tests/tabs.rs
+@@ -8,7 +8,7 @@ use sheets_view::{
+     render_open_lots, render_positions, render_realized, render_tax, workbook_tab_order, Cell,
+     Publisher, SheetsViewClient, ViewTab, HISTORY_TAB, LEDGER_EVENTS_TAB, OPEN_LOTS_TAB,
+     PLATFORMS_ALIASES_TAB, POSITIONS_TAB, REALIZED_TAB, RESIDENCY_TAB, TAX_EVENTS_TAB,
+-    TAX_RESERVE_HEADER, TAX_RULES_TAB, TAX_TAB, VIEW_TABS,
++    TAX_RESERVE_HEADER, TAX_RESERVE_TAB, TAX_RULES_TAB, TAX_TAB, VIEW_TABS,
+ };
+ 
+ use config::AliasMap;
+@@ -159,6 +159,21 @@ fn workbook_order_views_then_config_then_logs_positions_landing() {
+     assert_eq!(order.last().copied(), Some(TAX_EVENTS_TAB));
+ }
+ 
++// @spec SHEET-TAB-004
++#[test]
++fn reserve_summary_tab_sits_immediately_after_the_accrual_band_in_workbook_order() {
++    let order = workbook_tab_order();
++    let pos_tax = order.iter().position(|t| *t == TAX_TAB).unwrap();
++    let pos_reserve = order.iter().position(|t| *t == TAX_RESERVE_TAB).unwrap();
++    // The two physically-separated typed ranges still land adjacent to each
++    // other in the workbook, rather than at two arbitrary positions.
++    assert_eq!(
++        pos_reserve,
++        pos_tax + 1,
++        "the reserve summary tab must immediately follow its accrual band"
++    );
++}
++
+ // @spec SHEET-TAB-002
+ #[test]
+ fn republish_idempotently_reasserts_tab_order() {
