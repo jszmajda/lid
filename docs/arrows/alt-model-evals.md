@@ -4,7 +4,7 @@ The alternate-model eval runner — runs LID's existing behavioral eval suites o
 
 ## Status
 
-**MAPPED** — new leaf segment (#78), sampled 2026-09-27, not yet audited. 81 of 81 specs implemented; the `ALT-EVAL-REC` process specs were satisfied by the 1.4.0 capability roster's `tested_with` entries.
+**MAPPED** — new leaf segment (#78), sampled 2026-09-27, not yet audited. 81 of 82 specs implemented; the `ALT-EVAL-REC` process specs were satisfied by the 1.4.0 capability roster's `tested_with` entries, except `ALT-EVAL-REC-005` (recording a batch run on a copy with the capability subsystem removed), a gap until the first such batch is recorded.
 
 ## References
 

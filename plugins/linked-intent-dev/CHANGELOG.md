@@ -6,6 +6,9 @@ All notable changes to LID (Linked-Intent Development) are recorded here. The fo
 
 *Changes merged since the latest numbered version that did not require a version bump (per the policy in `docs/high-level-design.md` § Architecture / Distribution / What warrants a version change). These fold into the next numbered version's entry when one is cut.*
 
+### Changed
+- **Capability flags: a model places itself by its stated identity.** A model finds its row in `references/capability-flags.md` by the model its harness or user names (an ID, or a display name naming one model), matched past route and vendor prefixes, date stamps, and revision tags. Its own belief about which model it is may add a flag but never lifts one. With no row of its own, it takes the row of the nearest tested earlier release in its line, else the nearest tested smaller model of its generation, flags and tendencies alike; only a model nothing places treats every flag as applying. No harness states reasoning effort, so a model takes its row's effort as its own unless its context states a lower one. Evidence runs for the list now use a copy of the skills with the capability subsystem removed, so the list cannot shape the judgment it measures. (`LID-CORE-059`, `-077`–`-087`; `ALT-EVAL-REC-005`; evidence: `docs/research/harness-model-identity.md`)
+
 ### Fixed
 - **`arrow-maintenance` skill frontmatter is valid YAML.** The skill's `description` held an unquoted `: `, which strict YAML parsers reject — a host that parses frontmatter strictly would load the skill without its description. The value is now quoted; the wording is unchanged. (#77)
 

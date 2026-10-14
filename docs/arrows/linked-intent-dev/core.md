@@ -40,10 +40,10 @@ No command stub — the skill is directly invokable as `/linked-intent-dev` per 
 | Cascade Discipline | LID-CORE-026..035 | 10 | 0 | 0 |
 | Bug Fixes / Overrides | LID-CORE-036..037 | 2 | 0 | 0 |
 | Brownfield | LID-CORE-038 | 1 | 0 | 0 |
-| Later additions (node shape, instruments, delegation, divergence probe, misplaced EARS, judgment list, capability flags, terms, decision-doc offer) | LID-CORE-039..076 | 38 | 0 | 0 |
-| **Total** | | **76** | **0** | **0** |
+| Later additions (node shape, instruments, delegation, divergence probe, misplaced EARS, judgment list, capability flags, terms, decision-doc offer, capability-flag self-matching) | LID-CORE-039..087 | 49 | 0 | 0 |
+| **Total** | | **87** | **0** | **0** |
 
-**Summary:** All 76 specs `[x]` — the `SKILL.md` embodies every described behavior. The `[x]` marker is artifact coverage; the scenario evals exercise the decision-doc offer, and the coverage audit applies only to the specs they cite.
+**Summary:** All 87 specs `[x]` — the `SKILL.md` embodies every described behavior. The `[x]` marker is artifact coverage; the scenario evals exercise the decision-doc offer, and the coverage audit applies only to the specs they cite.
 
 ## Key Findings
 

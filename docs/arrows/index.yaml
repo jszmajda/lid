@@ -37,7 +37,7 @@ arrows:
     blockedBy: []
     detail: linked-intent-dev/core.md
     next: null
-    drift: "76 of 76 LID-CORE specs [x] (workflow skill; pure-prose guidance verified mainly by dogfooding, plus a 4-eval scenario suite for the decision-doc offer). No gaps."
+    drift: "87 of 87 LID-CORE specs [x] (workflow skill; pure-prose guidance verified mainly by dogfooding, plus a 4-eval scenario suite for the decision-doc offer). No gaps."
 
   update-lid:
     status: AUDITED
@@ -177,7 +177,7 @@ arrows:
     blockedBy: [linked-intent-dev]
     detail: alt-model-evals.md
     next: null
-    drift: "81 specs, all [x] (CLI to 012, STAGE to 013, RUN to 011, OUT to 018, REC 001-004 satisfied by the 1.4.0 roster entries in tested_with). 77 runner tests green. Used for the 1.4.0 capability roster on six OpenRouter models."
+    drift: "82 specs, 81 [x] (CLI to 012, STAGE to 013, RUN to 011, OUT to 018, REC 001-004 satisfied by the 1.4.0 roster entries in tested_with); REC-005 [ ] until the first batch run on a capability-stripped copy is recorded. 77 runner tests green. Used for the 1.4.0 capability roster on six OpenRouter models."
 
 unmapped:
   docs:

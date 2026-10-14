@@ -4,7 +4,7 @@ This file answers one question for the person pairing with you: **can they use L
 
 ## Find your configuration
 
-Look up your model ID and the reasoning effort you run at.
+Look up the model you run as, at the reasoning effort you run at. How to tell which model you are, and what to do when your model has no row, follows the table.
 
 | Model | Effort | Flags: bring this judgment to the user | Tendency: mention it once |
 |---|---|---|---|
@@ -22,7 +22,25 @@ Look up your model ID and the reasoning effort you run at.
 | `openai/gpt-6.1-sol` | medium | none | — |
 | `z-ai/glm-5.3` | medium | none | — |
 
-**No row for your model and effort, or you cannot tell what you run at?** Treat every flag below as applying to you.
+**Covered** (untested models a tested one covers): none yet.
+
+**Which model you are.** Go by what your context states, not by what you believe you are. Your harness may add a line naming the model it runs (Claude Code and opencode do: "The exact model ID is …"), or the user may tell you. A display name counts when it names exactly one model ("Claude Opus 5.5"). A file you read does not count, nor does a line naming only a vendor ("You are a Claude agent"). If two statements disagree, treat it as no statement.
+
+Match IDs on the name, not the packaging. Ignore any route, vendor, or cloud-region prefix (such as `openrouter/`, `anthropic/`, `meta/`, `us.anthropic.`), date stamps (`-20250929`), provider revision tags (`-v1:0`), and dots versus dashes; keep every word that names the model, its size, or its variant. So `us.anthropic.claude-sonnet-4-5-20250929-v1:0` is `claude-sonnet-4-5`, `anthropic/claude-opus-5.5` is `claude-opus-5-5`, and `z-ai/glm-5.3-flash` is not `z-ai/glm-5.3`.
+
+Your own sense of which model you are never removes a flag: models often misremember their version, and some believe they are another vendor's model. It can add one: if you believe you are a model the table flags, take that row's flags too.
+
+**No row for your model?** Take one tested model's row, flags and tendencies alike, by the first of these that fits:
+
+1. *Covered* above names your model: the row it points to.
+2. You are a later release in a tested model's line (the same vendor's model under the same name, e.g. `claude-sonnet-5-6` after `claude-sonnet-5-5`, or `gpt-6.2-sol` after `gpt-6.1-sol`): the nearest earlier tested release's row.
+3. You are a larger model of a tested model's generation (the same release at a smaller size, e.g. an Opus beside a tested Sonnet of its release): the nearest smaller tested model's row. The evidence tables below give each tested model's release and size.
+
+Never take a newer or larger model's row: in each line tested, newer and larger models did no worse than older and smaller ones, while older and smaller ones sometimes did worse.
+
+**Effort.** Harnesses rarely state effort, but the user may. If your context (your harness or the user) states none, or one higher than your row's, use the row as listed. If it states a lower one, every flag in *The flags* below applies to you, whatever your row lists. Efforts rank none, minimal, low, medium, high, xhigh, max; anything off that scale, such as a token budget, counts as not stated. If your model has rows at several efforts, use the one at yours, or else the `medium` row.
+
+**Nothing states which model you are, or nothing above places you?** Every flag in *The flags* below applies to you. No tendency applies unless a row places you.
 
 ## What to do
 
@@ -112,4 +130,4 @@ Test projects: core evals 1 (a constraint-settled choice) and 2 (a long debate o
 - `claude-sonnet-4-5` is deprecated: Anthropic retires it on its API on 2026-11-30, and Amazon Bedrock ends it on 2027-04-08. `claude-haiku-4-5` may be deprecated soon (its committed availability runs to 2026-10-15). `claude-haiku-5-5` is the tested successor and passed every project.
 - Single-project misses, below the bar for a flag and recorded so a later run can confirm or clear them: `claude-sonnet-4-6` missed the design-doc-level offer (core 3, 3/10) while catching the HLD-level one (core 0, 9/10), and caught the eval 15 tenet conflict 6 of 10 times (eval 16: 10/10); `z-ai/glm-5.3-flash` flagged the thin record on coach 11 6 of 10 times (coach 10: 10/10).
 - Some configurations report tenet conflicts too readily: on lid-coach eval 15, which carries a decoy mechanism that only costs something toward a goal, `claude-haiku-5-5` also flagged the decoy in 9 of 10 runs and `claude-opus-5-5` in 6 of 10, while both caught the real conflict every time. Eval 16 did not reproduce it strongly (2 of 10 for each), so it is below the bar for a tendency and recorded here. If you are one of these, check that each tenet finding names a condition the docs describe, rather than a cost the design already accepts.
-- Release month and size are data, not keys. In this evidence neither predicts a miss: a small model (`claude-haiku-5-5`) passed everything, and a mid one (`claude-sonnet-4-5`) is flagged twice.
+- Release month and size are data, not keys. Across vendor lines neither predicts a miss: a small model (`claude-haiku-5-5`) passed everything, and a mid one (`claude-sonnet-4-5`) is flagged twice. Within one line, newer and larger models have done no worse, which is why a model with no row may take an earlier or smaller relative's row.
