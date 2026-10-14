@@ -32,7 +32,7 @@ This sub-HLD describes intent; the `SKILL.md` files and references under `plugin
 
 The plugin lives at `plugins/linked-intent-dev/` with this shape:
 
-- `.claude-plugin/plugin.json` — Claude Code plugin manifest (name, version, skills listing). Its `version` is the canonical LID conventions version (see the HLD's Versioning note).
+- `.claude-plugin/plugin.json` — Claude Code plugin manifest (name, version, skills listing). Its `version` is the LID version the three plugins share, which is also the conventions version (see the HLD's Versioning note).
 - `skills/linked-intent-dev/` — the pure-prose workflow skill. Specified in `docs/intent/linked-intent-dev/core/core-design.md`.
   - `SKILL.md`
   - `references/` — supporting reference docs (EARS syntax, LLD template, HLD template, decision-doc template, capability flags).
@@ -44,9 +44,9 @@ The plugin lives at `plugins/linked-intent-dev/` with this shape:
   - `SKILL.md`
   - `references/` — situational material: follow-up turns, conversational guidance, sampling, and the LID FAQ.
 
-No `commands/` directory. Per Claude Code's skills model, an identically-named skill is already directly invokable as `/skill-name`, so a separate command stub would be redundant surface (and would be shadowed by the skill anyway). Users invoke `/linked-intent-dev`, `/update-lid`, and `/lid-coach` directly against their skills.
+No `commands/` directory. Each skill is already directly invokable as `/skill-name`, so a command file under the same name would be redundant surface, and on a host where the command file wins it would hide the skill (`project-structure` § *Skill and command files*: one file per invocable name). Users invoke `/linked-intent-dev`, `/update-lid`, and `/lid-coach` directly against their skills.
 
-**Size and line limits.** Every `SKILL.md` body stays under 50 KB, and no line in a shipped skill or reference file runs past 2,000 characters. Some agent harnesses cap what one tool call returns: opencode, for one, cuts any tool output past 51,200 bytes (its skill loader included) and any line past 2,000 characters when reading a file, without the model seeing more than a short notice. A skill over those limits silently loses its tail, or the end of its longest paragraphs, on those harnesses. What every invocation needs stays in `SKILL.md`; material a skill needs only in some situations moves to `references/`, which harnesses page through like any file. Long paragraphs break across lines rather than running on one.
+**Size and line limits.** Every `SKILL.md` body stays under 50 KB, and no line in a shipped skill or reference file runs past 2,000 characters. Some agent harnesses cap what one tool call returns: opencode, for one, cuts any tool output past 51,200 bytes (its skill loader included) and any line past 2,000 characters when reading a file, without the model seeing more than a short notice. A skill over those limits silently loses its tail, or the end of its longest paragraphs, on those harnesses. What every invocation needs stays in `SKILL.md`; material a skill needs only in some situations moves to `references/`, which harnesses page through like any file. Long paragraphs break across lines rather than running on one. The packaging checks enforce both limits before each merge (the `packaging-checks` segment).
 
 The plugin intentionally does not bundle scripts. Everything the skills do is expressed in prompts and references; there is no code layer between the skill and the agent's tool use.
 

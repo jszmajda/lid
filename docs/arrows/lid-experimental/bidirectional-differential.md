@@ -25,7 +25,7 @@ The first `lid-experimental` experiment — audits EARS↔code coherence by spaw
 ### Code (skill prompt and references)
 - `plugins/lid-experimental/skills/bidirectional-differential/SKILL.md`
 - `plugins/lid-experimental/skills/bidirectional-differential/references/` — `audit-protocol.md` (full six-step protocol; includes stripping rules and split-result mechanics referenced from individual specs), `classification-codes.md`, `scoping-conversation.md`, `audit-report-template.md`
-- `plugins/lid-experimental/commands/differential-audit.md` (plugin-level command stub)
+- `plugins/lid-experimental/commands/differential-audit.md` — the `/differential-audit` alias, a command file under a name no skill uses
 
 ### Reserved output namespace
 - `docs/arrows/_experiments/bidirectional-differential/{segment-name}/{EARS-ID}.md` — per-EARS audit records produced by `/differential-audit` runs. Currently unpopulated in this repo.

@@ -43,10 +43,11 @@ No command stub — the skill is directly invokable as `/update-lid` per Claude 
 | Arrow-Maintenance Coordination | LID-UPDATE-025..026 | 2 | 0 | 0 |
 | Verification | LID-UPDATE-027..029 | 3 | 0 | 0 |
 | Scope Declaration | LID-UPDATE-030..034 | 5 | 0 | 0 |
-| Version-Walk | LID-UPDATE-036..043 | 8 | 0 | 0 |
-| **Total** | | **43** | **0** | **0** |
+| Version-Walk | LID-UPDATE-036..043, 054..057 | 12 | 0 | 0 |
+| Workflow doc, memory directive, Aider (added after this table was first drawn) | LID-UPDATE-044..053 | 10 | 0 | 0 |
+| **Total** (recounted from the spec file) | | **57** | **0** | **0** |
 
-**Summary:** All 43 active specs implemented; `update-lid` is feature-complete relative to its current LLD scope.
+**Summary:** All 57 active specs implemented. The version-walk fires only on major.minor lag (`LID-UPDATE-037`, `039`); a project newer than the installed plugin, patch included, gets a suggestion to update the LID plugins and no changes (`054`); a malformed `- Version:` is read for what parses and walked (`055`); reconcile-conventions records the installed version when it applies an update (`057`); and the skill is model-invocable (`056`). Evals 14–20 exercise these, with eval 3 covering a malformed block that keeps its recorded version (`004`).
 
 ## Key Findings
 

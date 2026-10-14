@@ -22,8 +22,7 @@ The dual-mode `/arrow-maintenance` skill — ambient catch-and-recommend on arro
 - `plugins/arrow-maintenance/skills/arrow-maintenance-workspace/` (latest: iteration-2, 2026-08-08, 15/15 with-skill assertions; audit fixtures are git-initialized so `audited_sha` is verifiable)
 
 ### Code
-- `plugins/arrow-maintenance/skills/arrow-maintenance/SKILL.md` + `references/` (`index-schema.md`, `arrow-doc-template.md`, `audit-checklist.md`, `README-template.md`, `coherence-check.mjs`)
-- `plugins/arrow-maintenance/commands/arrow-maintenance.md`
+- `plugins/arrow-maintenance/skills/arrow-maintenance/SKILL.md` + `references/` (`index-schema.md`, `arrow-doc-template.md`, `audit-checklist.md`, `README-template.md`, `coherence-check.mjs`) — invoked by its own name; no command file (`project-structure` § *Skill and command files*)
 
 ## Spec Coverage
 

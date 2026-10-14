@@ -1,6 +1,6 @@
 ---
 name: linked-intent-dev
-description: Guide for linked-intent development (LID). Consult for ALL code changes. Walks changes through a mode-aware six-phase workflow (HLD → LLD → EARS → intent-narrowing edge audit → tests-first → code) with mandatory stops between each phase. Bugs walk the arrow like any other change — no short-circuit. Enforces cascade discipline within arrow segments and pauses across segment boundaries.
+description: "Guide for linked-intent development (LID). Consult for ALL code changes. Walks changes through a mode-aware six-phase workflow (HLD → LLD → EARS → intent-narrowing edge audit → tests-first → code) with mandatory stops between each phase. Bugs walk the arrow like any other change — no short-circuit. Enforces cascade discipline within arrow segments and pauses across segment boundaries."
 ---
 
 # Linked-Intent Development

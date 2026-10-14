@@ -1,5 +1,5 @@
 schema_version: 2
-last_updated: 2026-10-10
+last_updated: 2026-10-24
 
 taxonomy:
   core:
@@ -13,6 +13,7 @@ taxonomy:
     - extensions
   tooling:
     - alt-model-evals
+    - packaging-checks
 
 arrows:
   linked-intent-dev:
@@ -49,7 +50,7 @@ arrows:
     blockedBy: []
     detail: linked-intent-dev/update-lid.md
     next: null
-    drift: "53 of 53 LID-UPDATE specs [x]; no gaps. 1.4.0's workflow-doc vendoring (048-053: no update-lid offer with a preserved decline bullet, shipped-asset copy, single workflow-section shape, version-walk re-sync, hand-edit surfacing, Aider bridge) is eval-covered by fixtures 8-13. Fixtures 2, 6 and 8-10 were revised for on-demand vendoring after the 1.4.0 roster (piloted on claude-sonnet-5-5 only); the roster's tested_with rows cover the other nine. Suite: 14 fixtures; iteration-4 (2026-08-08) 52/52 with-skill assertions, new-fixture baseline 63% — discrimination strongest on shipped-asset fidelity and the do-not-overwrite gate. Grew in 1.3.0: AGENTS.md-canonical instruction file + Windows symlink fallback (045/046) and the tool-agnostic memory->intent directive (047)."
+    drift: "57 of 57 LID-UPDATE specs [x]. The version-walk fires on major.minor lag only (037, 039); a project newer than the installed plugin gets a suggestion to update the LID plugins and no changes (054); a malformed - Version: is read for what parses (055); the skill is model-invocable (056); reconcile records the installed version when it applies an update (057). Evals 14-20 exercise these."
 
   lid-coach:
     status: AUDITED
@@ -61,7 +62,7 @@ arrows:
     blockedBy: []
     detail: linked-intent-dev/lid-coach.md
     next: "Author next-round fixtures covering the 35 unexercised LID-COACH specs (invocation 001-002, inputs 008-012, principle-body 014-015, review dims 016-032 less 019/023, 036/038/041/042/047/048/051, 053 tenet-quality) plus the 3 new tenet-cascade specs (054 verticalize-intent, 055 granularity-as-tree, 056 nested-arrow-validity); 048 needs a >15-LLD fixture project; 053 needs a fixture with a tenet-less HLD and one with platitude tenets; 054 needs a fixture carrying a cross-cutting index/tag registry beside the tree; 055 needs a fixture with an outgrown leaf LLD (promotion candidate) and one bundling several share-design separable-behavior concerns (sub-HLD candidate); 056 needs a fixture whose design layer nests sub-HLDs with a subtree-gathering intermediate prefix (must NOT be flagged) alongside a genuine phase deviation (must be flagged). Also tighten fixture 10's discriminators (drop the expanded-rationale escape hatch in assertion 2; pin assertion 3 to missing-decision-doc grounds)."
-    drift: "33 of 69 LID-COACH specs [x] ([x] here means exercised by an eval assertion); 36 remain [ ], in the skill body but unexercised. Capability roster (21 configurations: 13 for 1.4.0, eight more from 2026-10-16 to 2026-10-24; effort medium, 10 runs per project on evals 10, 11, 15, 16): see capability-flags.md. LID-COACH-062 (doc named as an option when other nodes rely on a decision) lost its only fixture when eval 14's cadence assertions were retired."
+    drift: "34 of 69 LID-COACH specs [x] ([x] here means exercised by an eval assertion, or for LID-COACH-002 by the packaging checks' guard check); 35 remain [ ], in the skill body but unexercised. Capability roster (21 configurations: 13 for 1.4.0, eight more from 2026-10-16 to 2026-10-24; effort medium, 10 runs per project on evals 10, 11, 15, 16): see capability-flags.md. LID-COACH-062 (doc named as an option when other nodes rely on a decision) lost its only fixture when eval 14's cadence assertions were retired."
 
   arrow-maintenance:
     status: MAPPED
@@ -85,7 +86,7 @@ arrows:
     blockedBy: []
     detail: arrow-maintenance/maintenance.md
     next: "Strengthen eval-3's misplaced-EARS assertions: the surfaced-finding and reference-not-flagged clauses pass baselines outright and the no-auto-move clause only stochastically (one baseline run moved the content, another didn't); add assertions for report-vs-state fidelity and for never flipping [x] markers unilaterally."
-    drift: "31 of 31 SCALE-MAINT specs [x]. Suite: 4 fixtures; iteration-2 (2026-08-08) 15/15 with-skill assertions, incl. the new misplaced-EARS fixture for check 6 (SCALE-MAINT-031) — finding surfaced, content verified un-moved against git state — and eval-0's six-classes assertion. Eval-0's audited_sha assertion requires a git-initialized fixture project; the run harness seeds one."
+    drift: "31 of 31 SCALE-MAINT specs [x]; SCALE-MAINT-003 now names /map-codebase for the user to run (eval 2 re-run 2026-10-24, 9/9). Suite: 4 fixtures; iteration-2 (2026-08-08) 15/15 with-skill assertions, incl. the new misplaced-EARS fixture for check 6 (SCALE-MAINT-031) — finding surfaced, content verified un-moved against git state — and eval-0's six-classes assertion. Eval-0's audited_sha assertion requires a git-initialized fixture project; the run harness seeds one."
 
   map-codebase:
     status: MAPPED
@@ -151,11 +152,11 @@ arrows:
     sampled: 2026-05-05
     audited: 2026-06-07
     audited_sha: 65a143750760
-    blocks: []
+    blocks: [packaging-checks]
     blockedBy: [linked-intent-dev]
     detail: project-structure.md
-    next: "Wire build-time structural checks for the three deferred specs (PROJ-STRUCT-039 link-check, 040 marketplace.json validity, 041 CLAUDE.md symlink integrity), most cheaply via a CI workflow extending marketing-site's."
-    drift: "65 of 68 specs [x]; 3 [ ] (build-time checks 039-041, deferred to CI). 064-069 added as a cascade from alt-model-evals: tracked .claude/settings.json (three first-party plugins + the runner allow rule), its .gitignore exception, AGENTS.md tools/ description. Grew substantially this cycle: community-health artifacts (047-053: CODE_OF_CONDUCT/SECURITY/CITATION/.github templates), release-publication ritual (054), EXTENSIONS.md ownership pointer (055), and Cursor first-class plugin-host support (056-062: .cursor-plugin manifests, .gitignore, name-identity, No-Version-Update policy, docs/setup.md hosts). PROJ-STRUCT-014 retired; -018 revised to a motivation-first PR shape. Cursor specs renumbered 047-053 -> 056-062 to resolve a merge-time ID collision with the community-health specs."
+    next: null
+    drift: "The build-time checks (039-041) are superseded by the packaging-checks segment (PKG-CHECK-018-020); 061 (No-Version section) superseded by the shared-version rule (045, 077). New rules: skill and command files (073-076, 084), shared version and release step (046, 077-081), opencode skills host (072, 085)."
 
   extensions:
     status: AUDITED
@@ -178,6 +179,17 @@ arrows:
     detail: alt-model-evals.md
     next: null
     drift: "82 specs, 82 [x] (CLI to 012, STAGE to 013, RUN to 011, OUT to 018, REC 001-004 satisfied by the 1.4.0 roster entries in tested_with, REC-005 by the 2026-10-16 Gemini 4 Argon and Muse Glimmer 30B entries, run on a capability-stripped copy). 77 runner tests green. Used for the 1.4.0 capability roster on six OpenRouter models and for six more from 2026-10-16 to 2026-10-19."
+
+  packaging-checks:
+    status: MAPPED
+    sampled: 2026-10-24
+    audited: null
+    audited_sha: null
+    blocks: []
+    blockedBy: [project-structure, linked-intent-dev, alt-model-evals]
+    detail: packaging-checks.md
+    next: null
+    drift: "New segment (#86, #87). Tool and tests built; PR-process obligations live in project-structure (PROJ-STRUCT-070, 079)."
 
 unmapped:
   docs:

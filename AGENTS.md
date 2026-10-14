@@ -10,18 +10,20 @@ This is the **Linked-Intent Development (LID)** project — a methodology for ke
 - **Three Claude Code plugins** under `plugins/` (two core, one opt-in experimental) — richest integration, with auto-invoking skills and slash commands. Cursor reads the same plugins through its own manifests.
 - Rule-file adapters for other agentic coding tools (Cursor, Windsurf, GitHub Copilot, Aider, Continue, JetBrains Junie, Zed, Codex, and any tool that reads `AGENTS.md`). See `docs/setup.md` for per-tool setup.
 
-There is no build system or application code. The plugins are prose (skills, references, templates); the only executable code is maintainer tooling under `tools/`, which ships in no plugin. The repo is simultaneously the distribution source for the plugins and the canonical LID-on-LID reference — its own `docs/` tree is LID applied to LID.
+There is no build system or application code. The plugins are prose (skills, references, templates); the only executable code is maintainer tooling under `tools/` (the alternate-model eval runner and the packaging checks), which ships in no plugin. The repo is simultaneously the distribution source for the plugins and the canonical LID-on-LID reference — its own `docs/` tree is LID applied to LID.
 
 ## Structure
 
 - **`plugins/`**: Three installable plugins (Claude Code and Cursor)
   - **`linked-intent-dev/`**: Core LID workflow skill (`/linked-intent-dev`), configuration skill (`/update-lid`), and principle-review coach (`/lid-coach`)
-  - **`arrow-maintenance/`**: Arrow tracking overlay + `/map-codebase` command for brownfield bootstrap
+  - **`arrow-maintenance/`**: Arrow tracking overlay skill (`/arrow-maintenance`) and brownfield bootstrap skill (`/map-codebase`)
   - **`lid-experimental/`**: Opt-in experiments under evaluation (`review-depth`, `bidirectional-differential`)
 - **`.claude-plugin/marketplace.json`**: Claude Code plugin manifest (technical file — users install via `/plugin marketplace add jszmajda/lid`)
 - **`docs/setup.md`**: Per-tool setup instructions for non-Claude-Code agents
 - **`docs/`**: The HLD, LLDs, and EARS specs that define the project
-- **`tools/`**: Maintainer tooling that ships in no plugin — `tools/alt-model-evals/` runs the skills' eval suites on non-Claude models (optional evidence, never a merge gate; see `docs/intent/alt-model-evals/`)
+- **`tools/`**: Maintainer tooling that ships in no plugin
+  - **`alt-model-evals/`**: runs the skills' eval suites on non-Claude models (optional evidence, never a merge gate; see `docs/intent/alt-model-evals/`)
+  - **`packaging-checks/`**: checks that the plugins are well-formed and load whole on a host (the merge gate; see `docs/intent/packaging-checks/`); also regenerates the shipped workflow doc
 
 ## Plugin Architecture (Claude Code)
 
@@ -50,9 +52,12 @@ The methodology is identical across tools — only the invocation differs. Claud
 ## Editing Guidelines
 
 - Each plugin lives in `plugins/<name>/` with `.claude-plugin/plugin.json` manifest
-- Skills follow the SKILL.md frontmatter format (`name`, `description` in YAML front matter)
+- Skills follow the SKILL.md frontmatter format (`name`, `description` in YAML front matter); a skill's `name` equals its directory name
 - The skill `description` field is critical — it determines when Claude Code auto-invokes the skill. Use specific trigger words, not vague descriptions
+- Write each `description` as one double-quoted line, `description: "…"`, with no `"` inside it — reword a literal quote rather than escaping it
+- Every skill is invocable by its own name, so a command file (`commands/<name>.md`) exists only as an alias under a name no skill in its plugin uses
 - Reference templates live in `references/` subdirectories within each skill
+- Before opening a pull request, run `tools/packaging-checks/packaging_checks.py` and paste its one-line result into the PR's *Packaging checks* line (see `CONTRIBUTING.md`)
 
 ## LID
 - Mode: Full

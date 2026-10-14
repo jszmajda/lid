@@ -1,6 +1,6 @@
 ---
 name: differential-audit
-description: Audit EARS↔code coherence via a bidirectional differential. With no arguments, opens a scoping conversation that interprets what the user wants audited, maps it to arrows, and captures an explicit EARS selection. With one or more EARS IDs, audits those specs directly using configured defaults. Requires docs/arrows/ overlay from arrow-maintenance.
+description: "Audit EARS↔code coherence via a bidirectional differential. With no arguments, opens a scoping conversation that interprets what the user wants audited, maps it to arrows, and captures an explicit EARS selection. With one or more EARS IDs, audits those specs directly using configured defaults. Requires docs/arrows/ overlay from arrow-maintenance."
 ---
 
 Invoke the `bidirectional-differential` skill in command mode.
