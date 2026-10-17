@@ -8,8 +8,10 @@ All notable changes to LID (Linked-Intent Development) are recorded here. The fo
 
 ### Changed
 - **Capability flags: a model places itself by its stated identity.** A model finds its row in `references/capability-flags.md` by the model its harness or user names (an ID, or a display name naming one model), matched past route and vendor prefixes, date stamps, and revision tags. Its own belief about which model it is may add a flag but never lifts one. With no row of its own, it takes the row of the nearest tested earlier release in its line, else the nearest tested smaller model of its generation, flags and tendencies alike; only a model nothing places treats every flag as applying. No harness states reasoning effort, so a model takes its row's effort as its own unless its context states a lower one. Evidence runs for the list now use a copy of the skills with the capability subsystem removed, so the list cannot shape the judgment it measures. (`LID-CORE-059`, `-077`–`-087`; `ALT-EVAL-REC-005`; evidence: `docs/research/harness-model-identity.md`)
+- **Capability flags: two more configurations.** `meta/muse-glimmer-30b` at `medium` is flagged for *tenet or goal conflict* and *under-captured decision*; `google/gemini-4-argon` at `medium` passed every test project and carries no flag. Both were measured on a copy of the skills with the capability subsystem removed.
 
 ### Fixed
+- **Capability-flag evidence: lid-coach eval 11 scored by the right check.** The *under-captured decision* table had scored eval 11 by its tenet-conflict assertion; it now scores whether the thin record gets a finding of its own, as eval 10 already did. No flag changes. Seven configurations score lower on eval 11, most of all `openai/gpt-5.6-terra` (3/10, was 10/10); the notes record the new single-project misses.
 - **`arrow-maintenance` skill frontmatter is valid YAML.** The skill's `description` held an unquoted `: `, which strict YAML parsers reject — a host that parses frontmatter strictly would load the skill without its description. The value is now quoted; the wording is unchanged. (#77)
 
 ## [1.4.0] — 2026-10-10
