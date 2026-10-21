@@ -123,6 +123,7 @@ The operating principles that tie the preceding approaches to day-to-day work:
 - **The user is always right — with warning.** A user may override a phase requirement; the skill warns about the drift risk and honors the override.
 - **Every phase is inspected — by the human, or an inspector the human has authorized.** Alignment with intent is verified, never assumed; what varies is the instrument, not whether inspection happens.
 - **Design for the pair, not the model.** Where a judgment depends on the model's capability, bring it to the human rather than rewording LID to coax the model through it.
+- **Lean toward the human's attention.** When it is unclear whether a judgment needs the human, bring it to them: asking a user to look twice costs less than letting them trust a check the model has not earned.
 
 ## Goals
 

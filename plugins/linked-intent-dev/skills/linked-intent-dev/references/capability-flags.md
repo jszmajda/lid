@@ -63,9 +63,9 @@ A flag says where to look harder. It does not limit what you do.
 
 ## Evidence
 
-A flag or tendency enters this file only when the gap is real: at least 10 runs per configuration, a gap larger than the spread between repeated runs of one model, and the gap appearing on at least two test projects. A configuration leaves a flag when a rerun no longer shows the gap. Each row records the harness the runs used, the release month, and the size tier as data; none of them decides whether a flag applies.
+A flag or tendency enters this file only when the gap is real: at least 10 completed runs per configuration on each test project, a gap larger than the spread between repeated runs of one model, and the gap appearing on at least two test projects. A configuration leaves a flag when a rerun no longer shows the gap. Each row records the harness the runs used, the release month, and the size tier as data; none of them decides whether a flag applies.
 
-Every row: 10 runs per test project, reasoning effort `medium`, graded blind. Strong configurations score 9 or 10 of 10 on each project across repeated batches; a flag marks a gap well beyond that spread, on both of its projects. The test projects are small and state the conditions a judgment turns on fairly plainly, so a passing row means the model makes the judgment when the docs make it visible; it says less about a large real project where nothing announces it.
+Every row: 10 runs per test project, reasoning effort `medium`, graded blind; a cell with fewer runs lost them to timeouts at the host, and no outcome of the missing runs could change the row's result. Strong configurations score 9 or 10 of 10 on each project across repeated batches; a pass rate of 70% or lower (7 of 10) counts as a miss, and a flag or tendency needs misses on at least two projects. The test projects are small and state the conditions a judgment turns on fairly plainly, so a passing row means the model makes the judgment when the docs make it visible; it says less about a large real project where nothing announces it.
 
 ### Tenet or goal conflict
 
