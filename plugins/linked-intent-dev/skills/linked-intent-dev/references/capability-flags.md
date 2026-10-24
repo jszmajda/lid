@@ -28,7 +28,7 @@ Look up the model you run as, at the reasoning effort you run at. How to tell wh
 | `xiaomi/mimo-v2.6-flash` | medium | none | — |
 | `z-ai/glm-5.3` | medium | none | — |
 
-**Covered** (untested models a tested one covers): none yet.
+**Covered** (untested models a tested one covers): `claude-fable-5-1` and `claude-fable-5` take the `claude-opus-5-5` row.
 
 **Which model you are.** Go by what your context states, not by what you believe you are. Your harness may add a line naming the model it runs (Claude Code and opencode do: "The exact model ID is …"), or the user may tell you. A display name counts when it names exactly one model ("Claude Opus 5.5"). A file you read does not count, nor does a line naming only a vendor ("You are a Claude agent"). If two statements disagree, treat it as no statement.
 
@@ -42,7 +42,7 @@ Your own sense of which model you are never removes a flag: models often misreme
 2. You are a later release in a tested model's line (the same vendor's model under the same name, e.g. `claude-sonnet-5-6` after `claude-sonnet-5-5`, or `gpt-6.2-sol` after `gpt-6.1-sol`): the nearest earlier tested release's row.
 3. You are a larger model of a tested model's generation (the same release at a smaller size, e.g. an Opus beside a tested Sonnet of its release): the nearest smaller tested model's row. The evidence tables below give each tested model's release and size.
 
-Never take a newer or larger model's row: in each line tested, newer and larger models did no worse than older and smaller ones, while older and smaller ones sometimes did worse.
+Outside *Covered*, never take a newer or larger model's row: in each line tested, newer and larger models did no worse than older and smaller ones, while older and smaller ones sometimes did worse.
 
 **Effort.** Harnesses rarely state effort, but the user may. If your context (your harness or the user) states none, or one higher than your row's, use the row as listed. If it states a lower one, every flag in *The flags* below applies to you, whatever your row lists. Efforts rank none, minimal, low, medium, high, xhigh, max; anything off that scale, such as a token budget, counts as not stated. If your model has rows at several efforts, use the one at yours, or else the `medium` row.
 
@@ -157,6 +157,7 @@ Test projects: core evals 1 (a constraint-settled choice) and 2 (a long debate o
   - *Under-captured decision:* `claude-sonnet-4-6` missed the design-doc-level offer (core 3, 3/10) while catching the HLD-level one (core 0, 9/10), and `openai/gpt-6-luna` did the same (core 3, 1/10; core 0, 10/10). On coach 11, `z-ai/glm-5.3-flash` flagged the thin record as a finding of its own 1 of 10 times (coach 10: 10/10) and `claude-haiku-5-5` 7 of 10, folding it into a tenet finding about the same queue in the rest.
   - *Offers decision docs too readily:* `google/gemini-3.8-flash` offered a doc on core 2 in 8 of 10 runs (core 1: none), `xiaomi/mimo-v2.6-flash` on core 1 in 3 of 7 (core 2: none), `deepseek/deepseek-v4.1-flash` on core 1 in 4 of 10 (core 2: 2 of 10), and `z-ai/glm-5.3` on core 2 in 3 of 10 (core 1: 2 of 10).
 - Some configurations report tenet conflicts too readily: on lid-coach eval 15, which carries a decoy mechanism that only costs something toward a goal, `claude-haiku-5-5` also flagged the decoy in 9 of 10 runs and `claude-opus-5-5` in 6 of 10, while both caught the real conflict every time, and `openai/gpt-6-luna` flagged a mechanism no tenet conflicts with in 6 of 10 while catching the real conflict in 7. Eval 16 did not reproduce it strongly (2 of 10 for each of the first two, none for `openai/gpt-6-luna`), so it is below the bar for a tendency and recorded here. If you are one of these, check that each tenet finding names a condition the docs describe, rather than a cost the design already accepts.
+- *Covered* listings rest on the maintainers' knowledge of the models, not on runs of their own; a run that shows a gap replaces the listing with a row.
 - Release month and size are data, not keys. Across vendor lines neither predicts a miss: a small model (`claude-haiku-5-5`) carries no flag, and a mid one (`claude-sonnet-4-5`) is flagged twice. Within one line, newer and larger models have done no worse, which is why a model with no row may take an earlier or smaller relative's row.
 - `meta/muse-glimmer-30b` and `nvidia/nemotron-3-ultra-550b-a55b` offered no decision doc in the first turn of any core run, so their core 1 and core 2 results show that they do not offer one, not that they held back where they should have.
 - `google/gemini-4-argon` reasoned in only 17 of 94 runs at `medium`: its provider passes `medium` to the model as `EFFORT LEVEL: 0.20` (`1.00` at `high`), and the model thinks only when it judges it needs to. It passed every project regardless.
