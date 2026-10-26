@@ -928,7 +928,7 @@ Look up the model you run as, at the reasoning effort you run at. How to tell wh
 
 **Which model you are.** Go by what your context states, not by what you believe you are. Your harness may add a line naming the model it runs (Claude Code and opencode do: "The exact model ID is …"), or the user may tell you. A display name counts when it names exactly one model ("Claude Opus 5.5"). A file you read does not count, nor does a line naming only a vendor ("You are a Claude agent"). If two statements disagree, treat it as no statement.
 
-Match IDs on the name, not the packaging. Ignore any route, vendor, or cloud-region prefix (such as `openrouter/`, `anthropic/`, `meta/`, `us.anthropic.`), date stamps (`-20250929`), provider revision tags (`-v1:0`), and dots versus dashes; keep every word that names the model, its size, or its variant. So `us.anthropic.claude-sonnet-4-5-20250929-v1:0` is `claude-sonnet-4-5`, `anthropic/claude-opus-5.5` is `claude-opus-5-5`, and `z-ai/glm-5.3-flash` is not `z-ai/glm-5.3`.
+Match IDs on the name, not the packaging, both the ID your context states and the IDs in the table. Ignore any route, vendor, or cloud-region prefix (such as `openrouter/`, `anthropic/`, `meta/`, `us.anthropic.`), date stamps (`-20250929`), provider revision tags (`-v1:0`), and dots versus dashes; keep every word that names the model, its size, or its variant. So `us.anthropic.claude-sonnet-4-5-20250929-v1:0` is `claude-sonnet-4-5`, `anthropic/claude-opus-5.5` is `claude-opus-5-5`, and `z-ai/glm-5.3-flash` is not `z-ai/glm-5.3`; a stated `openrouter/google/gemini-4-argon` or `gemini-4-argon` matches the row `google/gemini-4-argon`.
 
 Your own sense of which model you are never removes a flag: models often misremember their version, and some believe they are another vendor's model. It can add one: if you believe you are a model the table flags, take that row's flags too.
 
@@ -936,11 +936,11 @@ Your own sense of which model you are never removes a flag: models often misreme
 
 1. *Covered* above names your model: the row it points to.
 2. You are a later release in a tested model's line (the same vendor's model under the same name, e.g. `claude-sonnet-5-6` after `claude-sonnet-5-5`, or `gpt-6.2-sol` after `gpt-6.1-sol`): the nearest earlier tested release's row.
-3. You are a larger model of a tested model's generation (the same release at a smaller size, e.g. an Opus beside a tested Sonnet of its release): the nearest smaller tested model's row. The evidence tables below give each tested model's release and size.
+3. You are a larger model of a tested model's generation: the nearest smaller tested model's row. A generation is one release across its sizes, so the same version number: Claude 5.5's Haiku, Sonnet, and Opus are one generation, while `claude-opus-4-7` and `claude-sonnet-4-6` are not. The evidence tables below give each tested model's release and size.
 
 Outside *Covered*, never take a newer or larger model's row: in each line tested, newer and larger models did no worse than older and smaller ones, while older and smaller ones sometimes did worse.
 
-**Effort.** Harnesses rarely state effort, but the user may. If your context (your harness or the user) states none, or one higher than your row's, use the row as listed. If it states a lower one, every flag in *The flags* below applies to you, whatever your row lists. Efforts rank none, minimal, low, medium, high, xhigh, max; anything off that scale, such as a token budget, counts as not stated. If your model has rows at several efforts, use the one at yours, or else the `medium` row.
+**Effort.** Harnesses rarely state effort, but the user may. If your context (your harness or the user) states none, or one higher than your row's, use the row as listed. If it states a lower one, every flag in *The flags* below applies to you, whatever your row lists, and your row's tendencies still apply. Efforts rank none, minimal, low, medium, high, xhigh, max; anything off that scale, such as a token budget, counts as not stated. If your model has rows at several efforts, use the one at yours, or else the `medium` row.
 
 **Nothing states which model you are, or nothing above places you?** Every flag in *The flags* below applies to you. No tendency applies unless a row places you.
 
@@ -963,9 +963,9 @@ A flag says where to look harder. It does not limit what you do.
 
 ## Evidence
 
-A flag or tendency enters this file only when the gap is real: at least 10 completed runs per configuration on each test project, a gap larger than the spread between repeated runs of one model, and the gap appearing on at least two test projects. A configuration leaves a flag when a rerun no longer shows the gap. Each row records the harness the runs used, the release month, and the size tier as data; none of them decides whether a flag applies.
+A flag or tendency enters this file only when the gap is real: at least 10 runs per configuration on each test project (fewer only where the host cut runs short and no outcome of them could change the result), a gap larger than the spread between repeated runs of one model, and the gap appearing on at least two test projects. A configuration leaves a flag when a rerun no longer shows the gap. Each row records the harness the runs used, the release month, and the size tier as data; none of them decides whether a flag applies.
 
-Every row: 10 runs per test project, reasoning effort `medium`, graded blind; a cell with fewer runs lost them to timeouts at the host, and no outcome of the missing runs could change the row's result. Strong configurations score 9 or 10 of 10 on each project across repeated batches; a pass rate of 70% or lower (7 of 10) counts as a miss, and a flag or tendency needs misses on at least two projects. The test projects are small and state the conditions a judgment turns on fairly plainly, so a passing row means the model makes the judgment when the docs make it visible; it says less about a large real project where nothing announces it.
+Every row: 10 runs per test project, reasoning effort `medium`, graded blind, and dated by the last run it rests on; a cell with fewer runs lost them to timeouts or errors at the host, and no outcome of the missing runs could change the row's result. Strong configurations score 9 or 10 of 10 on each project across repeated batches; a pass rate of 70% or lower (7 of 10) counts as a miss, and a flag or tendency needs misses on at least two projects. The test projects are small and state the conditions a judgment turns on fairly plainly, so a passing row means the model makes the judgment when the docs make it visible; it says less about a large real project where nothing announces it.
 
 ### Tenet or goal conflict
 
@@ -997,7 +997,7 @@ Test projects: lid-coach evals 15 (library holds) and 16 (home-visit openings).
 
 ### Under-captured decision
 
-Test projects: core evals 0 (an HLD-level choice) and 3 (a design-doc-level choice), where the doc should be offered; lid-coach evals 10 and 11, where a thin record should be flagged as a finding of its own, not folded into a design or tenet finding about the same choice. Every flagged row misses on both kinds, most of all on coach 11.
+Test projects: core evals 0 (an HLD-level choice) and 3 (a design-doc-level choice), where the doc should be offered; lid-coach evals 10 and 11, where a thin record should be flagged as a finding of its own, not folded into a design or tenet finding about the same choice. Every flagged row misses on both kinds, most of all on core 3.
 
 | Configuration | Harness | Effort | Test projects (pass rate) | Result | Date | Released | Size |
 |---|---|---|---|---|---|---|---|
@@ -1025,7 +1025,7 @@ Test projects: core evals 0 (an HLD-level choice) and 3 (a design-doc-level choi
 
 ### Offers decision docs too readily
 
-Test projects: core evals 1 (a constraint-settled choice) and 2 (a long debate over a single-node choice); the pass rate is how often the model held back. A configuration is listed when it held back in 6 or fewer of 10 runs on both projects; strong configurations hold back in 8 to 10.
+Test projects: core evals 1 (a constraint-settled choice) and 2 (a long debate over a single-node choice); the pass rate is how often the model held back. A configuration is listed when it held back in 70% or fewer of its runs (7 of 10) on both projects; strong configurations hold back in 8 to 10.
 
 | Configuration | Harness | Effort | Test projects (pass rate) | Result | Date | Released | Size |
 |---|---|---|---|---|---|---|---|

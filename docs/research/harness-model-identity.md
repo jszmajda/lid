@@ -91,7 +91,7 @@ Claude Code and opencode do put the line in subagent contexts, which matters for
 
 In Claude Code issue #64848, the harness injected a stale "Opus 4.7" line while Opus 4.8 was selected. The model "in good faith disputes the user's own UI evidence ... since the system prompt is the only identity signal the model has" ([anthropics/claude-code#64848](https://github.com/anthropics/claude-code/issues/64848)). The 2.1.299 template is now computed from the live model ID and re-sent on every switch, so this class of bug is likely addressed, but that is not confirmed.
 
-Persona text competes with the ID line. With `ANTHROPIC_BASE_URL` pointed at DeepSeek, the model answered "I am Claude Opus 4.8 by Anthropic" ([anthropics/claude-code#69067](https://github.com/anthropics/claude-code/issues/69067)). Today's capture shows the raw `deepseek-v4-pro` ID sitting next to the "Claude agent" persona, so the ID is present and the conflict remains. Copilot Chat sends its hidden "familyH" and MiniMax families two contradictory instructions, and no capture shows which one wins.
+Persona text competes with the ID line. With `ANTHROPIC_BASE_URL` pointed at DeepSeek, the model answered "I am Claude Opus 4.8 by Anthropic" ([anthropics/claude-code#69067](https://github.com/anthropics/claude-code/issues/69067)). The 2026-10-14 capture shows the raw `deepseek-v4-pro` ID sitting next to the "Claude agent" persona, so the ID is present and the conflict remains. Copilot Chat sends its hidden "familyH" and MiniMax families two contradictory instructions, and no capture shows which one wins.
 
 ### Identity lines are recent, reactive, and not monotonic
 
