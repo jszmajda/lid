@@ -31,7 +31,9 @@
     { "model": "google/gemini-3.8-flash", "date": "2026-10-19", "evals": "10,11,15,16", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "159/180" },
     { "model": "nvidia/nemotron-3-ultra-550b-a55b", "date": "2026-10-18", "evals": "10,11,15,16", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "117/180" },
     { "model": "openai/gpt-6-luna", "date": "2026-10-18", "evals": "10,11,15,16", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "161/180" },
-    { "model": "xiaomi/mimo-v2.6-flash", "date": "2026-10-19", "evals": "10,11,15,16", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "172/180" }
+    { "model": "xiaomi/mimo-v2.6-flash", "date": "2026-10-19", "evals": "10,11,15,16", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "172/180" },
+    { "model": "claude-opus-5", "date": "2026-10-24", "evals": "10,11,15,16", "effort": "medium", "passed": "163/180" },
+    { "model": "claude-sonnet-5", "date": "2026-10-24", "evals": "10,11,15,16", "effort": "medium", "passed": "167/180" }
   ],
   "evals": [
     {

@@ -15,8 +15,10 @@ Look up the model you run as, at the reasoning effort you run at. How to tell wh
 | `z-ai/glm-5.3-flash` | medium | tenet or goal conflict | offers decision docs too readily |
 | `google/gemini-3.8-flash` | medium | tenet or goal conflict | — |
 | `claude-opus-4-8` | medium | none | offers decision docs too readily |
+| `claude-sonnet-5` | medium | none | offers decision docs too readily |
 | `openai/gpt-5.6-terra` | medium | under-captured decision | — |
 | `claude-haiku-5-5` | medium | none | — |
+| `claude-opus-5` | medium | none | — |
 | `claude-opus-5-5` | medium | none | — |
 | `claude-sonnet-4-6` | medium | none | — |
 | `claude-sonnet-5-5` | medium | none | — |
@@ -84,11 +86,13 @@ Test projects: lid-coach evals 15 (library holds) and 16 (home-visit openings).
 | `z-ai/glm-5.3-flash` | opencode-ai@1.18.32 | medium | eval 15 1/10; eval 16 5/10 | **flagged** | 2026-10-10 | 2026-08 | small |
 | `google/gemini-3.8-flash` | opencode-ai@1.18.32 | medium | eval 15 0/10; eval 16 6/10 | **flagged** | 2026-10-19 | 2026-09 | small |
 | `openai/gpt-6-luna` | opencode-ai@1.18.32 | medium | eval 15 7/10; eval 16 8/10 | passed | 2026-10-18 | 2026-09 | small |
+| `claude-sonnet-5` | claude -p (Claude Code 2.1.310) | medium | eval 15 3/10; eval 16 10/10 | passed | 2026-10-24 | 2026-06 | mid |
 | `claude-sonnet-4-6` | claude -p (Claude Code 2.1.296) | medium | eval 15 6/10; eval 16 10/10 | passed | 2026-10-10 | 2026-02 | mid |
 | `deepseek/deepseek-v4.1-flash` | opencode-ai@1.18.32 | medium | eval 15 8/10; eval 16 9/10 | passed | 2026-10-10 | 2026-09 | small |
 | `claude-haiku-5-5` | claude -p (Claude Code 2.1.296) | medium | eval 15 10/10; eval 16 10/10 | passed | 2026-10-10 | 2026-10 | small |
 | `claude-sonnet-5-5` | claude -p (Claude Code 2.1.296) | medium | eval 15 10/10; eval 16 10/10 | passed | 2026-10-10 | 2026-09 | mid |
 | `claude-opus-4-8` | claude -p (Claude Code 2.1.296) | medium | eval 15 10/10; eval 16 10/10 | passed | 2026-10-10 | 2026-05 | large |
+| `claude-opus-5` | claude -p (Claude Code 2.1.310) | medium | eval 15 10/10; eval 16 10/10 | passed | 2026-10-24 | 2026-07 | large |
 | `claude-opus-5-5` | claude -p (Claude Code 2.1.296) | medium | eval 15 10/10; eval 16 10/10 | passed | 2026-10-10 | 2026-09 | large |
 | `z-ai/glm-5.3` | opencode-ai@1.18.32 | medium | eval 15 10/10; eval 16 10/10 | passed | 2026-10-10 | 2026-08 | large |
 | `openai/gpt-5.6-terra` | opencode-ai@1.18.32 | medium | eval 15 10/10; eval 16 10/10 | passed | 2026-10-10 | 2026-07 | mid |
@@ -117,8 +121,10 @@ Test projects: core evals 0 (an HLD-level choice) and 3 (a design-doc-level choi
 | `openai/gpt-5.6-sol` | opencode-ai@1.18.32 | medium | core 0 10/10; core 3 9/10; coach 10 10/10; coach 11 9/10 | passed | 2026-10-10 | 2026-07 | large |
 | `z-ai/glm-5.3` | opencode-ai@1.18.32 | medium | core 0 10/10; core 3 10/10; coach 10 10/10; coach 11 8/10 | passed | 2026-10-10 | 2026-08 | large |
 | `deepseek/deepseek-v4.1-flash` | opencode-ai@1.18.32 | medium | core 0 10/10; core 3 10/10; coach 10 10/10; coach 11 9/10 | passed | 2026-10-10 | 2026-09 | small |
+| `claude-sonnet-5` | claude -p (Claude Code 2.1.310) | medium | core 0 10/10; core 3 10/10; coach 10 10/10; coach 11 10/10 | passed | 2026-10-24 | 2026-06 | mid |
 | `claude-sonnet-5-5` | claude -p (Claude Code 2.1.296) | medium | core 0 10/10; core 3 10/10; coach 10 10/10; coach 11 10/10 | passed | 2026-10-10 | 2026-09 | mid |
 | `claude-opus-4-8` | claude -p (Claude Code 2.1.296) | medium | core 0 10/10; core 3 10/10; coach 10 10/10; coach 11 10/10 | passed | 2026-10-10 | 2026-05 | large |
+| `claude-opus-5` | claude -p (Claude Code 2.1.310) | medium | core 0 10/10; core 3 10/10; coach 10 10/10; coach 11 10/10 | passed | 2026-10-24 | 2026-07 | large |
 | `claude-opus-5-5` | claude -p (Claude Code 2.1.296) | medium | core 0 10/10; core 3 10/10; coach 10 10/10; coach 11 10/10 | passed | 2026-10-10 | 2026-09 | large |
 | `openai/gpt-6.1-sol` | opencode-ai@1.18.32 | medium | core 0 10/10; core 3 10/10; coach 10 10/10; coach 11 10/10 | passed | 2026-10-10 | 2026-09 | mid |
 | `google/gemini-4-argon` | opencode-ai@1.18.32 | medium | core 0 10/10; core 3 10/10; coach 10 10/10; coach 11 10/10 | passed | 2026-10-16 | 2026-10 | large |
@@ -131,10 +137,12 @@ Test projects: core evals 1 (a constraint-settled choice) and 2 (a long debate o
 |---|---|---|---|---|---|---|---|
 | `claude-opus-4-8` | claude -p (Claude Code 2.1.296) | medium | core 1 3/10; core 2 4/10 | **listed** | 2026-10-10 | 2026-05 | large |
 | `z-ai/glm-5.3-flash` | opencode-ai@1.18.32 | medium | core 1 6/10; core 2 3/10 | **listed** | 2026-10-10 | 2026-08 | small |
+| `claude-sonnet-5` | claude -p (Claude Code 2.1.310) | medium | core 1 7/10; core 2 2/10 | **listed** | 2026-10-24 | 2026-06 | mid |
 | `google/gemini-3.8-flash` | opencode-ai@1.18.32 | medium | core 1 10/10; core 2 2/10 | not listed | 2026-10-18 | 2026-09 | small |
 | `xiaomi/mimo-v2.6-flash` | opencode-ai@1.18.32 | medium | core 1 4/7; core 2 8/8 | not listed | 2026-10-18 | 2026-09 | small |
 | `deepseek/deepseek-v4.1-flash` | opencode-ai@1.18.32 | medium | core 1 6/10; core 2 8/10 | not listed | 2026-10-10 | 2026-09 | small |
 | `z-ai/glm-5.3` | opencode-ai@1.18.32 | medium | core 1 8/10; core 2 7/10 | not listed | 2026-10-10 | 2026-08 | large |
+| `claude-opus-5` | claude -p (Claude Code 2.1.310) | medium | core 1 9/10; core 2 8/10 | not listed | 2026-10-24 | 2026-07 | large |
 | `claude-sonnet-5-5` | claude -p (Claude Code 2.1.296) | medium | core 1 8/10; core 2 9/10 | not listed | 2026-10-10 | 2026-09 | mid |
 | `claude-sonnet-4-6` | claude -p (Claude Code 2.1.296) | medium | core 1 10/10; core 2 8/10 | not listed | 2026-10-10 | 2026-02 | mid |
 | `claude-sonnet-4-5` | claude -p (Claude Code 2.1.296) | medium | core 1 10/10; core 2 9/10 | not listed | 2026-10-10 | 2025-09 | mid |
@@ -153,10 +161,10 @@ Test projects: core evals 1 (a constraint-settled choice) and 2 (a long debate o
 
 - `claude-sonnet-4-5` is deprecated: Anthropic retires it on its API on 2026-11-30, and Amazon Bedrock ends it on 2027-04-08. `claude-haiku-4-5` may be deprecated soon (its committed availability runs to 2026-10-15). `claude-haiku-5-5` is the tested successor and carries no flag.
 - Single-project misses (70% or lower on one project), below the bar for a flag or tendency and recorded so a later run can confirm or clear them:
-  - *Tenet or goal conflict:* `claude-sonnet-4-6` caught the eval 15 conflict 6 of 10 times (eval 16: 10/10), and `openai/gpt-6-luna` 7 of 10 (eval 16: 8/10).
+  - *Tenet or goal conflict:* on eval 15, `claude-sonnet-5` caught the conflict 3 of 10 times, `claude-sonnet-4-6` 6 of 10, and `openai/gpt-6-luna` 7 of 10 (eval 16: 10/10, 10/10, and 8/10).
   - *Under-captured decision:* `claude-sonnet-4-6` missed the design-doc-level offer (core 3, 3/10) while catching the HLD-level one (core 0, 9/10), and `openai/gpt-6-luna` did the same (core 3, 1/10; core 0, 10/10). On coach 11, `z-ai/glm-5.3-flash` flagged the thin record as a finding of its own 1 of 10 times (coach 10: 10/10) and `claude-haiku-5-5` 7 of 10, folding it into a tenet finding about the same queue in the rest.
   - *Offers decision docs too readily:* `google/gemini-3.8-flash` offered a doc on core 2 in 8 of 10 runs (core 1: none), `xiaomi/mimo-v2.6-flash` on core 1 in 3 of 7 (core 2: none), `deepseek/deepseek-v4.1-flash` on core 1 in 4 of 10 (core 2: 2 of 10), and `z-ai/glm-5.3` on core 2 in 3 of 10 (core 1: 2 of 10).
-- Some configurations report tenet conflicts too readily: on lid-coach eval 15, which carries a decoy mechanism that only costs something toward a goal, `claude-haiku-5-5` also flagged the decoy in 9 of 10 runs and `claude-opus-5-5` in 6 of 10, while both caught the real conflict every time, and `openai/gpt-6-luna` flagged a mechanism no tenet conflicts with in 6 of 10 while catching the real conflict in 7. Eval 16 did not reproduce it strongly (2 of 10 for each of the first two, none for `openai/gpt-6-luna`), so it is below the bar for a tendency and recorded here. If you are one of these, check that each tenet finding names a condition the docs describe, rather than a cost the design already accepts.
+- Some configurations report tenet conflicts too readily. On lid-coach eval 15, which carries a decoy mechanism that only costs something toward a goal, `claude-opus-5` and `claude-haiku-5-5` also flagged a mechanism other than the real conflict in 9 of 10 runs, `claude-opus-5-5` and `openai/gpt-6-luna` in 6, and `claude-sonnet-5` in 3; on eval 16, `claude-opus-5` did so in 3 of 10, `claude-haiku-5-5` and `claude-opus-5-5` in 2, and the other two in none. This is recorded as an observation, not a tendency: an extra tenet finding asks the user to look twice, which costs less than a missed one (HLD tenet *Lean toward the human's attention*). If you are one of these, check that each tenet finding names a condition the docs describe, rather than a cost the design already accepts.
 - *Covered* listings rest on the maintainers' knowledge of the models, not on runs of their own; a run that shows a gap replaces the listing with a row.
 - Release month and size are data, not keys. Across vendor lines neither predicts a miss: a small model (`claude-haiku-5-5`) carries no flag, and a mid one (`claude-sonnet-4-5`) is flagged twice. Within one line, newer and larger models have done no worse, which is why a model with no row may take an earlier or smaller relative's row.
 - `meta/muse-glimmer-30b` and `nvidia/nemotron-3-ultra-550b-a55b` offered no decision doc in the first turn of any core run, so their core 1 and core 2 results show that they do not offer one, not that they held back where they should have.
