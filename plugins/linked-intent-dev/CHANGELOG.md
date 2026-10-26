@@ -2,12 +2,27 @@
 
 All notable changes to LID (Linked-Intent Development) are recorded here. The format follows [Keep a Changelog](https://keepachangelog.com/); LID uses [Semantic Versioning](https://semver.org/). This file is the single human-readable record of the current release — the plugin manifests carry the matching version, and `linked-intent-dev`'s version is the canonical "LID conventions" version a project records as the `- Version:` bullet in the `## LID` block.
 
-## [No Version Update Required]
+## [1.4.1] — 2026-10-26
 
-*Changes merged since the latest numbered version that did not require a version bump (per the policy in `docs/high-level-design.md` § Architecture / Distribution / What warrants a version change). These fold into the next numbered version's entry when one is cut.*
+A patch: a model finds its capability-flag row by the identity its harness or user states, eight more model configurations are measured, and the HLD gains the tenet *Lean toward the human's attention*. Projects that vendor the workflow doc re-sync it; nothing else asks for action.
+
+### Added
+- **Lean toward the human's attention** (HLD tenet). When it is unclear whether a judgment needs the human, LID brings it to them. In the capability-flag evidence bar, a pass rate of 70% or lower on a test project now counts as a miss, so a borderline gap is resolved toward the flag; no existing row changes. A run its host cuts short (a timeout or a harness error) is rerun, or left out when no outcome could change the result, and is never recorded. (`ALT-EVAL-REC-003`)
+
+### Changed
+- **Capability flags: a model places itself by its stated identity.** A model finds its row in `references/capability-flags.md` by the model its harness or user names (an ID, or a display name naming one model), matched past route and vendor prefixes, date stamps, and revision tags. Its own belief about which model it is may add a flag but never lifts one. With no row of its own, it takes the row of the nearest tested earlier release in its line, else the nearest tested smaller model of its generation, flags and tendencies alike; only a model nothing places treats every flag as applying. No harness states reasoning effort, so a model takes its row's effort as its own unless its context states a lower one. Evidence runs for the list now use a copy of the skills with the capability subsystem removed, so the list cannot shape the judgment it measures. `lid-coach` and the `review-depth` experiment point to the list's placement procedure instead of restating it. (`LID-CORE-059`, `-077`–`-087`; `ALT-EVAL-REC-005`; evidence: `docs/research/harness-model-identity.md`)
+- **Capability flags: eight more configurations**, each at `medium`. `meta/muse-glimmer-30b` and `nvidia/nemotron-3-ultra-550b-a55b` are flagged for *tenet or goal conflict* and *under-captured decision*, and `google/gemini-3.8-flash` for *tenet or goal conflict*; `claude-opus-5`, `claude-sonnet-5`, `google/gemini-4-argon`, `openai/gpt-6-luna`, and `xiaomi/mimo-v2.6-flash` carry no flag, and `claude-sonnet-5` is listed for the tendency *offers decision docs too readily*. All eight were measured on a copy of the skills with the capability subsystem removed. The untested `claude-fable-5-1` and `claude-fable-5` are listed as covered by `claude-opus-5-5`, so they carry no flag.
 
 ### Fixed
+- **Capability-flag evidence: lid-coach eval 11 scored by the right check.** The *under-captured decision* table had scored eval 11 by its tenet-conflict assertion; it now scores whether the thin record gets a finding of its own, as eval 10 already did. No flag changes. Nine configurations score lower on eval 11, most of all `openai/gpt-5.6-terra` (3/10, was 10/10); the notes record the new single-project misses.
 - **`arrow-maintenance` skill frontmatter is valid YAML.** The skill's `description` held an unquoted `: `, which strict YAML parsers reject — a host that parses frontmatter strictly would load the skill without its description. The value is now quoted; the wording is unchanged. (#77)
+
+### Migration (v1.4.0 → v1.4.1)
+- **Workflow doc re-sync (mechanical, vendored projects only).** If the project vendors `docs/lid/workflow.md`, re-sync it: its capability-flag section changed. `/update-lid`'s version walk does this where the plugin is available; otherwise fetch the doc from the v1.4.1 release (see `docs/setup.md`). Projects that work only on plugin hosts have nothing to do.
+- **Capability flags (informational).** Your model now places itself by the identity its harness or you state, and may take a tested relative's row, so fewer models treat every flag as applying. If your model is flagged, expect it to ask you to check that kind of judgment yourself.
+
+### Plugin versions
+`linked-intent-dev` 1.4.1 · `arrow-maintenance` 1.3.1 · `lid-experimental` 0.3.1
 
 ## [1.4.0] — 2026-10-10
 

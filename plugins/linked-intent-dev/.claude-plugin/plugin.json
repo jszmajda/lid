@@ -1,7 +1,7 @@
 {
   "name": "linked-intent-dev",
   "description": "Structured design-before-code workflow: HLD \u2192 LLD \u2192 EARS specs \u2192 Tests \u2192 Code",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "author": {
     "name": "Jess Szmajda"
   },

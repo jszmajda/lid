@@ -37,7 +37,7 @@ arrows:
     blockedBy: []
     detail: linked-intent-dev/core.md
     next: null
-    drift: "76 of 76 LID-CORE specs [x] (workflow skill; pure-prose guidance verified mainly by dogfooding, plus a 4-eval scenario suite for the decision-doc offer). No gaps."
+    drift: "87 of 87 LID-CORE specs [x] (workflow skill; pure-prose guidance verified mainly by dogfooding, plus a 4-eval scenario suite for the decision-doc offer). No gaps."
 
   update-lid:
     status: AUDITED
@@ -61,7 +61,7 @@ arrows:
     blockedBy: []
     detail: linked-intent-dev/lid-coach.md
     next: "Author next-round fixtures covering the 35 unexercised LID-COACH specs (invocation 001-002, inputs 008-012, principle-body 014-015, review dims 016-032 less 019/023, 036/038/041/042/047/048/051, 053 tenet-quality) plus the 3 new tenet-cascade specs (054 verticalize-intent, 055 granularity-as-tree, 056 nested-arrow-validity); 048 needs a >15-LLD fixture project; 053 needs a fixture with a tenet-less HLD and one with platitude tenets; 054 needs a fixture carrying a cross-cutting index/tag registry beside the tree; 055 needs a fixture with an outgrown leaf LLD (promotion candidate) and one bundling several share-design separable-behavior concerns (sub-HLD candidate); 056 needs a fixture whose design layer nests sub-HLDs with a subtree-gathering intermediate prefix (must NOT be flagged) alongside a genuine phase deviation (must be flagged). Also tighten fixture 10's discriminators (drop the expanded-rationale escape hatch in assertion 2; pin assertion 3 to missing-decision-doc grounds)."
-    drift: "33 of 69 LID-COACH specs [x] ([x] here means exercised by an eval assertion); 36 remain [ ], in the skill body but unexercised. 1.4.0 roster (13 configurations, effort medium, 10 runs per project on evals 10, 11, 15, 16): see capability-flags.md. LID-COACH-062 (doc named as an option when other nodes rely on a decision) lost its only fixture when eval 14's cadence assertions were retired."
+    drift: "33 of 69 LID-COACH specs [x] ([x] here means exercised by an eval assertion); 36 remain [ ], in the skill body but unexercised. Capability roster (21 configurations: 13 for 1.4.0, eight more from 2026-10-16 to 2026-10-24; effort medium, 10 runs per project on evals 10, 11, 15, 16): see capability-flags.md. LID-COACH-062 (doc named as an option when other nodes rely on a decision) lost its only fixture when eval 14's cadence assertions were retired."
 
   arrow-maintenance:
     status: MAPPED
@@ -177,7 +177,7 @@ arrows:
     blockedBy: [linked-intent-dev]
     detail: alt-model-evals.md
     next: null
-    drift: "81 specs, all [x] (CLI to 012, STAGE to 013, RUN to 011, OUT to 018, REC 001-004 satisfied by the 1.4.0 roster entries in tested_with). 77 runner tests green. Used for the 1.4.0 capability roster on six OpenRouter models."
+    drift: "82 specs, 82 [x] (CLI to 012, STAGE to 013, RUN to 011, OUT to 018, REC 001-004 satisfied by the 1.4.0 roster entries in tested_with, REC-005 by the 2026-10-16 Gemini 4 Argon and Muse Glimmer 30B entries, run on a capability-stripped copy). 77 runner tests green. Used for the 1.4.0 capability roster on six OpenRouter models and for six more from 2026-10-16 to 2026-10-19."
 
 unmapped:
   docs:
