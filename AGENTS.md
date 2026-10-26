@@ -56,7 +56,7 @@ The methodology is identical across tools — only the invocation differs. Claud
 
 ## LID
 - Mode: Full
-- Version: 1.4.0
+- Version: 1.4.1
 
 ## Linked-Intent Development (MANDATORY)
 
