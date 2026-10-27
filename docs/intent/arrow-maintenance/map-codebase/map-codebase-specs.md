@@ -20,6 +20,7 @@ Phase structure in this file mirrors the `/map-codebase` workflow in the arrow-m
 - `[x]` **SCALE-MAP-002**: When invoked, the system SHALL offer subagent-parallel mapping as an option the user may accept or decline.
 - `[x]` **SCALE-MAP-003**: When invoked on a project that already has partial LID docs (some LLDs or EARS specs exist), the system SHALL ask the user whether to treat the existing docs as authoritative (drafting skeletons only for segments not yet covered) or to supersede them.
 - `[x]` **SCALE-MAP-004**: When invoked on a project with complete LID docs but no `docs/arrows/`, the system SHALL redirect the user to `/arrow-maintenance` for overlay creation and SHALL NOT proceed with the brownfield sweep.
+- `[x]` **SCALE-MAP-034**: The `map-codebase` skill SHALL declare `disable-model-invocation: true`, so that on a host that honors the flag the skill is reachable only through the user's explicit `/map-codebase` invocation, and other skills SHALL direct the user to run it rather than starting it by any route.
 - `[x]` **SCALE-MAP-024**: At invocation, the system SHALL warn the user that `/map-codebase` is token-intensive by design before beginning the sweep, and SHALL give the user the option to reconsider.
 
 ## Cross-Cutting: Five Critical Rules

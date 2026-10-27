@@ -1,6 +1,20 @@
 # Changelog
 
-All notable changes to LID (Linked-Intent Development) are recorded here. The format follows [Keep a Changelog](https://keepachangelog.com/); LID uses [Semantic Versioning](https://semver.org/). This file is the single human-readable record of the current release — the plugin manifests carry the matching version, and `linked-intent-dev`'s version is the canonical "LID conventions" version a project records as the `- Version:` bullet in the `## LID` block.
+All notable changes to LID (Linked-Intent Development) are recorded here. The format follows [Keep a Changelog](https://keepachangelog.com/); LID uses [Semantic Versioning](https://semver.org/). It records what the plugins ship, one entry per version. The three plugins share one version, carried in each plugin's manifest; it is also the "LID conventions" version a project records as the `- Version:` bullet in the `## LID` block. A minor or major entry carries the migration steps `/update-lid` walks a project through; a patch asks nothing of a project.
+
+## [1.4.2] — 2026-10-27
+
+### Changed
+- **One version for all three plugins, raised by every change that ships.** `linked-intent-dev`, `arrow-maintenance`, and `lid-experimental` now share one version, set in each plugin's manifest and no longer repeated in the marketplace manifest. Claude Code updates an installed plugin only when its version changes, so a fix merged without a version change reached new installs and never existing ones; every change that ships now raises the version, a patch when it asks nothing of your project. `arrow-maintenance` moves from 1.3.1 and `lid-experimental` from 0.3.1 to 1.4.2.
+- **`/update-lid` walks a project forward only when the major.minor version lags.** A project recorded at 1.4.0 with 1.4.2 installed is current, and no walk runs. When reconcile-conventions applies an update, `- Version:` now records the installed version, so it names the newest conventions the project has taken; when nothing is applied, it is left as recorded.
+- **`/update-lid` on a project newer than the installed plugin** — a teammate ran a newer LID version, patch included — suggests updating your LID plugins and changes nothing, instead of offering to undo their changes.
+- **`/update-lid` keeps the version a project records.** A malformed `- Version:` such as `v1.3` is read for what it says and walked forward from there, and repairing a malformed `## LID` block keeps the version it records, instead of overwriting either with the installed version and skipping the migrations in between.
+- **`/update-lid` can be started by the model**, not only typed: asking in plain words to set up or check LID reaches it, and `/map-codebase`'s final step can invoke it. It still proposes every change before making it.
+- **`/arrow-maintenance` on a project without LID** still offers both routes. `/linked-intent-dev` is dispatched on your answer; `/map-codebase` is named, with its cost, for you to run yourself, since it runs only on the user's own invocation.
+
+### Fixed
+- **`/arrow-maintenance` and `/map-codebase` load their full skills.** The plugin shipped command files with the same names as its two skills. In Claude Code a plugin's command file replaces a same-named skill, so the model saw a short stub description instead of the skill's trigger text, invoking either name delivered the stub instead of the skill, and `/map-codebase`'s guard against model invocation was lost. The command files are removed; each skill is invoked by its own name. (#86)
+- **Every skill and command description is a single-line double-quoted string**, which every host and strict YAML parser reads whole. `review-depth`'s quoted example now uses single quotes; no wording changed. (#87)
 
 ## [1.4.1] — 2026-10-26
 

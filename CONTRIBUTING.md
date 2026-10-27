@@ -77,24 +77,59 @@ Branch from `main`. Lead the PR description with what reviewers actually use:
 - **Why** — the motivation and impact: the problem, who it affects, why it's worth doing.
 - **What changed** — the substance.
 - **How it's been tested** — builds, evals, cold-reads, real-project checks, or the dogfooding scenarios a pure-prose change was exercised against.
+- **Packaging checks** — the result line of the packaging-checks run (below).
 - **Arrow touched** — a lightweight line naming the segments and EARS IDs (or that the change is trivial).
 
 Include the heavier gate items only when the change involves them: the minimum-surface gate answers when introducing new surface, and the cross-segment pause points (with what was verified at each) when a cascade crosses a boundary.
 
 These are conventions, not a template to copy-paste; [`.github/PULL_REQUEST_TEMPLATE.md`](.github/PULL_REQUEST_TEMPLATE.md) is the starting point.
 
+### Packaging checks
+
+Users install the plugins from `main`, so every pull request records a run of the packaging checks before it merges. There is no hosted CI: whoever prepares the pull request runs them, from the repository root:
+
+```
+tools/packaging-checks/packaging_checks.py
+```
+
+- **What it checks.** The commit holding the current change — under jj `@`, or `@-` when `@` is empty; under git `HEAD` — compared against `main` fetched from `github.com/jszmajda/lid`. `--rev <rev>` names another commit. The run reads that commit's tracked files, not the working copy, so under git, commit before running. The commit must contain `main`'s tip, so bring the branch up to date with `main` first.
+- **Parts.** A static part (frontmatter, size, versions, repository structure) and two host-loading parts (Claude Code and opencode). It needs Python 3 with PyYAML. The Claude Code part needs a Claude Code login, and the opencode part a container runtime (Docker). `--no-host` skips the host parts, which then report *owed*.
+- **The record.** Paste the one-line result the tool prints into the pull request's *Packaging checks* line. The line names the commit and tree it checked, so a push after the run needs a new run.
+- **The gate.** A pull request merges only when every part of the run on its final commit is *pass* or *skipped*. The other states are *fail*, *inconclusive*, *error*, and *owed* — see [*Result states*](docs/intent/packaging-checks/packaging-checks-design.md#result-states).
+
+On a contributor's pull request, the run that gates the merge is the maintainer's, on the final commit after the version is raised (see *Release / versioning*). A contributor's own run may therefore fail only the version checks, and its host parts may be *owed*.
+
 ## Release / versioning
 
-LID is versioned with semver per plugin, and `linked-intent-dev`'s version is the canonical "LID conventions" version. There is no CI gate keeping the version strings in sync — this release step is the conventional discipline that substitutes for one, in keeping with LID's stance that it is not a linter or validator.
+The three plugins share one semver version, set in each plugin's `.claude-plugin/plugin.json`. It is also the LID conventions version a project records as `- Version:` in its `## LID` block. No marketplace manifest carries a version: Claude Code reads it from `plugin.json`, and the Cursor manifests omit it.
 
-**When to bump.** The version reflects what a downstream project must or may act on, not every plugin change. *Major* = radically new or breaking behavior; *minor* = an important structural or convention change projects adopt; *patch* = a smaller change a project may act on. A change that requires nothing of existing projects — a new supported host or platform, internal refactors, docs — gets **no version bump**: record it under `## [No Version Update Required]` in the CHANGELOG; it folds into the next numbered version's entry when one is cut. (New experiments are typically a patch; core-skill changes are minor or major by extent.) Withholding the bump when nothing is required keeps `/update-lid` from triggering a no-op version-walk on every project. The steps below apply only when you are actually advancing the version.
+**Every merge that changes shipped plugin files raises the version.** Claude Code updates an existing install only when the version changes, and users install from `main`, so a merge that leaves the version alone never reaches existing installs. A plugin's shipped files are its tracked files under `plugins/<plugin>/`, except any `evals/` directory; the CHANGELOG counts. A merge that changes no shipped file leaves the version equal to `main`'s.
 
-When cutting a release:
+The raise is to the next version after `main`'s, with none skipped, and all three plugins move together whichever of them changed. Its size says what a downstream project must do:
 
-- Bump the `version` field in each plugin's `.claude-plugin/plugin.json` and the matching entry in [`.claude-plugin/marketplace.json`](.claude-plugin/marketplace.json) together — six version strings, kept equal per plugin. The Cursor manifests (`.cursor-plugin/marketplace.json` and each `.cursor-plugin/plugin.json`) carry no `version` and are not part of this sync.
-- Regenerate the shipped workflow-doc asset (`plugins/linked-intent-dev/skills/update-lid/references/workflow-doc.md`) from the core skill source — strip the LID-on-LID exception section, keep the repository-reference note — so the vendored copy users receive matches the released skill.
-- Add a [`CHANGELOG.md`](CHANGELOG.md) entry for the release (Keep a Changelog format), including a `### Migration (vX → vY)` section whenever conventions changed so `update-lid` can walk downstream projects through the upgrade.
-- Keep the `CHANGELOG.md` top version equal to `linked-intent-dev`'s `plugin.json` version — that is the canonical LID version.
-- Publish the release: create the git tag and GitHub Release with notes from the new `CHANGELOG.md` entry, announcing it to the community in one step — `gh release create vX.Y.Z --notes-file <entry> --discussion-category Announcements`. This tag-and-Release step is what keeps published releases from falling behind the manifests, and the `--discussion-category` flag posts the announcement to Discussions automatically.
+- **Patch** — the change asks nothing of a project: a fix, a new host, a new experiment, reworded guidance.
+- **Minor** — a structural or convention change a project adopts through the release's migration steps.
+- **Major** — radically new or breaking behavior.
 
-The changelog is canonical at `plugins/linked-intent-dev/CHANGELOG.md` and aliased by the repo-root symlink, so it ships inside the plugin. Reviewers confirm the versions and changelog match before merging the release.
+A patch demands no migration. It may carry optional refreshes — template rewording, a changed workflow doc — which reconcile-conventions offers to projects; a change a project must make to stay correct is minor and carries the migration steps. So for the instruction-file template that `/update-lid` writes into projects, a wording fix is a patch, and a change to what the template tells an agent to do is minor.
+
+**The release travels with the change.** A pull request that changes shipped plugin files also:
+
+- sets the raised version in the three `plugin.json` files;
+- adds the version's entry at the top of [`CHANGELOG.md`](CHANGELOG.md). A minor or major entry carries exactly one migration section, headed with the two major.minor versions (`### Migration (v1.4 → v1.5)`), which `update-lid`'s version-walk reads to guide projects through the upgrade. A patch entry carries none;
+- regenerates the shipped workflow doc (`plugins/linked-intent-dev/skills/update-lid/references/workflow-doc.md`) from the core skill source with `tools/packaging-checks/packaging_checks.py --write-workflow-doc`. The doc takes the new version as its stamp only when its assembled content changed.
+
+On a contributor's pull request, the maintainer raises the version, writes the CHANGELOG entry, and regenerates the workflow doc before merging, because the right version depends on what else has merged by then. Contributors leave these three to the maintainer.
+
+**What the CHANGELOG records.** Changes to what the plugins ship, in version entries only, newest first, so its first `## ` heading is the current version. It has no `[Unreleased]` section: every shipped change is released as it merges. Work that ships in no plugin — the site, research, this repository's design docs and tooling — takes no entry; its record is the repository history and pull requests. The file follows Keep a Changelog. It is canonical at `plugins/linked-intent-dev/CHANGELOG.md`, aliased by the repo-root symlink, so it ships inside the plugin.
+
+**Releases that span several changes** gather on a release branch and merge to `main` once, as one version. `main` holds only released content.
+
+**After the merge**, the maintainer tags the merge commit `v<version>` and publishes a GitHub Release with notes from the version's CHANGELOG entry. A minor or major Release also posts to Discussions *Announcements*:
+
+```
+gh release create v<version> --target <merge commit> --notes-file <entry>                                       # patch
+gh release create v<version> --target <merge commit> --notes-file <entry> --discussion-category Announcements  # minor or major
+```
+
+Every version is tagged, patches included: a project's instruction file links to the workflow doc at the tag of the project's recorded version. The next pull request's packaging checks fail if `main`'s version has no tag.

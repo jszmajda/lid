@@ -15,7 +15,7 @@ Status markers: `[x]` implemented and exercised by an eval assertion · `[ ]` in
 ## Invocation
 
 - `[ ]` **LID-COACH-001**: When the user invokes `/lid-coach`, the system SHALL dispatch to the `lid-coach` skill.
-- `[ ]` **LID-COACH-002**: The `lid-coach` skill SHALL declare `disable-model-invocation: true` so the skill is reachable only via explicit `/lid-coach` invocation and is not auto-triggered by model interpretation of ambient prompts.
+- `[x]` **LID-COACH-002**: The `lid-coach` skill SHALL declare `disable-model-invocation: true` so that, on a host that honors the flag, the skill is reachable only via explicit `/lid-coach` invocation and is not auto-triggered by model interpretation of ambient prompts.
 
 ## State Dispatch
 

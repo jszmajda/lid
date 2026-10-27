@@ -1,6 +1,6 @@
 {
   "skill_name": "arrow-maintenance",
-  "tested_with": [{ "model": "claude-fable-5", "date": "2026-08-08", "evals": "0-3", "passed": "15/15" }],
+  "tested_with": [{ "model": "claude-fable-5", "date": "2026-08-08", "evals": "0-3", "passed": "15/15" }, { "model": "claude-sonnet-5-5", "date": "2026-10-24", "evals": "2", "effort": "medium", "harness": "claude-code@2.1.310, installed plugin", "passed": "9/9" }],
   "evals": [
     {
       "id": 0,
@@ -48,7 +48,8 @@
       ],
       "assertions": [
         { "text": "No changes were made to the project (no docs/ directory created, no CLAUDE.md created, no index.yaml)", "spec_ids": ["SCALE-MAINT-003"] },
-        { "text": "The agent's response explicitly recommends the user try /map-codebase (brownfield) or /linked-intent-dev (greenfield) instead", "spec_ids": ["SCALE-MAINT-003"] }
+        { "text": "The agent's response explicitly recommends the user try /map-codebase (brownfield) or /linked-intent-dev (greenfield) instead", "spec_ids": ["SCALE-MAINT-003"] },
+        { "text": "The response presents /map-codebase as something the user runs themselves; it does not offer to start /map-codebase on the user's answer (it may offer to start /linked-intent-dev)", "spec_ids": ["SCALE-MAINT-003"] }
       ]
     },
     {

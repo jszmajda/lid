@@ -57,7 +57,7 @@ The plugin lives at `plugins/lid-experimental/`:
 - `skills/{experiment-name}/` — one directory per experiment, each a self-contained skill.
   - `SKILL.md` — the experiment's prose. Header includes an `Experimental:` block stating: candidate-for (which core plugin would receive it on promotion), open-questions, and a feedback-link placeholder.
   - `references/` — per-experiment reference material.
-- `commands/` — command stubs only when the experiment exposes a slash command.
+- `commands/` — an alias file only when an experiment is invoked under a name other than its skill's, as `/differential-audit` is for `bidirectional-differential`; never a file sharing a skill's name (`project-structure` § *Skill and command files*: one file per invocable name).
 - `evals/` — per-experiment eval suites for behavioral experiments.
 
 **No shared code or shared state across experiments.** Each experiment is independent so that promotion or retirement is a self-contained operation: removing an experiment removes only its own subdirectory and spec file, with no cross-experiment cleanup.

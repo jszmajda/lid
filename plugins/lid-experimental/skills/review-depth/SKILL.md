@@ -1,6 +1,6 @@
 ---
 name: review-depth
-description: Experimental declared review depth for linked-intent development. Use when a LID project's instruction file declares a review depth in prose (e.g. "Review depth - I review through LLD; below that, consolidate to one review") or the user asks to batch phase reviews, consolidate stops, or let go below a phase depth. Overlays the linked-intent-dev workflow — every phase still runs; interrupts consolidate. Never activates on its own judgment.
+description: "Experimental declared review depth for linked-intent development. Use when a LID project's instruction file declares a review depth in prose (e.g. 'Review depth - I review through LLD; below that, consolidate to one review') or the user asks to batch phase reviews, consolidate stops, or let go below a phase depth. Overlays the linked-intent-dev workflow — every phase still runs; interrupts consolidate. Never activates on its own judgment."
 ---
 
 # Review Depth (experiment)

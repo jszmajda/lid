@@ -41,7 +41,8 @@ The plugin lives at `plugins/arrow-maintenance/`:
 - `skills/map-codebase/` — the behavioral brownfield-mapping skill (leaf `map-codebase`).
   - `SKILL.md`
   - `references/` — prompts for subagent-driven mapping runs, reconciliation templates, skeleton HLD/LLD/EARS starters.
-- `commands/` — command stubs routing `/arrow-maintenance` and `/map-codebase` to their respective skills.
+
+No `commands/` directory: each skill is invoked by its own name.
 
 ## Component Map
 
@@ -209,6 +210,7 @@ Active experiments at this document's current version:
 | Audited state tracking | `audited` (date) + `audited_sha` (git SHA) | Date only; SHA only | Date is human-readable for staleness judgment; SHA enables incremental audit on subsequent runs, which is a large performance win on big projects. Both are cheap to store. |
 | Rename and re-parent as lifecycle events | First-class; the plugin rewrites path-concatenated EARS IDs, `@spec` annotations, docs, and `index.yaml` atomically in one session | Manual find-replace; not supported events; ID rewrite left to the user | The namespace decision makes path-concatenated IDs stable except under a deliberate re-parent or rename, and assigns that tooled operation to this plugin. Because the ID *is* the tree path, a rename or re-parent changes IDs in spec files and every `@spec` annotation citing them in code and tests — a partial application is exactly the cross-reference rot atomicity prevents. Splits and merges already warrant first-class treatment; these are the operations the path-ID model makes mandatory to do atomically. |
 | `index.yaml` schema home | This sub-HLD (owns the shared overlay design) | A leaf LLD; the root HLD | The schema is the shared contract both leaves and `linked-intent-dev` write against. The sub-HLD is the lowest node that sees the whole overlay, so it is the natural authority; placing it in a leaf would force the sibling and the core plugin to reference across leaves. |
+| Slash invocation of the two skills | Each skill invoked by its own name (`/arrow-maintenance`, `/map-codebase`), with no command files | Command stubs under the same names, routing each slash name to its skill | A skill is already invocable by its own name, so a stub adds nothing, and under `project-structure`'s *One file per invocable name* rule a same-named command file can replace the skill on a host: Claude Code then shows the model the stub's short description instead of the skill's trigger text, delivers the stub's body instead of the skill's, and drops `map-codebase`'s user-invoked-only guard. |
 
 ## Open Questions
 

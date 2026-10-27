@@ -48,7 +48,7 @@ Command-mode behavior produces verifiable project-state changes and is therefore
 
 - **Overlay present.** Run the audit-and-update pass described above.
 - **LID docs but no `docs/arrows/`.** Create the overlay from existing LLDs and specs — one arrow doc per leaf LLD (the EARS-owning nodes), the design tree's nesting recorded in `index.yaml` via `parent`/`children` links, no upstream skeleton generation (LLDs already exist).
-- **No LID docs at all.** Describe what was found and offer to dispatch inline to `/linked-intent-dev` (greenfield — invoke with a description of what to build; the workflow bootstraps LID as part of Phase 1) or `/map-codebase` (brownfield) rather than asking the user to re-invoke. The user's answer proceeds directly into the chosen command without requiring a second manual invocation. The skill does not silently run the audit-and-update pass on such a project.
+- **No LID docs at all.** Describe what was found and offer both routes, letting the user choose. `/linked-intent-dev` (invoke with a description of what to build; the workflow bootstraps LID as part of Phase 1) is dispatched inline on the user's answer, without a second manual invocation. `/map-codebase`, for mapping an existing codebase, is user-invoked only (see the `map-codebase` LLD), so this skill names it and its cost for the user to run rather than starting it. The skill does not silently run the audit-and-update pass on such a project.
 
 ### Triggering (ambient mode)
 

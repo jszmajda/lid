@@ -1,6 +1,6 @@
 ---
 name: map-codebase
-description: Bootstrap LID in an existing (brownfield) codebase. Deep-reads every file in the declared scope, offers lens-based clustering options, generates skeleton LLDs/HLD/EARS bottom-up, then creates arrow docs and prompts the user to flesh out the skeletons. Token-intensive by design. Use when asked to map a codebase, bootstrap arrows, reverse-engineer the design, or start LID on an existing project.
+description: "Bootstrap LID in an existing (brownfield) codebase. Deep-reads every file in the declared scope, offers lens-based clustering options, generates skeleton LLDs/HLD/EARS bottom-up, then creates arrow docs and prompts the user to flesh out the skeletons. Token-intensive by design. Use when asked to map a codebase, bootstrap arrows, reverse-engineer the design, or start LID on an existing project."
 disable-model-invocation: true
 ---
 

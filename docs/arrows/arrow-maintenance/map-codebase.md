@@ -21,11 +21,10 @@ The `/map-codebase` brownfield-bootstrap skill — five-phase sweep (sweep → l
 - `plugins/arrow-maintenance/skills/map-codebase-workspace/iteration-1/` — `skill-creator` iteration outputs
 
 ### Code
-- `plugins/arrow-maintenance/skills/map-codebase/SKILL.md` + `references/` (subagent-sweep prompts, reconciliation templates, skeleton starters)
-- `plugins/arrow-maintenance/commands/map-codebase.md`
+- `plugins/arrow-maintenance/skills/map-codebase/SKILL.md` + `references/` (subagent-sweep prompts, reconciliation templates, skeleton starters) — user-invoked only (`disable-model-invocation: true`); no command file
 
 ## Spec Coverage
 
 | Spec range | Implemented | Active gap | Deferred |
 |---|---|---|---|
-| SCALE-MAP-001..033 | 32 | 0 | 1 |
+| SCALE-MAP-001..034 | 33 | 0 | 1 |

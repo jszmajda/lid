@@ -10,6 +10,12 @@
 <!-- Builds, evals, cold-reads, real-project/persona checks, manual steps —
      and how it behaves in projects using it, where relevant. -->
 
+## Packaging checks
+<!-- Paste the one-line result of tools/packaging-checks/packaging_checks.py, run on this PR's final commit.
+     The PR merges only when every part is pass or skipped. On a contributor's PR the maintainer raises
+     the version and makes the run that gates the merge, so a failure in the version checks alone, or
+     owed host parts (--no-host), is fine here. See CONTRIBUTING.md § Packaging checks. -->
+
 ## Arrow touched
 <!-- Lightweight: the segment(s) and EARS IDs this touches (and the variant if it isn't obvious).
      Trivial change — typo, link, formatting? Say so and skip the rest. -->

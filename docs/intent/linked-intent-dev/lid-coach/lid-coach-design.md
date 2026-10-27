@@ -33,7 +33,7 @@ The coach lives at `plugins/linked-intent-dev/skills/lid-coach/` with this shape
 What stays in `SKILL.md` is what every review uses: dispatch, inputs, the principle body, the review dimensions, the review steps, and the report format. Material needed only in some situations lives in `references/`, which keeps `SKILL.md` within the plugin's size limit (see the sub-HLD's *Plugin Structure*).
 - `evals/evals.json` — per the eval-metadata convention specified in `docs/intent/linked-intent-dev/linked-intent-dev-design.md § Eval Metadata Conventions`.
 
-The skill is directly invokable as `/lid-coach` — no command stub is needed. Per Claude Code's skills model, a skill named `lid-coach` is reachable as `/lid-coach` from the slash menu, and a separate command file would be shadowed by the skill anyway.
+The skill is directly invokable as `/lid-coach` — no command file is needed. A skill named `lid-coach` is reachable as `/lid-coach` from the slash menu, and a command file of the same name would hide the skill on a host where the command wins (`project-structure` § *Skill and command files*: one file per invocable name).
 
 ## Intent
 

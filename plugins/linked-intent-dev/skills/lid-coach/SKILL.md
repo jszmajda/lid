@@ -1,6 +1,6 @@
 ---
 name: lid-coach
-description: Review a project's current linked-intent-development (LID) usage against LID's own principles and produce a prioritized report of recommendations for getting more out of the methodology. Invoke when the user runs /lid-coach, asks for a LID review, asks how they could use LID better, wants feedback on their LID setup, or asks what LID antipatterns might be present in their project. This is a principle-level advisory review, distinct from /update-lid (configuration reconciliation) and /arrow-maintenance (deterministic structural audit).
+description: "Review a project's current linked-intent-development (LID) usage against LID's own principles and produce a prioritized report of recommendations for getting more out of the methodology. Invoke when the user runs /lid-coach, asks for a LID review, asks how they could use LID better, wants feedback on their LID setup, or asks what LID antipatterns might be present in their project. This is a principle-level advisory review, distinct from /update-lid (configuration reconciliation) and /arrow-maintenance (deterministic structural audit)."
 disable-model-invocation: true
 ---
 

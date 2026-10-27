@@ -181,7 +181,7 @@ You have an existing codebase and want to bring structure to it. This works bott
 
 ### 1. Install and set up
 
-Brownfield bootstrap is a Claude-Code-only flow today — `arrow-maintenance`'s `/map-codebase` command orchestrates multi-phase codebase reading that other tools' rule systems can't drive. Install both plugins, then run setup:
+Brownfield bootstrap is a Claude-Code-only flow today — `arrow-maintenance`'s `/map-codebase` skill orchestrates multi-phase codebase reading that other tools' rule systems can't drive. Install both plugins, then run setup:
 
 ```
 /plugin install linked-intent-dev@jszmajda-lid

@@ -39,7 +39,7 @@ Claude Code users get both for free: `/linked-intent-dev` (the workflow skill) b
 
 **Claude Code is different** — it reads `CLAUDE.md`, not `AGENTS.md`. See the [Claude Code section below](#claude-code) for how to keep a single source of truth across both files.
 
-Other tools that honor `AGENTS.md` per the [spec](https://agents.md/) and should work with just the root file: **Factory, goose, opencode, Warp, Devin, Gemini CLI, RooCode, Kilo Code, Augment Code**.
+Other tools that honor `AGENTS.md` per the [spec](https://agents.md/) and should work with just the root file: **Factory, goose, opencode, Warp, Devin, Gemini CLI, RooCode, Kilo Code, Augment Code**. opencode can also load the LID skills themselves — see the [opencode section below](#opencode).
 
 Nearest-wins nesting is part of the spec; Codex and Amp implement hierarchical merge, while Zed and Cline pick a single file.
 
@@ -129,6 +129,44 @@ globs:
 ```
 
 Cursor supports four rule-application modes: **Always** (`alwaysApply: true`), **Auto Attached** (matched by `globs:`), **Agent Requested** (the model opts in based on `description`), and **Manual** (`@rule-name`). Keep rule files under ~500 lines (Cursor's guidance). Sources: [cursor.com/docs/context/rules](https://cursor.com/docs/context/rules).
+
+---
+
+## opencode
+
+**Skills host.** opencode reads Agent Skills natively, so it loads the LID skills straight from a clone of this repository, with no plugin manifest or marketplace. Clone the repository, then list the core plugins' directories under `skills.paths` in your opencode config:
+
+```
+git clone https://github.com/jszmajda/lid
+```
+
+**`~/.config/opencode/opencode.json`**
+```json
+{
+  "skills": {
+    "paths": [
+      "/path/to/lid/plugins/linked-intent-dev",
+      "/path/to/lid/plugins/arrow-maintenance"
+    ]
+  }
+}
+```
+
+- **Each entry is a plugin directory.** opencode searches it recursively for `SKILL.md` files, which sit at `skills/<name>/SKILL.md` inside each plugin.
+- **Use absolute paths.** A leading `~/` expands to your home directory, but any other relative entry resolves against the directory opencode is started in, not against the config file. The global config above applies to every project. A project's own `opencode.json` works too, but it records a path on one machine.
+- **Experiments are opt-in.** Add `/path/to/lid/plugins/lid-experimental` to the list only if you want them.
+- **Updating.** Pull the clone (`git -C /path/to/lid pull`) and restart opencode.
+
+opencode 2.x's config schema marks the `skills.paths` object as deprecated in favor of a plain list (`"skills": [...]`) but still reads it. opencode 1.x accepts only the `skills.paths` form, so the snippet above works on both.
+
+With the skills loaded, the agent loads `linked-intent-dev` through opencode's skill tool when a task matches it, and opencode reads your project's `AGENTS.md` natively. Because the harness provides the skill, the project needs no vendored workflow doc.
+
+**What opencode does not load from the plugin layer:**
+
+- **Command aliases.** opencode loads skills, not the plugins' `commands/` files, so `lid-experimental`'s `/differential-audit` alias is not available there. The skill it names is `bidirectional-differential`.
+- **The invocation guard, on opencode 1.x.** opencode 1.x ignores `disable-model-invocation`, so `lid-coach` and `map-codebase` are also model-invocable there. On the plugin hosts these two run only when you invoke them; on opencode 1.x the model may also load them on its own when a task matches their descriptions.
+
+Sources: [opencode.ai/docs/skills](https://opencode.ai/docs/skills/), [opencode.ai/docs/config](https://opencode.ai/docs/config/), and the config schema at [opencode.ai/config.json](https://opencode.ai/config.json), which defines `skills.paths`.
 
 ---
 
