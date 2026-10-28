@@ -73,6 +73,7 @@ These cover every `plugins/<plugin>/skills/<skill>/SKILL.md` and every `plugins/
 ## Workflow-Doc Assembly
 
 - `[x]` **PKG-CHECK-036**: The tool SHALL assemble the workflow doc deterministically: a generated-file header whose stamp line names a given version, followed by the title and the repository-reference note; then the `linked-intent-dev` skill's `SKILL.md` body without its frontmatter and with its `## LID-on-LID exception` section removed; then each reference file, in the order the body's *Reference files* list names them, each preceded by a `---` rule and an `<!-- Appended reference: <file> -->` comment.
+- `[x]` **PKG-CHECK-039**: The run SHALL fail when the `linked-intent-dev` skill's *Reference files* list includes `references/tour.md` or `references/tour-topics.md`.
 
 ## Tests
 

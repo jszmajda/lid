@@ -129,6 +129,8 @@ The tool assembles the shipped workflow doc (`plugins/linked-intent-dev/skills/u
 2. The `linked-intent-dev` skill's `SKILL.md` body, without its frontmatter, with its `## LID-on-LID exception` section removed (the heading through the line before the blank line that precedes the next `## ` heading).
 3. Each reference file, in the order the body's *Reference files* list names them, preceded by a `---` rule and an `<!-- Appended reference: <file> -->` comment.
 
+The newcomer tour's `tour.md` and `tour-topics.md` sit in the core skill's `references/` but are not in its reference list, so the assembly leaves them out. A check fails when either file is in the reference list, because adding one there would load the whole tour into what hosts without a plugin system read before every change (the `tour` segment).
+
 The release step runs it (`project-structure` § *Versions and releases*), and the version checks compare the shipped doc against a fresh assembly. A doc left stale after a later source edit therefore fails, and an edit that leaves the assembled content unchanged, such as one inside the removed section, needs no new stamp.
 
 ## Cascade

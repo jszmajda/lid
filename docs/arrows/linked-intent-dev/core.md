@@ -16,7 +16,7 @@ The pure-prose `linked-intent-dev` workflow skill (invokable as `/linked-intent-
 - `docs/intent/linked-intent-dev/linked-intent-dev-design.md` — parent `LID` sub-HLD for plugin-level concerns (mode detection, spec ID format, LID-on-LID linkage inversion, eval-metadata schema).
 
 ### EARS
-- `docs/intent/linked-intent-dev/core/core-specs.md` (76 specs, prefix `LID-CORE-*`)
+- `docs/intent/linked-intent-dev/core/core-specs.md` (93 specs, prefix `LID-CORE-*`)
 
 ### Tests / Evals
 - `plugins/linked-intent-dev/skills/linked-intent-dev/evals/evals.json` — four two-turn scenario evals for the decision-doc offer (LID-CORE-011, 045, 071–074). The rest of the pure-prose skill is verified by dogfooding (the LID repo runs on this skill).
@@ -41,9 +41,10 @@ No command stub — the skill is directly invokable as `/linked-intent-dev` per 
 | Bug Fixes / Overrides | LID-CORE-036..037 | 2 | 0 | 0 |
 | Brownfield | LID-CORE-038 | 1 | 0 | 0 |
 | Later additions (node shape, instruments, delegation, divergence probe, misplaced EARS, judgment list, capability flags, terms, decision-doc offer, capability-flag self-matching) | LID-CORE-039..087 | 49 | 0 | 0 |
-| **Total** | | **87** | **0** | **0** |
+| Newcomer tour offer | LID-CORE-088..093 | 6 | 0 | 0 |
+| **Total** | | **93** | **0** | **0** |
 
-**Summary:** All 87 specs `[x]` — the `SKILL.md` embodies every described behavior. The `[x]` marker is artifact coverage; the scenario evals exercise the decision-doc offer, and the coverage audit applies only to the specs they cite.
+**Summary:** All 93 specs `[x]` — the `SKILL.md` embodies every described behavior. The `[x]` marker is artifact coverage; the scenario evals exercise the decision-doc offer and the newcomer tour offer, and the coverage audit applies only to the specs they cite.
 
 ## Key Findings
 

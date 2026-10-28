@@ -22,6 +22,9 @@ Phase structure in this file mirrors the `/map-codebase` workflow in the arrow-m
 - `[x]` **SCALE-MAP-004**: When invoked on a project with complete LID docs but no `docs/arrows/`, the system SHALL redirect the user to `/arrow-maintenance` for overlay creation and SHALL NOT proceed with the brownfield sweep.
 - `[x]` **SCALE-MAP-034**: The `map-codebase` skill SHALL declare `disable-model-invocation: true`, so that on a host that honors the flag the skill is reachable only through the user's explicit `/map-codebase` invocation, and other skills SHALL direct the user to run it rather than starting it by any route.
 - `[x]` **SCALE-MAP-024**: At invocation, the system SHALL warn the user that `/map-codebase` is token-intensive by design before beginning the sweep, and SHALL give the user the option to reconsider.
+- `[x]` **SCALE-MAP-035**: Unless the skill's check of the project redirects the person to `/arrow-maintenance` (SCALE-MAP-004), when the memory the harness places in the agent's context does not show that this person has met LID before, the skill SHALL load the `linked-intent-dev` skill to read its `references/tour-offer.md`, and SHALL follow that offer at the top of the skill's first message to the person, applying the offer's rule for a person setting LID up.
+- `[x]` **SCALE-MAP-036**: When the skill's check of the project redirects the person to `/arrow-maintenance` (SCALE-MAP-004), the skill SHALL NOT make the newcomer tour offer.
+- `[x]` **SCALE-MAP-037**: When the `linked-intent-dev` skill is not installed, the skill SHALL NOT make the newcomer tour offer.
 
 ## Cross-Cutting: Five Critical Rules
 

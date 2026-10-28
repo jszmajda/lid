@@ -109,3 +109,10 @@
     });
   });
 })();
+
+// Tour page: on a narrow screen the on-this-page list sits above the content,
+// so start it collapsed (MKT-SITE-081). On a wide screen it is the sidebar.
+(function () {
+  var toc = document.querySelector(".tour-toc");
+  if (toc && window.matchMedia("(max-width: 959px)").matches) toc.removeAttribute("open");
+})();

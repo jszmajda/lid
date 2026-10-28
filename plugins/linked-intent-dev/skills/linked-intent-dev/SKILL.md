@@ -1,6 +1,6 @@
 ---
 name: linked-intent-dev
-description: "Guide for linked-intent development (LID). Consult for ALL code changes. Walks changes through a mode-aware six-phase workflow (HLD → LLD → EARS → intent-narrowing edge audit → tests-first → code) with mandatory stops between each phase. Bugs walk the arrow like any other change — no short-circuit. Enforces cascade discipline within arrow segments and pauses across segment boundaries."
+description: "Guide for linked-intent development (LID). Consult for ALL code changes. Walks changes through a mode-aware six-phase workflow (HLD → LLD → EARS → intent-narrowing edge audit → tests-first → code) with mandatory stops between each phase. Bugs walk the arrow like any other change — no short-circuit. Enforces cascade discipline within arrow segments and pauses across segment boundaries. Also consult when someone asks for the LID tour, or asks how LID or one part of it works."
 ---
 
 # Linked-Intent Development
@@ -69,6 +69,18 @@ Every LID project declares its mode in its instruction file (the project's `AGEN
 
 - **Full LID**: the skill triggers broadly — any prompt that could result in a code change is in scope.
 - **Scoped LID**: additionally checks whether the files or subsystems the prompt touches fall within the declared scope. Scope is declared in the instruction file under a `## LID Scope` section (see `docs/intent/linked-intent-dev/core/core-design.md § Scope declaration format`) with include/exclude glob patterns. If every file the prompt touches is outside scope (in the exclude list, or not in the include list), the skill does not trigger. If any touched path is in scope, the skill triggers. For prompts that reference no specific paths, default to triggering and ask the user to confirm when ambiguous. When the `## LID Scope` section is missing or empty in a Scoped-mode project (misconfiguration), fall back to treating all prompts as in-scope and surface a warning suggesting `/update-lid` to declare scope.
+
+## Newcomer tour
+
+LID offers a short introduction, the tour, to a person meeting it for the first time. How the offer looks, how to read the person's answer, and how to record it are in `references/tour-offer.md`. The tour itself is in `references/tour.md`, and the topics a person can go further into are in `references/tour-topics.md`.
+
+- **Offer it at first contact.** In two situations, before your first message to the person, check whether the memory your harness already placed in your context shows that this person has met LID before: a record of the LID tour, or other memories of them working with LID. Don't search for it. If it doesn't, read `references/tour-offer.md` and follow it, which puts a card at the top of that first message. The two situations:
+  - Phase 1 bootstrap of a project with no LID setup;
+  - the start of a change in a project whose instruction file has LID directives. In Scoped mode, if you need to ask whether the change is in scope, wait until the answer puts it in scope.
+
+  Only you, the agent talking with the person, make the offer, and at most once in a session. A subagent you dispatch never does.
+- **Notes during the first change.** When the person saw at least the first step of the tour in this session, add the tour's notes from `references/tour.md` at the moments it lists. A note never adds a pause or changes what a phase presents.
+- **Any time.** When someone asks for the LID tour, or for one of its topics, read `references/tour.md` or the matching section of `references/tour-topics.md` and give it. When they ask how one part of LID works, read the matching topic in `references/tour-topics.md` and answer in two to four plain sentences drawn from it, without adding detail from elsewhere. Then offer that topic by its title, for example: "There's a short topic on this, 'How a change in a design reaches the code', if you'd like more." If you were in the middle of something, remind the person of it in one line the first time; while they keep asking, leave the reminder out.
 
 ## The six phases
 
@@ -262,3 +274,4 @@ Inside LID's own repository (when editing LID itself), `@spec` annotation direct
 - `references/hld-template.md` — HLD standard sections template.
 - `references/decision-doc-template.md` — decision-doc structure, the earns-its-place heuristic, and the fit-verdict format.
 - `references/capability-flags.md` — kinds of judgment some models are known to miss, and at which configurations; read when checking whether to bring the user in.
+- `references/tour-offer.md` — the newcomer tour's offer: who sees it, the card, how to read answers, and the memory record.

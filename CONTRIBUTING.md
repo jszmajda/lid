@@ -125,11 +125,11 @@ On a contributor's pull request, the maintainer raises the version, writes the C
 
 **Releases that span several changes** gather on a release branch and merge to `main` once, as one version. `main` holds only released content.
 
-**After the merge**, the maintainer tags the merge commit `v<version>` and publishes a GitHub Release with notes from the version's CHANGELOG entry. A minor or major Release also posts to Discussions *Announcements*:
+**After the merge**, the maintainer tags the merge commit `v<version>` and publishes a GitHub Release with notes from the version's CHANGELOG entry. A minor or major Release also posts to Discussions *Announcements*, and so does a patch the maintainer chooses to announce:
 
 ```
-gh release create v<version> --target <merge commit> --notes-file <entry>                                       # patch
-gh release create v<version> --target <merge commit> --notes-file <entry> --discussion-category Announcements  # minor or major
+gh release create v<version> --target <merge commit> --notes-file <entry>                                       # patch, not announced
+gh release create v<version> --target <merge commit> --notes-file <entry> --discussion-category Announcements  # minor, major, or an announced patch
 ```
 
 Every version is tagged, patches included: a project's instruction file links to the workflow doc at the tag of the project's recorded version. The next pull request's packaging checks fail if `main`'s version has no tag.

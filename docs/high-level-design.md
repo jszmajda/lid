@@ -124,6 +124,8 @@ The operating principles that tie the preceding approaches to day-to-day work:
 - **Every phase is inspected — by the human, or an inspector the human has authorized.** Alignment with intent is verified, never assumed; what varies is the instrument, not whether inspection happens.
 - **Design for the pair, not the model.** Where a judgment depends on the model's capability, bring it to the human rather than rewording LID to coax the model through it.
 - **Lean toward the human's attention.** When it is unclear whether a judgment needs the human, bring it to them: asking a user to look twice costs less than letting them trust a check the model has not earned.
+- **Friendly over exacting when introducing LID.** When introducing LID, the agent talks like a colleague showing someone how they work, and natural conversation wins over exact rules.
+- **Introduce LID fast.** When introducing LID to a newcomer, fewer turns and fewer tokens win over fitting the explanation to their own project.
 
 ## Goals
 
@@ -131,7 +133,7 @@ The operating principles that tie the preceding approaches to day-to-day work:
 2. **Stay a minimum system.** LID is a blueprint-and-workbench, not a factory. Every new command or skill is challenged; absorbing behavior into existing surface is the default over adding new surface.
 3. **Meet teams where they are.** Two adoption modes — Full and Scoped — let solo users, scoped subsystems, full teams, and brownfield projects use LID at proportional cost. No boiling-ocean commitment required.
 4. **Dogfood itself — falsifiably.** LID describes LID using LID, and this repository is the canonical mature-project example. Two concrete failure signals test the claim **as applied to this repository** (not to every user's LID project — user projects use LID, they do not falsify it): the **process signal** — every non-trivial change to `plugins/` must trace through an LLD or spec update, so an edit to a `SKILL.md` without a corresponding upstream change is a dogfooding violation — and the **coherence signal** — every behavioral skill has a navigable chain of LLD → EARS → evals, audited periodically by the `arrow-maintenance` overlay. Both signals are live here because this repo installs the overlay; projects that adopt LID without the overlay are not inside LID's dogfooding claim. Either signal going red means dogfooding has failed and the system needs repair.
-5. **Make LID's value legible to those not yet using it.** The gap between "heard of LID" and "running LID" is itself an intent gap at project scale. LID's onboarding surface — the README, the marketing site, examples, and positioning content — is load-bearing intent, not distribution overhead. It cascades from this HLD like any other segment: claims that appear on the onboarding surface trace to specific HLD and LLD sections and must stay coherent with the system they describe. A site that oversells, that names capabilities LID does not have, or that drifts from the current LLDs fails this goal as cleanly as a broken test.
+5. **Make LID's value legible to people meeting it for the first time.** The gap between "heard of LID" and "running LID" is itself an intent gap at project scale, and a person who first meets LID inside their coding agent — setting it up in a project, or starting work in a project that already runs it — meets a smaller version of the same gap. LID's onboarding surface — the README, the marketing site, examples, positioning content, and the short introduction LID offers inside the agent (see *Introducing LID inside the agent* under Key Design Decisions) — is load-bearing intent, not distribution overhead. It cascades from this HLD like any other segment: claims that appear on the onboarding surface trace to specific HLD and LLD sections and must stay coherent with the system they describe. A site that oversells, that names capabilities LID does not have, or that drifts from the current LLDs fails this goal as cleanly as a broken test.
 
 ## Target Users
 
@@ -303,6 +305,33 @@ Two outcomes are explicit at adoption time:
 - **Retirement** when an experiment fails to find adoption, or when the fast-moving tooling layer LID delegates to (per the minimum-system reasoning) absorbs the capability LID was probing. Retirement removes the artifact rather than marking it deprecated — mutation, not accumulation.
 
 The repository publishes each experiment as it lands and actively seeks community feedback to inform the promotion-or-retirement decision. The feedback channel and cadence are aspirational at this stage and will firm up as the first experiments arrive, but the commitment to evaluating experiments in the open — rather than in private — is structural.
+
+### Introducing LID inside the agent
+
+A person often meets LID inside their coding agent before anything has told them what it is. Setup asks LID-specific questions, such as which mode to run in, and the workflow then pauses for review between phases. Someone who joins a project their team already runs on LID never sees setup at all; the workflow engages on their first change. So LID offers a short introduction at the moment of first contact: what LID is, how the workflow runs and why it pauses, what the person gets for it, and which tools LID offers. After the introduction, the person can go further into short topics on LID's other capabilities, each pointing to where its detail lives.
+
+- **When it is offered: before the first LID-specific choice or pause the person meets.** Setting LID up reaches that moment by three routes: the workflow skill on a fresh project, `/update-lid`, and `/map-codebase`, whose first question (map the whole project or only parts of it) is already the mode decision and comes before its long sweep of the code. Each route places the offer at the top of its first message to the person, so the person can take the introduction before answering anything. A person starting work in a project that already runs LID is offered it at the top of the agent's first message on their first change, when the harness keeps per-person memory that shows they have not met LID before. Without such memory, that offer does not happen (see *Harness capabilities* below).
+- **Available whenever asked.** A person can ask for the introduction, or one of its topics, at any time, because people forget how a system like LID works when they are not driving it every day. The workflow skill notices these requests.
+- **Offered, never required.** The person declines simply by carrying on, for example by answering the question below the offer, and declining changes nothing else. The offer never holds up the work in a separate turn. A person who has taken or declined the introduction is not offered it again wherever the harness can remember that.
+- **One home for its content.** The introduction lives in the `tour` segment, and its claims trace to this HLD the way the marketing site's do. Each skill that makes the offer points to that content rather than carrying its own copy, and the marketing site presents the same content as a page, built from that one source, for a person who would rather read it outside the agent. The offer carries the page's link. The introduction adds no command or skill (Goal 2).
+- **It describes the workflow as the workflow currently behaves.** That makes it downstream of the workflow: a change to how the workflow behaves cascades into the introduction like any other segment.
+- **Hosts without a plugin system** reach it without its content joining what those hosts load on every change. The marketing site's page is their simplest route to it.
+
+What the introduction says, how it looks on each host, and how it records a person's answer live in the `tour` segment.
+
+### Product documents and the HLD
+
+The HLD is the root of truth for what a project is. Many projects have no product document. When one exists, such as a PRD or a PRFAQ, it often comes first and is an input to the HLD: its problem, its users, and its measures of success feed the HLD's own sections, written for the project at hand, and most of what the product document set out to say ends up there. Once the HLD exists, the project's intent flows down from it. Where ownership makes it worth keeping the product document as its own layer, for example when a product team owns it and the HLD answers to it, the product document can live in the project above the HLD, with the HLD tracing to it. The HLD stays the root of the design tree either way. LID does not prescribe where product documents live; the project's instruction file says where they are, so the agent reads them.
+
+### Harness capabilities: used when present, never required
+
+Harnesses differ in what they provide (per-person memory, subagents, a plugin system), and a harness may provide a capability without the person having allowed LID to use it. LID may make a behavior depend on such a capability, under three rules:
+
+- **Never required.** LID works on a harness without the capability. The segment that owns the behavior states what happens when the capability is absent or not allowed.
+- **Used only as the harness and the person allow.** A capability being present is not permission to use it.
+- **A record about one person stays with that person.** Knowledge about a single person, such as whether they have taken or declined the introduction, goes only where the harness keeps knowledge per person, such as its memory. It never goes into the project's shared instruction file, which everyone on the project reads. This is the other side of the instruction file's memory-vs-intent directive: project intent goes in the arrow, and knowledge about the person stays in memory.
+
+The first behavior that depends on a capability is the introduction's offer to a person joining a project, which depends on per-person memory.
 
 ## Glossary
 

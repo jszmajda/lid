@@ -551,7 +551,20 @@ def structure_findings(tree):
     claude = tree / "CLAUDE.md"
     if not claude.is_symlink() or claude.resolve() != (tree / "AGENTS.md").resolve():
         findings.append(Finding("structure", "CLAUDE.md", "must be a symlink resolving to AGENTS.md"))
+    findings += tour_reference_findings(tree)
     return findings
+
+
+# @spec PKG-CHECK-039
+def tour_reference_findings(tree):
+    """The tour's content files stay out of the core skill's reference list, and so out of the workflow doc."""
+    skill = Path(tree) / CORE_SKILL / "SKILL.md"
+    if not skill.exists():
+        return []
+    listed = re.findall(r"^- `references/([^`]+)`", skill.read_text(), re.M)
+    return [Finding("structure", CORE_SKILL + "/SKILL.md",
+                    "references/%s is in the reference list, so the workflow doc would carry the whole tour" % name)
+            for name in ("tour.md", "tour-topics.md") if name in listed]
 
 
 # ------------------------------------------------------- workflow doc assembly

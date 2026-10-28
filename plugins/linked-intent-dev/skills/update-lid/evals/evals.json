@@ -315,6 +315,51 @@
         { "text": "CLAUDE.md's '- Version:' bullet is now written as X.Y.Z and reads the installed plugin's version (the version in linked-intent-dev's plugin.json)", "spec_ids": ["LID-UPDATE-055", "LID-UPDATE-057"] },
         { "text": "No version-walk ran (no migration steps were proposed or applied): the project was treated as already on the 1.4 conventions", "spec_ids": ["LID-UPDATE-037", "LID-UPDATE-055"] }
       ]
+    },
+    {
+      "id": 21,
+      "eval_name": "tour-offer-update-lid-bootstrap",
+      "prompt": "/update-lid",
+      "files": [],
+      "assertions": [
+        { "text": "The agent's first message opens with a card: a Markdown blockquote whose bold heading asks whether the person is new to LID", "spec_ids": ["TOUR-010", "TOUR-012", "TOUR-015", "LID-UPDATE-058"] },
+        { "text": "The card offers the word 'tour' for a walk-through inside the agent and gives the link linked-intent.dev/tour", "spec_ids": ["TOUR-012"] },
+        { "text": "Below the card, the same message carries on with the setup (the proposal, the mode question, or both). The agent does not stop after the card to wait for an answer about the tour", "spec_ids": ["TOUR-011", "LID-UPDATE-058"] }
+      ],
+      "notes": "The newcomer tour's offer on the update-lid bootstrap route."
+    },
+    {
+      "id": 22,
+      "eval_name": "no-tour-offer-on-configured-project",
+      "prompt": "/update-lid",
+      "files": [
+        { "path": "CLAUDE.md", "content": "# Shelf\n\nA small app that tracks a reader's reading list.\n\nConsult the linked-intent-dev skill.\n\n## LID\n- Mode: Full\n- Version: 1.4.1\n\n## Navigation\n\n| What you need | Where to look |\n|---|---|\n| High-level design | docs/high-level-design.md |\n| Design nodes and EARS specs | docs/intent/ |\n" },
+        { "path": "docs/high-level-design.md", "content": "# Shelf High-Level Design\n\n## Problem\n\nReaders lose track of the books they mean to read and the ones they have finished.\n\n## Approach\n\nA single-user web app with one list of books, each with a status: to read, reading, or finished.\n\n## Tenets\n\n- **Simple over complete.** When a feature could grow options, ship the simplest version a reader can use today.\n" },
+        { "path": "docs/intent/reading-list/reading-list-design.md", "content": "---\nparent: high-level-design\nprefix: LIST\n---\n\n# LLD: Reading list\n\nThe list holds books with a title, an author, a status, and the date a book was finished. Readers add, edit, and remove books.\n" },
+        { "path": "docs/intent/reading-list/reading-list-specs.md", "content": "# Reading list specs\n\n**LLD**: docs/intent/reading-list/reading-list-design.md\n\n- `[x]` **LIST-001**: When the reader adds a book with a title and an author, the system shall add it to the list with the status \"to read\".\n- `[x]` **LIST-002**: When the reader marks a book finished, the system shall record the date it was finished.\n" }
+      ],
+      "assertions": [
+        { "text": "The response contains no newcomer tour card and no offer of a LID tour", "spec_ids": ["LID-UPDATE-059"] }
+      ],
+      "notes": "A project that already has LID directives is not a setup route, so update-lid makes no tour offer."
+    },
+    {
+      "id": 23,
+      "eval_name": "tour-ambiguous-yes",
+      "prompt": "/update-lid",
+      "files": [
+        { "path": "CLAUDE.md", "content": "# Shelf\n\nA small app that tracks a reader's reading list.\n\n## Commands\n\n- `npm test` runs the tests.\n" }
+      ],
+      "assertions": [
+        { "text": "The agent's first message opens with a card: a Markdown blockquote whose bold heading asks whether the person is new to LID", "spec_ids": ["TOUR-010", "TOUR-012", "TOUR-015", "LID-UPDATE-058"] }
+      ],
+      "follow_up": {
+        "prompt": "yes",
+        "assertions": [
+          { "text": "If the first message also asked a yes-or-no question (such as whether to apply the proposed setup), the reply asks in one short question whether 'yes' meant the tour or that question, instead of choosing one. If the first message asked no yes-or-no question, the reply starts the tour", "spec_ids": ["TOUR-112", "TOUR-016"] }
+        ]
+      },
+      "notes": "Appending LID directives to an existing instruction file is a setup route. update-lid proposes before it writes, so its first message usually ends with a yes-or-no question as well as the tour card."
     }
   ]
 }

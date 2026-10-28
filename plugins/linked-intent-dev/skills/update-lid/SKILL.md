@@ -50,6 +50,8 @@ Inspect the project and take exactly one of these actions:
 
 Version-walk is evaluated before reconcile-conventions: a lagging project is brought to the current conventions version first, then ordinary drift reconciliation runs against those conventions.
 
+**Newcomer tour offer.** On a project with no LID directives (the full-bootstrap and append-directives rows), check whether the memory your harness already placed in your context shows that this person has met LID before: a record of the LID tour, or other memories of them working with LID. If it doesn't, read the `linked-intent-dev` skill's `references/tour-offer.md` (beside this skill, at `../linked-intent-dev/references/tour-offer.md`) and follow it. That puts a card at the top of your first message, the one that proposes the setup. Make no offer when a calling skill passed the mode, when the workflow's Phase 1 is applying this bootstrap branch inline (the workflow makes the offer), or on a project that already has LID directives.
+
 ## Version-walk
 
 A project records the `linked-intent-dev` version its docs conform to in the `## LID` block's `- Version:` bullet. The canonical LID version is the `version` field in `plugins/linked-intent-dev/.claude-plugin/plugin.json`. When the project's major.minor is lower than the installed version's — or `- Version:` is absent, in which case the project is treated as **predating versioned conventions (no `- Version:` bullet)** and walked from the start — the skill walks the project forward to the installed version.

@@ -60,15 +60,17 @@ Each sub-repo's HLD carries a one-line upstream pointer back to the container's 
 
 ## PRDs and product-requirement docs
 
-**The question.** "Where do product requirements fit in LID? My PM writes PRDs, and I want them to be part of the arrow somehow."
+**The question.** "Where do product requirements fit in LID? My PM writes PRDs (or PRFAQs), and I want them to be part of the arrow somehow."
 
-**The shape that works.** PRDs naturally extend the arrow **upstream of the HLD**. Where the HLD covers *how we'll solve the problem*, a PRD covers *what the problem is and what success looks like from the user's perspective*. When a PRD is present, the arrow becomes `PRD → HLD → LLDs → EARS → Tests → Code`. The PRD's claims feed the HLD's Problem and Approach sections; HLD decisions trace back to PRD goals.
+**The shape that works.** The HLD is the root of truth for what a project is, as LID's own HLD (*Product documents and the HLD*) puts it. Many projects have no product document at all, often because one person leads the product and the engineering. When a PRD exists, it often comes first and is an input to the HLD: its problem, users, and measures of success feed the HLD's Problem, Target Users, and Goals sections, written for the project at hand. Most of what the PRD set out to say ends up in the HLD, in a form the agent can build from directly. Once the HLD exists, the project's intent flows down from it.
 
-**Location.** LID doesn't prescribe one. A single `docs/product/` doc, per-feature PRDs each referenced from the HLD, a `PRD.md` at the root — all fine. The CLAUDE.md / AGENTS.md should note where they live so the agent reads them.
+**Keeping the PRD as its own layer.** Where ownership makes it worth keeping the PRD separate, for example when a product team owns it and the HLD answers to it, store it in the project as a layer of intent above the HLD: `PRD → HLD → LLDs → EARS → Tests → Code`. HLD decisions then trace back to PRD goals. The HLD stays the root of the design tree either way. This layer is an option, not the default, so don't recommend it for a project where one person owns both the product and the design.
 
-**Working with the PM.** The most useful adoption pattern is to **pair the engineer lead and the PM on both the PRD and the HLD**. The PRD is the PM's primary artifact, the HLD is the engineer's, and the two need to stay coherent for the arrow to walk all the way up. Pair-writing is faster than ping-ponging drafts.
+**Location.** LID doesn't prescribe one. A single `docs/product/` doc, per-feature PRDs each referenced from the HLD, a `PRD.md` at the root: all fine. The instruction file (AGENTS.md or CLAUDE.md) should say where they live, so the agent reads them.
 
-**Coach behavior.** The coach treats the PRD (when present) as the upstream-most layer for intent-tree alignment. A PRD claim that doesn't flow into the HLD is an intent gap at the top of the arrow — worth surfacing as a finding.
+**Working with the PM.** Where a separate product person writes the PRD, the most useful adoption pattern is to **pair the engineering lead and the PM on both the PRD and the HLD**. Pair-writing is faster than passing drafts back and forth, and it keeps the two documents coherent.
+
+**Coach behavior.** When the project keeps a PRD as its own layer, the coach treats it as the upstream-most layer for intent-tree alignment: a PRD claim that doesn't flow into the HLD is an intent gap at the top of the arrow, worth surfacing as a finding. When there's no PRD, the HLD is the top, and the coach doesn't suggest adding one.
 
 ---
 

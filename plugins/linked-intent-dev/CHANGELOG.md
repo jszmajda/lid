@@ -2,6 +2,23 @@
 
 All notable changes to LID (Linked-Intent Development) are recorded here. The format follows [Keep a Changelog](https://keepachangelog.com/); LID uses [Semantic Versioning](https://semver.org/). It records what the plugins ship, one entry per version. The three plugins share one version, carried in each plugin's manifest; it is also the "LID conventions" version a project records as the `- Version:` bullet in the `## LID` block. A minor or major entry carries the migration steps `/update-lid` walks a project through; a patch asks nothing of a project.
 
+## [1.4.3] — 2026-11-01
+
+A patch that adds a newcomer tour. The first time someone meets LID inside their coding agent, LID offers them a short, friendly introduction, and carrying on with their work declines it. Nothing is written to your project's files, and nothing is asked of your project.
+
+### Added
+- **The newcomer tour.** When someone sets LID up (`/linked-intent-dev` on a fresh project, `/update-lid` on a project with no LID directives, or `/map-codebase`), or starts a change in a project that already uses LID, the agent's first message starts with a short card about LID, unless the agent's memory shows they have met LID before. Saying **tour** starts a walk-through in five steps, one per message, built on one example: a 30-day free trial, and the question of exactly when day 30 ends. It covers the levels from why the project exists down to the code, what writing the design down catches, tenets, how requirements become tests and code, and what LID gives you. Answering the rest of the message carries on with the work instead. In a project that already uses LID, the card appears only where the harness keeps per-person memory the agent may write, so it never comes back at every change. (`TOUR-*`; `LID-CORE-088`–`093`, `LID-UPDATE-058`–`059`, `SCALE-MAP-035`–`037`)
+- **Nineteen topics for going further**, each short and standalone: how the levels close in on what you meant, one design or a tree of smaller ones, decision docs, where product documents such as PRDs fit, how a change in a design reaches the code, fixing bugs, who checks each level, capability flags, modes, existing code, large projects, working without plugins, and more. The tour ends by listing them, and you can ask for one at any time.
+- **Questions about LID, at any time.** Asking for the tour, or asking how part of LID works, gets a short answer and an offer of the matching topic. While you keep asking, the agent reminds you once of what you were in the middle of, and brings it back in full when you're done.
+- **Notes during your first change.** After you have seen the tour, a few one-line notes point out what the tour described as your first change reaches it. They add no pauses.
+- **The answer is remembered.** Where the harness keeps per-person memory the agent may write, the agent records that you took or declined the tour, so the card doesn't come back. It never writes this to your project's files.
+- **Hosts without plugins.** The workflow doc carries the offer. The tour and its topics are fetched by link, at this version's tag, when someone asks for them, and the same tour is at [linked-intent.dev/tour](https://linked-intent.dev/tour).
+
+### Changed
+- **The `linked-intent-dev` skill's description** also covers asking for the LID tour or asking how part of LID works, so those requests reach the skill. (`LID-CORE-092`)
+- **`lid-coach` on product documents.** The FAQ answer on PRDs now says where a product document fits relative to the high-level design (HLD): the HLD is the root of a project's intent, and a PRD or PRFAQ, when a project has one, often comes first and is an input to the HLD. (`LID-COACH-052`)
+- **The workflow doc carries the tour offer.** Projects that vendor `docs/lid/workflow.md` can re-sync it, and reconcile-conventions offers the refresh. Nothing else asks for action.
+
 ## [1.4.2] — 2026-10-27
 
 ### Changed

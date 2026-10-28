@@ -1,5 +1,5 @@
 schema_version: 2
-last_updated: 2026-10-24
+last_updated: 2026-10-28
 
 taxonomy:
   core:
@@ -11,6 +11,7 @@ taxonomy:
     - marketing-site
     - project-structure
     - extensions
+    - tour
   tooling:
     - alt-model-evals
     - packaging-checks
@@ -22,7 +23,7 @@ arrows:
     sampled: 2026-05-25
     audited: null
     audited_sha: null
-    blocks: [arrow-maintenance, lid-experimental, bidirectional-differential, marketing-site]
+    blocks: [arrow-maintenance, lid-experimental, bidirectional-differential, marketing-site, tour]
     blockedBy: []
     detail: ../intent/linked-intent-dev/linked-intent-dev-design.md     # the doc to open on this node (sub-HLD design doc)
     next: null
@@ -38,7 +39,7 @@ arrows:
     blockedBy: []
     detail: linked-intent-dev/core.md
     next: null
-    drift: "87 of 87 LID-CORE specs [x] (workflow skill; pure-prose guidance verified mainly by dogfooding, plus a 4-eval scenario suite for the decision-doc offer). No gaps."
+    drift: "93 of 93 LID-CORE specs [x] (workflow skill; pure-prose guidance verified mainly by dogfooding, plus scenario evals for the decision-doc offer and the newcomer tour offer). No gaps."
 
   update-lid:
     status: AUDITED
@@ -70,7 +71,7 @@ arrows:
     sampled: 2026-04-25
     audited: null
     audited_sha: null
-    blocks: [marketing-site]
+    blocks: [marketing-site, tour]
     blockedBy: [linked-intent-dev]
     detail: ../intent/arrow-maintenance/arrow-maintenance-design.md     # the doc to open on this node (sub-HLD design doc)
     next: "Run first /arrow-maintenance audit pass and refresh audited / audited_sha across the subtree."
@@ -106,7 +107,7 @@ arrows:
     sampled: 2026-04-25
     audited: null
     audited_sha: null
-    blocks: []
+    blocks: [tour]
     blockedBy: [linked-intent-dev]
     detail: ../intent/lid-experimental/lid-experimental-design.md      # the doc to open on this node (sub-HLD design doc)
     next: "Container sub-HLD — no behavioral surface of its own. Add child segments as new experiments land."
@@ -142,10 +143,10 @@ arrows:
     audited: 2026-06-07
     audited_sha: 65a143750760
     blocks: []
-    blockedBy: [linked-intent-dev, arrow-maintenance, extensions]
+    blockedBy: [linked-intent-dev, arrow-maintenance, extensions, tour]
     detail: marketing-site.md
     next: "Close the 12 active MKT-SITE gaps (notably MKT-SITE-009 README/Quickstart cascade and the build-time checks -026/-027/-028/-029); reconcile the audited-SHA mismatch between marketing-site.md and this entry."
-    drift: "54 of 66 MKT-SITE specs [x]; 12 [ ] (build-time checks + process specs; content debt cleared). Added this cycle: MKT-SITE-055–059 (attestation story), MKT-SITE-060–064 (copy-effectiveness pass — pain-first hero, show-then-name vocabulary, not-a-waterfall, cost honesty, Home Teams section; MKT-SITE-007 ordering amended), and MKT-SITE-065–066 (portfolio-tracker exemplar — Examples third card, Start Evaluating mention; MKT-SITE-016 reframed to three lenses), all [x]; five-panel trace cluster verified implemented and stale markers flipped."
+    drift: "70 of 82 MKT-SITE specs [x]; 12 [ ] (build-time checks + process specs; content debt cleared). The Tour page (MKT-SITE-072–082) is [x]. Added in the 2026-06 cycles: MKT-SITE-055–059 (attestation story), MKT-SITE-060–064 (copy-effectiveness pass — pain-first hero, show-then-name vocabulary, not-a-waterfall, cost honesty, Home Teams section; MKT-SITE-007 ordering amended), and MKT-SITE-065–066 (portfolio-tracker exemplar — Examples third card, Start Evaluating mention; MKT-SITE-016 reframed to three lenses), all [x]; five-panel trace cluster verified implemented and stale markers flipped."
 
   project-structure:
     status: AUDITED
@@ -168,6 +169,17 @@ arrows:
     detail: extensions.md
     next: "Wire EXT-007 (broken-link check on EXTENSIONS.md) into CI alongside the PROJ-STRUCT-039-041 build-check backlog; firm up the link-back marker and EXTENSIONS.md inclusion bar as the ecosystem grows."
     drift: "New leaf segment (PR #34). 6 of 7 specs [x]; EXT-007 (link-check) deferred [ ]. Convention: GitHub topic linked-intent-development + link-back; EXTENSIONS.md curated showcase (currently EtaCassiopeia/lid-tooling)."
+
+  tour:
+    status: MAPPED
+    sampled: 2026-10-28
+    audited: null
+    audited_sha: null
+    blocks: [marketing-site]
+    blockedBy: [linked-intent-dev, arrow-maintenance, lid-experimental]
+    detail: tour.md
+    next: "Multi-model eval runs recorded in tested_with."
+    drift: "Landed with issue #84 in 1.4.3: 129 of 129 TOUR specs [x]. Smoke-run evals on claude-sonnet-5-5 at medium pass except core 6 (answer longer than asked) and map-codebase 2 (pre-1.2 fixture never redirects)."
 
   alt-model-evals:
     status: MAPPED
