@@ -4,7 +4,7 @@ The conversion and orientation surface — the five-page Eleventy site at `site/
 
 ## Status
 
-**AUDITED** — last audited 2026-06-07 (git SHA `527cf08c9150`); refreshed 2026-06-09 during the attestation and copy-effectiveness cascades, and 2026-06-11 for the portfolio-tracker exemplar cascade (`MKT-SITE-016` reframed to three lenses; `MKT-SITE-065`/`-066` added and implemented — Examples third card, Start Evaluating mention), and 2026-11-09 for the site refresh (Nodes logo, Linked list look, Home rebuilt around the free-trial example and the rings drawing; Logo Ideas page and the five-panel trace removed). 99 of 111 specs implemented; 12 active gaps, concentrated in build-time checks (link strictness, mermaid, a11y contrast), README/Quickstart cascade behaviors, and process specs (`MKT-SITE-033`–`036`). Added this cycle: the attestation story beat (`MKT-SITE-055`–`059`), and the copy-effectiveness pass (`MKT-SITE-060`–`064` — pain-first hero lede, show-then-name vocabulary rule, not-a-waterfall statement, cost-honesty passage, and the Home Teams section between demo and Quickstart; `MKT-SITE-007` ordering amended accordingly).
+**AUDITED** — last audited 2026-06-07 (git SHA `527cf08c9150`); refreshed 2026-06-09 during the attestation and copy-effectiveness cascades, and 2026-06-11 for the portfolio-tracker exemplar cascade (`MKT-SITE-016` reframed to three lenses; `MKT-SITE-065`/`-066` added and implemented — Examples third card, Start Evaluating mention), and 2026-11-09 for the site refresh (Nodes logo, Linked list look, Home rebuilt around the free-trial example and the rings drawing; Logo Ideas page and the five-panel trace removed). 100 of 112 specs implemented; 12 active gaps, concentrated in build-time checks (link strictness, mermaid, a11y contrast), README/Quickstart cascade behaviors, and process specs (`MKT-SITE-033`–`036`). Added this cycle: the attestation story beat (`MKT-SITE-055`–`059`), and the copy-effectiveness pass (`MKT-SITE-060`–`064` — pain-first hero lede, show-then-name vocabulary rule, not-a-waterfall statement, cost-honesty passage, and the Home Teams section between demo and Quickstart; `MKT-SITE-007` ordering amended accordingly).
 
 ## References
 
@@ -15,7 +15,7 @@ The conversion and orientation surface — the five-page Eleventy site at `site/
 - `docs/intent/marketing-site/marketing-site-design.md`
 
 ### EARS
-- `docs/intent/marketing-site/marketing-site-specs.md` (111 specs, prefix `MKT-SITE-*`)
+- `docs/intent/marketing-site/marketing-site-specs.md` (112 specs, prefix `MKT-SITE-*`)
 
 ### Tests / Build checks
 - Build-time structural checks (link-check, mermaid render, markdown lint) — declared in the LLD § *Content Maintenance and Review*; CI workflow scope per `MKT-SITE-*` build specs.
@@ -45,16 +45,16 @@ The conversion and orientation surface — the five-page Eleventy site at `site/
 | Category (per LLD groupings) | Implemented | Active gap | Deferred |
 |---|---|---|---|
 | Content / pages / framing (incl. attestation beat `-055`–`-058`) | majority `[x]` | `[ ]` MKT-SITE-012, -015, -023 | 0 |
-| Home: the gap, the explainers, the rings drawing (`-099`–`-124`) | 26 `[x]` | 0 | 0 |
+| Home: the gap, the explainers, the rings drawing (`-099`–`-124`, `-133`) | 27 `[x]` | 0 | 0 |
 | Visual identity and navigation (`-125`–`-132`) | 8 `[x]` | 0 | 0 |
 | README + ecosystem (badges `-053`, social proof `-054`, two-payoff passage `-059`) | 3 `[x]` | 0 | 0 |
 | Theme & typography | system-aware theme `[x]`; a11y contrast check `[ ]` (-026) | | 0 |
 | Build & deploy | GitHub Pages deploy `[x]`; mermaid/link-check strictness `[ ]` (-027/-028/-029), README/Quickstart cascade `[ ]` (-009) | | 0 |
 | Cascade & coherence process | `[x]` MKT-SITE-037 | `[ ]` MKT-SITE-033–036 | 0 |
 | Tour page (`-072`–`-082`) | 11 `[x]` | 0 | 0 |
-| **Total** | **99** | **12** | **0** |
+| **Total** | **100** | **12** | **0** |
 
-**Summary:** 99 of 111 specs implemented; 12 active gaps. The site is live and serves the core flow, and the Tour page (`MKT-SITE-072`–`082`) renders the newcomer tour from the `tour` segment's files. The 2026-06 cycles added the attestation story (`MKT-SITE-055`–`059`), cascading from HLD § Linkage's two-payoff framing (navigation + attestation); the five-panel trace cluster was verified implemented and its stale markers corrected. Remaining gaps are build-time checks and process specs, not content debt.
+**Summary:** 100 of 112 specs implemented; 12 active gaps. The site is live and serves the core flow, and the Tour page (`MKT-SITE-072`–`082`) renders the newcomer tour from the `tour` segment's files. The 2026-06 cycles added the attestation story (`MKT-SITE-055`–`059`), cascading from HLD § Linkage's two-payoff framing (navigation + attestation); the five-panel trace cluster was verified implemented and its stale markers corrected. Remaining gaps are build-time checks and process specs, not content debt.
 
 ## Key Findings
 

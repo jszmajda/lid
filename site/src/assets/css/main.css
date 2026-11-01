@@ -145,6 +145,14 @@ img, svg { max-width: 100%; }
 .lede { color: var(--ink-2); max-width: 58ch; }
 .ctas { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
 .hero-rings { min-width: 0; }
+/* @spec MKT-SITE-133: on one column, the drawing is a small mark beside the h1. */
+@media (max-width: 979px) {
+  .hero { grid-template-columns: minmax(0, 1fr) auto; gap: 18px 16px; }
+  .hero-text { display: contents; }
+  .hero h1 { grid-area: 1 / 1; }
+  .hero-rings { grid-area: 1 / 2; width: clamp(96px, 30vw, 220px); }
+  .hero-text > :not(h1) { grid-column: 1 / -1; }
+}
 
 /* 8. The gap ───────────────────────────────────────────────────────────── */
 .bubble { display: grid; gap: 5px; justify-items: start; }

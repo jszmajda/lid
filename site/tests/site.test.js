@@ -157,6 +157,18 @@ describe("home page", () => {
     assert.match(svg[0], /class="code"/);
   });
 
+  // @spec MKT-SITE-133
+  it("sets the hero drawing small beside the h1 on narrow screens", () => {
+    const narrow = css.match(/@media \(max-width: 979px\) \{\s*\.hero \{[\s\S]*?\n\}/);
+    assert.ok(narrow, "a narrow-screen hero layout");
+    const block = narrow[0];
+    assert.match(block, /\.hero-text \{[^}]*display:\s*contents/, "the h1 joins the hero's own grid");
+    assert.match(block, /\.hero h1 \{[^}]*grid-area:\s*1 \/ 1/, "the h1 sits in the first row");
+    assert.match(block, /\.hero-rings \{[^}]*grid-area:\s*1 \/ 2/, "the drawing sits beside it");
+    const vw = block.match(/\.hero-rings \{[^}]*width:\s*clamp\([^,]+,\s*(\d+)vw/);
+    assert.ok(vw && Number(vw[1]) <= 33, "the drawing takes at most a third of the screen");
+  });
+
   // @spec MKT-SITE-099, MKT-SITE-103
   it("shows the gap: one request and the decisions it leaves open", () => {
     const gap = text(section("gap"));

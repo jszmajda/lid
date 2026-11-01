@@ -146,7 +146,7 @@ arrows:
     blockedBy: [linked-intent-dev, arrow-maintenance, extensions, tour]
     detail: marketing-site.md
     next: "Close the 12 active MKT-SITE gaps (notably MKT-SITE-009 README/Quickstart cascade and the build-time checks -026/-027/-028/-029); reconcile the audited-SHA mismatch between marketing-site.md and this entry."
-    drift: "99 of 111 MKT-SITE specs [x]; 12 [ ] (build-time checks + process specs). The 2026-11 site refresh replaced the Logo Ideas page (MKT-SITE-083–098, removed) and the five-panel trace (MKT-SITE-039/041/047/048/049, removed) with the free-trial Home: the gap, two scrolling explainers over the rings drawing, check it yourself, and where your time goes (MKT-SITE-099–124), plus the Nodes visual identity and sticky navigation (MKT-SITE-125–132); MKT-SITE-007, -038, -045, -046, -055–057, -062–064, -067–069 re-homed to the new sections."
+    drift: "100 of 112 MKT-SITE specs [x]; 12 [ ] (build-time checks + process specs). The 2026-11 site refresh replaced the Logo Ideas page (MKT-SITE-083–098, removed) and the five-panel trace (MKT-SITE-039/041/047/048/049, removed) with the free-trial Home: the gap, two scrolling explainers over the rings drawing, check it yourself, and where your time goes (MKT-SITE-099–124, with the hero drawing set small beside the h1 on narrow screens in MKT-SITE-133), plus the Nodes visual identity and sticky navigation (MKT-SITE-125–132); MKT-SITE-007, -038, -045, -046, -055–057, -062–064, -067–069 re-homed to the new sections."
 
   project-structure:
     status: AUDITED

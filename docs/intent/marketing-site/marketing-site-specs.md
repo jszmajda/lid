@@ -54,6 +54,7 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 ## Home: The Rings Drawing
 
 - `[x]` **MKT-SITE-111**: The hero SHALL show the rings drawing in its finished state, without labels, as static SVG in the page's HTML.
+- `[x]` **MKT-SITE-133**: On screens narrower than 980 CSS pixels, the hero SHALL show the rings drawing beside the h1, at no more than a third of the screen's width.
 - `[x]` **MKT-SITE-112**: Each explainer SHALL keep its rings drawing in view while the reader scrolls through that explainer's cards: beside the cards on screens 900 CSS pixels wide or wider, and above them on narrower screens.
 - `[x]` **MKT-SITE-113**: While JavaScript runs, each explainer's drawing SHALL show the state of the last card whose top has scrolled past a fixed line on the screen, and before any card has reached that line, the state that precedes the explainer's first card.
 - `[x]` **MKT-SITE-114**: Where a card's state is a sequence of steps, the drawing SHALL play the steps once when the card becomes active, and leaving the card SHALL cancel any steps not yet played.
