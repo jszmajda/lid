@@ -1,6 +1,6 @@
 # LID brand files
 
-Source files for LID's logo. Eleventy builds only `site/src/`, so nothing in this folder is published to the site.
+Source files for LID's logo. Eleventy builds only `site/src/`, so nothing in this folder is published to the site. The site's own copies live in `site/src/assets/favicon.svg` (the icon) and `site/src/_includes/wordmark.svg` (the wordmark), drawn from these.
 
 ## The logo
 
@@ -39,6 +39,8 @@ The rounds ran in this order.
 - **`explorations/nodes/`** has Nodes with a plain I and with a slab I. The `guides-` files show the first draft and the two corrected versions, with pink lines at each tile's center and at the top and bottom of the letters.
 - **`explorations/favicons/`** has square icon sketches. `pointer-square-l.svg` is the chosen icon. `pointer-round-l.svg` puts the pointer through Soft Cut's round L, and `pointer-node-l.svg` puts it through an L inside a small Nodes tile. The other four are plain letter icons for Nodes and Soft Cut.
 - **`explorations/flush-cut/`** has Flush Cut, a full wordmark in the chosen icon's style: the Nodes letters without tiles, with the pointer cut through all three and its head past the D. The files vary the letter spacing (18, 10, and 5) and the length of the arrow past the D (20%, 45%, and 70% of the letter height). `spacing-10-arrow-45.svg` was the most balanced.
+- **`explorations/site-refresh/`** has five home-page directions for the site, each built around the Nodes logo: Linked list, Plain text, Stickers, Poster, and Rail. Open `index.html` to compare them. Each page is the home page with its real copy and works in light and dark.
+  `spikes.html` holds the later spikes for the chosen direction, Linked list: the scrolling rings explainer, the button, the phone menu, and the home page outline.
 
 ## Scripts
 
@@ -49,6 +51,7 @@ Each script needs Python 3 and writes its SVG files into the matching folder in 
 - **`scripts/linking_wordmarks.py`** redraws `linking-wordmarks/`.
 - **`scripts/favicons.py`** redraws `favicons/`. Its `pointer_square_l()` function draws the chosen icon in any colors.
 - **`scripts/flush_cut.py`** redraws `flush-cut/`. Its `flush_cut()` function draws Flush Cut at any spacing, arrow length, and colors.
+- **`scripts/site_refresh.py`** builds `site-refresh/` from the pages in `site-refresh/src/`, filling in the logo, the icon, and the bar that switches between pages.
 
 ```
 python3 site/brand/scripts/abstract_marks.py

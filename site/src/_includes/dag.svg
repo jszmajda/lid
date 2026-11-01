@@ -1,0 +1,76 @@
+<svg class="dag" xmlns="http://www.w3.org/2000/svg" viewBox="0 20 540 380" role="img" aria-labelledby="dag-title dag-desc">
+  <title id="dag-title">Every arrow across a codebase</title>
+  <desc id="dag-desc">A directed graph: one high-level design fans out to three low-level designs, six requirements, six tests written first, and five code files. Two highlighted edges show one test covering two code files and one code file covered by two tests.</desc>
+  <!-- Every filled rect stays at least 70 by 30 viewBox units: smaller filled rects hit a
+       Firefox Android paint bug where the fill never draws until a hard reload. -->
+  <defs>
+    <marker id="dag-arrow" viewBox="0 0 8 8" refX="8" refY="4" markerWidth="5" markerHeight="5" orient="auto" markerUnits="userSpaceOnUse"><path class="dag-head" d="M0 1L8 4L0 7z"/></marker>
+    <marker id="dag-arrow-cross" viewBox="0 0 8 8" refX="8" refY="4" markerWidth="5.5" markerHeight="5.5" orient="auto" markerUnits="userSpaceOnUse"><path class="dag-head-cross" d="M0 1L8 4L0 7z"/></marker>
+  </defs>
+  <g class="dag-edges">
+    <path class="dag-edge" marker-end="url(#dag-arrow)" d="M 270 70 Q 200 90 70 118"/>
+    <path class="dag-edge" marker-end="url(#dag-arrow)" d="M 270 70 L 270 118"/>
+    <path class="dag-edge" marker-end="url(#dag-arrow)" d="M 270 70 Q 340 90 470 118"/>
+    <path class="dag-edge" marker-end="url(#dag-arrow)" d="M 70 148 Q 62 170 55 196"/>
+    <path class="dag-edge" marker-end="url(#dag-arrow)" d="M 70 148 Q 110 170 145 196"/>
+    <path class="dag-edge" marker-end="url(#dag-arrow)" d="M 270 148 Q 250 170 235 196"/>
+    <path class="dag-edge" marker-end="url(#dag-arrow)" d="M 270 148 Q 300 170 325 196"/>
+    <path class="dag-edge" marker-end="url(#dag-arrow)" d="M 470 148 Q 440 170 415 196"/>
+    <path class="dag-edge" marker-end="url(#dag-arrow)" d="M 470 148 Q 488 170 505 196"/>
+    <path class="dag-edge" marker-end="url(#dag-arrow)" d="M 55 226 L 55 270"/>
+    <path class="dag-edge" marker-end="url(#dag-arrow)" d="M 145 226 L 145 270"/>
+    <path class="dag-edge" marker-end="url(#dag-arrow)" d="M 235 226 L 235 270"/>
+    <path class="dag-edge" marker-end="url(#dag-arrow)" d="M 325 226 L 325 270"/>
+    <path class="dag-edge" marker-end="url(#dag-arrow)" d="M 415 226 L 415 270"/>
+    <path class="dag-edge" marker-end="url(#dag-arrow)" d="M 505 226 L 505 270"/>
+    <path class="dag-edge" marker-end="url(#dag-arrow)" d="M 55 300 Q 55 326 75 352"/>
+    <path class="dag-edge" marker-end="url(#dag-arrow)" d="M 145 300 Q 145 326 170 352"/>
+    <path class="dag-edge dag-edge-cross" marker-end="url(#dag-arrow-cross)" d="M 145 300 Q 200 326 270 352"/>
+    <path class="dag-edge" marker-end="url(#dag-arrow)" d="M 235 300 Q 245 326 270 352"/>
+    <path class="dag-edge" marker-end="url(#dag-arrow)" d="M 325 300 Q 340 326 370 352"/>
+    <path class="dag-edge dag-edge-cross" marker-end="url(#dag-arrow-cross)" d="M 415 300 Q 395 326 370 352"/>
+    <path class="dag-edge" marker-end="url(#dag-arrow)" d="M 505 300 Q 495 326 465 352"/>
+  </g>
+  <rect class="dag-node dag-node-hld" x="235" y="40" width="70" height="30" rx="9"/>
+  <text class="dag-label" x="270" y="59.5" text-anchor="middle">HLD</text>
+  <rect class="dag-node" x="35" y="118" width="70" height="30" rx="9"/>
+  <text class="dag-label" x="70" y="137.5" text-anchor="middle">LLD</text>
+  <rect class="dag-node" x="235" y="118" width="70" height="30" rx="9"/>
+  <text class="dag-label" x="270" y="137.5" text-anchor="middle">LLD</text>
+  <rect class="dag-node" x="435" y="118" width="70" height="30" rx="9"/>
+  <text class="dag-label" x="470" y="137.5" text-anchor="middle">LLD</text>
+  <rect class="dag-node" x="20" y="196" width="70" height="30" rx="9"/>
+  <text class="dag-label" x="55" y="215.5" text-anchor="middle">EARS</text>
+  <rect class="dag-node" x="110" y="196" width="70" height="30" rx="9"/>
+  <text class="dag-label" x="145" y="215.5" text-anchor="middle">EARS</text>
+  <rect class="dag-node" x="200" y="196" width="70" height="30" rx="9"/>
+  <text class="dag-label" x="235" y="215.5" text-anchor="middle">EARS</text>
+  <rect class="dag-node" x="290" y="196" width="70" height="30" rx="9"/>
+  <text class="dag-label" x="325" y="215.5" text-anchor="middle">EARS</text>
+  <rect class="dag-node" x="380" y="196" width="70" height="30" rx="9"/>
+  <text class="dag-label" x="415" y="215.5" text-anchor="middle">EARS</text>
+  <rect class="dag-node" x="470" y="196" width="70" height="30" rx="9"/>
+  <text class="dag-label" x="505" y="215.5" text-anchor="middle">EARS</text>
+  <rect class="dag-node" x="20" y="270" width="70" height="30" rx="9"/>
+  <text class="dag-label" x="55" y="289.5" text-anchor="middle">Test</text>
+  <rect class="dag-node" x="110" y="270" width="70" height="30" rx="9"/>
+  <text class="dag-label" x="145" y="289.5" text-anchor="middle">Test</text>
+  <rect class="dag-node" x="200" y="270" width="70" height="30" rx="9"/>
+  <text class="dag-label" x="235" y="289.5" text-anchor="middle">Test</text>
+  <rect class="dag-node" x="290" y="270" width="70" height="30" rx="9"/>
+  <text class="dag-label" x="325" y="289.5" text-anchor="middle">Test</text>
+  <rect class="dag-node" x="380" y="270" width="70" height="30" rx="9"/>
+  <text class="dag-label" x="415" y="289.5" text-anchor="middle">Test</text>
+  <rect class="dag-node" x="470" y="270" width="70" height="30" rx="9"/>
+  <text class="dag-label" x="505" y="289.5" text-anchor="middle">Test</text>
+  <rect class="dag-node" x="40" y="352" width="70" height="30" rx="9"/>
+  <text class="dag-label" x="75" y="371.5" text-anchor="middle">Code</text>
+  <rect class="dag-node" x="135" y="352" width="70" height="30" rx="9"/>
+  <text class="dag-label" x="170" y="371.5" text-anchor="middle">Code</text>
+  <rect class="dag-node" x="235" y="352" width="70" height="30" rx="9"/>
+  <text class="dag-label" x="270" y="371.5" text-anchor="middle">Code</text>
+  <rect class="dag-node" x="335" y="352" width="70" height="30" rx="9"/>
+  <text class="dag-label" x="370" y="371.5" text-anchor="middle">Code</text>
+  <rect class="dag-node" x="430" y="352" width="70" height="30" rx="9"/>
+  <text class="dag-label" x="465" y="371.5" text-anchor="middle">Code</text>
+</svg>

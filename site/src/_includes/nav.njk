@@ -1,29 +1,29 @@
-<!-- @spec MKT-SITE-019, MKT-SITE-020 -->
-<header class="site-nav">
-  <div class="container nav-inner">
-    <a class="brand" href="{{ '/' | url }}" aria-label="LID home">
-      <span class="brand-mark" aria-hidden="true">L</span>
-      <span class="brand-text">Linked-Intent Dev</span>
-    </a>
-
-    <input type="checkbox" id="nav-menu-toggle" class="nav-toggle-input" aria-hidden="true" tabindex="-1" />
-    <label for="nav-menu-toggle" class="nav-toggle-btn" aria-label="Toggle menu" role="button" tabindex="0">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="square" aria-hidden="true">
-        <line x1="4" y1="7" x2="20" y2="7" class="bar bar-top"/>
-        <line x1="4" y1="12" x2="20" y2="12" class="bar bar-mid"/>
-        <line x1="4" y1="17" x2="20" y2="17" class="bar bar-btm"/>
-      </svg>
-    </label>
-
-    <nav aria-label="Primary" class="primary-nav">
-      <ul class="nav-list">
-        <li><a href="{{ '/' | url }}"{% if page.url == '/' %} aria-current="page"{% endif %}>Home</a></li>
-        <li><a href="{{ '/start/' | url }}"{% if page.url == '/start/' %} aria-current="page"{% endif %}>Start</a></li>
-        <li><a href="{{ '/examples/' | url }}"{% if page.url == '/examples/' %} aria-current="page"{% endif %}>Examples</a></li>
-        <li><a href="{{ '/anti-patterns/' | url }}"{% if page.url == '/anti-patterns/' %} aria-current="page"{% endif %}>Anti-patterns</a></li>
-        <li><a href="{{ '/tour/' | url }}"{% if page.url == '/tour/' %} aria-current="page"{% endif %}>Tour</a></li>
-        <li><a href="{{ site.repoUrl }}" class="nav-repo">GitHub ↗</a></li>
+<!-- @spec MKT-SITE-019, MKT-SITE-020, MKT-SITE-125, MKT-SITE-127, MKT-SITE-128 -->
+{% set navLinks = [
+  { label: "Start", href: "/start/" },
+  { label: "Examples", href: "/examples/" },
+  { label: "Anti-patterns", href: "/anti-patterns/" },
+  { label: "Tour", href: "/tour/" },
+  { label: "GitHub", href: site.repoUrl }
+] %}
+<header class="nav-bar" id="nav-bar">
+  <div class="wrap nav">
+    <a class="home" href="{{ '/' | url }}" aria-label="LID home">{% include "wordmark.svg" %}</a>
+    <nav aria-label="Primary">
+      <ul class="nav-links">
+        {%- for item in navLinks %}
+        <li><a href="{{ item.href | url }}"{% if page.url == item.href %} aria-current="page"{% endif %}>{{ item.label }}</a></li>
+        {%- endfor %}
       </ul>
     </nav>
+    <a class="btn btn-go nav-install" href="{{ '/#quickstart' | url }}">Install</a>
+    <details class="nav-menu">
+      <summary><span class="menu-bars" aria-hidden="true"></span>Menu</summary>
+      <ul>
+        {%- for item in navLinks %}
+        <li><a href="{{ item.href | url }}"{% if page.url == item.href %} aria-current="page"{% endif %}>{{ item.label }} <span class="ptr" aria-hidden="true"></span></a></li>
+        {%- endfor %}
+      </ul>
+    </details>
   </div>
 </header>
