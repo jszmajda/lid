@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 240" role="img" aria-label="LID wordmark: three linked-list nodes, one letter each">
+  <title>LID wordmark: three linked-list nodes, one letter each</title>
+  <rect id="ground" x="0" y="0" width="480" height="240" fill="#FFD60A"/>
+  <g id="nodes">
+    <g id="node-l">
+      <rect x="32" y="65" width="124" height="110" fill="#FFFFFF" stroke="#111111" stroke-width="7"/>
+      <path d="M116 65V175" fill="none" stroke="#111111" stroke-width="7"/>
+      <path d="M58.0 89V151H92.0" fill="none" stroke="#111111" stroke-width="12"/>
+    </g>
+    <g id="node-i">
+      <rect x="178" y="65" width="124" height="110" fill="#FFFFFF" stroke="#111111" stroke-width="7"/>
+      <path d="M262 65V175" fill="none" stroke="#111111" stroke-width="7"/>
+      <path d="M220.0 89V151" fill="none" stroke="#111111" stroke-width="12"/>
+    </g>
+    <g id="node-d">
+      <rect x="324" y="65" width="124" height="110" fill="#FFFFFF" stroke="#111111" stroke-width="7"/>
+      <path d="M408 65V175" fill="none" stroke="#111111" stroke-width="7"/>
+      <path d="M346.0 89H362.0A24 31 0 0 1 362.0 151H346.0Z" fill="none" stroke="#111111" stroke-width="12"/>
+    </g>
+  </g>
+  <g id="pointers">
+    <circle cx="136.0" cy="120.0" r="7" fill="#111111"/>
+    <path d="M136.0 120.0H164.5" fill="none" stroke="#111111" stroke-width="6"/>
+    <path d="M161.5 110.0L174.5 120.0L161.5 130.0Z" fill="#111111"/>
+    <circle cx="282.0" cy="120.0" r="7" fill="#111111"/>
+    <path d="M282.0 120.0H310.5" fill="none" stroke="#111111" stroke-width="6"/>
+    <path d="M307.5 110.0L320.5 120.0L307.5 130.0Z" fill="#111111"/>
+    <path id="null" d="M408 175L448 65" fill="none" stroke="#111111" stroke-width="7"/>
+  </g>
+</svg>

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 240" role="img" aria-label="lid wordmark: a single circuit trace writes the word between solder pads">
+  <title>lid wordmark: a single circuit trace writes the word between solder pads</title>
+  <rect id="ground" x="0" y="0" width="480" height="240" fill="#3D1A78"/>
+  <g id="word" transform="translate(240 122) scale(1.2) translate(-192 -116)">
+    <path id="trace" d="M92 196V51A15 15 0 0 1 122 51V187A9 9 0 0 0 140 187V107A15 15 0 0 1 170 107V187A9 9 0 0 0 188 187V144A52 52 0 0 1 262 96.9V51A15 15 0 0 1 292 51V184A12 12 0 0 1 280 196H222A18 18 0 0 1 222 160L232 152" fill="none" stroke="#FFC857" stroke-width="8" stroke-linejoin="round"/>
+    <g id="pads">
+    <circle cx="92" cy="196" r="11" fill="#FFC857"/>
+    <circle cx="92" cy="196" r="4.4" fill="#3D1A78"/>
+    <circle cx="238" cy="146" r="13" fill="#FFC857"/>
+    <circle cx="238" cy="146" r="5.2" fill="#3D1A78"/>
+    <circle cx="155" cy="66" r="12" fill="#FFC857"/>
+    <circle cx="155" cy="66" r="4.8" fill="#3D1A78"/>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 240" role="img" aria-label="lid wordmark: chunky lowercase with a chain-link icon as the dot on the i">
+  <title>lid wordmark: chunky lowercase with a chain-link icon as the dot on the i</title>
+  <rect id="ground" x="0" y="0" width="480" height="240" fill="#EEF3FF"/>
+  <g id="word" fill="none" stroke="#14122B" stroke-width="38" stroke-linecap="round">
+    <path id="l" d="M130 44V186"/>
+    <path id="i" d="M202 104V186"/>
+    <circle id="d-bowl" cx="310" cy="145" r="41"/>
+    <path id="d-stem" d="M351 44V186"/>
+  </g>
+  <g id="link-icon" transform="translate(208 48) rotate(-45)" fill="none" stroke="#1F5FFF" stroke-width="8.5">
+    <rect x="-35" y="-11" width="42" height="22" rx="11"/>
+    <rect x="-7" y="-11" width="42" height="22" rx="11"/>
+  </g>
+</svg>

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 240" role="img" aria-label="LID wordmark: each letter drawn with five parallel lines">
+  <title>LID wordmark: each letter drawn with five parallel lines</title>
+  <rect id="ground" x="0" y="0" width="480" height="240" fill="#23110F"/>
+  <g id="word" transform="translate(-4 0)" fill="none" stroke-width="7">
+  <g id="l">
+    <path d="M120 40V152A8 8 0 0 0 128 160H178" stroke="#FFC63D"/>
+    <path d="M110 40V152A18 18 0 0 0 128 170H178" stroke="#FF9A2E"/>
+    <path d="M100 40V152A28 28 0 0 0 128 180H178" stroke="#F4632B"/>
+    <path d="M90 40V152A38 38 0 0 0 128 190H178" stroke="#E0344F"/>
+    <path d="M80 40V152A48 48 0 0 0 128 200H178" stroke="#B22A85"/>
+  </g>
+  <g id="i">
+    <path d="M238 40V200" stroke="#FFC63D"/>
+    <path d="M228 40V200" stroke="#FF9A2E"/>
+    <path d="M218 40V200" stroke="#F4632B"/>
+    <path d="M208 40V200" stroke="#E0344F"/>
+    <path d="M198 40V200" stroke="#B22A85"/>
+  </g>
+  <g id="d">
+    <path d="M298 80H320A40 40 0 0 1 320 160H298Z" stroke="#FFC63D"/>
+    <path d="M288 70H320A50 50 0 0 1 320 170H288Z" stroke="#FF9A2E"/>
+    <path d="M278 60H320A60 60 0 0 1 320 180H278Z" stroke="#F4632B"/>
+    <path d="M268 50H320A70 70 0 0 1 320 190H268Z" stroke="#E0344F"/>
+    <path d="M258 40H320A80 80 0 0 1 320 200H258Z" stroke="#B22A85"/>
+  </g>
+  </g>
+</svg>

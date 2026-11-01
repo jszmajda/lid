@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 17 17" role="img" aria-label="LID: a pixel design tree with one lit path" shape-rendering="crispEdges">
+  <title>LID: a pixel design tree with one lit path</title>
+  <rect id="ground" x="0" y="0" width="17" height="17" fill="#352879"/>
+  <path id="other-branches" d="M9 6h4v1h-4zM12 7h1v1h-1zM11 8h3v1h-3zM11 9h3v1h-3zM12 10h1v1h-1zM2 11h2v1h-2zM10 11h5v1h-5zM2 12h1v1h-1zM10 12h1v1h-1zM14 12h1v1h-1zM1 13h3v1h-3zM9 13h3v1h-3zM13 13h3v1h-3zM1 14h3v1h-3zM9 14h3v1h-3zM13 14h3v1h-3z" fill="#8C7FE0"/>
+  <path id="root-to-leaf" d="M7 3h3v1h-3zM7 4h3v1h-3zM8 5h1v1h-1zM4 6h5v1h-5zM4 7h1v1h-1zM3 8h3v1h-3zM3 9h3v1h-3zM4 10h1v1h-1zM4 11h3v1h-3zM6 12h1v1h-1zM5 13h3v1h-3zM5 14h3v1h-3z" fill="#FFE14D"/>
+</svg>

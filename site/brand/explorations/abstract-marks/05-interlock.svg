@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="LID: an L threaded through a D">
+  <title>LID: an L threaded through a D</title>
+  <rect id="ground" x="0" y="0" width="240" height="240" fill="#FBF4F6"/>
+  <path id="d" d="M88 62H110A62 62 0 0 1 110 186H88Z" fill="none" stroke="#F47FA8" stroke-width="26"/>
+  <path id="l-gap" d="M46 26V146H226" fill="none" stroke="#FBF4F6" stroke-width="38"/>
+  <path id="l" d="M46 26V146H226" fill="none" stroke="#0B5B3E" stroke-width="26"/>
+  <path id="bowl-gap" d="M171.97 126A62 62 0 0 1 143.77 176" fill="none" stroke="#FBF4F6" stroke-width="38"/>
+  <path id="bowl-over-l" d="M171.7 118A62 62 0 0 1 135.2 180.6" fill="none" stroke="#F47FA8" stroke-width="26"/>
+</svg>

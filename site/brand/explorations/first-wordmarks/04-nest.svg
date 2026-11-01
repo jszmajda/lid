@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 240" role="img" aria-label="LID wordmark: a tight block with the I standing on the foot of the L">
+  <title>LID wordmark: a tight block with the I standing on the foot of the L</title>
+  <rect id="ground" x="0" y="0" width="480" height="240" fill="#FFD60A"/>
+  <g id="word" fill="#111111">
+    <path id="l" d="M112 34H164V154H216V206H112Z"/>
+    <rect id="i" x="170" y="34" width="46" height="114" fill="#E0201B"/>
+    <path id="d" d="M222 34H282A86 86 0 0 1 282 206H222Z"/>
+  </g>
+</svg>

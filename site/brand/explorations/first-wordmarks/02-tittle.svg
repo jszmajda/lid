@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 240" role="img" aria-label="lid wordmark: lowercase, with a tiny pot lid as the dot on the i">
+  <title>lid wordmark: lowercase, with a tiny pot lid as the dot on the i</title>
+  <rect id="ground" x="0" y="0" width="480" height="240" fill="#FFE3D3"/>
+  <g id="word" fill="none" stroke="#2A0F0A" stroke-width="38" stroke-linecap="round">
+    <path id="l" d="M130 44V186"/>
+    <path id="i" d="M202 104V186"/>
+    <circle id="d-bowl" cx="310" cy="145" r="41"/>
+    <path id="d-stem" d="M351 44V186"/>
+  </g>
+  <g id="tittle-lid" transform="translate(204 58) rotate(-15)" fill="#E23D28">
+    <circle cx="0" cy="-23" r="6.5"/>
+    <path d="M-29 4A29 25 0 0 1 29 4Z"/>
+    <rect x="-36" y="8" width="72" height="8" rx="4"/>
+  </g>
+</svg>

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 240" role="img" aria-label="LID wordmark: each letter a rail line, joined by interchange stations">
+  <title>LID wordmark: each letter a rail line, joined by interchange stations</title>
+  <rect id="ground" x="0" y="0" width="480" height="240" fill="#F4F5F0"/>
+  <g id="lines" fill="none" stroke-width="26">
+    <path id="l-line" d="M92 46V152A24 24 0 0 0 116 176H176" stroke="#DC241F"/>
+    <path id="i-line" d="M232 46V176" stroke="#0B2FB8"/>
+    <path id="d-line" d="M300 46H330A65 65 0 0 1 330 176H300Z" stroke="#00843D" stroke-linejoin="round"/>
+  </g>
+  <g id="interchange-links" fill="#111111">
+    <rect x="176" y="170" width="56" height="12"/>
+    <rect x="232" y="40" width="68" height="12"/>
+  </g>
+  <g id="stations" fill="#FFFFFF" stroke="#111111" stroke-width="7">
+    <circle id="terminus" cx="92" cy="46" r="18"/>
+    <circle id="l-to-i" cx="176" cy="176" r="18"/>
+    <circle id="i-from-l" cx="232" cy="176" r="18"/>
+    <circle id="i-to-d" cx="232" cy="46" r="18"/>
+    <circle id="d-from-i" cx="300" cy="46" r="18"/>
+    <circle id="stop" cx="395" cy="111" r="18"/>
+  </g>
+</svg>

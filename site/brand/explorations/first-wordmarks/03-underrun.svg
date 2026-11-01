@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 240" role="img" aria-label="LID wordmark: the foot of the L runs under the word as an arrow">
+  <title>LID wordmark: the foot of the L runs under the word as an arrow</title>
+  <rect id="ground" x="0" y="0" width="480" height="240" fill="#1437E0"/>
+  <g id="word" fill="#F5F7FF">
+    <path id="l-and-arrow" d="M52 28H84V165H392V136L444 181L392 226V197H52Z"/>
+    <rect id="i" x="136" y="28" width="32" height="118"/>
+    <path id="d" fill-rule="evenodd" d="M202 28H264A70 59 0 0 1 264 146H202ZM234 56V118H262A38 31 0 0 0 262 56Z"/>
+  </g>
+</svg>
