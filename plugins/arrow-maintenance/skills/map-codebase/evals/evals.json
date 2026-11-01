@@ -54,8 +54,25 @@
       "assertions": [
         { "text": "The agent recognizes the project as fully LID-configured (HLD, LLD, and EARS specs present) but missing the docs/arrows/ overlay", "spec_ids": ["SCALE-MAP-004"] },
         { "text": "The agent redirects the user to /arrow-maintenance rather than running the brownfield sweep", "spec_ids": ["SCALE-MAP-004"] },
-        { "text": "No new LLDs, EARS specs, or arrow docs are generated in this run", "spec_ids": ["SCALE-MAP-004"] }
+        { "text": "No new LLDs, EARS specs, or arrow docs are generated in this run", "spec_ids": ["SCALE-MAP-004"] },
+        { "text": "The response contains no newcomer tour card and no offer of a LID tour", "spec_ids": ["SCALE-MAP-036"] }
       ]
+    },
+    {
+      "id": 3,
+      "eval_name": "tour-offer-map-codebase",
+      "prompt": "/map-codebase",
+      "files": [
+        { "path": "package.json", "content": "{\n  \"name\": \"shelf\",\n  \"version\": \"0.1.0\",\n  \"scripts\": { \"test\": \"vitest run\" }\n}\n" },
+        { "path": "src/books.ts", "content": "export type Status = \"to-read\" | \"reading\" | \"finished\";\n\nexport interface Book {\n  title: string;\n  author: string;\n  status: Status;\n  finishedOn?: string;\n}\n\nexport function addBook(list: Book[], title: string, author: string): Book[] {\n  return [...list, { title, author, status: \"to-read\" }];\n}\n" },
+        { "path": "src/index.ts", "content": "import { addBook } from \"./books\";\n\nconsole.log(addBook([], \"Middlemarch\", \"George Eliot\"));\n" }
+      ],
+      "assertions": [
+        { "text": "The skill's first message opens with a card: a Markdown blockquote whose bold heading asks whether the person is new to LID", "spec_ids": ["TOUR-010", "TOUR-012", "TOUR-015", "TOUR-005", "SCALE-MAP-035"] },
+        { "text": "Below the card, the same message carries the skill's own opening: the warning that mapping is costly and its first question, such as whether to map the whole project or only parts of it", "spec_ids": ["TOUR-011", "SCALE-MAP-035", "SCALE-MAP-001"] },
+        { "text": "The skill does not start reading the codebase's files for the sweep before the person answers", "spec_ids": ["SCALE-MAP-001", "SCALE-MAP-035"] }
+      ],
+      "notes": "The newcomer tour's offer on the brownfield route comes before the costly sweep. map-codebase reaches tour-offer.md by loading the linked-intent-dev skill."
     }
   ]
 }

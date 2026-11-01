@@ -29,6 +29,8 @@ Map an existing codebase into the tail of the LID arrow so the project can adopt
 
 **State dispatch.** If the project already has partial LID docs (an HLD or some LLDs exist), the command asks the user whether to treat the existing docs as authoritative (draft skeletons only for segments not yet covered) or to supersede them. There is no silent overwrite. If the project already has full LID docs and no `docs/arrows/`, the command redirects the user to `/arrow-maintenance`, which generates the overlay from existing docs without the brownfield sweep.
 
+**Newcomer tour offer.** Unless the state dispatch sends the person to `/arrow-maintenance`, the skill's first message to the person carries LID's newcomer tour offer at its top when the person may be new (HLD § Key Design Decisions, *Introducing LID inside the agent*). That message usually holds the cost warning and the scope question. The `tour` segment sets the condition and owns the offer's form. This skill loads the `linked-intent-dev` skill, reads its `references/tour-offer.md`, and follows it. A redirect to `/arrow-maintenance` carries no offer, and neither does a run where the `linked-intent-dev` skill is not installed. Because the offer comes before the sweep, a person new to LID can learn what it is before the long and costly part of the work.
+
 ## Five Critical Rules
 
 Five rules govern the entire workflow, applied consistently by the agent regardless of phase:

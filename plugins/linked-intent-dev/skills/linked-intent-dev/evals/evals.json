@@ -110,6 +110,93 @@
         ]
       },
       "notes": "Fixture authored blind by openai/gpt-6.1-sol from a brief (2026-10-09), then reviewed. The user selects whole-visit revisions, accepting more manual review in exchange for preserving submitted visit intent and avoiding field-merge rules. Record-store owns the choice; the unwritten tablet-sync and review-export nodes will be sized around its submission metadata, competing-revision representation, and export eligibility contract. The alternatives trade coordinator workload and submission size against implementation complexity, automatic reconciliation throughput, and the risk of combining scientifically related edits."
+    },
+    {
+      "id": 4,
+      "eval_name": "tour-offer-fresh-bootstrap",
+      "prompt": "Use the linked-intent-dev skill. I want to build a small app that tracks my reading list.",
+      "files": [],
+      "assertions": [
+        { "text": "The agent's first message opens with a card: a Markdown blockquote whose bold heading asks whether the person is new to LID", "spec_ids": ["TOUR-010", "TOUR-012", "TOUR-015", "LID-CORE-088"] },
+        { "text": "The card's paragraph says, in full sentences, that the agent writes the request down in layers before any code exists and shows each layer and waits for the person, and that tests and code point back to the requirement they serve, so connected pieces can be found when something changes", "spec_ids": ["TOUR-013"] },
+        { "text": "The card offers the word 'tour' for a walk-through inside the agent and gives the link linked-intent.dev/tour", "spec_ids": ["TOUR-012"] },
+        { "text": "The card's paragraph uses no LID term other than 'LID' (no HLD, LLD, EARS, sub-HLD, segment, cascade, or arrow)", "spec_ids": ["TOUR-014"] },
+        { "text": "Below the card, the same message carries on with setting the project up for LID (for example the mode, or the project's first design questions). The agent does not stop after the card to wait for an answer about the tour", "spec_ids": ["TOUR-011", "LID-CORE-088"] }
+      ],
+      "follow_up": {
+        "prompt": "tour",
+        "assertions": [
+          { "text": "The reply starts the tour: it opens with a bold title line giving its place in the tour, such as 'Tour 1 of 5'", "spec_ids": ["TOUR-016", "TOUR-022", "TOUR-113"] },
+          { "text": "Near its start, the reply asks how the person knows their agent built what they meant (that question or close wording)", "spec_ids": ["TOUR-026"] },
+          { "text": "The reply shows the levels (high-level design, low-level designs, EARS requirements, tests, and code) and introduces EARS with an example of its pattern, such as '…the system shall…'", "spec_ids": ["TOUR-028"] },
+          { "text": "The reply shows a tree of designs branching, with a sub-HLD and designs beneath it, inside a text fence, before it uses the term 'sub-HLD'", "spec_ids": ["TOUR-029", "TOUR-075", "TOUR-128"] },
+          { "text": "The reply ends with bold 'next' and 'done' choices, each followed by a few words saying where it leads", "spec_ids": ["TOUR-023"] },
+          { "text": "The reply does not answer the mode question on the person's behalf or finish setting LID up", "spec_ids": ["TOUR-017"] }
+        ]
+      },
+      "notes": "Checks the newcomer tour's offer on the workflow's Phase 1 bootstrap route, and the first step of the tour. The tour's files are tour-offer.md and tour.md in the skill's references."
+    },
+    {
+      "id": 5,
+      "eval_name": "tour-offer-declined-by-carrying-on",
+      "prompt": "Use the linked-intent-dev skill. I want to build a small app that tracks my reading list.",
+      "files": [],
+      "assertions": [
+        { "text": "The agent's first message opens with a card: a Markdown blockquote whose bold heading asks whether the person is new to LID", "spec_ids": ["TOUR-010", "TOUR-012", "TOUR-015", "LID-CORE-088"] }
+      ],
+      "follow_up": {
+        "prompt": "A command-line tool, please.",
+        "assertions": [
+          { "text": "The reply goes on with setting up LID and designing the reading-list app as it would have without the card, and does not start the tour", "spec_ids": ["TOUR-018", "TOUR-019"] },
+          { "text": "The reply does not show the tour card again", "spec_ids": ["TOUR-008"] },
+          { "text": "If an instruction file (AGENTS.md or CLAUDE.md) exists at the end of the run, it holds no record of the person's answer to the tour offer", "spec_ids": ["TOUR-084"] }
+        ]
+      },
+      "notes": "Carrying on with the route's own question declines the tour. Any memory record belongs in the harness's per-person memory, never in the project's files."
+    },
+    {
+      "id": 6,
+      "eval_name": "tour-on-request",
+      "prompt": "Remind me how cascade works in LID?",
+      "files": [
+        { "path": "CLAUDE.md", "content": "# Shelf\n\nA small app that tracks a reader's reading list.\n\nConsult the linked-intent-dev skill.\n\n## LID\n- Mode: Full\n- Version: 1.4.1\n\n## Navigation\n\n| What you need | Where to look |\n|---|---|\n| High-level design | docs/high-level-design.md |\n| Design nodes and EARS specs | docs/intent/ |\n" },
+        { "path": "docs/high-level-design.md", "content": "# Shelf High-Level Design\n\n## Problem\n\nReaders lose track of the books they mean to read and the ones they have finished.\n\n## Approach\n\nA single-user web app with one list of books, each with a status: to read, reading, or finished.\n\n## Tenets\n\n- **Simple over complete.** When a feature could grow options, ship the simplest version a reader can use today.\n" },
+        { "path": "docs/intent/reading-list/reading-list-design.md", "content": "---\nparent: high-level-design\nprefix: LIST\n---\n\n# LLD: Reading list\n\nThe list holds books with a title, an author, a status, and the date a book was finished. Readers add, edit, and remove books.\n" },
+        { "path": "docs/intent/reading-list/reading-list-specs.md", "content": "# Reading list specs\n\n**LLD**: docs/intent/reading-list/reading-list-design.md\n\n- `[x]` **LIST-001**: When the reader adds a book with a title and an author, the system shall add it to the list with the status \"to read\".\n- `[x]` **LIST-002**: When the reader marks a book finished, the system shall record the date it was finished.\n" }
+      ],
+      "assertions": [
+        { "text": "The agent answers briefly how cascade works: a change at one level is carried down to the levels below it so they still agree. The answer is a few short paragraphs at most", "spec_ids": ["LID-CORE-092", "LID-CORE-093"] },
+        { "text": "The agent offers a longer topic on how a change in a design reaches the code, instead of starting the five-step tour", "spec_ids": ["LID-CORE-093"] }
+      ],
+      "follow_up": {
+        "prompt": "Actually, could you give me the whole LID tour?",
+        "assertions": [
+          { "text": "The reply starts the tour, opening with a bold title line such as 'Tour 1 of 5'", "spec_ids": ["TOUR-021", "TOUR-113", "LID-CORE-093"] }
+        ]
+      },
+      "notes": "A person can ask for the tour, or about one part of LID, at any time. The workflow skill's description covers these requests."
+    },
+    {
+      "id": 7,
+      "eval_name": "tour-offer-joining-change",
+      "prompt": "Add a CSV export to the reading list.",
+      "files": [
+        { "path": "CLAUDE.md", "content": "# Shelf\n\nA small app that tracks a reader's reading list.\n\nConsult the linked-intent-dev skill.\n\n## LID\n- Mode: Full\n- Version: 1.4.1\n\n## Navigation\n\n| What you need | Where to look |\n|---|---|\n| High-level design | docs/high-level-design.md |\n| Design nodes and EARS specs | docs/intent/ |\n" },
+        { "path": "docs/high-level-design.md", "content": "# Shelf High-Level Design\n\n## Problem\n\nReaders lose track of the books they mean to read and the ones they have finished.\n\n## Approach\n\nA single-user web app with one list of books, each with a status: to read, reading, or finished.\n\n## Tenets\n\n- **Simple over complete.** When a feature could grow options, ship the simplest version a reader can use today.\n" },
+        { "path": "docs/intent/reading-list/reading-list-design.md", "content": "---\nparent: high-level-design\nprefix: LIST\n---\n\n# LLD: Reading list\n\nThe list holds books with a title, an author, a status, and the date a book was finished. Readers add, edit, and remove books.\n" },
+        { "path": "docs/intent/reading-list/reading-list-specs.md", "content": "# Reading list specs\n\n**LLD**: docs/intent/reading-list/reading-list-design.md\n\n- `[x]` **LIST-001**: When the reader adds a book with a title and an author, the system shall add it to the list with the status \"to read\".\n- `[x]` **LIST-002**: When the reader marks a book finished, the system shall record the date it was finished.\n" }
+      ],
+      "assertions": [
+        { "text": "The agent's first message on the change opens with a Markdown blockquote card whose bold heading says that this project uses LID", "spec_ids": ["LID-CORE-089", "TOUR-006", "TOUR-010", "TOUR-012"] },
+        { "text": "Below the card, the same message carries on with the change (for example the design or requirement work for the export), introduced as the way to keep moving", "spec_ids": ["TOUR-011"] }
+      ],
+      "follow_up": {
+        "prompt": "Looks right, go ahead.",
+        "assertions": [
+          { "text": "The reply goes on with the change without starting the tour or showing the card again", "spec_ids": ["TOUR-018", "TOUR-019", "TOUR-008"] }
+        ]
+      },
+      "notes": "Assumes a harness that keeps per-person memory the agent may write, as Claude Code's auto-memory does, with no record of the person meeting LID. On a harness without such memory, showing no card is the correct behavior (TOUR-006), and these assertions do not apply."
     }
   ]
 }

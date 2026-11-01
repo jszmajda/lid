@@ -22,6 +22,8 @@ These govern every phase. Apply consistently.
 
 ## At invocation
 
+**Newcomer tour offer.** Unless the state dispatch below sends the person to `/arrow-maintenance`, check whether the memory your harness already placed in your context shows that this person has met LID before: a record of the LID tour, or other memories of them working with LID. If it doesn't, load the `linked-intent-dev` skill, read its `references/tour-offer.md`, and follow it as a setup route. That puts a card at the top of your first message, above the token-intensity warning and your first question. If the `linked-intent-dev` skill isn't installed, make no offer.
+
 Ask one question first:
 
 - **Whole project, or specific parts?**

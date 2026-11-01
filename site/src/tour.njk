@@ -1,0 +1,85 @@
+---
+layout: base.njk
+title: Tour
+eleventyNavigation:
+  key: Tour
+  order: 5
+permalink: /tour/
+description: A short walk-through of Linked-Intent Development — the same introduction LID offers inside your coding agent.
+---
+
+<!-- @spec MKT-SITE-072, MKT-SITE-074, MKT-SITE-075, MKT-SITE-077, MKT-SITE-078, MKT-SITE-079, MKT-SITE-080, MKT-SITE-081, MKT-SITE-082 -->
+<div class="page tour-page">
+  <div class="container">
+
+    <header class="page-header">
+      <div class="page-header-main">
+        <span class="plate">Sheet 05 / Tour</span>
+        <h1>A short <em>tour</em> of LID.</h1>
+        <p class="lede">
+          This is the same introduction LID offers inside your coding agent the first time you meet it. Inside the agent you can ask questions as you go, and type <code>tour</code> any time to see it again.
+        </p>
+        <p class="muted">From LID version {{ tour.version }}.</p>
+      </div>
+      <aside class="page-header-aside" aria-label="Sheet notes">
+        <dl>
+          <dt>Sheet</dt>         <dd>05 / 05</dd>
+          <dt>Steps</dt>         <dd>{{ tour.steps | length }}</dd>
+          <dt>Topics</dt>        <dd>{{ tour.topics | length }}</dd>
+          <dt>Loop back</dt>     <dd><a href="{{ '/' | url }}">Home ↺</a></dd>
+        </dl>
+      </aside>
+    </header>
+
+    <div class="tour-layout">
+
+    <nav class="tour-sidebar" aria-label="On this page">
+      <details class="tour-toc" open>
+        <summary>On this page</summary>
+        <ol class="tour-toc-steps">
+          {% for step in tour.steps %}
+          <li><a href="#step-{{ loop.index }}">{{ step.label }}</a></li>
+          {% endfor %}
+        </ol>
+        <p class="tour-toc-head"><a href="#going-further">Going further</a></p>
+        <ul class="tour-toc-topics">
+          {% for topic in tour.topics %}
+          <li><a href="#{{ topic.anchor }}">{{ topic.title }}</a></li>
+          {% endfor %}
+        </ul>
+      </details>
+    </nav>
+
+    <div class="tour-content">
+    {% for step in tour.steps %}
+    <section class="tour-step" id="step-{{ loop.index }}" aria-labelledby="step-{{ loop.index }}-h">
+      <h2 id="step-{{ loop.index }}-h">{{ step.title }}</h2>
+      <div class="tour-body">
+        {{ step.body | markdown | safe }}
+      </div>
+    </section>
+    {% endfor %}
+
+    <section class="tour-further" id="going-further" aria-labelledby="going-further-h">
+      <h2 id="going-further-h">Going further</h2>
+      <p>Each of these is short, and each one stands on its own.</p>
+      <ul class="tour-topic-list">
+        {% for topic in tour.topics %}
+        <li><a href="#{{ topic.anchor }}">{{ topic.title }}</a></li>
+        {% endfor %}
+      </ul>
+      {% for topic in tour.topics %}
+      <section class="tour-topic" id="{{ topic.anchor }}" aria-labelledby="{{ topic.anchor }}-h">
+        <h3 id="{{ topic.anchor }}-h">{{ topic.title }}</h3>
+        <div class="tour-body">
+          {{ topic.body | markdown | safe }}
+        </div>
+      </section>
+      {% endfor %}
+    </section>
+    </div>
+
+    </div>
+
+  </div>
+</div>

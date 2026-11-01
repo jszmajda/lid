@@ -435,6 +435,20 @@ class StructureTest(TreeCase):
         write(self.tree / "CLAUDE.md", "# Agents\n")
         self.assertTrue(any("CLAUDE.md" in f.where for f in pc.structure_findings(self.tree)))
 
+    def test_tour_files_stay_out_of_the_reference_list(self):
+        # @spec PKG-CHECK-039
+        core = self.tree / pc.CORE_SKILL / "SKILL.md"
+        body = core.read_text()
+        for name in ("tour-offer.md", "tour.md", "tour-topics.md"):
+            write(self.tree / pc.CORE_SKILL / "references" / name, "# Tour\n")
+        for name in ("tour.md", "tour-topics.md"):
+            write(core, body.replace("## Reference files\n\n",
+                                     "## Reference files\n\n- `references/%s` — the tour.\n" % name))
+            self.assertTrue(any(name in f.reason for f in pc.structure_findings(self.tree)), name)
+        write(core, body.replace("## Reference files\n\n",
+                                 "## Reference files\n\n- `references/tour-offer.md` — the offer.\n"))
+        self.assertEqual(pc.structure_findings(self.tree), [])
+
 
 # ------------------------------------------------------- workflow doc assembly
 

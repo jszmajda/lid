@@ -53,6 +53,11 @@ The `linked-intent-dev` workflow skill is pure prose — its `SKILL.md` is the a
 - `[x]` **LID-CORE-075**: When no capability flag applies to the executing model's configuration, the system SHALL say nothing about capability flags at a phase's stop.
 - `[x]` **LID-CORE-066**: When a capability flag applies to a kind of judgment the user has let go, the system SHALL still bring that judgment to the human and say why, unless the user, knowing the flag, has said to let it go.
 - `[x]` **LID-CORE-052**: When dispatching phase work to a subagent, the system SHALL embed in the dispatch prompt the obligations that phase carries — for implementation work, the EARS IDs in scope, the tests-first gate, and the `@spec` annotation requirement — and, for every dispatch regardless of phase, the obligation to surface rather than resolve ambiguity: a spec admitting more than one reading returns to the dispatcher as a question, never as a silently chosen reading.
+- `[x]` **LID-CORE-089**: At the start of a change in a project whose instruction file has LID directives, when the memory the harness places in the agent's context does not show that this person has met LID before, the agent conversing with the person SHALL read `references/tour-offer.md` and follow its offer at the top of its first message on that change. In Scoped mode, when the workflow asks whether the change is in scope, the offer SHALL wait until the answer puts the change in scope.
+- `[x]` **LID-CORE-090**: When the person saw at least the first step of the newcomer tour in the current session, the workflow SHALL add the tour's notes for the first change from `references/tour.md`, without adding a pause or changing what any phase presents.
+- `[x]` **LID-CORE-091**: The `linked-intent-dev` skill's reference list SHALL include `references/tour-offer.md`.
+- `[x]` **LID-CORE-092**: The `linked-intent-dev` skill's description SHALL cover a person asking for the LID tour, or asking how part of LID works, so that the skill is consulted for those requests.
+- `[x]` **LID-CORE-093**: When a person asks for the LID tour or for one of its topics, the system SHALL read `references/tour.md`, or the matching section of `references/tour-topics.md`, and give it. When a person asks how one part of LID works, the system SHALL answer briefly and offer the matching topic.
 
 ## Phase 1 — HLD Check
 
@@ -69,6 +74,7 @@ The `linked-intent-dev` workflow skill is pure prose — its `SKILL.md` is the a
 - `[x]` **LID-CORE-012**: When drafting or revising the HLD, the system SHALL elicit tenets — surfacing the few decisions that could reasonably go more than one acceptable way and recording each as a one-line tie-breaker under `## Tenets` — and SHALL drop a candidate whose opposite would be absurd rather than a choice a different project could reasonably make.
 - `[x]` **LID-CORE-039**: When eliciting tenets, the system SHALL route a candidate phrased as a triggered action (*when X, do Y* with a definite outcome) to EARS rather than recording it as a tenet, even when its opposite is defensible.
 - `[x]` **LID-CORE-041**: When a tenet candidate carries operational elaboration (how to apply it, steps to run), the system SHALL record the tenet as a one-line lean and route the elaboration into workflow guidance.
+- `[x]` **LID-CORE-088**: During Phase 1 bootstrap of a project with no LID setup, when the memory the harness places in the agent's context does not show that this person has met LID before, the system SHALL read `references/tour-offer.md` and follow its offer at the top of the agent's first message to the person.
 
 ## Phase 2 — LLD Check or Draft
 

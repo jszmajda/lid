@@ -48,6 +48,8 @@ Nearest-wins nesting is part of the spec; Codex and Amp implement hierarchical m
 - **Prose pointers are best-effort on most tools** — the model chooses whether to follow them. That is why the compact core in `AGENTS.md` carries the invariants that must survive an ignored pointer.
 - **Use deterministic loading where your tool has it:** Amp users can `@`-mention the doc from `AGENTS.md` (guaranteed inclusion, globs supported); Aider users should commit a `.aider.conf.yml` with `read: AGENTS.md` (see the [Aider section](#aider)); Claude Code and Cursor need nothing extra — the plugins carry the workflow.
 
+**New to LID?** The tour at [linked-intent.dev/tour](https://linked-intent.dev/tour) walks through what LID is and how it works, in a few minutes. It's the same introduction LID offers inside the agent on hosts with plugins.
+
 **If you use only tools from this list, with an `AGENTS.md` at your root and the vendored workflow doc, you are done.** The sections below cover tools that need something extra, or that benefit from an explicit adapter.
 
 ---

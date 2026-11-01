@@ -75,6 +75,7 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 - `[x]` **PROJ-STRUCT-027**: This repository SHALL NOT ship per-tool rule-file *adapter* files of its own (for example, it SHALL NOT contain a `.cursor/rules/lid.mdc` or `.github/copilot-instructions.md`); these are documented in `docs/setup.md` for users to drop into their own LID projects. Plugin *marketplace manifests* (`.claude-plugin/`, `.cursor-plugin/`) are NOT adapter files and ARE shipped — they register first-party plugins for a host's marketplace.
 - `[x]` **PROJ-STRUCT-062**: `docs/setup.md` SHALL document the first-class plugin hosts (Claude Code and Cursor), each installing the LID plugins from its own marketplace. The Cursor section SHALL present the plugin install as the primary path and the rule-file adapter as the lighter alternative.
 - `[x]` **PROJ-STRUCT-072**: `docs/setup.md` SHALL document opencode as a skills host: listing the core plugins' directories from a clone of this repository (`plugins/linked-intent-dev`, `plugins/arrow-maintenance`) under `skills.paths` in the user's opencode config, adding `plugins/lid-experimental` only to opt in, updating by pulling the clone, and stating that opencode loads no command aliases and that opencode 1.x ignores `disable-model-invocation`, so `lid-coach` and `map-codebase` are also model-invocable there.
+- `[x]` **PROJ-STRUCT-086**: `docs/setup.md` SHALL link to the marketing site's tour page for a person setting LID up by hand on a host without a plugin system.
 
 ## .claude-plugin/marketplace.json
 
@@ -143,7 +144,7 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 - `[x]` **PROJ-STRUCT-080**: `CHANGELOG.md` SHALL record changes to what the plugins ship, and SHALL NOT record work that ships in no plugin (the site, research, this repository's design docs and tooling).
 - `[x]` **PROJ-STRUCT-081**: A release that spans several changes SHALL gather on a release branch and merge to `main` once, as one version.
 - `[x]` **PROJ-STRUCT-063**: When a pull request changes shipped plugin files, the shipped workflow-doc asset (`plugins/linked-intent-dev/skills/update-lid/references/workflow-doc.md`) SHALL be regenerated with the packaging checks' assembly (`PKG-CHECK-036`), taking the new version as its stamp only when its assembled content changed.
-- `[x]` **PROJ-STRUCT-054**: After each merge that raises the version, the maintainer SHALL publish a `v<version>` git tag on the merge commit and a GitHub Release with notes drawn from that version's `CHANGELOG.md` entry; a minor or major Release SHALL also create a linked discussion in the repository's Discussions **Announcements** category (`gh release create … --discussion-category Announcements`).
+- `[x]` **PROJ-STRUCT-054**: After each merge that raises the version, the maintainer SHALL publish a `v<version>` git tag on the merge commit and a GitHub Release with notes drawn from that version's `CHANGELOG.md` entry; a minor or major Release SHALL also create a linked discussion in the repository's Discussions **Announcements** category (`gh release create … --discussion-category Announcements`), and a patch Release MAY create one when the maintainer judges that it brings something users would want to hear about.
 
 ## Arrow Registration
 

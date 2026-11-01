@@ -82,8 +82,8 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 
 ## Structure and Navigation
 
-- `[x]` **MKT-SITE-019**: The site SHALL contain exactly four top-level pages: Home, Start, Examples, Anti-patterns.
-- `[x]` **MKT-SITE-020**: When a user visits any page, the site SHALL provide navigation to the other three pages and to the GitHub repository.
+- `[x]` **MKT-SITE-019**: The site SHALL contain exactly five top-level pages: Home, Start, Examples, Anti-patterns, Tour.
+- `[x]` **MKT-SITE-020**: When a user visits any page, the site SHALL provide navigation to the other four pages and to the GitHub repository.
 - `[x]` **MKT-SITE-021**: The site SHALL NOT contain community features — forums, comments, user-submitted content, newsletter signups.
 - `[x]` **MKT-SITE-022**: The site SHALL NOT contain calls-to-action beyond "install and use."
 - `[ ]` **MKT-SITE-023**: The site SHALL NOT duplicate content from the README beyond the orientation material needed for an evaluator to decide whether to click through to it.
@@ -120,3 +120,17 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 ## Ecosystem (social proof)
 
 - `[x]` **MKT-SITE-054**: The onboarding surface SHALL surface the third-party extension ecosystem as a trust signal — at minimum a curated link from the repository `README.md` to `EXTENSIONS.md` and/or the canonical `linked-intent-development` topic, framed as projects building on LID, optionally enriched with a site element. It SHALL be a single curated maintainer link-out, not user-submitted content or an embedded feed, consistent with `MKT-SITE-021` (not a community hub). The ecosystem's substance is owned by the `extensions` segment; this segment owns only the trust-signal framing.
+
+## Tour page
+
+- `[x]` **MKT-SITE-072**: The Tour page, at `/tour`, SHALL present the newcomer tour's five steps, followed by the tour's topics as sections with a list of their titles at the top of that part of the page.
+- `[x]` **MKT-SITE-073**: The site's build SHALL render the Tour page's steps and topics from `tour.md` and `tour-topics.md` in `plugins/linked-intent-dev/skills/linked-intent-dev/references/` at the commit being built, and SHALL NOT edit or paraphrase them.
+- `[x]` **MKT-SITE-077**: The Tour page SHALL leave out the parts the tour files mark as making sense only inside the agent: the **next** and **done** choices, the **trace** offer, the notes, and the instructions to the agent.
+- `[x]` **MKT-SITE-078**: The site's copy rules for its other pages SHALL NOT apply to the tour's text on the Tour page, which follows the `tour` segment's word rules.
+- `[x]` **MKT-SITE-074**: The Tour page SHALL say which LID version its content comes from, taken from the plugin manifest at the commit being built.
+- `[x]` **MKT-SITE-075**: The Tour page SHALL show `diff` fences in red and green and language-tagged fences in syntax colors, in both the light and dark themes.
+- `[x]` **MKT-SITE-076**: The Start page SHALL link to the Tour page.
+- `[x]` **MKT-SITE-079**: Each topic's section on the Tour page SHALL have a stable anchor, so that a link can point to one topic.
+- `[x]` **MKT-SITE-080**: On a screen wide enough for two columns, the Tour page SHALL show a sidebar on the left of the content, staying in view as the page scrolls, with links to each step, to the "Going further" section, and to each topic.
+- `[x]` **MKT-SITE-081**: On a narrower screen, the Tour page SHALL show the same links in a collapsible list above the content instead of a sidebar.
+- `[x]` **MKT-SITE-082**: The Tour page SHALL set a short horizontal rule between consecutive steps and between consecutive topics.

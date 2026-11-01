@@ -2723,3 +2723,74 @@ hr {
     scroll-behavior: auto !important;
   }
 }
+
+/* ------------------------------------------------------------------ tour */
+/* The Tour page (MKT-SITE-072 to 082). Steps and topics are Markdown read from
+   the tour's own files; fenced code gets light coloring from the build's
+   highlighter (.hl-*), in both themes. */
+.tour-page .tour-step,
+.tour-page .tour-topic { margin: 2.5rem 0; max-width: 46rem; }
+/* A short rule between one step or topic and the next, so each reads as its
+   own screen (MKT-SITE-082). */
+.tour-page .tour-step + .tour-step::before,
+.tour-page .tour-topic + .tour-topic::before { content: ""; display: block; width: 4rem; border-top: 2px solid var(--ink-4); margin-bottom: 2.5rem; }
+.tour-page .tour-further { margin-top: 4rem; border-top: 1px solid var(--ink-4); padding-top: 2rem; max-width: 46rem; }
+.tour-page .tour-body p,
+.tour-page .tour-body li { color: var(--ink-2); overflow-wrap: anywhere; }
+.tour-page .tour-body blockquote { border-left: 2px solid var(--nib); margin: 1rem 0; padding: 0.25rem 1rem; color: var(--ink-2); }
+.tour-page .tour-body pre { white-space: pre; overflow-x: auto; }
+.tour-page .tour-topic-list { columns: 2; column-gap: 2rem; }
+@media (max-width: 640px) { .tour-page .tour-topic-list { columns: 1; } }
+
+:root {
+  --hl-add: #8ec07c;
+  --hl-del: #e07a6a;
+  --hl-comment: #8a8a7c;
+  --hl-string: #d9a35f;
+  --hl-keyword: #79a8d1;
+  --hl-number: #c79ad6;
+}
+@media (prefers-color-scheme: light) {
+  :root {
+    --hl-add: #2e6b2a;
+    --hl-del: #a3341f;
+    --hl-comment: #6e7079;
+    --hl-string: #8c4f12;
+    --hl-keyword: #1f4971;
+    --hl-number: #6b3a7d;
+  }
+}
+.hl-add { color: var(--hl-add); }
+.hl-del { color: var(--hl-del); }
+.hl-comment { color: var(--hl-comment); font-style: italic; }
+.hl-string { color: var(--hl-string); }
+.hl-keyword { color: var(--hl-keyword); }
+.hl-number { color: var(--hl-number); }
+
+/* Tour page layout: a sidebar of links on the left (MKT-SITE-080), or a
+   collapsible list above the content on narrow screens (MKT-SITE-081). */
+.tour-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-6); }
+.tour-page .tour-step,
+.tour-page .tour-topic,
+.tour-page .tour-further { scroll-margin-top: 7rem; }
+.tour-page .tour-step:first-child { margin-top: 0; }
+.tour-toc { border: 1px solid var(--graphite); border-radius: 6px; padding: var(--s-3) var(--s-4); background: var(--paper-2); }
+.tour-toc > summary { cursor: pointer; font-family: var(--type-mono); font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); }
+.tour-toc ol,
+.tour-toc ul { list-style: none; padding: 0; margin: var(--s-3) 0 var(--s-4); }
+.tour-toc ol { counter-reset: tour-step; }
+.tour-toc ol li { counter-increment: tour-step; }
+.tour-toc ol li::before { content: counter(tour-step) "  "; font-family: var(--type-mono); color: var(--nib); font-size: 0.8em; }
+.tour-toc li { margin: var(--s-3) 0; font-size: 0.9rem; line-height: 1.35; }
+.tour-toc a { color: var(--ink-2); border-bottom: 0; }
+.tour-toc a:hover,
+.tour-toc a:focus-visible { color: var(--nib); border-bottom: 1px solid currentColor; }
+.tour-toc-head { margin: var(--s-3) 0 0; font-family: var(--type-mono); font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; }
+.tour-toc-head a { color: var(--ink-3); }
+@media (min-width: 960px) {
+  .tour-layout { grid-template-columns: 15rem minmax(0, 1fr); gap: var(--s-7); }
+  .tour-sidebar { position: sticky; top: 7rem; align-self: start; max-height: calc(100vh - 8rem); overflow-y: auto; }
+  .tour-toc { border: 0; background: transparent; padding: 0; }
+  .tour-toc > summary { display: none; }
+  .tour-page .tour-further .tour-topic-list { display: none; }
+}

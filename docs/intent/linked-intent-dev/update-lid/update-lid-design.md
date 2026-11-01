@@ -46,6 +46,10 @@ On invocation, the skill inspects the project:
 
 Version-walk is evaluated ahead of reconcile-conventions: a lagging project is first brought to the current conventions version, then ordinary drift reconciliation runs against those conventions. Reconcile-conventions also offers template rewording shipped in a patch, as an optional refresh; a change to what the template tells an agent to do ships as a minor version with a migration step (`project-structure` § *Versions and releases*).
 
+### Newcomer tour offer
+
+On a project with no LID directives (the full-bootstrap and append-directives rows above), the skill's first message, which proposes the setup before anything is written, carries LID's newcomer tour offer at its top when the person may be new (HLD § Key Design Decisions, *Introducing LID inside the agent*). The `tour` segment sets that condition and owns the offer's form: the skill reads `references/tour-offer.md` from the `linked-intent-dev` skill and follows it. The skill makes no offer when a caller passed the mode, because that caller made the offer at its own first question, and none on a project that already has LID directives. When the workflow's Phase 1 applies this skill's bootstrap branch inline, the workflow's offer is the only one made.
+
 ### Detection signals
 
 The skill detects state via specific signals rather than heuristics:
