@@ -12,14 +12,8 @@ description: Linked-Intent Development — how do you know your agent built what
 <section class="wrap hero" id="hero">
   <div class="hero-text">
     <h1>How do you know your agent built what you meant?</h1>
-    <ul class="because" aria-label="Four-line framing">
-      {% for line in site.framing %}
-      <li><span class="ptr" aria-hidden="true"></span><span>{{ line | safe }}</span></li>
-      {% endfor %}
-    </ul>
-    <p class="lede">
-      Code that runs can still miss what you meant. Somewhere in there, the agent made a judgment call you never saw — and by the next session, nobody remembers why. With LID (Linked-Intent Development), the design stays linked to everything built from it: fix it once, the agent cascades the change, and you sign off or push back at every step. You'd type these sentences into the chat anyway — LID keeps them where the next session can find them.
-    </p>
+    <p class="lede">When your request leaves a detail unsaid, your agent fills the gap with its best guess, and when you come back later, the agent there won't remember why it chose what it did.</p>
+    <p class="lede">With LID (Linked-Intent Development), you and your agent write the design down in plain English, and everything the agent builds points back to it. When you change your mind, you change the design once, and the agent carries the change down while you review each step. You'd type the design into the chat anyway, and LID keeps it where your agent can find it next time.</p>
     <div class="ctas">
       <a class="btn btn-go" href="#quickstart">Install <span class="ptr" aria-hidden="true"></span></a>
       <a class="btn btn-ghost" href="{{ site.repoUrl }}">Read the source</a>
@@ -194,7 +188,10 @@ it("ends the trial 720 hours after signup", () =&gt; {
   <figure class="node dag-figure">
     <p class="muted" style="max-width:62ch;margin-inline:auto">Each traced path like that, from a design down to code, is what LID calls an arrow. Every design, requirement, test, and file in a project make one graph of them:</p>
     {% include "dag.svg" %}
-    <figcaption>One high-level design, its low-level designs, their requirements, the tests written first, and the code. The highlighted edges show one test covering two files, and one file covered by two tests.</figcaption>
+    <figcaption>
+      <span class="dag-key"><svg viewBox="0 0 28 10" aria-hidden="true"><path d="M1 5H21" class="dag-edge dag-edge-cross"/><path d="M19 1L27 5L19 9z" class="dag-head-cross"/></svg>Orange edges mark the overlap: one test that covers two files, and one file that two tests cover.</span>
+      <span>One high-level design, its low-level designs, their requirements, the tests written first, and the code.</span>
+    </figcaption>
   </figure>
 </section><!-- /section:check -->
 

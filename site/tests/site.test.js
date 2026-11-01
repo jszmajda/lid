@@ -135,6 +135,20 @@ describe("home page", () => {
     assert.deepEqual(ids, ["hero", "gap", "narrowing", "change", "check", "time", "teams", "quickstart", "experimental", "ecosystem", "paths"]);
   });
 
+  // @spec MKT-SITE-002, MKT-SITE-060
+  it("answers the question in two short paragraphs", () => {
+    const hero = section("hero");
+    assert.doesNotMatch(hero.match(/<div class="hero-text">[\s\S]*?<div class="ctas">/)[0], /<ul|<ol/, "no list of fragments under the h1");
+    const paras = [...hero.matchAll(/<p class="lede">([\s\S]*?)<\/p>/g)].map((m) => text(m[1]));
+    assert.equal(paras.length, 2);
+    assert.match(paras[0], /best guess/);
+    assert.match(paras[0], /won't remember why/);
+    assert.match(paras[1], /^With LID \(Linked-Intent Development\)/);
+    assert.match(paras[1], /review each step/);
+    assert.match(paras[1], /type the design into the chat anyway, and LID keeps it where your agent can find it next time\.$/);
+    for (const p of paras) assert.doesNotMatch(p, /\b(HLD|LLD|EARS|DAG|arrow)\b|[A-Z]+-\d{3}/);
+  });
+
   // @spec MKT-SITE-111
   it("shows the finished rings in the hero, without labels", () => {
     const svg = section("hero").match(/<svg[^>]*class="rings-svg"[\s\S]*?<\/svg>/);
@@ -283,6 +297,7 @@ describe("home page", () => {
     assert.ok(edges.length > 10);
     for (const edge of edges) assert.match(edge, /marker-end="url\(#dag-/);
     assert.ok(edges.filter((edge) => edge.includes("dag-edge-cross")).length >= 2);
+    assert.match(text(check.match(/<figcaption>[\s\S]*?<\/figcaption>/)[0]), /Orange edges mark the overlap/);
     assert.match(text(check), /what LID calls an arrow/);
   });
 

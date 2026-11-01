@@ -1,4 +1,4 @@
-<svg class="dag" xmlns="http://www.w3.org/2000/svg" viewBox="0 20 540 380" role="img" aria-labelledby="dag-title dag-desc">
+<svg class="dag" xmlns="http://www.w3.org/2000/svg" viewBox="-4 20 548 380" role="img" aria-labelledby="dag-title dag-desc">
   <title id="dag-title">Every arrow across a codebase</title>
   <desc id="dag-desc">A directed graph: one high-level design fans out to three low-level designs, six requirements, six tests written first, and five code files. Two highlighted edges show one test covering two code files and one code file covered by two tests.</desc>
   <!-- Every filled rect stays at least 70 by 30 viewBox units: smaller filled rects hit a

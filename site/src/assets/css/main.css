@@ -137,7 +137,7 @@ img, svg { max-width: 100%; }
 /* 7. Hero ──────────────────────────────────────────────────────────────── */
 .hero { display: grid; gap: 32px; padding-block: clamp(28px, 5vw, 64px) 0; align-items: center; }
 @media (min-width: 980px) { .hero { grid-template-columns: minmax(0, 11fr) minmax(0, 9fr); gap: 48px; } }
-.hero-text { display: grid; gap: 22px; }
+.hero-text { display: grid; gap: 18px; }
 .hero h1 { font-size: clamp(2.3rem, 5vw, 4.4rem); line-height: 1; font-weight: 800; letter-spacing: -0.035em; max-width: 13ch; }
 .because { list-style: none; padding: 0; display: grid; gap: 6px; font-size: clamp(1rem, 1.4vw, 1.12rem); }
 .because li { display: flex; gap: 12px; align-items: baseline; }
@@ -179,7 +179,7 @@ img, svg { max-width: 100%; }
 .step p b { color: var(--ink); font-weight: 600; }
 .file { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--surface); }
 .file figcaption { display: flex; align-items: center; gap: 8px; padding: 7px 12px; background: var(--paper); border-bottom: 1px solid var(--line); font: 500 12px var(--mono); color: var(--ink-2); }
-.file figcaption::before { content: ""; width: 9px; height: 11px; border: 1.5px solid currentColor; border-radius: 2px; display: block; flex: none; }
+.file figcaption::before { content: "📄"; font-size: 13px; line-height: 1; flex: none; }
 .file pre { padding: 10px 14px; font: 400 13px/1.6 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink); }
 .file .h, .file .c, .file .dim { color: var(--ink-2); }
 .file .id { color: var(--link); font-weight: 500; }
@@ -259,7 +259,9 @@ img, svg { max-width: 100%; }
 .dag-edge-cross { stroke: var(--ptr); stroke-width: 2; }
 .dag-head { fill: var(--ink-2); }
 .dag-head-cross { fill: var(--ptr); }
-.dag-figure figcaption { color: var(--ink-2); font-size: 15px; max-width: 62ch; margin-inline: auto; }
+.dag-figure figcaption { color: var(--ink-2); font-size: 15px; max-width: 62ch; margin-inline: auto; display: grid; gap: 6px; }
+.dag-key { display: flex; gap: 10px; align-items: center; color: var(--ink); font-weight: 500; }
+.dag-key svg { width: 28px; height: 10px; flex: none; overflow: visible; }
 
 /* 12. Where your time goes ─────────────────────────────────────────────── */
 .time-grid { display: grid; gap: 28px; }
