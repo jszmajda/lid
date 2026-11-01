@@ -1,0 +1,716 @@
+<title>LID Home Spikes</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geologica:wght@400;500;700;800&family=Spline+Sans+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a short run of the home page in the Linked list look (sticky nav, hero, the gap, the two explainer sections, the quickstart), under a band of notes on this pass. */
+:root {
+  --paper: #F6F6F4;
+  --surface: #FFFFFF;
+  --line: #E3DFDB;
+  --ink: #1A0F0A;
+  --ink-2: #5B514B;
+  --ptr: #FF6B3D;
+  --link: #C2410C;
+  --tile: #1A0F0A;
+  --on-tile: #FFF8F4;
+  --on-tile-2: #CDBFB7;
+  --tint: #FFEDE5;
+  --display: "Geologica", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "Spline Sans Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --nav-h: 68px;
+  {{PTR_MASK}}
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #14100D; --surface: #1D1714; --line: #352B25; --ink: #F4EDE8; --ink-2: #B8ABA3;
+    --ptr: #FF7A4F; --link: #FF9A76; --tile: #F4EDE8; --on-tile: #14100D; --on-tile-2: #5B514B; --tint: #33190F;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #14100D; --surface: #1D1714; --line: #352B25; --ink: #F4EDE8; --ink-2: #B8ABA3;
+  --ptr: #FF7A4F; --link: #FF9A76; --tile: #F4EDE8; --on-tile: #14100D; --on-tile-2: #5B514B; --tint: #33190F;
+  color-scheme: dark;
+}
+
+body { background: var(--paper); color: var(--ink); font: 400 17px/1.6 var(--display); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--paper); }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+p, ol, ul, figure, blockquote, pre { margin: 0; }
+code, pre { font-family: var(--mono); }
+a { color: var(--link); text-underline-offset: 3px; }
+:focus-visible { outline: 2px solid var(--ptr); outline-offset: 3px; border-radius: 6px; }
+.ptr-glyph { display: inline-block; width: 0.62em; aspect-ratio: 28 / 32; background: currentColor; -webkit-mask: var(--ptr-mask) center / contain no-repeat; mask: var(--ptr-mask) center / contain no-repeat; flex: none; }
+.wrap {
+  max-width: 1200px; margin-inline: auto;
+  padding-left: max(18px, env(safe-area-inset-left, 0px));
+  padding-right: max(18px, env(safe-area-inset-right, 0px));
+}
+
+/* Notes band */
+.notes { background: var(--surface); border-bottom: 1px solid var(--line); }
+.notes .wrap { padding-block: 22px; display: grid; gap: 12px; }
+.notes-row { display: flex; justify-content: space-between; gap: 16px; align-items: center; }
+.notes h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
+.notes details { max-width: 84ch; }
+.notes summary { cursor: pointer; font-weight: 600; font-size: 15px; color: var(--ink-2); }
+.notes ol { margin-top: 10px; padding-left: 1.3em; display: grid; gap: 6px; font-size: 15px; color: var(--ink-2); }
+.notes b { color: var(--ink); font-weight: 600; }
+.theme { font: 600 14px var(--display); color: var(--ink); background: var(--paper); border: 1px solid var(--line); border-radius: 999px; padding: 7px 14px; cursor: pointer; white-space: nowrap; }
+
+/* Buttons */
+.btn { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; font: 700 16px var(--display); padding: 12px 22px; border-radius: 999px; border: 2px solid transparent; cursor: pointer; white-space: nowrap; }
+.btn .ptr-glyph { width: 0.55em; }
+.btn-go { background: #FF6B3D; color: #1A0F0A; }
+.btn-go:hover { background: #FF8459; }
+.btn-ghost { border-color: var(--ink); color: var(--ink); background: transparent; }
+.btn-ghost:hover { background: var(--surface); }
+.btn-sm { font-size: 14.5px; padding: 8px 15px; }
+
+/* Sticky nav */
+.nav-bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: color-mix(in srgb, var(--paper) 90%, transparent); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border-bottom: 1px solid transparent; transition: border-color .2s; }
+.nav-bar.scrolled { border-bottom-color: var(--line); }
+.nav { display: flex; align-items: center; gap: 14px; min-height: var(--nav-h); }
+.nav .home { margin-right: auto; display: block; }
+.nav .wordmark { height: 34px; width: auto; display: block; }
+.nav ul { display: flex; gap: 2px; list-style: none; padding: 0; margin: 0; }
+.nav ul a { color: var(--ink-2); text-decoration: none; font-weight: 500; font-size: 15px; padding: 8px 12px; border-radius: 999px; white-space: nowrap; }
+.nav ul a:hover { color: var(--ink); background: var(--surface); }
+.m-menu { position: relative; display: none; }
+@media (max-width: 900px) { .nav ul { display: none; } .m-menu { display: block; } }
+.m-menu summary { list-style: none; cursor: pointer; font: 700 14.5px var(--display); padding: 7px 13px; border-radius: 999px; border: 2px solid var(--ink); display: inline-flex; gap: 8px; align-items: center; }
+.m-menu summary::-webkit-details-marker { display: none; }
+.m-menu summary i { width: 14px; height: 10px; display: block; border-top: 2px solid currentColor; border-bottom: 2px solid currentColor; position: relative; }
+.m-menu summary i::after { content: ""; position: absolute; left: 0; right: 0; top: 2px; border-top: 2px solid currentColor; }
+.m-menu[open] summary { background: var(--tile); color: var(--on-tile); border-color: var(--tile); }
+.m-panel { position: absolute; right: 0; top: calc(100% + 8px); width: 240px; z-index: 5; background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 8px; display: grid; gap: 2px; box-shadow: 0 14px 32px rgba(26, 15, 10, .16); }
+.m-panel a { display: flex; justify-content: space-between; align-items: center; padding: 11px 12px; border-radius: 12px; text-decoration: none; color: var(--ink); font-weight: 600; font-size: 16px; }
+.m-panel a:hover { background: var(--paper); }
+.m-panel a .ptr-glyph { color: var(--ptr); width: 9px; }
+
+/* Sections */
+.sec { padding-block: clamp(56px, 8vw, 104px) 0; scroll-margin-top: calc(var(--nav-h) + 12px); }
+.sec-head { display: grid; gap: 14px; max-width: 46rem; margin-bottom: 32px; }
+.sec-head h2 { font-size: clamp(1.9rem, 3.6vw, 3rem); line-height: 1.05; font-weight: 800; letter-spacing: -0.03em; }
+.sec-head p { color: var(--ink-2); }
+
+/* Hero */
+.hero { display: grid; gap: 32px; padding-block: clamp(28px, 5vw, 64px) 0; align-items: center; }
+@media (min-width: 980px) { .hero { grid-template-columns: minmax(0, 11fr) minmax(0, 9fr); gap: 48px; } }
+.hero-text { display: grid; gap: 22px; }
+.hero h1 { font-size: clamp(2.3rem, 5vw, 4.4rem); line-height: 1; font-weight: 800; letter-spacing: -0.035em; max-width: 13ch; }
+.because { list-style: none; padding: 0; display: grid; gap: 6px; font-size: clamp(1rem, 1.4vw, 1.12rem); }
+.because li { display: flex; gap: 12px; align-items: baseline; }
+.because .ptr-glyph { color: var(--ptr); width: 0.58em; }
+.lede { color: var(--ink-2); max-width: 56ch; font-size: 16.5px; }
+.ctas { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+
+/* The gap */
+.ask { font-size: clamp(1.4rem, 2.8vw, 2rem); font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; margin-bottom: 18px; }
+.decisions { list-style: none; padding: 0; display: grid; gap: 14px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 980px) { .decisions { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .decisions { grid-template-columns: 1fr; } }
+.decisions li { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 18px; display: grid; gap: 6px; align-content: start; }
+.decisions b { font-weight: 700; }
+.decisions span { color: var(--ink-2); font-size: 15.5px; }
+.decisions li:last-child { border-color: var(--ink); }
+.tokyo { margin-top: 18px; max-width: 60ch; color: var(--ink-2); }
+
+/* ── Explainer ───────────────────────────────────────── */
+.scrolly { display: grid; gap: 18px; }
+@media (min-width: 900px) { .scrolly { grid-template-columns: minmax(0, 11fr) minmax(0, 9fr); gap: 48px; } }
+.scrolly-fig { position: sticky; top: calc(var(--nav-h) + env(safe-area-inset-top, 0px) + 6px); align-self: start; background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 14px 14px 12px; z-index: 2; display: grid; gap: 10px; }
+@media (min-width: 900px) { .scrolly-fig { top: calc(var(--nav-h) + 20px); padding: 20px; } }
+.steps { list-style: none; padding: 0 0 30vh; display: grid; gap: 14px; }
+.step { min-height: 44vh; display: grid; align-content: center; gap: 12px; padding: 22px; border-radius: 20px; border: 1px solid transparent; transition: border-color .3s, background-color .3s, opacity .3s; opacity: .45; }
+.step.on { border-color: var(--line); background: var(--surface); opacity: 1; }
+@media (max-width: 899px) { .step { min-height: 40vh; } }
+.step h3 { font-size: 21px; font-weight: 700; letter-spacing: -0.01em; }
+.step blockquote { font-weight: 600; font-size: 1.06rem; line-height: 1.45; }
+.step blockquote code { font-weight: 500; font-size: .88em; }
+.step p { color: var(--ink-2); font-size: 16px; }
+.step p b { color: var(--ink); font-weight: 600; }
+.step mark { background: var(--tint); color: var(--link); border-radius: 4px; padding: 0 3px; }
+.bubble { display: grid; gap: 5px; justify-items: start; }
+.bubble .who { font: 500 12.5px var(--mono); color: var(--ink-2); }
+.bubble p { background: var(--tint); color: var(--ink); padding: 10px 16px; border-radius: 18px 18px 18px 6px; font-weight: 600; font-size: 1.05rem; max-width: 42ch; margin: 0; }
+.file { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--surface); margin: 0; }
+.file figcaption { display: flex; align-items: center; gap: 8px; padding: 7px 12px; background: var(--paper); border-bottom: 1px solid var(--line); font: 500 12px var(--mono); color: var(--ink-2); }
+.file figcaption i { width: 9px; height: 11px; border: 1.5px solid currentColor; border-radius: 2px; display: block; flex: none; }
+.file pre { padding: 10px 14px; font: 400 13px/1.6 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink); }
+.file .h { color: var(--ink-2); }
+.file .dim { color: var(--ink-2); }
+.file .id { color: var(--link); font-weight: 500; }
+.file .hl { background: var(--tint); color: var(--link); border-radius: 3px; }
+.file b { font-weight: 600; }
+.run { font: 500 13.5px/1.7 var(--mono); display: grid; gap: 2px; }
+.run .fail { color: var(--ink-2); }
+.run b { display: inline-block; width: 1.4em; }
+.drafts { display: grid; gap: 8px; }
+.draft { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 2px 12px; align-items: center; padding: 12px 14px; border-radius: 14px; border: 1.5px solid var(--line); background: var(--surface); transition: opacity .3s, border-color .3s; }
+.draft .mk { grid-row: span 2; width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; font: 700 14px var(--display); border: 1.5px solid var(--line); }
+.draft .mk .n { display: none; color: var(--ink-2); }
+.draft.d1 .mk .r { color: var(--link); }
+.draft b { font: 500 12.5px var(--mono); color: var(--ink-2); }
+.draft .text { font-weight: 600; font-size: 15px; color: var(--ink); }
+.step[data-phase="d1"] .draft .mk .n, .step[data-phase="d1x"] .d2 .mk .n, .step[data-phase="d2"] .d2 .mk .n { display: inline; }
+.step[data-phase="d1"] .draft .mk .r, .step[data-phase="d1x"] .d2 .mk .r, .step[data-phase="d2"] .d2 .mk .r { display: none; }
+.step[data-phase="d1"] .d2, .step[data-phase="d1x"] .d2, .step[data-phase="d2"] .d1, .step[data-phase="d2ok"] .d1 { opacity: .4; }
+.step[data-phase="d1"] .d1, .step[data-phase="d1x"] .d1, .step[data-phase="d2"] .d2, .step[data-phase="d2ok"] .d2 { border-color: var(--ink); }
+.why span { transition: opacity .3s; }
+.step[data-phase="d1"] .why span, .step[data-phase="d1x"] .why .w2, .step[data-phase="d2"] .why .w2 { opacity: 0; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 13px; color: var(--ink-2); list-style: none; padding: 0; }
+.legend li { display: inline-flex; align-items: center; gap: 6px; }
+.rings .legend svg { width: 18px; height: 18px; flex: none; overflow: visible; }
+@media (max-width: 520px) { .legend { font-size: 12px; gap: 2px 12px; } }
+
+/* Drawing */
+.rings svg { display: block; width: 100%; height: auto; overflow: visible; }
+.dot { fill: var(--ink); transition: opacity .5s ease; }
+.dot.l0 { opacity: .85; }
+.dot.l1 { opacity: .24; }
+.dot.l2 { opacity: .13; }
+.dot.l3 { opacity: .07; }
+.dot.hid { opacity: 0; }
+.ring-line { fill: color-mix(in srgb, var(--ink) 3.5%, transparent); stroke: var(--ink); stroke-width: 2.4; transition: stroke .35s ease; }
+.ring.ear .ring-line { stroke-width: 1.8; fill: color-mix(in srgb, var(--ink) 4%, transparent); }
+.ring.loose .ring-line { stroke: var(--ptr); stroke-dasharray: 8 6; }
+.ring.ear.loose .ring-line { stroke-dasharray: 5 4; }
+.ring-tab { fill: var(--surface); transition: fill .35s ease; }
+.ring.loose .ring-tab { fill: var(--ptr); }
+.ring-label { font: 500 15px var(--mono); fill: var(--ink); }
+.ring.small .ring-label { font-size: 12px; }
+.ring.loose .ring-label { fill: #1A0F0A; }
+.badge circle { fill: var(--ink); }
+.badge path { fill: none; stroke: var(--surface); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.xbadge circle { fill: var(--ptr); }
+.xbadge path { fill: none; stroke: #1A0F0A; stroke-width: 2.4; stroke-linecap: round; }
+.hatch-line { stroke: var(--ink); stroke-width: 1.3; opacity: .2; }
+.tenet-edge { stroke: var(--ink); stroke-width: 1.8; stroke-dasharray: 2 5; stroke-linecap: round; transition: stroke .2s; }
+.tenet.hit .tenet-edge { stroke: var(--ptr); stroke-width: 4; stroke-dasharray: none; }
+.thread { fill: none; stroke: var(--ink-2); stroke-width: 1.6; stroke-dasharray: 2 4; stroke-linecap: round; transition: stroke .3s; }
+.thread.lit { stroke: var(--ptr); stroke-width: 2.6; }
+.spec-tag { font: 500 11.5px var(--mono); fill: var(--ink-2); }
+.spec-tag.lit { fill: var(--link); }
+.reticle circle { fill: none; stroke: var(--ink); stroke-width: 2; }
+.reticle line { stroke: var(--ink); stroke-width: 2; stroke-linecap: round; }
+.reticle.aim circle { stroke-dasharray: 3 3; }
+.code-core { fill: var(--ptr); stroke: var(--ptr); stroke-width: 2.5; transition: fill .3s; }
+.code.hollow .code-core { fill: var(--surface); }
+.code-halo { fill: none; stroke: var(--ptr); stroke-width: 2; opacity: .4; }
+.nolabels .ring-tab, .nolabels .ring-label, .nolabels .badge, .nolabels .xbadge, .nolabels .thread, .nolabels .spec-tag { display: none; }
+
+/* Demo and quickstart */
+.term { border-radius: 22px; background: #1A0F0A; color: #F4EDE8; overflow: hidden; border: 1px solid var(--line); max-width: 860px; }
+.term-bar { display: flex; gap: 8px; padding: 13px 18px; border-bottom: 1px solid rgba(255, 255, 255, .08); font: 400 12.5px var(--mono); color: #B8ABA3; align-items: center; }
+.term-body { aspect-ratio: 16 / 7; display: grid; place-content: center; justify-items: center; gap: 12px; text-align: center; padding: 20px; }
+.play { width: 64px; height: 64px; border-radius: 18px; background: #FF6B3D; display: grid; place-items: center; }
+.play i { width: 22px; aspect-ratio: 28/32; background: #1A0F0A; -webkit-mask: var(--ptr-mask) center / contain no-repeat; mask: var(--ptr-mask) center / contain no-repeat; display: block; transform: translateX(2px); }
+.term-body p { font: 400 13px var(--mono); color: #B8ABA3; }
+.demo-head { margin-top: 40px; display: grid; gap: 6px; margin-bottom: 16px; }
+.demo-head h3 { font-size: 22px; font-weight: 700; }
+.demo-head p { color: var(--ink-2); }
+.qs { background: var(--tile); color: var(--on-tile); border-radius: 32px; padding: clamp(24px, 5vw, 52px); display: grid; gap: 32px; }
+@media (min-width: 960px) { .qs { grid-template-columns: 5fr 7fr; gap: 52px; } }
+.qs h2 { font-size: clamp(1.9rem, 3.6vw, 2.8rem); line-height: 1.05; font-weight: 800; letter-spacing: -0.03em; }
+.qs-head { display: grid; gap: 14px; align-content: start; }
+.qs-head p { color: var(--on-tile-2); }
+.cmds { list-style: none; padding: 0; display: grid; gap: 10px; counter-reset: s; }
+.cmds li { counter-increment: s; display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 13px 14px; border-radius: 14px; background: color-mix(in srgb, var(--on-tile) 7%, transparent); }
+.cmds li::before { content: counter(s); font-weight: 800; color: var(--ptr); font-size: 18px; }
+.cmds code { font-size: 14px; overflow-wrap: anywhere; display: block; }
+.cmds small { display: block; color: var(--on-tile-2); font-size: 13.5px; margin-top: 3px; }
+.copy { font: 600 13px var(--display); color: var(--on-tile); background: none; cursor: pointer; border: 1.5px solid color-mix(in srgb, var(--on-tile) 30%, transparent); border-radius: 999px; padding: 6px 12px; }
+.copy:hover { border-color: var(--ptr); }
+.end { padding-block: 56px 96px; color: var(--ink-2); font-size: 15px; }
+
+@media (prefers-reduced-motion: reduce) { .dot, .step, .ring-line, .ring-tab, .code-core, .thread, .tenet-edge, .nav-bar, .draft { transition: none; } }
+</style>
+
+<div class="notes">
+  <div class="wrap">
+    <div class="notes-row"><h1>Home page spikes, fifth pass</h1><button class="theme" type="button" id="theme">Theme: auto</button></div>
+    <details open>
+      <summary>What changed, by your six new comments</summary>
+      <ol>
+        <li><b>A conversational start.</b> The first card opens with your request as a chat message, lists a few ways the agent could build it, then asks you to picture each program as a dot.</li>
+        <li><b>Every quote is a file.</b> Each level appears in a small editor window with its path, like <code>docs/high-level-design.md</code>, so it reads as your project's own document. Requests are chat messages.</li>
+        <li><b>A real tenet.</b> "Customer delight over perfect cost management," in the HLD template's own form, with your wording for the line under it.</li>
+        <li><b>Valid EARS.</b> TRIAL-001 is event-driven, TRIAL-002 is state-driven, and TRIAL-003 is event-driven before and after the change.</li>
+        <li><b>An intro beat for the change.</b> The section opens by admitting it's a lot to write down, and says it pays off when you change your mind.</li>
+        <li><b>Drafts read like options.</b> The two boxes hold only the drafts, numbered like a question's choices. They turn into ✗ and ✓ as the drawing plays, and the reasons appear below the boxes.</li>
+      </ol>
+    </details>
+  </div>
+</div>
+
+<div class="nav-bar" id="nav-bar">
+  <header class="wrap nav">
+    <a class="home" href="#" aria-label="LID home">{{WORDMARK_BADGE}}</a>
+    <nav aria-label="Sample navigation"><ul>
+      <li><a href="#">Start</a></li><li><a href="#">Examples</a></li><li><a href="#">Anti-patterns</a></li><li><a href="#">Tour</a></li><li><a href="#">GitHub</a></li>
+    </ul></nav>
+    <a class="btn btn-go btn-sm" href="#quickstart">Install</a>
+    <details class="m-menu">
+      <summary><i aria-hidden="true"></i>Menu</summary>
+      <nav class="m-panel" aria-label="Sample menu">
+        <a href="#">Start <span class="ptr-glyph" aria-hidden="true"></span></a>
+        <a href="#">Examples <span class="ptr-glyph" aria-hidden="true"></span></a>
+        <a href="#">Anti-patterns <span class="ptr-glyph" aria-hidden="true"></span></a>
+        <a href="#">Tour <span class="ptr-glyph" aria-hidden="true"></span></a>
+        <a href="#">GitHub <span class="ptr-glyph" aria-hidden="true"></span></a>
+      </nav>
+    </details>
+  </header>
+</div>
+
+<main class="wrap">
+  <section class="hero">
+    <div class="hero-text">
+      <h1>How do you know your agent built what you meant?</h1>
+      <ul class="because">
+        <li><span class="ptr-glyph" aria-hidden="true"></span>Because you wrote it down: a design, in plain English.</li>
+        <li><span class="ptr-glyph" aria-hidden="true"></span>Because everything the agent builds comes from that design.</li>
+        <li><span class="ptr-glyph" aria-hidden="true"></span>Because you can check: one ID grep returns the requirement, its tests, and its code.</li>
+        <li><span class="ptr-glyph" aria-hidden="true"></span>Because LID helped you get there.</li>
+      </ul>
+      <p class="lede">Code that runs can still miss what you meant. With LID (Linked-Intent Development), the design stays linked to everything built from it. Fix it once, the agent cascades the change, and you sign off or push back at every step.</p>
+      <div class="ctas">
+        <a class="btn btn-go" href="#quickstart">Install <span class="ptr-glyph" aria-hidden="true"></span></a>
+        <a class="btn btn-ghost" href="#">Read the source</a>
+      </div>
+    </div>
+    <figure class="rings">
+      <svg id="rings-hero" role="img" aria-label="A field of dots with nested rounded rings closing in on one orange dot."></svg>
+    </figure>
+  </section>
+
+  <section class="sec" id="gap">
+    <header class="sec-head">
+      <h2>A short request leaves the decisions to your agent.</h2>
+      <p>Suppose you ask your agent to add a feature to your app:</p>
+    </header>
+    <div class="bubble"><span class="who">You, to your agent</span><p>Give new users a 30-day free trial.</p></div>
+    <p style="color:var(--ink-2);margin:18px 0 16px">It sounds complete, but it leaves these decisions to the agent:</p>
+    <ul class="decisions">
+      <li><b>When the trial starts</b><span>At signup, or the first time they use the app.</span></li>
+      <li><b>What happens when it ends</b><span>The account locks, or the card on file is charged.</span></li>
+      <li><b>Second trials</b><span>Whether someone can start another with a new email address.</span></li>
+      <li><b>When exactly day 30 ends</b><span>Easy to miss, and someone will notice.</span></li>
+    </ul>
+    <p class="tokyo">Someone who signs up at 11 p.m. on the 1st, in Tokyo, will notice how the last one was decided.</p>
+  </section>
+
+  <section class="sec" id="narrowing">
+    <header class="sec-head">
+      <h2>Each level you write down rules out what you didn't mean.</h2>
+      <p>Each level of design is a constraint on what the agent can build. In the drawing, each one is a ring around the programs it still allows. Scroll through the free trial, one level at a time.</p>
+    </header>
+    <div class="scrolly">
+      <figure class="scrolly-fig rings">
+        <svg id="rings-a" role="img" aria-label="Rings closing in on one program as each level of the free-trial design is written down."></svg>
+        <ul class="legend" aria-label="Key">
+          <li><svg viewBox="-9 -9 18 18" aria-hidden="true"><circle r="3.6" fill="var(--ink)" opacity=".85"/></svg>a program the agent could build</li>
+          <li><svg viewBox="-9 -9 18 18" aria-hidden="true"><circle r="5.5" fill="var(--ptr)"/></svg>the code that got built</li>
+          <li><svg viewBox="-12 -12 24 24" aria-hidden="true"><g class="reticle"><circle r="7"/><line x1="0" y1="-5" x2="0" y2="-11"/><line x1="0" y1="5" x2="0" y2="11"/><line x1="-5" y1="0" x2="-11" y2="0"/><line x1="5" y1="0" x2="11" y2="0"/></g></svg>a test</li>
+          <li><svg viewBox="0 0 18 18" aria-hidden="true"><path class="thread" d="M1 15C6 15 12 10 17 3"/></svg>an @spec link</li>
+        </ul>
+      </figure>
+      <ol class="steps" data-scene="a">
+        <li class="step on">
+          <h3>Start with the request</h3>
+          <div class="bubble"><span class="who">You, to your agent</span><p>Give new users a 30-day free trial.</p></div>
+          <p>Your agent could build that in many ways. The trial could start at signup or at first use, end at the server's midnight or exactly 720 hours later, and lock the account or charge the card. Picture each possible program as a dot in a field like this one. A request this short leaves the whole field open, and the agent picks one dot.</p>
+        </li>
+        <li class="step">
+          <h3>Write down why</h3>
+          <figure class="file"><figcaption><i aria-hidden="true"></i>docs/high-level-design.md</figcaption>
+<pre><span class="h">## Goals</span>
+New users can try the app free for 30 days before they pay.</pre></figure>
+          <p>This is a <b>high-level design</b>, or HLD: why the project exists and what it must get right. It lives in your repository, like every LID document. Its ring is the first constraint, and it rules out programs that miss the point of the trial.</p>
+        </li>
+        <li class="step">
+          <h3>Write down which way to lean</h3>
+          <figure class="file"><figcaption><i aria-hidden="true"></i>docs/high-level-design.md</figcaption>
+<pre><span class="h">## Tenets</span>
+- <b>Customer delight over perfect cost management.</b> When a choice could go either way, we err on the side of the customer.</pre></figure>
+          <p>This is a <b>tenet</b>: your project's tie-breaker between two good options, kept in your HLD. Another business could reasonably pick the other side. This one rules out a whole region before anyone thinks to ask, including ending trials at the server's midnight, which would cut a Tokyo signup's trial 14 hours short.</p>
+        </li>
+        <li class="step">
+          <h3>Write down how</h3>
+          <figure class="file"><figcaption><i aria-hidden="true"></i>docs/intent/trial/trial-design.md</figcaption>
+<pre><span class="h">## When the trial ends</span>
+The trial ends 720 hours after signup.</pre></figure>
+          <p>This is a <b>low-level design</b>, or LLD: how one part works. Its smaller ring sits inside the HLD's, clear of what the tenet ruled out.</p>
+        </li>
+        <li class="step">
+          <h3>Write down the rules</h3>
+          <figure class="file"><figcaption><i aria-hidden="true"></i>docs/intent/trial/trial-specs.md</figcaption>
+<pre><span class="dim">- <b>TRIAL-001</b>: When a new user signs up, the system shall start a trial.
+- <b>TRIAL-002</b>: While a trial is active, the system shall give the user full access.</span>
+- <b>TRIAL-003</b>: When 720 hours have passed since signup, the system shall end the trial.</pre></figure>
+          <p>These are <b>requirements</b>: one line each, with an ID, in a pattern called EARS. Each one draws a smaller ring, and the program has to sit inside all of them. A few programs still fit.</p>
+        </li>
+        <li class="step">
+          <h3>Test first, then code</h3>
+          <figure class="file"><figcaption><i aria-hidden="true"></i>tests/trial.test.ts</figcaption>
+<pre><span class="h">// @spec </span><span class="id">TRIAL-003</span>
+it("ends the trial 720 hours after signup", () =&gt; {
+  <span class="h">// 11 p.m. on March 1st, in Tokyo</span>
+  const signup = new Date("2026-03-01T14:00:00Z");
+  const end = hoursAfter(signup, 720);
+  expect(trialEnded(signup, end)).toBe(true);
+});</pre></figure>
+          <div class="run" aria-label="Test runs">
+            <span class="fail"><b>✗</b>fails, before the code exists</span>
+            <span><b>✓</b>passes, once the code lands</span>
+          </div>
+          <p>The <b>test</b> aims at the one program you meant. The code carries the same <code>@spec TRIAL-003</code> comment, so the ID leads to everything built from that line.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="sec" id="change">
+    <header class="sec-head">
+      <h2>Change your mind in one place, and the agent carries it down.</h2>
+      <p>That may feel like a lot to write down for one free trial. It pays off when you change your mind. You change the highest level the change touches, and the agent follows the links from there to everything that has to change, while you review each level.</p>
+    </header>
+    <div class="scrolly">
+      <figure class="scrolly-fig rings">
+        <svg id="rings-b" role="img" aria-label="The same rings: the low-level design is re-checked, a first draft runs into the tenet, a second draft settles, and only the requirement that changed moves."></svg>
+        <ul class="legend" aria-label="Key">
+          <li><svg viewBox="0 0 18 18" aria-hidden="true"><rect x="1.5" y="3.5" width="15" height="11" rx="3" fill="none" stroke="var(--ptr)" stroke-width="1.8" stroke-dasharray="3.5 2.5"/></svg>being re-checked</li>
+          <li><svg viewBox="-9 -9 18 18" aria-hidden="true"><g class="badge"><circle r="8"/><path d="M-3.6 0.2L-1 2.8L3.8-2.6"/></g></svg>still holds</li>
+          <li><svg viewBox="-9 -9 18 18" aria-hidden="true"><g class="xbadge"><circle r="8"/><path d="M-3 -3L3 3M3 -3L-3 3"/></g></svg>ruled out</li>
+          <li><svg viewBox="0 0 18 18" aria-hidden="true"><path class="thread lit" d="M1 15C6 15 12 10 17 3"/></svg>an @spec link being followed</li>
+        </ul>
+      </figure>
+      <ol class="steps" data-scene="b">
+        <li class="step">
+          <h3>Say what should change</h3>
+          <div class="bubble"><span class="who">You, to your agent</span><p>End trials at midnight in each user's own time zone.</p></div>
+          <p>This changes how the trial ends. The low-level design no longer says what you mean, so the agent re-checks the decisions built on it and adjusts them.</p>
+        </li>
+        <li class="step">
+          <h3>Check what still holds</h3>
+          <p>First the agent checks the change against the levels above it. New users still get 30 days free, and the tenet still favors the customer. The HLD and its tenet hold, and they mark out where the new design can go.</p>
+        </li>
+        <li class="step">
+          <h3>Find the new design</h3>
+          <p>Your request leaves one question open: which midnight? The agent drafts two answers for <code>trial-design.md</code>.</p>
+          <div class="drafts">
+            <div class="draft d1"><span class="mk" aria-hidden="true"><span class="n">1</span><span class="r">✗</span></span><b>Draft 1</b><span class="text">The trial ends at midnight on day 30, in the user's time zone.</span></div>
+            <div class="draft d2"><span class="mk" aria-hidden="true"><span class="n">2</span><span class="r">✓</span></span><b>Draft 2</b><span class="text">The trial ends at the first midnight, in the user's time zone, after 720 hours.</span></div>
+          </div>
+          <p class="why"><span class="w1">Draft 1 would cut a late-night signup's trial by most of a day, so the tenet rules it out.</span> <span class="w2">Draft 2 gives everyone at least 30 full days, and you approve it at the pause.</span></p>
+        </li>
+        <li class="step">
+          <h3>Follow the ID down</h3>
+          <figure class="file"><figcaption><i aria-hidden="true"></i>docs/intent/trial/trial-specs.md</figcaption>
+<pre>- <b>TRIAL-003</b>: When <span class="hl">the user's local time first reaches midnight after 720 hours from signup</span>, the system shall end the trial.</pre></figure>
+          <div class="run" aria-label="Test runs">
+            <span class="fail"><b>✗</b>ends a Tokyo trial at the first local midnight after 720 hours: fails</span>
+            <span><b>✓</b>the same test, after the code changes: passes</span>
+          </div>
+          <p>The agent searches for <code>TRIAL-003</code> and finds the test and the code that cite it. TRIAL-001 and TRIAL-002 still hold, so their rings stay put. TRIAL-003 changes, its test changes and fails, then the code changes and the test passes.</p>
+        </li>
+      </ol>
+    </div>
+    <div class="demo-head">
+      <h3>Watch it happen in a real project</h3>
+      <p>A two-minute recording of one design edit reaching the code.</p>
+    </div>
+    <figure class="term">
+      <div class="term-bar">cascade: LLD → specs → tests → code</div>
+      <div class="term-body"><div class="play" aria-hidden="true"><i></i></div><p>The recording plays here.</p></div>
+    </figure>
+  </section>
+
+  <section class="sec" id="quickstart">
+    <div class="qs">
+      <header class="qs-head">
+        <h2>Four commands, inside Claude Code.</h2>
+        <p>Install the two plugins, then describe what you want to build. The skill walks you through design, specs, and tests before it writes any code.</p>
+      </header>
+      <ol class="cmds">
+        <li><div style="min-width:0"><code>/plugin marketplace add jszmajda/lid</code><small>Register the plugin source in Claude Code.</small></div><button class="copy" type="button" data-cmd="/plugin marketplace add jszmajda/lid">Copy</button></li>
+        <li><div style="min-width:0"><code>/plugin install linked-intent-dev@jszmajda-lid</code><small>Install the core workflow plugin.</small></div><button class="copy" type="button" data-cmd="/plugin install linked-intent-dev@jszmajda-lid">Copy</button></li>
+        <li><div style="min-width:0"><code>/plugin install arrow-maintenance@jszmajda-lid</code><small>Track the links between specs and code in big projects.</small></div><button class="copy" type="button" data-cmd="/plugin install arrow-maintenance@jszmajda-lid">Copy</button></li>
+        <li><div style="min-width:0"><code>/linked-intent-dev</code><small>Describe what you want to build.</small></div><button class="copy" type="button" data-cmd="/linked-intent-dev">Copy</button></li>
+      </ol>
+    </div>
+  </section>
+  <p class="end">In outline A the page continues with the grep, Teams, the price, and the four paths.</p>
+</main>
+
+<script>
+(function () {
+  var root = document.documentElement, orig = root.getAttribute('data-theme'), btn = document.getElementById('theme');
+  var modes = ['auto', 'light', 'dark'], m = 'auto';
+  try { m = localStorage.getItem('lid-spike-theme') || 'auto'; } catch (e) {}
+  function apply() {
+    if (m === 'auto') { if (orig) root.setAttribute('data-theme', orig); else root.removeAttribute('data-theme'); }
+    else root.setAttribute('data-theme', m);
+    btn.textContent = 'Theme: ' + m;
+  }
+  btn.addEventListener('click', function () { m = modes[(modes.indexOf(m) + 1) % 3]; try { localStorage.setItem('lid-spike-theme', m); } catch (e) {} apply(); });
+  apply();
+  document.querySelectorAll('.copy').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var done = function () { b.textContent = 'Copied'; setTimeout(function () { b.textContent = 'Copy'; }, 1600); };
+      if (navigator.clipboard) navigator.clipboard.writeText(b.dataset.cmd).then(done, function () {});
+    });
+  });
+  var bar = document.getElementById('nav-bar');
+  var mark = function () { bar.classList.toggle('scrolled', bar.getBoundingClientRect().top <= 1 && window.scrollY > 0); };
+  window.addEventListener('scroll', mark, { passive: true }); mark();
+})();
+
+(function () {
+  var W = 640, H = 420, NS = 'http://www.w3.org/2000/svg';
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var HLD = { x: 52, y: 34, w: 536, h: 352 }, TEN = { x: 52, y: 34, w: 150, h: 352 }, TEN_EDGE = TEN.x + TEN.w;
+  var L0 = { x: 224, y: 90, w: 304, h: 240 }, L1 = { x: 244, y: 98, w: 300, h: 226 }, PROBE = { x: 184, y: 94, w: 304, h: 236 };
+  // TRIAL-001 and TRIAL-002 are wide rings that hold whatever the trial's end does;
+  // TRIAL-003 is the small ring that picks the program, and the only one that moves.
+  var E1 = { x: 272, y: 168, w: 210, h: 84 }, E2 = { x: 332, y: 122, w: 92, h: 176 };
+  var P0 = { x: 354, y: 194 }, P1 = { x: 394, y: 226 };
+  function e3For(p) { return { x: p.x - 26, y: p.y - 22, w: 52, h: 44 }; }
+  var FIXED = [P0, P1, { x: 369, y: 203 }, { x: 340, y: 206 }, { x: 409, y: 235 }, { x: 380, y: 238 }];
+
+  function rng(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  function mk(tag, attrs, parent) { var e = document.createElementNS(NS, tag); for (var k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+  function makeDots(seed, fixed) {
+    var r = rng(seed), out = fixed.map(function (p) { return { x: p.x, y: p.y }; }), n = 0;
+    while (out.length < 160 && n < 9000) {
+      n++; var x = 14 + r() * (W - 28), y = 14 + r() * (H - 28), ok = true;
+      for (var i = 0; i < out.length; i++) { var dx = out[i].x - x, dy = out[i].y - y; if (dx * dx + dy * dy < 17 * 17) { ok = false; break; } }
+      if (ok) out.push({ x: x, y: y });
+    }
+    return out;
+  }
+  function radius(g) { return Math.min(g.w, g.h) * 0.2; }
+  function inside(p, g, pad) {
+    var x0 = g.x + pad, y0 = g.y + pad, x1 = g.x + g.w - pad, y1 = g.y + g.h - pad;
+    if (p.x < x0 || p.x > x1 || p.y < y0 || p.y > y1) return false;
+    var r = Math.max(0, radius(g) - pad);
+    var cx = Math.min(Math.max(p.x, x0 + r), x1 - r), cy = Math.min(Math.max(p.y, y0 + r), y1 - r);
+    return (p.x - cx) * (p.x - cx) + (p.y - cy) * (p.y - cy) <= r * r;
+  }
+  function copy(g) { return { x: g.x, y: g.y, w: g.w, h: g.h }; }
+  function ease(cur, tgt, k) { var d = tgt - cur; return Math.abs(d) < 0.004 ? tgt : cur + d * k; }
+  function rrect(el, g) { var R = radius(g); el.setAttribute('x', g.x); el.setAttribute('y', g.y); el.setAttribute('width', g.w); el.setAttribute('height', g.h); el.setAttribute('rx', R); el.setAttribute('ry', R); }
+  function badge(parent, cross) {
+    var b = mk('g', { 'class': cross ? 'xbadge' : 'badge', opacity: 0 }, parent); mk('circle', { r: 9 }, b);
+    mk('path', { d: cross ? 'M-3.4 -3.4L3.4 3.4M3.4 -3.4L-3.4 3.4' : 'M-4 0.2L-1.1 3.1L4.2-2.9' }, b); return b;
+  }
+  function ring(parent, key, name, geo, cls) {
+    var g = mk('g', { 'class': 'ring ' + cls }, parent);
+    var r = { key: key, g: g, name: name, cur: copy(geo), tgt: copy(geo), op: 0, opT: 0, chk: 0, chkT: 0, x: 0, xT: 0, loose: false, small: cls.indexOf('small') >= 0, ear: cls.indexOf('ear') >= 0 };
+    r.line = mk('rect', { 'class': 'ring-line' }, g);
+    if (name) { r.tab = mk('rect', { 'class': 'ring-tab', rx: r.small ? 5 : 6, height: r.small ? 18 : 22 }, g); r.label = mk('text', { 'class': 'ring-label' }, g); r.label.textContent = name; }
+    r.badge = badge(g, false); r.xbadge = badge(g, true);
+    return r;
+  }
+  function setLoose(r, v) { if (r.loose !== v) { r.loose = v; r.g.classList.toggle('loose', v); } }
+
+  // One drawing. A state names which levels show, where the LLD sits and what it's called,
+  // which program TRIAL-003 closes on, whether a test aims (1) or holds (2), whether the
+  // code is in doubt (1) or built (2), whether the @spec link shows (1) or is being
+  // followed (2), which rings are being re-checked, which hold, and which draft is ruled out.
+  function Scene(svg, seed, uid, labels) {
+    var self = this;
+    this.k = 0.1;
+    if (!labels) svg.classList.add('nolabels');
+    svg.setAttribute('viewBox', '-24 -22 688 464');
+    var defs = mk('defs', {}, svg);
+    var pat = mk('pattern', { id: uid + '-h', width: 10, height: 10, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' }, defs);
+    mk('line', { x1: 2, y1: 0, x2: 2, y2: 10, 'class': 'hatch-line' }, pat);
+    rrect(mk('rect', {}, mk('clipPath', { id: uid + '-c' }, defs)), HLD);
+
+    var gd = mk('g', {}, svg);
+    this.dots = makeDots(seed, FIXED).map(function (p) { p.node = mk('circle', { cx: p.x.toFixed(1), cy: p.y.toFixed(1), r: 3.6, 'class': 'dot l0' }, gd); return p; });
+    this.S0 = this.dots[0]; this.S1 = this.dots[1];
+
+    this.ten = { op: 0, opT: 0, chk: 0, chkT: 0 };
+    this.tenG = mk('g', { 'class': 'tenet', opacity: 0 }, svg);
+    var tc = mk('g', { 'clip-path': 'url(#' + uid + '-c)' }, this.tenG);
+    mk('rect', { x: TEN.x, y: TEN.y, width: TEN.w, height: TEN.h, fill: 'url(#' + uid + '-h)' }, tc);
+    mk('line', { x1: TEN_EDGE, y1: TEN.y, x2: TEN_EDGE, y2: TEN.y + TEN.h, 'class': 'tenet-edge' }, tc);
+    if (labels) {
+      var tw = 5 * 9.2 + 16, tx = TEN.x + 30, ty = TEN.y + 46;
+      mk('rect', { x: tx, y: ty - 11, width: tw, height: 22, rx: 6, 'class': 'ring-tab' }, this.tenG);
+      var tl = mk('text', { x: tx + 8, y: ty + 5.5, 'class': 'ring-label' }, this.tenG); tl.textContent = 'tenet';
+      this.ten.badge = badge(this.tenG, false); this.ten.badge.setAttribute('transform', 'translate(' + (tx + tw + 13) + ' ' + ty + ')');
+    }
+
+    var gr = mk('g', {}, svg);
+    this.hld = ring(gr, 'hld', 'HLD', HLD, ''); this.lld = ring(gr, 'lld', 'LLD', L0, '');
+    this.e1 = ring(gr, 'e1', null, E1, 'ear'); this.e2 = ring(gr, 'e2', null, E2, 'ear');
+    this.e3 = ring(gr, 'e3', 'TRIAL-003', e3For(this.S0), 'ear small');
+    this.rings = [this.hld, this.lld, this.e1, this.e2, this.e3];
+    this.ears = [this.e1, this.e2, this.e3];
+
+    this.thread = mk('path', { 'class': 'thread', opacity: 0 }, svg);
+    this.specTag = mk('text', { 'class': 'spec-tag', opacity: 0 }, svg); this.specTag.textContent = '@spec';
+    this.ret = mk('g', { 'class': 'reticle', opacity: 0 }, svg);
+    mk('circle', { r: 10 }, this.ret);
+    [[0, -7, 0, -15], [0, 7, 0, 15], [-7, 0, -15, 0], [7, 0, 15, 0]].forEach(function (l) { mk('line', { x1: l[0], y1: l[1], x2: l[2], y2: l[3] }, self.ret); });
+    this.code = mk('g', { 'class': 'code', opacity: 0 }, svg);
+    mk('circle', { r: 11, 'class': 'code-halo' }, this.code); mk('circle', { r: 5.5, 'class': 'code-core' }, this.code);
+
+    this.retOp = 0; this.codeOp = 0; this.thrOp = 0;
+    this.set({}); this.snap();
+    (function loop() { self.frame(); requestAnimationFrame(loop); })();
+  }
+  Scene.prototype.set = function (s) {
+    var c = s.chk || {}, lo = s.loose || {}, self = this;
+    this.hld.opT = s.hld ? 1 : 0;
+    this.ten.opT = s.tenet ? 1 : 0; this.ten.chkT = c.tenet ? 1 : 0; this.tenG.classList.toggle('hit', !!s.hit);
+    this.lld.tgt = copy(s.lldGeo || L0); this.lld.opT = s.lld ? 1 : 0;
+    var name = s.lldName || 'LLD'; if (name !== this.lld.name) { this.lld.name = name; this.lld.label.textContent = name; }
+    this.e1.opT = this.e2.opT = this.e3.opT = s.ears ? 1 : 0;
+    this.e3.tgt = e3For(s.target === 1 ? this.S1 : this.S0);
+    this.rings.forEach(function (r) { r.chkT = c[r.key] ? 1 : 0; setLoose(r, !!lo[r.key]); r.xT = 0; });
+    if (s.reject) this.lld.xT = 1;
+    this.retAt = s.testAt === 1 ? this.S1 : this.S0; this.retOpT = s.test ? 1 : 0; this.ret.classList.toggle('aim', s.test === 1);
+    this.codeAt = s.codeAt === 1 ? this.S1 : this.S0; this.codeOpT = s.code ? 1 : 0; this.code.classList.toggle('hollow', s.code === 1);
+    this.thrOpT = s.thread ? 1 : 0; this.thread.classList.toggle('lit', s.thread === 2); this.specTag.classList.toggle('lit', s.thread === 2);
+    this.locked = s.test === 2;
+    this.dirty = true;
+  };
+  Scene.prototype.snap = function () {
+    this.rings.forEach(function (r) { r.cur = copy(r.tgt); r.op = r.opT; r.chk = r.chkT; r.x = r.xT; });
+    this.ten.op = this.ten.opT; this.ten.chk = this.ten.chkT;
+    this.retPos = { x: this.retAt.x, y: this.retAt.y }; this.codePos = { x: this.codeAt.x, y: this.codeAt.y };
+    this.retOp = this.retOpT; this.codeOp = this.codeOpT; this.thrOp = this.thrOpT; this.dirty = true;
+  };
+  Scene.prototype.frame = function () {
+    if (!this.dirty) return;
+    var self = this, k = reduce ? 1 : this.k, kf = reduce ? 1 : 0.09, mv = false;
+    var ez = function (o, key, kk) { var v = ease(o[key], o[key + 'T'], kk); if (v !== o[key + 'T']) mv = true; o[key] = v; };
+    var glide = function (pos, to) { var dx = to.x - pos.x, dy = to.y - pos.y; if (Math.abs(dx) + Math.abs(dy) > 0.1) { var kk = reduce ? 1 : 0.11; pos.x += dx * kk; pos.y += dy * kk; mv = true; } else { pos.x = to.x; pos.y = to.y; } };
+
+    this.rings.forEach(function (r) {
+      ['x', 'y', 'w', 'h'].forEach(function (key) { var d = r.tgt[key] - r.cur[key]; if (Math.abs(d) > 0.05) { r.cur[key] += d * k; mv = true; } else r.cur[key] = r.tgt[key]; });
+      ez(r, 'op', kf); ez(r, 'chk', kf); ez(r, 'x', kf);
+      var grow = (1 - r.op) * (r.ear ? 14 : 30), g = { x: r.cur.x - grow, y: r.cur.y - grow, w: r.cur.w + 2 * grow, h: r.cur.h + 2 * grow }, R = radius(g);
+      r.g.setAttribute('opacity', r.op.toFixed(3)); r.g.style.visibility = r.op < 0.01 ? 'hidden' : 'visible';
+      rrect(r.line, g);
+      var bx, by = g.y, sc = r.small || r.ear ? 0.8 : 1;
+      if (r.tab) {
+        var tw = r.small ? r.name.length * 7.4 + 12 : r.name.length * 9.2 + 16, th = r.small ? 18 : 22, tx = g.x + R + 2;
+        r.tab.setAttribute('x', tx); r.tab.setAttribute('y', g.y - th / 2); r.tab.setAttribute('width', tw);
+        r.label.setAttribute('x', tx + (r.small ? 6 : 8)); r.label.setAttribute('y', g.y + (r.small ? 4.3 : 5.5));
+        r.tabEnd = { x: tx + tw, y: g.y };
+        bx = tx + tw + (r.small ? 11 : 13);
+      } else {
+        bx = g.x + g.w - R - 12;
+      }
+      r.badge.setAttribute('transform', 'translate(' + bx.toFixed(1) + ' ' + by.toFixed(1) + ') scale(' + (sc * (0.6 + 0.4 * r.chk)).toFixed(3) + ')');
+      r.badge.setAttribute('opacity', (r.chk * (1 - r.x)).toFixed(3));
+      r.xbadge.setAttribute('transform', 'translate(' + bx.toFixed(1) + ' ' + by.toFixed(1) + ') scale(' + (sc * (0.6 + 0.4 * r.x)).toFixed(3) + ')');
+      r.xbadge.setAttribute('opacity', r.x.toFixed(3));
+    });
+    ez(this.ten, 'op', kf); ez(this.ten, 'chk', kf);
+    this.tenG.setAttribute('opacity', this.ten.op.toFixed(3));
+    if (this.ten.badge) this.ten.badge.setAttribute('opacity', this.ten.chk.toFixed(3));
+
+    glide(this.retPos, this.retAt); glide(this.codePos, this.codeAt);
+    ez(this, 'retOp', kf); ez(this, 'codeOp', kf); ez(this, 'thrOp', kf);
+    this.ret.setAttribute('transform', 'translate(' + this.retPos.x.toFixed(2) + ' ' + this.retPos.y.toFixed(2) + ')'); this.ret.setAttribute('opacity', this.retOp.toFixed(3));
+    this.code.setAttribute('transform', 'translate(' + this.codePos.x.toFixed(2) + ' ' + this.codePos.y.toFixed(2) + ')'); this.code.setAttribute('opacity', this.codeOp.toFixed(3));
+
+    // The @spec link runs from the code out to the right, then up to TRIAL-003's label.
+    var e = this.e3;
+    if (e.tabEnd) {
+      var sx = this.codePos.x + 12, sy = this.codePos.y + 4, ex = e.tabEnd.x + 2, ey = e.tabEnd.y + 6;
+      this.thread.setAttribute('d', 'M' + sx.toFixed(1) + ' ' + sy.toFixed(1) + 'C' + (sx + 40).toFixed(1) + ' ' + (sy + 6).toFixed(1) + ' ' + (ex + 34).toFixed(1) + ' ' + (ey + 4).toFixed(1) + ' ' + ex.toFixed(1) + ' ' + ey.toFixed(1));
+      this.specTag.setAttribute('x', (sx + 30).toFixed(1)); this.specTag.setAttribute('y', (sy + 20).toFixed(1));
+    }
+    var to = (this.thrOp * Math.min(this.codeOp, e.op)).toFixed(3);
+    this.thread.setAttribute('opacity', to); this.specTag.setAttribute('opacity', to);
+
+    // Each level in force rules dots out; a dot that breaks more levels fades further.
+    // A ring being re-checked rules nothing out until it settles.
+    var cons = [];
+    if (this.hld.opT) cons.push(function (p) { return inside(p, self.hld.cur, 4); });
+    if (this.ten.opT) cons.push(function (p) { return p.x > TEN_EDGE + 3; });
+    [this.lld, this.e1, this.e2, this.e3].forEach(function (r) { if (r.opT && !r.loose) cons.push(function (p) { return inside(p, r.cur, 3); }); });
+    this.dots.forEach(function (p) {
+      var v = 0; for (var i = 0; i < cons.length; i++) if (!cons[i](p)) v++;
+      var lvl = Math.min(3, v);
+      if (self.locked && v === 0 && p !== self.retAt) lvl = 1;
+      var cls = (p === self.codeAt && self.codeOpT) ? 'dot hid' : 'dot l' + lvl;
+      if (cls !== p.cls) { p.cls = cls; p.node.setAttribute('class', cls); }
+    });
+    if (!mv) this.dirty = false;
+  };
+
+  function ext(a, b) { var o = {}, k; for (k in a) o[k] = a[k]; for (k in b) o[k] = b[k]; return o; }
+  var ALL = { hld: 1, tenet: 1, lld: 1, ears: 1, test: 2, code: 2, thread: 1 };
+  var A = [
+    [[0, {}]],
+    [[0, { hld: 1 }]],
+    [[0, { hld: 1, tenet: 1 }]],
+    [[0, { hld: 1, tenet: 1, lld: 1 }]],
+    [[0, { hld: 1, tenet: 1, lld: 1, ears: 1 }]],
+    [[0, { hld: 1, tenet: 1, lld: 1, ears: 1, test: 1 }], [1500, ALL]]
+  ];
+  var RECHECK = { lld: 1, e1: 1, e2: 1, e3: 1 };
+  var LOOSE = { hld: 1, tenet: 1, lld: 1, ears: 1, loose: RECHECK, code: 1, thread: 1 };
+  var HOLDS = ext(LOOSE, { chk: { hld: 1, tenet: 1 } });
+  var FOUND = ext(HOLDS, { lldGeo: L1, loose: { e1: 1, e2: 1, e3: 1 }, chk: { hld: 1, tenet: 1, lld: 1 } });
+  var KEPT = ext(FOUND, { loose: { e3: 1 }, chk: { hld: 1, tenet: 1, lld: 1, e1: 1, e2: 1 } });
+  var EVERY = { hld: 1, tenet: 1, lld: 1, e1: 1, e2: 1, e3: 1 };
+  var B = [
+    [[0, LOOSE]],
+    [[0, HOLDS]],
+    [[0, ext(HOLDS, { lldGeo: PROBE, lldName: 'draft 1', phase: 'd1' })],
+     [800, ext(HOLDS, { lldGeo: PROBE, lldName: 'draft 1', hit: 1, reject: 1, phase: 'd1x' })],
+     [2300, ext(HOLDS, { lldGeo: L1, lldName: 'draft 2', phase: 'd2' })],
+     [3300, ext(FOUND, { lldName: 'LLD', phase: 'd2ok' })]],
+    [[0, KEPT],
+     [800, ext(KEPT, { thread: 2 })],
+     [1500, ext(KEPT, { thread: 2, target: 1 })],
+     [2400, ext(KEPT, { thread: 2, target: 1, loose: {}, chk: EVERY, test: 1, testAt: 1 })],
+     [3400, ext(ALL, { lldGeo: L1, target: 1, testAt: 1, codeAt: 1, chk: EVERY })]]
+  ];
+
+  // Scroll: the active card is the last one whose top has passed a fixed line on screen.
+  // Entering a card plays its short sequence; leaving it cancels what's left.
+  function bind(scene, list, cards, pre) {
+    var steps = Array.prototype.slice.call(list.querySelectorAll('.step'));
+    var wide = window.matchMedia('(min-width: 900px)'), current = null, timers = [], ticking = false;
+    var apply = function (el, st) { scene.set(st); if (el) { if (st.phase) el.dataset.phase = st.phase; else delete el.dataset.phase; } };
+    var run = function (el, seq) {
+      timers.forEach(clearTimeout); timers = [];
+      if (reduce) { var last = seq[seq.length - 1][1]; apply(el, ext(last, { phase: '' })); scene.snap(); return; }
+      seq.forEach(function (item) { timers.push(setTimeout(function () { apply(el, item[1]); }, item[0])); });
+    };
+    var update = function () {
+      ticking = false;
+      var line = window.innerHeight * (wide.matches ? 0.58 : 0.74), n = -1;
+      for (var i = 0; i < steps.length; i++) { if (steps[i].getBoundingClientRect().top < line) n = i; }
+      if (n === current) return;
+      current = n;
+      steps.forEach(function (el, i) { el.classList.toggle('on', i === Math.max(n, 0)); delete el.dataset.phase; });
+      run(n < 0 ? null : steps[n], n < 0 ? [[0, pre]] : cards[n]);
+    };
+    window.addEventListener('scroll', function () { if (!ticking) { ticking = true; requestAnimationFrame(update); } }, { passive: true });
+    window.addEventListener('resize', update);
+    scene.set(pre); scene.snap(); update();
+  }
+
+  var hero = new Scene(document.getElementById('rings-hero'), 11, 'rh', false);
+  hero.set(ALL); hero.snap();
+  var a = new Scene(document.getElementById('rings-a'), 37, 'ra', true); a.k = 0.09;
+  bind(a, document.querySelector('[data-scene="a"]'), A, {});
+  var b = new Scene(document.getElementById('rings-b'), 37, 'rb', true); b.k = 0.08;
+  bind(b, document.querySelector('[data-scene="b"]'), B, ALL);
+})();
+</script>

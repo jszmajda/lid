@@ -1,0 +1,148 @@
+<title>LID Site Refresh</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geologica:wght@400;500;800&family=Martian+Mono:wdth,wght@75..112.5,300..800&family=Recursive:slnt,wght,CASL,CRSV,MONO@-15..0,300..1000,0..1,0..1,0..1&family=Archivo:wdth,wght@62..125,400..900&family=Atkinson+Hyperlegible+Next:wght@400;500;700;800&display=swap">
+<style>
+/* Layout: a plain index. One row per direction: its name set in its own type, what it is, and its colors. */
+:root {
+  --bg: #F7F6F5;
+  --fg: #1A0F0A;
+  --fg-2: #5B514B;
+  --rule: #E2DDDA;
+  --link: #C2410C;
+  --ui: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --ptr-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='154 104 28 32'%3E%3Cpath d='M154 115.5Q154 113.5 156 113.5L164 113.5Q166 113.5 166 111.5L166 106Q166 104 167.41 105.41L180.59 118.59Q182 120 180.59 121.41L167.41 134.59Q166 136 166 134L166 128.5Q166 126.5 164 126.5L156 126.5Q154 126.5 154 124.5Z'/%3E%3C/svg%3E");
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #15110F; --fg: #F3ECE6; --fg-2: #B7ABA3; --rule: #332A25; --link: #FF9A76; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --bg: #15110F; --fg: #F3ECE6; --fg-2: #B7ABA3; --rule: #332A25; --link: #FF9A76; color-scheme: dark; }
+
+body { background: var(--bg); color: var(--fg); font: 400 16px/1.55 var(--ui); padding-bottom: 96px; }
+.page {
+  max-width: 1040px; margin-inline: auto; padding-block: clamp(32px, 6vw, 72px) 0;
+  padding-left: max(20px, env(safe-area-inset-left, 0px));
+  padding-right: max(20px, env(safe-area-inset-right, 0px));
+}
+header.top { display: grid; gap: 16px; margin-bottom: 40px; }
+header.top .wordmark { width: 150px; height: auto; display: block; }
+h1 { font-size: clamp(1.8rem, 3.6vw, 2.4rem); line-height: 1.15; letter-spacing: -0.02em; margin: 0; text-wrap: balance; }
+header.top p { max-width: 62ch; color: var(--fg-2); margin: 0; }
+a { color: var(--link); }
+a:focus-visible { outline: 2px solid var(--link); outline-offset: 3px; border-radius: 4px; }
+
+.rows { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--rule); }
+.row { display: grid; gap: 14px 36px; padding-block: 28px; border-bottom: 1px solid var(--rule); }
+@media (min-width: 820px) { .row { grid-template-columns: 260px minmax(0, 1fr); } }
+.name { display: grid; gap: 12px; align-content: start; }
+.name a { text-decoration: none; color: var(--fg); display: inline-flex; align-items: baseline; gap: 12px; }
+.name .k { font: 600 13px var(--ui); color: var(--fg-2); }
+.name .n { font-size: 34px; line-height: 1; }
+.name a:hover .n { text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 6px; }
+.sw { display: flex; gap: 6px; }
+.sw i { width: 26px; height: 26px; border-radius: 7px; display: block; box-shadow: inset 0 0 0 1px rgba(128, 118, 110, .35); }
+.body { display: grid; gap: 12px; min-width: 0; }
+.body p { margin: 0; max-width: 64ch; }
+.facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 16px; margin: 0; font-size: 14.5px; }
+.facts dt { color: var(--fg-2); }
+.facts dd { margin: 0; }
+.open { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; text-decoration: none; justify-self: start; }
+.open i { width: 9px; aspect-ratio: 28/32; background: currentColor; -webkit-mask: var(--ptr-mask) center / contain no-repeat; mask: var(--ptr-mask) center / contain no-repeat; display: block; }
+.open:hover span { text-decoration: underline; text-underline-offset: 3px; }
+.note { margin-top: 28px; color: var(--fg-2); font-size: 14.5px; max-width: 66ch; }
+
+.n-a { font-family: "Geologica", var(--ui); font-weight: 800; letter-spacing: -0.03em; }
+.n-b { font-family: "Martian Mono", ui-monospace, monospace; font-weight: 700; font-size: 26px !important; letter-spacing: -0.04em; }
+.n-c { font-family: "Recursive", var(--ui); font-weight: 880; font-variation-settings: "CASL" 1, "CRSV" 0.5; }
+.n-d { font-family: "Archivo", var(--ui); font-weight: 900; font-stretch: 125%; font-variation-settings: "wdth" 125; letter-spacing: -0.02em; font-size: 30px !important; }
+.n-e { font-family: "Atkinson Hyperlegible Next", var(--ui); font-weight: 800; letter-spacing: -0.02em; }
+</style>
+
+<div class="page">
+  <header class="top">
+    <svg class="wordmark" viewBox="18 42 444 156" role="img" aria-label="LID"><rect x="18" y="42" width="444" height="156" rx="34" fill="#FF6B3D"/><g fill="#1A0F0A"><path fill-rule="evenodd" d="M64 66H128A22 22 0 0 1 150 88V152A22 22 0 0 1 128 174H64A22 22 0 0 1 42 152V88A22 22 0 0 1 64 66ZM76.16 88Q76.16 85 79.16 85L94.16 85Q97.16 85 97.16 88L97.16 134Q97.16 137 100.16 137L120.16 137Q123.16 137 123.16 140L123.16 152Q123.16 155 120.16 155L79.16 155Q76.16 155 76.16 152Z"/><path fill-rule="evenodd" d="M208 66H272A22 22 0 0 1 294 88V152A22 22 0 0 1 272 174H208A22 22 0 0 1 186 152V88A22 22 0 0 1 208 66ZM216 88Q216 85 219 85L261 85Q264 85 264 88L264 100Q264 103 261 103L253.5 103Q250.5 103 250.5 106L250.5 134Q250.5 137 253.5 137L261 137Q264 137 264 140L264 152Q264 155 261 155L219 155Q216 155 216 152L216 140Q216 137 219 137L226.5 137Q229.5 137 229.5 134L229.5 106Q229.5 103 226.5 103L219 103Q216 103 216 100Z"/><path fill-rule="evenodd" d="M352 66H416A22 22 0 0 1 438 88V152A22 22 0 0 1 416 174H352A22 22 0 0 1 330 152V88A22 22 0 0 1 352 66ZM358.67 85H381.67A34 35 0 0 1 381.67 155H358.67Q355.67 155 355.67 152V88Q355.67 85 358.67 85ZM378.67 103H381.67A12 17 0 0 1 381.67 137H378.67Q376.67 137 376.67 135V105Q376.67 103 378.67 103Z"/><path d="M154 115.5Q154 113.5 156 113.5L164 113.5Q166 113.5 166 111.5L166 106Q166 104 167.41 105.41L180.59 118.59Q182 120 180.59 121.41L167.41 134.59Q166 136 166 134L166 128.5Q166 126.5 164 126.5L156 126.5Q154 126.5 154 124.5Z"/><path d="M298 115.5Q298 113.5 300 113.5L308 113.5Q310 113.5 310 111.5L310 106Q310 104 311.41 105.41L324.59 118.59Q326 120 324.59 121.41L311.41 134.59Q310 136 310 134L310 128.5Q310 126.5 308 126.5L300 126.5Q298 126.5 298 124.5Z"/></g></svg>
+    <h1>Five directions for the LID site</h1>
+    <p>Each one is the home page with its real copy: the hero, the traced example, the demo, the quickstart, and the four paths. Palette A stays on the logo in all five; they differ in how much orange reaches the rest of the page. Every page works in light and dark, and the bar at the bottom switches pages and themes.</p>
+  </header>
+
+  <ol class="rows">
+    <li class="row">
+      <div class="name">
+        <a href="linked-list.html"><span class="k">A</span><span class="n n-a">Linked list</span></a>
+        <div class="sw" aria-hidden="true"><i style="background:#F6F6F4"></i><i style="background:#FFFFFF"></i><i style="background:#1A0F0A"></i><i style="background:#5B514B"></i><i style="background:#FF6B3D"></i></div>
+      </div>
+      <div class="body">
+        <p>Every section is a node that points to the next one, the way the logo points from L to I to D. The hero draws HLD, LLD, EARS, Tests, and Code as five logo tiles joined by the logo's pointer. The closest match to the logo itself.</p>
+        <dl class="facts">
+          <dt>Type</dt><dd>Geologica, with Spline Sans Mono for code</dd>
+          <dt>Orange</dt><dd>The logo, plus the small pointers between nodes</dd>
+          <dt>Logo</dt><dd>The wordmark on its orange ground in the nav; the L icon in the footer</dd>
+        </dl>
+        <a class="open" href="linked-list.html"><span>Open Linked list</span><i aria-hidden="true"></i></a>
+      </div>
+    </li>
+    <li class="row">
+      <div class="name">
+        <a href="plain-text.html"><span class="k">B</span><span class="n n-b">Plain text</span></a>
+        <div class="sw" aria-hidden="true"><i style="background:#FBFBFA"></i><i style="background:#1A0F0A"></i><i style="background:#7A6F69"></i><i style="background:#FFE0D3"></i><i style="background:#B83C0F"></i></div>
+      </div>
+      <div class="body">
+        <p>The page is set like a spec file. The margin shows the ID of the site spec each section implements, and each ID links to it. Headings keep their markdown marks, and the hero's picture is a grep that returns a requirement, its test, and its code. The quietest of the five.</p>
+        <dl class="facts">
+          <dt>Type</dt><dd>Martian Mono for headings and code, Newsreader for prose</dd>
+          <dt>Orange</dt><dd>The icon, and the highlight on each grep match</dd>
+          <dt>Logo</dt><dd>The flush-cut L icon leads the nav, with the domain beside it</dd>
+        </dl>
+        <a class="open" href="plain-text.html"><span>Open Plain text</span><i aria-hidden="true"></i></a>
+      </div>
+    </li>
+    <li class="row">
+      <div class="name">
+        <a href="stickers.html"><span class="k">C</span><span class="n n-c">Stickers</span></a>
+        <div class="sw" aria-hidden="true"><i style="background:#DFF7F2"></i><i style="background:#2E1065"></i><i style="background:#FCE7F3"></i><i style="background:#ECFCCB"></i><i style="background:#1C1917"></i></div>
+      </div>
+      <div class="body">
+        <p>The logo keeps palette A, and each section of the page takes one of the logo's other palettes, B through G. The wordmark and the flush-cut icon show up as die-cut stickers, and the path cards are stickers too. The most playful and the most colorful.</p>
+        <dl class="facts">
+          <dt>Type</dt><dd>Recursive: casual for headings, linear for text, mono for code</dd>
+          <dt>Orange</dt><dd>Only the logo stickers and the play button</dd>
+          <dt>Logo</dt><dd>A wordmark sticker in the nav; a sheet of stickers in the hero</dd>
+        </dl>
+        <a class="open" href="stickers.html"><span>Open Stickers</span><i aria-hidden="true"></i></a>
+      </div>
+    </li>
+    <li class="row">
+      <div class="name">
+        <a href="poster.html"><span class="k">D</span><span class="n n-d">Poster</span></a>
+        <div class="sw" aria-hidden="true"><i style="background:#FF6B3D"></i><i style="background:#1A0F0A"></i><i style="background:#FFFFFF"></i><i style="background:#F3F1EF"></i></div>
+      </div>
+      <div class="body">
+        <p>Loud once. A full-width orange band carries the wordmark at poster size and the headline in wide type. Below it, the page is black and white on a strict grid with heavy rules. This one tests how much orange the site can take if it all sits in one place.</p>
+        <dl class="facts">
+          <dt>Type</dt><dd>Archivo, wide for headings and regular for text, with Azeret Mono for code</dd>
+          <dt>Orange</dt><dd>The whole hero band, and nothing else</dd>
+          <dt>Logo</dt><dd>The tiles alone, as wide as the page, on the band's orange</dd>
+        </dl>
+        <a class="open" href="poster.html"><span>Open Poster</span><i aria-hidden="true"></i></a>
+      </div>
+    </li>
+    <li class="row">
+      <div class="name">
+        <a href="rail.html"><span class="k">E</span><span class="n n-e">Rail</span></a>
+        <div class="sw" aria-hidden="true"><i style="background:#16100D"></i><i style="background:#211915"></i><i style="background:#F3ECE6"></i><i style="background:#FFB08F"></i><i style="background:#7FD8C4"></i></div>
+      </div>
+      <div class="body">
+        <p>Dark first, in warm browns taken from the logo's ink. One rail runs down the page like <code>git log --graph</code>, with each section as a node on it. The hero shows one design edit cascading through specs, tests, and code as a graph log. The closest to the current site's dark default.</p>
+        <dl class="facts">
+          <dt>Type</dt><dd>Atkinson Hyperlegible Next and Atkinson Hyperlegible Mono</dd>
+          <dt>Orange</dt><dd>The logo; the page uses a softer apricot, with mint for spec IDs</dd>
+          <dt>Logo</dt><dd>The wordmark on its orange ground in the nav</dd>
+        </dl>
+        <a class="open" href="rail.html"><span>Open Rail</span><i aria-hidden="true"></i></a>
+      </div>
+    </li>
+  </ol>
+  <p class="note">The mocks leave out the Teams, Experimental, and Ecosystem sections and the How it works graph. Fonts come from Google Fonts here; the live site would load the same families from Bunny Fonts.</p>
+</div>
+<nav class="xsw" aria-label="Site explorations"><a href="index.html">All</a><a href="linked-list.html"><b>A</b><span> Linked list</span></a><a href="plain-text.html"><b>B</b><span> Plain text</span></a><a href="stickers.html"><b>C</b><span> Stickers</span></a><a href="poster.html"><b>D</b><span> Poster</span></a><a href="rail.html"><b>E</b><span> Rail</span></a><button type="button" id="xsw-theme" aria-label="Color theme">Auto</button></nav><style>.xsw{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:100;display:flex;gap:2px;padding:4px;background:rgba(26,15,10,.94);border-radius:999px;font:500 13px/1 ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;letter-spacing:0;box-shadow:0 6px 24px rgba(0,0,0,.28);max-width:calc(100vw - 24px)}.xsw a,.xsw button{color:#F4EDE8;text-decoration:none;padding:8px 11px;border-radius:999px;border:0;background:none;font:inherit;cursor:pointer;white-space:nowrap}.xsw b{font-weight:700}.xsw a:hover,.xsw button:hover{background:rgba(255,255,255,.12)}.xsw a[aria-current=page]{background:#FF6B3D;color:#1A0F0A}.xsw a:focus-visible,.xsw button:focus-visible{outline:2px solid #FF6B3D;outline-offset:2px}@media (max-width:700px){.xsw span{display:none}}</style><script>(function(){var here=location.pathname.split('/').pop()||'index.html';document.querySelectorAll('.xsw a').forEach(function(a){if(a.getAttribute('href')===here)a.setAttribute('aria-current','page')});var root=document.documentElement,orig=root.getAttribute('data-theme'),btn=document.getElementById('xsw-theme');var modes=['auto','light','dark'],m='auto';try{m=localStorage.getItem('lid-site-theme')||'auto'}catch(e){}function apply(){if(m==='auto'){if(orig)root.setAttribute('data-theme',orig);else root.removeAttribute('data-theme')}else root.setAttribute('data-theme',m);btn.textContent=m==='auto'?'Auto':m==='light'?'Light':'Dark';btn.setAttribute('aria-label','Color theme: '+btn.textContent)}btn.addEventListener('click',function(){m=modes[(modes.indexOf(m)+1)%3];try{localStorage.setItem('lid-site-theme',m)}catch(e){}apply()});apply()})();</script>

@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Linked List</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geologica:wght@400;500;700;800&family=Spline+Sans+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: content lives in rounded nodes, and each node points to the next with the logo's pointer, so the page reads as one linked list. */
+:root {
+  --paper: #F6F6F4;
+  --surface: #FFFFFF;
+  --line: #E3DFDB;
+  --ink: #1A0F0A;
+  --ink-2: #5B514B;
+  --ptr: #FF6B3D;
+  --link: #C2410C;
+  --tile: #1A0F0A;
+  --on-tile: #FFF8F4;
+  --on-tile-2: #CDBFB7;
+  --tint: #FFEDE5;
+  --term: #1A0F0A;
+  --block: #1A0F0A;
+  --on-block: #FFF8F4;
+  --on-block-2: #CDBFB7;
+  --display: "Geologica", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "Spline Sans Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --gap: clamp(18px, 3.4vw, 44px);
+  {{PTR_MASK}}
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #14100D; --surface: #1D1714; --line: #352B25; --ink: #F4EDE8; --ink-2: #B8ABA3;
+    --ptr: #FF7A4F; --link: #FF9A76; --tile: #F4EDE8; --on-tile: #14100D; --on-tile-2: #5B514B;
+    --tint: #33190F; --term: #0C0907; --block: #241C18; --on-block: #F4EDE8; --on-block-2: #B8ABA3; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #14100D; --surface: #1D1714; --line: #352B25; --ink: #F4EDE8; --ink-2: #B8ABA3;
+  --ptr: #FF7A4F; --link: #FF9A76; --tile: #F4EDE8; --on-tile: #14100D; --on-tile-2: #5B514B;
+  --tint: #33190F; --term: #0C0907; --block: #241C18; --on-block: #F4EDE8; --on-block-2: #B8ABA3; color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font: 400 17px/1.6 var(--display);
+  padding-bottom: 88px;
+}
+a { color: var(--link); text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--ptr); outline-offset: 3px; border-radius: 6px; }
+code, pre { font-family: var(--mono); }
+h1, h2, h3 { text-wrap: balance; margin: 0; }
+p { margin: 0; }
+
+.wrap {
+  max-width: 1160px; margin-inline: auto;
+  padding-left: max(20px, env(safe-area-inset-left, 0px));
+  padding-right: max(20px, env(safe-area-inset-right, 0px));
+}
+
+.ptr-glyph {
+  display: inline-block; width: 0.62em; aspect-ratio: 28 / 32; background: var(--ptr);
+  -webkit-mask: var(--ptr-mask) center / contain no-repeat; mask: var(--ptr-mask) center / contain no-repeat;
+  flex: none;
+}
+
+/* Nav */
+.nav { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding-block: 22px; }
+.nav .wordmark { height: 38px; width: auto; display: block; }
+.nav ul { display: flex; gap: 4px; list-style: none; margin: 0; padding: 0; flex-wrap: wrap; justify-content: flex-end; }
+.nav ul a { white-space: nowrap; color: var(--ink-2); text-decoration: none; font-weight: 500; font-size: 15px; padding: 8px 12px; border-radius: 10px; }
+.nav ul a:hover { color: var(--ink); background: var(--surface); }
+
+/* Hero */
+.hero { padding-block: clamp(40px, 8vw, 96px) 40px; display: grid; gap: 28px; }
+.hero h1 { font-size: clamp(2.5rem, 6.4vw, 5.4rem); line-height: 1.0; font-weight: 800; letter-spacing: -0.035em; max-width: 13ch; }
+.because { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; font-size: clamp(1.05rem, 1.6vw, 1.25rem); }
+.because li { display: flex; gap: 14px; align-items: baseline; }
+.because .ptr-glyph { width: 0.6em; transform: translateY(0.05em); }
+.lede { max-width: 60ch; color: var(--ink-2); }
+.ctas { display: flex; flex-wrap: wrap; gap: 12px; }
+.btn {
+  display: inline-flex; align-items: center; gap: 10px; text-decoration: none;
+  font-weight: 700; font-size: 16px; padding: 13px 20px; border-radius: 14px;
+  border: 2px solid var(--tile); color: var(--ink);
+}
+.btn-ink { background: var(--tile); color: var(--on-tile); }
+.btn-ink .ptr-glyph { background: var(--ptr); }
+.btn:hover { transform: translateY(-1px); }
+
+/* The chain: the arrow of intent drawn the way the logo draws L, I, D */
+.chain { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--gap); }
+.chain li {
+  position: relative; aspect-ratio: 1 / 1; border-radius: 20%;
+  background: var(--tile); color: var(--on-tile);
+  display: grid; place-content: center; text-align: center; gap: 4px;
+}
+.chain li + li::before {
+  content: ""; position: absolute; top: 50%; left: calc(var(--gap) / -2);
+  width: clamp(11px, 1.9vw, 24px); aspect-ratio: 28 / 32; transform: translate(-50%, -50%);
+  background: var(--ptr); -webkit-mask: var(--ptr-mask) center / contain no-repeat; mask: var(--ptr-mask) center / contain no-repeat;
+}
+.chain b { font-size: clamp(0.95rem, 3.4vw, 2.6rem); font-weight: 800; letter-spacing: -0.02em; line-height: 1; }
+.chain span { font-family: var(--mono); font-size: clamp(0.6rem, 1.05vw, 0.85rem); color: var(--on-tile-2); }
+.chain-cap { margin-top: 18px; color: var(--ink-2); font-size: 15px; }
+@media (max-width: 560px) { .chain span { display: none; } }
+@media (max-width: 640px) {
+  .nav { flex-wrap: wrap; padding-block: 16px; }
+  .nav nav { width: 100%; }
+  .nav ul { justify-content: flex-start; flex-wrap: nowrap; overflow-x: auto; margin-inline: -12px; }
+  .tnode { grid-template-columns: 48px minmax(0, 1fr); gap: 14px; padding: 16px; }
+  .tchip { width: 48px; height: 48px; border-radius: 12px; font-size: 13px; }
+  .tnode + .tnode::before { left: calc(16px + 24px); }
+}
+
+/* Sections */
+.sec { padding-block: clamp(56px, 9vw, 112px) 0; }
+.sec-grid { display: grid; gap: 36px; }
+@media (min-width: 960px) {
+  .sec-grid { grid-template-columns: 5fr 7fr; gap: 56px; align-items: start; }
+  .sec-grid .sec-head { position: sticky; top: 32px; }
+}
+.sec-head { display: grid; gap: 16px; }
+.sec-head h2 { font-size: clamp(1.9rem, 3.6vw, 3rem); line-height: 1.05; font-weight: 800; letter-spacing: -0.03em; }
+.sec-head p { color: var(--ink-2); max-width: 52ch; }
+
+/* Trace: five nodes in a vertical list */
+.trace { list-style: none; margin: 0; padding: 0; display: grid; gap: 34px; }
+.tnode {
+  position: relative; display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 20px; align-items: start;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 20px;
+}
+.tnode + .tnode::before {
+  content: ""; position: absolute; left: calc(20px + 36px); top: -17px; width: 18px; aspect-ratio: 28 / 32;
+  transform: translate(-50%, -50%) rotate(90deg);
+  background: var(--ptr); -webkit-mask: var(--ptr-mask) center / contain no-repeat; mask: var(--ptr-mask) center / contain no-repeat;
+}
+.tchip {
+  width: 72px; height: 72px; border-radius: 16px; background: var(--tile); color: var(--on-tile);
+  display: grid; place-items: center; font-weight: 800; font-size: 19px; letter-spacing: -0.01em;
+}
+.tbody { display: grid; gap: 8px; min-width: 0; }
+.trole { font-family: var(--mono); font-size: 13px; color: var(--ink-2); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.id { font-family: var(--mono); font-size: 12.5px; font-weight: 500; background: var(--tint); color: var(--link); padding: 2px 8px; border-radius: 7px; }
+.kw { font-weight: 700; }
+.tbody pre { margin: 0; font-size: 13.5px; line-height: 1.6; overflow-x: auto; color: var(--ink); }
+.tbody pre .c { color: var(--ink-2); }
+.grep {
+  margin-top: 28px; padding: 18px 20px; border-radius: 16px; background: var(--tint);
+  display: flex; gap: 14px; align-items: baseline;
+}
+.grep code { font-size: 0.92em; }
+
+/* Demo */
+.term {
+  border-radius: 22px; background: var(--term); color: #F4EDE8; overflow: hidden;
+  border: 1px solid var(--line);
+}
+.term-bar { display: flex; gap: 8px; padding: 14px 18px; border-bottom: 1px solid rgba(255,255,255,.08); font-family: var(--mono); font-size: 12.5px; color: #B8ABA3; align-items: center; }
+.term-bar i { width: 11px; height: 11px; border-radius: 4px; background: #3A2E28; display: block; }
+.term-bar span { margin-left: 8px; }
+.term-body { aspect-ratio: 16 / 8; display: grid; place-items: center; text-align: center; gap: 14px; padding: 24px; }
+.play { width: 72px; height: 72px; border-radius: 20px; background: #FF6B3D; display: grid; place-items: center; margin-inline: auto; }
+.play i { width: 26px; aspect-ratio: 28/32; background: #1A0F0A; -webkit-mask: var(--ptr-mask) center / contain no-repeat; mask: var(--ptr-mask) center / contain no-repeat; display: block; transform: translateX(2px); }
+.term-body p { font-family: var(--mono); font-size: 13px; color: #B8ABA3; }
+
+/* Quickstart: one ink node */
+.qs {
+  background: var(--block); color: var(--on-block); border-radius: 32px; border: 1px solid var(--line);
+  padding: clamp(24px, 5vw, 56px); display: grid; gap: 36px;
+}
+@media (min-width: 960px) { .qs { grid-template-columns: 5fr 7fr; gap: 56px; } }
+.qs h2 { font-size: clamp(1.9rem, 3.6vw, 3rem); line-height: 1.05; font-weight: 800; letter-spacing: -0.03em; }
+.qs .qs-head { display: grid; gap: 16px; align-content: start; }
+.qs .qs-head p { color: var(--on-block-2); }
+.steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; counter-reset: step; }
+.steps li {
+  counter-increment: step; display: grid; grid-template-columns: 28px minmax(0, 1fr) auto; gap: 12px; align-items: center;
+  padding: 14px 14px 14px 16px; border-radius: 14px; background: color-mix(in srgb, var(--on-block) 7%, transparent);
+}
+.steps li::before { content: counter(step); font-weight: 800; color: var(--ptr); font-size: 18px; }
+.steps code { font-size: 14px; overflow-wrap: anywhere; display: block; min-width: 0; }
+.steps small { display: block; color: var(--on-block-2); font-size: 13.5px; margin-top: 4px; white-space: normal; font-family: var(--display); }
+.copy {
+  font: 600 13px var(--display); color: var(--on-block); background: none; cursor: pointer;
+  border: 1.5px solid color-mix(in srgb, var(--on-block) 30%, transparent); border-radius: 9px; padding: 6px 10px;
+}
+.copy:hover { border-color: var(--ptr); }
+.others { display: grid; gap: 12px; grid-column: 1 / -1; }
+.others p { color: var(--on-block-2); font-size: 15px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; margin: 0; padding: 0; }
+.chips a { display: inline-block; color: var(--on-block); text-decoration: none; font-size: 14px; font-weight: 500; padding: 7px 12px; border-radius: 10px; border: 1.5px solid color-mix(in srgb, var(--on-block) 22%, transparent); }
+.chips a:hover { border-color: var(--ptr); }
+
+/* Paths */
+.paths { display: grid; gap: var(--gap); grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 36px; }
+@media (max-width: 960px) { .paths { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .paths { grid-template-columns: 1fr; } }
+.path {
+  position: relative; display: grid; gap: 10px; align-content: start; padding: 24px 24px 56px;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 22px; text-decoration: none; color: var(--ink);
+}
+.path h3 { font-size: 21px; font-weight: 700; letter-spacing: -0.015em; }
+.path p { color: var(--ink-2); font-size: 15.5px; }
+.path .ptr-glyph { position: absolute; right: 24px; bottom: 22px; width: 16px; transition: transform .18s ease; }
+.path:hover { border-color: var(--ink); }
+.path:hover .ptr-glyph { transform: translateX(5px); }
+
+/* Footer */
+.foot { margin-top: clamp(64px, 10vw, 120px); padding-block: 28px; border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 16px 32px; align-items: center; justify-content: space-between; color: var(--ink-2); font-size: 14px; }
+.foot .icon { width: 30px; height: 30px; display: block; }
+.foot-brand { display: flex; gap: 12px; align-items: center; }
+
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } .btn:hover { transform: none; } }
+</style>
+</head>
+<body>
+{{POINTER_SYMBOL}}
+<header class="wrap nav">
+  <a href="https://linked-intent.dev/" aria-label="LID home">{{WORDMARK_BADGE}}</a>
+  <nav aria-label="Primary">
+    <ul>
+      <li><a href="https://linked-intent.dev/start/">Start</a></li>
+      <li><a href="https://linked-intent.dev/examples/">Examples</a></li>
+      <li><a href="https://linked-intent.dev/anti-patterns/">Anti-patterns</a></li>
+      <li><a href="https://linked-intent.dev/tour/">Tour</a></li>
+      <li><a href="https://github.com/jszmajda/lid">GitHub</a></li>
+    </ul>
+  </nav>
+</header>
+
+<main>
+  <section class="wrap hero">
+    <h1>How do you know your agent built what you meant?</h1>
+    <ul class="because">
+      <li><span class="ptr-glyph" aria-hidden="true"></span>Because you wrote it down: a design, in plain English.</li>
+      <li><span class="ptr-glyph" aria-hidden="true"></span>Because everything the agent builds comes from that design.</li>
+      <li><span class="ptr-glyph" aria-hidden="true"></span>Because you can check: one ID grep returns the requirement, its tests, and its code.</li>
+      <li><span class="ptr-glyph" aria-hidden="true"></span>Because LID helped you get there.</li>
+    </ul>
+    <p class="lede">Code that runs can still miss what you meant. With LID (Linked-Intent Development), the design stays linked to everything built from it. Fix it once, the agent cascades the change, and you sign off or push back at every step.</p>
+    <div class="ctas">
+      <a class="btn btn-ink" href="#quickstart">Install <span class="ptr-glyph" aria-hidden="true"></span></a>
+      <a class="btn" href="https://github.com/jszmajda/lid">Read the source</a>
+    </div>
+  </section>
+
+  <section class="wrap" aria-label="The arrow of intent">
+    <ol class="chain">
+      <li><b>HLD</b><span>the why</span></li>
+      <li><b>LLD</b><span>the how</span></li>
+      <li><b>EARS</b><span>the claim</span></li>
+      <li><b>Tests</b><span>failing first</span></li>
+      <li><b>Code</b><span>@spec</span></li>
+    </ol>
+    <p class="chain-cap">One design, traced to code. Each node cites the one before it by ID.</p>
+  </section>
+
+  <section class="wrap sec" id="how">
+    <div class="sec-grid">
+      <header class="sec-head">
+        <h2>Design first. Everything below it cites an ID.</h2>
+        <p>Every code file cites, by ID, the spec it implements. Every test cites the spec it asserts, and every spec traces to a design. Checking that code still traces to design is a walk through that graph, mechanical enough to put in CI.</p>
+      </header>
+      <div>
+        <ol class="trace">
+          <li class="tnode">
+            <div class="tchip">HLD</div>
+            <div class="tbody">
+              <p class="trole">the why</p>
+              <p>The app is account-scoped. Only the account owner can see or change their data, so every request has to identify the caller.</p>
+            </div>
+          </li>
+          <li class="tnode">
+            <div class="tchip">LLD</div>
+            <div class="tbody">
+              <p class="trole">the how</p>
+              <p>Credentials enter at the login form, pass to the auth service, and resolve to one of two outcomes: a session scoped to the user, or a structured <code>AuthError</code>.</p>
+            </div>
+          </li>
+          <li class="tnode">
+            <div class="tchip">EARS</div>
+            <div class="tbody">
+              <p class="trole">the claim <span class="id">AUTH-UI-001</span></p>
+              <p><span class="kw">When</span> a user submits valid credentials, the authentication service <span class="kw">shall</span> return a session scoped to that user.</p>
+            </div>
+          </li>
+          <li class="tnode">
+            <div class="tchip">Tests</div>
+            <div class="tbody">
+              <p class="trole">failing first <span class="id">AUTH-UI-001</span></p>
+<pre><code>test("returns a session on valid credentials")
+<span class="c">  ▸ AUTH-UI-001</span></code></pre>
+            </div>
+          </li>
+          <li class="tnode">
+            <div class="tchip">Code</div>
+            <div class="tbody">
+              <p class="trole">@spec anchors <span class="id">AUTH-UI-001</span></p>
+<pre><code><span class="c">// services/auth.ts</span>
+<span class="c">// @spec AUTH-UI-001, AUTH-UI-002</span>
+async function authenticate(credentials) { … }</code></pre>
+            </div>
+          </li>
+        </ol>
+        <p class="grep"><span class="ptr-glyph" aria-hidden="true"></span><span>A spec ID is a grep target. <code>grep -r AUTH-UI-001</code> returns the spec, the tests that assert it, and the code that implements it.</span></p>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap sec">
+    <div class="sec-grid">
+      <header class="sec-head">
+        <h2>Watch one edit reach the code.</h2>
+        <p>Change one sentence of the design and watch it arrive in the specs, the tests, and the code. Two minutes, one real project.</p>
+      </header>
+      <figure class="term" style="margin:0">
+        <div class="term-bar"><i></i><i></i><i></i><span>cascade: LLD → specs → tests → code</span></div>
+        <div class="term-body">
+          <div class="play" aria-hidden="true"><i></i></div>
+          <p>The two-minute recording plays here.</p>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="wrap sec" id="quickstart">
+    <div class="qs">
+      <header class="qs-head">
+        <h2>Four commands, inside Claude Code.</h2>
+        <p>Install the two plugins, then describe what you want to build. The skill walks you through design, specs, and tests before it writes any code.</p>
+      </header>
+      <ol class="steps">
+        <li><div style="min-width:0"><code>/plugin marketplace add jszmajda/lid</code><small>Register the plugin source in Claude Code.</small></div><button class="copy" type="button" data-cmd="/plugin marketplace add jszmajda/lid">Copy</button></li>
+        <li><div style="min-width:0"><code>/plugin install linked-intent-dev@jszmajda-lid</code><small>Install the core workflow plugin.</small></div><button class="copy" type="button" data-cmd="/plugin install linked-intent-dev@jszmajda-lid">Copy</button></li>
+        <li><div style="min-width:0"><code>/plugin install arrow-maintenance@jszmajda-lid</code><small>Track the links between specs and code in projects too big for one context window.</small></div><button class="copy" type="button" data-cmd="/plugin install arrow-maintenance@jszmajda-lid">Copy</button></li>
+        <li><div style="min-width:0"><code>/linked-intent-dev</code><small>Describe what you want to build.</small></div><button class="copy" type="button" data-cmd="/linked-intent-dev">Copy</button></li>
+      </ol>
+      <div class="others">
+        <p>Using a different coding agent? Most tools need only an <code>AGENTS.md</code> at your project root.</p>
+        <ul class="chips">
+          <li><a href="https://github.com/jszmajda/lid/blob/main/docs/setup.md#cursor">Cursor</a></li>
+          <li><a href="https://github.com/jszmajda/lid/blob/main/docs/setup.md#windsurf">Windsurf</a></li>
+          <li><a href="https://github.com/jszmajda/lid/blob/main/docs/setup.md#github-copilot">GitHub Copilot</a></li>
+          <li><a href="https://github.com/jszmajda/lid/blob/main/docs/setup.md">Codex CLI</a></li>
+          <li><a href="https://github.com/jszmajda/lid/blob/main/docs/setup.md#aider">Aider</a></li>
+          <li><a href="https://github.com/jszmajda/lid/blob/main/docs/setup.md">Zed</a></li>
+          <li><a href="https://github.com/jszmajda/lid/blob/main/docs/setup.md">All tools</a></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="wrap sec">
+    <header class="sec-head">
+      <h2>Which path is yours?</h2>
+      <p>Four starting points, depending on where you're coming from.</p>
+    </header>
+    <div class="paths">
+      <a class="path" href="https://linked-intent.dev/start/#evaluating"><h3>Evaluating</h3><p>Decide if LID solves a problem you have.</p><span class="ptr-glyph" aria-hidden="true"></span></a>
+      <a class="path" href="https://linked-intent.dev/start/#greenfield"><h3>Starting new</h3><p>Install, describe what you want, and let the skill walk you through it.</p><span class="ptr-glyph" aria-hidden="true"></span></a>
+      <a class="path" href="https://linked-intent.dev/start/#brownfield"><h3>Existing codebase</h3><p>Map the code first, then layer LID on top of what exists.</p><span class="ptr-glyph" aria-hidden="true"></span></a>
+      <a class="path" href="https://linked-intent.dev/start/#scoped"><h3>One subsystem</h3><p>Try LID on one slice of a larger project.</p><span class="ptr-glyph" aria-hidden="true"></span></a>
+    </div>
+  </section>
+
+  <footer class="wrap">
+    <div class="foot">
+      <div class="foot-brand">{{ICON}}<span>Linked-Intent Development · MIT · © 2026 Jess Szmajda</span></div>
+      <p>This site is itself a segment of the arrow: <a href="https://github.com/jszmajda/lid/blob/main/docs/intent/marketing-site/marketing-site-design.md">LLD</a>, <a href="https://github.com/jszmajda/lid/blob/main/docs/intent/marketing-site/marketing-site-specs.md">EARS</a>.</p>
+    </div>
+  </footer>
+</main>
+
+<script>
+document.querySelectorAll('.copy').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var done = function () { b.textContent = 'Copied'; setTimeout(function () { b.textContent = 'Copy'; }, 1600); };
+    if (navigator.clipboard) navigator.clipboard.writeText(b.dataset.cmd).then(done, function () {});
+  });
+});
+</script>
+{{SWITCHER}}
+</body>
+</html>
