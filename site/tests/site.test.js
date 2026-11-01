@@ -309,7 +309,7 @@ describe("home page", () => {
     assert.ok(edges.length > 10);
     for (const edge of edges) assert.match(edge, /marker-end="url\(#dag-/);
     assert.ok(edges.filter((edge) => edge.includes("dag-edge-cross")).length >= 2);
-    assert.match(text(check.match(/<figcaption>[\s\S]*?<\/figcaption>/)[0]), /Orange edges mark the overlap/);
+    assert.match(text(check.match(/<figcaption>[\s\S]*?<\/figcaption>/)[0]), /Orange edges show a requirement reaching every file that needs it/);
     assert.match(text(check), /what LID calls an arrow/);
   });
 

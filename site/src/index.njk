@@ -189,7 +189,7 @@ it("ends the trial 720 hours after signup", () =&gt; {
     <p class="muted" style="max-width:62ch;margin-inline:auto">Each traced path like that, from a design down to code, is what LID calls an arrow. Every design, requirement, test, and file in a project make one graph of them:</p>
     {% include "dag.svg" %}
     <figcaption>
-      <span class="dag-key"><svg viewBox="0 0 28 10" aria-hidden="true"><path d="M1 5H21" class="dag-edge dag-edge-cross"/><path d="M19 1L27 5L19 9z" class="dag-head-cross"/></svg>Orange edges mark the overlap: one test that covers two files, and one file that two tests cover.</span>
+      <span class="dag-key"><svg viewBox="0 0 28 10" aria-hidden="true"><path d="M1 5H21" class="dag-edge dag-edge-cross"/><path d="M19 1L27 5L19 9z" class="dag-head-cross"/></svg>Orange edges show a requirement reaching every file that needs it, anywhere in the system.</span>
       <span>One high-level design, its low-level designs, their requirements, the tests written first, and the code.</span>
     </figcaption>
   </figure>
