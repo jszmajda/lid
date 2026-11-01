@@ -6,6 +6,7 @@
 - site/_site/** (build output)
 - .github/workflows/site-build.yml
 - README.md (the segment owns README content; see "Repository README")
+- site/tests/logo-ideas.test.js (checks the built Logo Ideas page)
 
 Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 
@@ -82,10 +83,10 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 
 ## Structure and Navigation
 
-- `[x]` **MKT-SITE-019**: The site SHALL contain exactly five top-level pages: Home, Start, Examples, Anti-patterns, Tour.
-- `[x]` **MKT-SITE-020**: When a user visits any page, the site SHALL provide navigation to the other four pages and to the GitHub repository.
+- `[x]` **MKT-SITE-019**: The site SHALL contain exactly five top-level pages: Home, Start, Examples, Anti-patterns, Tour. The temporary Logo Ideas page (MKT-SITE-083) is not a top-level page.
+- `[x]` **MKT-SITE-020**: When a user visits any top-level page, the site SHALL provide navigation to the other four top-level pages and to the GitHub repository.
 - `[x]` **MKT-SITE-021**: The site SHALL NOT contain community features — forums, comments, user-submitted content, newsletter signups.
-- `[x]` **MKT-SITE-022**: The site SHALL NOT contain calls-to-action beyond "install and use."
+- `[x]` **MKT-SITE-022**: The site SHALL NOT contain calls-to-action beyond "install and use," apart from the Logo Ideas page's request in MKT-SITE-092.
 - `[ ]` **MKT-SITE-023**: The site SHALL NOT duplicate content from the README beyond the orientation material needed for an evaluator to decide whether to click through to it.
 - `[x]` **MKT-SITE-058**: Anywhere on the onboarding surface (site pages and the repository README), attestation copy SHALL present linkage as the mechanism that makes verification cheap; it SHALL NOT claim that agent-written code is trustworthy by virtue of LID, and SHALL NOT present traceability as a compliance guarantee.
 
@@ -134,3 +135,22 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 - `[x]` **MKT-SITE-080**: On a screen wide enough for two columns, the Tour page SHALL show a sidebar on the left of the content, staying in view as the page scrolls, with links to each step, to the "Going further" section, and to each topic.
 - `[x]` **MKT-SITE-081**: On a narrower screen, the Tour page SHALL show the same links in a collapsible list above the content instead of a sidebar.
 - `[x]` **MKT-SITE-082**: The Tour page SHALL set a short horizontal rule between consecutive steps and between consecutive topics.
+
+## Logo Ideas page
+
+- `[x]` **MKT-SITE-083**: The Logo Ideas page, at `/logo-ideas/`, SHALL present its logos as ideas under consideration and SHALL NOT present any of them as LID's chosen logo.
+- `[x]` **MKT-SITE-084**: No page on the site other than the Logo Ideas page itself, including the navigation and footer on those pages, SHALL link to `/logo-ideas/`.
+- `[x]` **MKT-SITE-085**: The Logo Ideas page SHALL carry a `robots` meta tag with the value `noindex`, and `robots.txt` SHALL NOT mention the page.
+- `[x]` **MKT-SITE-086**: The Logo Ideas page SHALL show Nodes with a plain I, Nodes with a slab I, Markdown, and Wiki Link first, at a large size.
+- `[x]` **MKT-SITE-087**: The Logo Ideas page SHALL show Pointer Tails, Link Dot, Deref, Snake, Soft Cut, and Git Graph after the logos in MKT-SITE-086, at a smaller size than those logos.
+- `[x]` **MKT-SITE-088**: Each logo on the Logo Ideas page SHALL have a palette switch offering at least three palettes, each marked with a letter starting at A, and SHALL start on palette A when the page loads.
+- `[x]` **MKT-SITE-089**: The palette switch on the Logo Ideas page SHALL work by keyboard and with JavaScript turned off.
+- `[x]` **MKT-SITE-090**: Each logo on the Logo Ideas page SHALL show a text label giving the logo's name and its selected palette, such as "Nodes, plain I, palette B", and the label SHALL change when the palette changes, with or without JavaScript.
+- `[x]` **MKT-SITE-091**: Where the browser allows writing to the clipboard, each label on the Logo Ideas page SHALL have a button that copies the label's current text.
+- `[x]` **MKT-SITE-092**: The Logo Ideas page SHALL ask readers to send the labels of the options they like to the maintainer wherever they received the link.
+- `[x]` **MKT-SITE-093**: The Logo Ideas page SHALL NOT contain comments, votes, forms, or links to a feedback service in its main content.
+- `[x]` **MKT-SITE-094**: Each logo on the Logo Ideas page SHALL keep its selected palette's colors in both the light and dark themes.
+- `[x]` **MKT-SITE-095**: The Logo Ideas page SHALL provide the site's standard navigation and SHALL leave out the footer's sheet-number line.
+- `[x]` **MKT-SITE-096**: At a screen width of 360 CSS pixels, the Logo Ideas page SHALL NOT scroll horizontally.
+- `[x]` **MKT-SITE-097**: Each logo listed in MKT-SITE-086 SHALL offer seven palettes on the Logo Ideas page.
+- `[x]` **MKT-SITE-098**: On the Logo Ideas page, Nodes with a plain I and Nodes with a slab I SHALL NOT share any palette.

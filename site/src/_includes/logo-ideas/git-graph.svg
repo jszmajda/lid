@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 240" class="logo-mark" role="img" aria-label="lid growing from a commit graph">
+  <rect x="0" y="0" width="480" height="240" fill="var(--logo-ground)"/>
+  <g transform="translate(-3.00 2.00)">
+  <g fill="none" stroke-width="15">
+    <path d="M58 186H428" stroke="var(--logo-main)" stroke-linecap="round"/>
+    <path d="M116 186V54" stroke="var(--logo-l)"/>
+    <path d="M204 186V114" stroke="var(--logo-i)" stroke-linecap="round"/>
+    <circle cx="306" cy="139" r="47" stroke="var(--logo-d)"/>
+    <path d="M353 186V54" stroke="var(--logo-d)"/>
+  </g>
+  <g>
+    <circle cx="116" cy="54" r="15" fill="var(--logo-node)" stroke="var(--logo-l)" stroke-width="9"/>
+    <circle cx="204" cy="72" r="14" fill="var(--logo-node)" stroke="var(--logo-i)" stroke-width="9"/>
+    <circle cx="353" cy="54" r="15" fill="var(--logo-node)" stroke="var(--logo-d)" stroke-width="9"/>
+    <circle cx="160" cy="186" r="11" fill="var(--logo-node)" stroke="var(--logo-main)" stroke-width="9"/>
+    <circle cx="252" cy="186" r="11" fill="var(--logo-node)" stroke="var(--logo-main)" stroke-width="9"/>
+    <circle cx="398" cy="186" r="11" fill="var(--logo-node)" stroke="var(--logo-main)" stroke-width="9"/>
+  </g>
+
+  </g>
+</svg>

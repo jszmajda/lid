@@ -1,0 +1,109 @@
+---
+layout: base.njk
+title: Logo ideas
+permalink: /logo-ideas/
+unlisted: true
+description: Early logo sketches for LID. No logo has been chosen, and opinions are welcome.
+---
+
+<!-- @spec MKT-SITE-083, MKT-SITE-086, MKT-SITE-087, MKT-SITE-088, MKT-SITE-089, MKT-SITE-090, MKT-SITE-091, MKT-SITE-092, MKT-SITE-093, MKT-SITE-094, MKT-SITE-096, MKT-SITE-097, MKT-SITE-098 -->
+<style>
+.logo-ideas-header { max-width: var(--content-max); padding-block: var(--s-7) var(--s-5); display: grid; gap: var(--s-3); }
+.logo-ideas-header h1 { margin: 0; text-wrap: balance; }
+.logo-ideas-header p { margin: 0; }
+.logo-ideas-main, .logo-ideas-more { padding-block: var(--s-6); min-width: 0; }
+.logo-ideas-main h2, .logo-ideas-more h2 { margin: 0 0 var(--s-5); }
+.logo-ideas-main .logo-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-7) var(--s-6); }
+.logo-ideas-more .logo-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-6) var(--s-4); }
+@media (min-width: 48rem) {
+  .logo-ideas-main .logo-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 60rem) {
+  .logo-ideas-more .logo-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-6); }
+}
+.logo-card { display: grid; gap: var(--s-3); align-content: start; justify-items: start; min-width: 0; }
+.logo-tile { width: 100%; line-height: 0; outline: 1px solid var(--graphite); }
+.logo-mark { display: block; width: 100%; height: auto; }
+.logo-card h3 { margin: var(--s-1) 0 0; font-size: 1.25rem; line-height: 1.25; }
+.logo-ideas-more .logo-card h3 { font-size: 1.05rem; }
+.logo-idea { margin: 0; color: var(--ink-2); max-width: 34rem; }
+.logo-ideas-more .logo-idea { font-size: 0.9rem; }
+.logo-switch { display: flex; flex-wrap: wrap; gap: var(--s-2); margin: 0; padding: 0; border: 0; min-width: 0; }
+.logo-switch legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.logo-switch label { position: relative; cursor: pointer; }
+.logo-switch input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
+.logo-chip { display: inline-flex; align-items: center; gap: 0.4em; padding: 0.3em 0.55em; border: 1px solid var(--graphite); color: var(--ink-2); font: 500 0.82rem/1 var(--type-mono); }
+.logo-chip-colors { display: block; width: 1em; height: 1em; border-radius: 50%; outline: 1px solid var(--ink-3); }
+.logo-switch label:hover .logo-chip { border-color: var(--ink-3); color: var(--ink); }
+.logo-switch input:checked + .logo-chip { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); color: var(--ink); }
+.logo-switch input:focus-visible + .logo-chip { outline: 2px solid var(--nib); outline-offset: 2px; }
+.logo-label-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2) var(--s-3); min-width: 0; }
+.logo-label { margin: 0; font: 400 0.82rem/1.4 var(--type-mono); color: var(--ink); user-select: all; overflow-wrap: anywhere; }
+.logo-label [data-palette] { display: none; }
+.logo-label [data-palette="a"] { display: inline; }
+.logo-card:has(input:checked:not([value="a"])) .logo-label [data-palette="a"] { display: none; }
+.logo-card:has(input[value="b"]:checked) .logo-label [data-palette="b"],
+.logo-card:has(input[value="c"]:checked) .logo-label [data-palette="c"],
+.logo-card:has(input[value="d"]:checked) .logo-label [data-palette="d"],
+.logo-card:has(input[value="e"]:checked) .logo-label [data-palette="e"],
+.logo-card:has(input[value="f"]:checked) .logo-label [data-palette="f"],
+.logo-card:has(input[value="g"]:checked) .logo-label [data-palette="g"] { display: inline; }
+.logo-copy { font: 500 0.78rem/1 var(--type-mono); color: var(--nib); background: transparent; border: 1px solid currentColor; padding: 0.35em 0.6em; cursor: pointer; }
+.logo-copy:hover { color: var(--nib-2); }
+.logo-copy:focus-visible { outline: 2px solid var(--nib); outline-offset: 2px; }
+{{ logoIdeas.css | safe }}
+</style>
+
+<div class="page">
+  <div class="container">
+    <header class="logo-ideas-header">
+      <h1>Help choose a logo for LID</h1>
+      <p class="lede">These are early sketches, and no logo has been chosen. LID links a project's design, requirements, tests, and code, so most of these ideas start from something that links.</p>
+      <p>Switch each logo between its palettes. Then send the labels of the options you like to Jess, wherever you received this link. Reasons are welcome too, including what you would change.</p>
+    </header>
+
+    <section class="logo-ideas-main" aria-labelledby="logo-ideas-main-heading">
+      <h2 id="logo-ideas-main-heading">Main ideas</h2>
+      <div class="logo-grid">
+        {%- for logo in logoIdeas.main %}
+        {% include "logo-card.njk" %}
+        {%- endfor %}
+      </div>
+    </section>
+
+    <section class="logo-ideas-more" aria-labelledby="logo-ideas-more-heading">
+      <h2 id="logo-ideas-more-heading">More ideas</h2>
+      <div class="logo-grid">
+        {%- for logo in logoIdeas.more %}
+        {% include "logo-card.njk" %}
+        {%- endfor %}
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+// Adds a copy button beside each label, where the browser allows writing to the clipboard.
+if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+  document.querySelectorAll(".logo-card").forEach((card) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "logo-copy";
+    button.textContent = "Copy label";
+    card.querySelector(".logo-label-row").appendChild(button);
+    let timer = 0;
+    button.addEventListener("click", async () => {
+      const letter = card.querySelector("input:checked").value;
+      const text = card.querySelector(`[data-palette="${letter}"]`).textContent.trim();
+      try {
+        await navigator.clipboard.writeText(text);
+        button.textContent = "Copied";
+      } catch (error) {
+        button.textContent = "Copy failed. Select the label instead.";
+      }
+      clearTimeout(timer);
+      timer = setTimeout(() => { button.textContent = "Copy label"; }, 2000);
+    });
+  });
+}
+</script>

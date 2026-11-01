@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 240" class="logo-mark" role="img" aria-label="lid inside double square brackets">
+  <rect x="0" y="0" width="480" height="240" fill="var(--logo-ground)"/>
+  <g transform="translate(14.75 -0.25)">
+  <g transform="translate(28 165) scale(1.28)" fill="none" stroke-width="10.94" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M32 -84H14V14H32" transform="translate(0 0)" stroke="var(--logo-bracket)"/>
+    <path d="M32 -84H14V14H32" transform="translate(24 0)" stroke="var(--logo-bracket)"/>
+    <path d="M14 -80H30V-16Q30 0 46 0H50" transform="translate(64 0)" stroke="var(--logo-word)"/>
+    <path d="M14 -52H30V-16Q30 0 46 0H50M30 -77h.01" transform="translate(124 0)" stroke="var(--logo-word)"/>
+    <path d="M46 -80V0M46 -26C46 -42 38 -52 28 -52C18 -52 11 -42 11 -26C11 -10 18 0 28 0C38 0 46 -10 46 -26" transform="translate(184 0)" stroke="var(--logo-word)"/>
+    <path d="M8 -84H26V14H8" transform="translate(244 0)" stroke="var(--logo-bracket)"/>
+    <path d="M8 -84H26V14H8" transform="translate(268 0)" stroke="var(--logo-bracket)"/>
+  </g>
+
+  </g>
+</svg>
