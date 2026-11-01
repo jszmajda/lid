@@ -101,7 +101,7 @@ Terms used in the lines below:
 - `[x]` **TOUR-044**: The example SHALL list these decisions the request hands over without saying so: when the trial starts, what happens when it ends, whether someone can start a second trial with a new email address, and when exactly day 30 ends.
 - `[x]` **TOUR-045**: The boundary question the example follows down SHALL be when day 30 ends and in whose time zone.
 - `[x]` **TOUR-046**: The agent's first draft of the example's low-level design SHALL contain a plausible guess (the trial ends at midnight at the end of day 30, in the server's time zone), and the before-and-after change SHALL replace it with the settled line: the trial ends 720 hours after signup.
-- `[x]` **TOUR-122**: The example's tenet SHALL be "the same for everyone" (where a rule could work out differently for users in different places, lean toward the version that treats them all alike), and the statement that settles nothing SHALL be one whose opposite nobody would choose, such as "write good code".
+- `[x]` **TOUR-122**: The example's tenet SHALL be "customer delight over perfect cost management" (when a choice could go either way, lean toward the customer), and the statement that settles nothing SHALL be one whose opposite nobody would choose, such as "write good code".
 - `[x]` **TOUR-047**: The example's excerpts at each level, its IDs, test, code, and search result SHALL be written out in `tour.md`.
 - `[x]` **TOUR-094**: The example's test and code SHALL be written in TypeScript.
 
