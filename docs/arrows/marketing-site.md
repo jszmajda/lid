@@ -1,10 +1,10 @@
 # Arrow: marketing-site
 
-The conversion and orientation surface — the four-page Eleventy site at `site/` that carries LID's positioning, the cascade demo, anti-patterns, and short paths into the README and repo.
+The conversion and orientation surface — the five-page Eleventy site at `site/` that carries LID's positioning, the cascade demo, anti-patterns, and short paths into the README and repo.
 
 ## Status
 
-**AUDITED** — last audited 2026-06-07 (git SHA `527cf08c9150`); refreshed 2026-06-09 during the attestation and copy-effectiveness cascades, and 2026-06-11 for the portfolio-tracker exemplar cascade (`MKT-SITE-016` reframed to three lenses; `MKT-SITE-065`/`-066` added and implemented — Examples third card, Start Evaluating mention). 70 of 82 specs implemented; 12 active gaps, concentrated in build-time checks (link strictness, mermaid, a11y contrast), README/Quickstart cascade behaviors, and process specs (`MKT-SITE-033`–`036`). Added this cycle: the attestation story beat (`MKT-SITE-055`–`059`), and the copy-effectiveness pass (`MKT-SITE-060`–`064` — pain-first hero lede, show-then-name vocabulary rule, not-a-waterfall statement, cost-honesty passage, and the Home Teams section between demo and Quickstart; `MKT-SITE-007` ordering amended accordingly). The five-panel trace cluster (`MKT-SITE-039/-041/-045/-047/-048/-049`) verified implemented (panels + dimension rail in `site/src/index.njk` and `main.css`) and its stale gap markers flipped.
+**AUDITED** — last audited 2026-06-07 (git SHA `527cf08c9150`); refreshed 2026-06-09 during the attestation and copy-effectiveness cascades, and 2026-06-11 for the portfolio-tracker exemplar cascade (`MKT-SITE-016` reframed to three lenses; `MKT-SITE-065`/`-066` added and implemented — Examples third card, Start Evaluating mention). 86 of 98 specs implemented; 12 active gaps, concentrated in build-time checks (link strictness, mermaid, a11y contrast), README/Quickstart cascade behaviors, and process specs (`MKT-SITE-033`–`036`). Added this cycle: the attestation story beat (`MKT-SITE-055`–`059`), and the copy-effectiveness pass (`MKT-SITE-060`–`064` — pain-first hero lede, show-then-name vocabulary rule, not-a-waterfall statement, cost-honesty passage, and the Home Teams section between demo and Quickstart; `MKT-SITE-007` ordering amended accordingly). The five-panel trace cluster (`MKT-SITE-039/-041/-045/-047/-048/-049`) verified implemented (panels + dimension rail in `site/src/index.njk` and `main.css`) and its stale gap markers flipped.
 
 ## References
 
@@ -15,10 +15,11 @@ The conversion and orientation surface — the four-page Eleventy site at `site/
 - `docs/intent/marketing-site/marketing-site-design.md`
 
 ### EARS
-- `docs/intent/marketing-site/marketing-site-specs.md` (82 specs, prefix `MKT-SITE-*`)
+- `docs/intent/marketing-site/marketing-site-specs.md` (98 specs, prefix `MKT-SITE-*`)
 
 ### Tests / Build checks
 - Build-time structural checks (link-check, mermaid render, markdown lint) — declared in the LLD § *Content Maintenance and Review*; CI workflow scope per `MKT-SITE-*` build specs.
+- `site/tests/logo-ideas.test.js` — checks the built Logo Ideas page (`node --test site/tests/logo-ideas.test.js`).
 - No skill-creator evals (content artifact, not a skill).
 
 ### Code (site sources)
@@ -29,13 +30,15 @@ The conversion and orientation surface — the four-page Eleventy site at `site/
 
 ## Architecture
 
-**Purpose:** Close the gap between "heard of LID" and "running LID" — convert evaluators with a structured pitch, orient newcomers by audience path (evaluating / greenfield / brownfield / scoped), demonstrate plasticity via a ~2-minute asciinema cascade demo, and surface honest non-fit on an anti-patterns page. Four pages, one terminal outbound (the GitHub repo).
+**Purpose:** Close the gap between "heard of LID" and "running LID" — convert evaluators with a structured pitch, orient newcomers by audience path (evaluating / greenfield / brownfield / scoped), demonstrate plasticity via a ~2-minute asciinema cascade demo, and surface honest non-fit on an anti-patterns page. Five pages, one terminal outbound (the GitHub repo), plus the temporary, unlisted Logo Ideas page.
 
 **Key Components:**
 1. **Home** — hero (pitch, framing, schematic) → How it works (five-panel trace + DAG) → cascade demo (asciinema embed) → Quickstart → four path links → repo CTA in hero.
 2. **Start** — audience-path orientation (evaluating / greenfield / brownfield / scoped), each ~150 words.
 3. **Examples** — three cards: `examples/urlshort/` (clean, minimal), portfolio-tracker (complete, end-to-end), and Threadkeeper (messy, real).
 4. **Anti-patterns** — honest list of when LID is the wrong choice.
+5. **Tour** — the newcomer tour's steps and topics, rendered from the `tour` segment's files.
+6. **Logo Ideas** — a temporary, unlisted page of candidate logos with palette switches and copyable labels, removed once a logo is chosen.
 
 ## Spec Coverage
 
@@ -47,9 +50,10 @@ The conversion and orientation surface — the four-page Eleventy site at `site/
 | Build & deploy | GitHub Pages deploy `[x]`; mermaid/link-check strictness `[ ]` (-027/-028/-029), README/Quickstart cascade `[ ]` (-009) | | 0 |
 | Cascade & coherence process | `[x]` MKT-SITE-037 | `[ ]` MKT-SITE-033–036 | 0 |
 | Tour page (`-072`–`-082`) | 11 `[x]` | 0 | 0 |
-| **Total** | **70** | **12** | **0** |
+| Logo Ideas page (`-083`–`-098`) | 16 `[x]` | 0 | 0 |
+| **Total** | **86** | **12** | **0** |
 
-**Summary:** 70 of 82 specs implemented; 12 active gaps. The site is live and serves the core flow, and the Tour page (`MKT-SITE-072`–`082`) renders the newcomer tour from the `tour` segment's files. The 2026-06 cycles added the attestation story (`MKT-SITE-055`–`059`), cascading from HLD § Linkage's two-payoff framing (navigation + attestation); the five-panel trace cluster was verified implemented and its stale markers corrected. Remaining gaps are build-time checks and process specs, not content debt.
+**Summary:** 86 of 98 specs implemented; 12 active gaps. The site is live and serves the core flow, and the Tour page (`MKT-SITE-072`–`082`) renders the newcomer tour from the `tour` segment's files. The 2026-06 cycles added the attestation story (`MKT-SITE-055`–`059`), cascading from HLD § Linkage's two-payoff framing (navigation + attestation); the five-panel trace cluster was verified implemented and its stale markers corrected. Remaining gaps are build-time checks and process specs, not content debt.
 
 ## Key Findings
 

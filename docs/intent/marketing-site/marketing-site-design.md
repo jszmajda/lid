@@ -105,7 +105,7 @@ graph LR
   Tour --> Repo
 ```
 
-Five pages, one outbound destination. The Tour page also has a way in from outside the site: the offer card LID shows inside the agent links to it. The repo is the terminal node — every path eventually ends there, and the site's job is to make sure the user arrives at the repo oriented enough to find what they need.
+Five pages, one outbound destination. The Tour page also has a way in from outside the site: the offer card LID shows inside the agent links to it. The repo is the terminal node — every path eventually ends there, and the site's job is to make sure the user arrives at the repo oriented enough to find what they need. The temporary Logo Ideas page sits outside this structure, and nothing on the site links to it.
 
 ### Page: Home
 
@@ -214,6 +214,16 @@ The newcomer tour's five steps and its topics as one page, at `/tour`, and one o
 - **The page says which LID version** its content comes from, taken from the plugin manifest at the commit being built.
 - **Fenced code is colored the way the tour expects from a host**: a `diff` fence in red and green, and language-tagged fences in syntax colors, in both themes.
 - **The page's claims and words are the tour's.** The `tour` segment traces the claims to the HLD and holds the text to its own word rules, so the site's copy rules for its other pages do not apply to it. The site's other pages keep any claim they share with the tour consistent with it.
+
+### Page: Logo Ideas
+
+A temporary page at `/logo-ideas/` that shows candidate logos, so that the maintainer can link community members to it and hear what they think. It sits outside the site's five top-level pages and exists only while the logo is being chosen. Once a logo is chosen, the page, its specs, and its test file (`site/tests/logo-ideas.test.js`) are removed.
+
+- **Unlisted.** No page links to it, the navigation does not list it, and it asks search engines not to index it. The site and the repository are public, so anyone with the link can open the page, and its source stays in the repository's history.
+- **Main candidates, then smaller options.** Nodes with a plain I, Nodes with a slab I, Markdown, and Wiki Link come first at a large size. Pointer Tails, Link Dot, Deref, Snake, Soft Cut, and Git Graph follow at a smaller size.
+- **A palette switch on each logo.** Each logo has several palettes, and a small switch changes which one is shown. The main candidates have more palettes than the smaller options, and the two versions of Nodes use different palettes, which gives Nodes the widest range of colors. The switch works without JavaScript.
+- **A copyable label for each choice.** The label gives the logo and the selected palette, such as "Nodes, plain I, palette B". A reader copies it and sends it to the maintainer wherever they received the link. The page has no comments, votes, or forms.
+- **Candidates only.** The page presents the logos as ideas under consideration, and the rest of the site keeps its current look.
 
 ## Repository README
 
@@ -363,6 +373,10 @@ Once `docs/arrows/` is bootstrapped for this repository, the site appears as a *
 | Authorial presence | Exactly one first-person receipt sentence, beside the price passage, plus the author's name in the footer | No authorial presence (prior state); first person in the hero; first person sprinkled across sections | With zero author, the receipts register reads as institutional documentation; one "I" re-registers the site as personal. In the hero it becomes an origin story and delays the mechanism. The sentence must carry receipts — the linked exemplar and the breadth clause that LID runs on projects beyond the author's — so it lands as testimony, not bio; more than one dilutes. |
 | Heading register | Persuasive headings state a claim traceable to a mechanism or artifact shown on the page; navigational headings orient; metaphor demoted to body copy | Metaphor-led headings (prior state); the claim rule applied to every heading | The skim path (h1 plus h2s) is what an evaluator actually reads; when it carries metaphor, the substance never reaches them — cold reads of the prior copy could name the vibe but not the mechanism. A strict all-headings rule fails the navigational slots, which legitimately orient rather than claim. |
 | Cost vocabulary | "The price," on every page | "Overhead" on Anti-patterns beside "the price" on Home (prior state); "cost" everywhere | Two words for one concept across pages read as two concepts. "Price" is the sharper word and already anchors the Home passage. |
+| Logo Ideas hosting | An unlisted page on the site, removed once a logo is chosen | A page outside the site; an access-controlled page | Readers meet the candidates on the project's own domain. GitHub Pages and a public repository offer no access control, so unlisted is the most private option the site has. The exception to the five-page limit and the install-only call to action stays small because the page is temporary and nothing links to it. |
+| Logo Ideas unlisting | A `noindex` tag on the page, no links to it, and no `robots.txt` entry | A `Disallow` line in `robots.txt` | A `Disallow` line would publish the URL, and a crawler blocked by `robots.txt` never sees the `noindex` tag. |
+| Logo Ideas feedback | A copyable label for each choice, with the conversation off the site | A linked GitHub Discussion; on-page voting | The maintainer already talks with the people who receive the link, and a label lets a reader say exactly which option they mean in any channel. On-page voting would need the community features and tracking that `MKT-SITE-021` and `MKT-SITE-031` rule out. |
+| Logo Ideas palettes | A small switch on each logo | All palettes side by side | Ten logos with several palettes each would make a long page, and the switch keeps each logo to one tile. |
 | Antithesis budget | At most two "X, not Y" constructions sitewide, with the holders named in the Copy register | No budget — six-plus accumulated (prior state); zero antithesis | Stacked antithesis is the signature cadence of AI-inflected marketing prose, and the author's own voice caps the form; two earned instances keep the register human without banning the tool. |
 
 ## Open Questions & Future Decisions

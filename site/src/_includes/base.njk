@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{% if title %}{{ title }} — {% endif %}{{ site.title }}</title>
     <meta name="description" content="{{ description or site.description }}" />
+    {% if unlisted %}<meta name="robots" content="noindex" /><!-- @spec MKT-SITE-085 -->{% endif %}
     <!-- Typography: Bunny Fonts — GDPR-compliant, no tracking. Per MKT-SITE-030. -->
     <link rel="preconnect" href="https://fonts.bunny.net" crossorigin />
     <link rel="stylesheet" href="https://fonts.bunny.net/css?family=fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=jetbrains-mono:wght@400;500&display=swap" />
@@ -37,7 +38,7 @@
             </p>
           </div>
           <div class="footer-meta">
-            <span>SHEET {% if eleventyNavigation and eleventyNavigation.order %}{% if eleventyNavigation.order < 10 %}0{% endif %}{{ eleventyNavigation.order }}{% else %}01{% endif %} OF 05</span>
+            {# @spec MKT-SITE-095 #}{% if not unlisted %}<span>SHEET {% if eleventyNavigation and eleventyNavigation.order %}{% if eleventyNavigation.order < 10 %}0{% endif %}{{ eleventyNavigation.order }}{% else %}01{% endif %} OF 05</span>{% endif %}
             <span class="coord">DRAWN · JS</span>
             <span class="coord">REV · {{ "" | year }}</span>
           </div>

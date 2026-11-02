@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 240" class="logo-mark" role="img" aria-label="lid with a chain-link icon as the dot on the i">
+  <rect x="0" y="0" width="480" height="240" fill="var(--logo-ground)"/>
+  <g transform="translate(-0.50 9.75)">
+  <g fill="none" stroke="var(--logo-ink)" stroke-width="38" stroke-linecap="round">
+    <path d="M130 44V186"/>
+    <path d="M202 104V186"/>
+    <circle cx="310" cy="145" r="41"/>
+    <path d="M351 44V186"/>
+  </g>
+  <g transform="translate(208 48) rotate(-45)" fill="none" stroke="var(--logo-accent)" stroke-width="8.5">
+    <rect x="-35" y="-11" width="42" height="22" rx="11"/>
+    <rect x="-7" y="-11" width="42" height="22" rx="11"/>
+  </g>
+
+  </g>
+</svg>

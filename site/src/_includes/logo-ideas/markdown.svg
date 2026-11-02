@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 240" class="logo-mark" role="img" aria-label="lid written as a Markdown link to intent">
+  <rect x="0" y="0" width="480" height="240" fill="var(--logo-ground)"/>
+  <g transform="translate(-1.00 0.50)">
+  <g transform="translate(25 141) scale(0.614)" fill="none" stroke-width="15.47" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M32 -84H14V14H32" transform="translate(0 0)" stroke="var(--logo-punct)"/>
+    <path d="M14 -80H30V-16Q30 0 46 0H50" transform="translate(40 0)" stroke="var(--logo-word)"/>
+    <path d="M14 -52H30V-16Q30 0 46 0H50M30 -77h.01" transform="translate(100 0)" stroke="var(--logo-word)"/>
+    <path d="M46 -80V0M46 -26C46 -42 38 -52 28 -52C18 -52 11 -42 11 -26C11 -10 18 0 28 0C38 0 46 -10 46 -26" transform="translate(160 0)" stroke="var(--logo-word)"/>
+    <path d="M8 -84H26V14H8" transform="translate(220 0)" stroke="var(--logo-punct)"/>
+    <path d="M32 -84C12 -62 10 -50 10 -35C10 -20 12 -8 32 14" transform="translate(260 0)" stroke="var(--logo-punct)"/>
+    <path d="M14 -52H30V-16Q30 0 46 0H50M30 -77h.01" transform="translate(300 0)" stroke="var(--logo-target)"/>
+    <path d="M13 0V-52M13 -34C13 -46 21 -52 31 -52C42 -52 47 -44 47 -32V0" transform="translate(360 0)" stroke="var(--logo-target)"/>
+    <path d="M26 -72V-16Q26 0 42 0H50M10 -52H48" transform="translate(420 0)" stroke="var(--logo-target)"/>
+    <path d="M12 -26H48C48 -42 40 -52 30 -52C18 -52 12 -40 12 -26C12 -10 20 0 32 0C40 0 46 -4 48 -10" transform="translate(480 0)" stroke="var(--logo-target)"/>
+    <path d="M13 0V-52M13 -34C13 -46 21 -52 31 -52C42 -52 47 -44 47 -32V0" transform="translate(540 0)" stroke="var(--logo-target)"/>
+    <path d="M26 -72V-16Q26 0 42 0H50M10 -52H48" transform="translate(600 0)" stroke="var(--logo-target)"/>
+    <path d="M8 -84C28 -62 30 -50 30 -35C30 -20 28 -8 8 14" transform="translate(660 0)" stroke="var(--logo-punct)"/>
+  </g>
+
+  </g>
+</svg>
