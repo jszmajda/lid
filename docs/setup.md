@@ -172,6 +172,91 @@ Sources: [opencode.ai/docs/skills](https://opencode.ai/docs/skills/), [opencode.
 
 ---
 
+## Kiro
+
+**Skills host.** Kiro reads Agent Skills natively, so it loads the LID skills from a clone of this repository, linked one by one into Kiro's user-level skills directory, `~/.kiro/skills/`. Kiro's default agent loads that directory in every project, in both the IDE and the CLI. Kiro also reads your project's `AGENTS.md` natively, so the project needs no vendored workflow doc.
+
+The commands below are for a POSIX shell on macOS and Linux. The setup depends on symlinks; where you cannot create them (for example, Windows without Developer Mode), there is no supported Kiro setup.
+
+**1. Clone the repository:**
+
+```sh
+git clone https://github.com/jszmajda/lid "$HOME/src/lid"
+```
+
+**2. Link the skills.** Set `LID` to the absolute path of your clone, without a trailing slash. The block links every skill directory of each plugin in `PLUGINS`, creating `~/.kiro/skills/` if needed. It runs itself under `sh`, so you can paste it into zsh, bash, or any other shell:
+
+```sh
+sh <<'EOF'
+LID="$HOME/src/lid"
+PLUGINS="linked-intent-dev arrow-maintenance"
+SKILLS="$HOME/.kiro/skills"
+mkdir -p "$SKILLS"
+# Remove links into the clone whose skill no longer exists.
+for entry in "$SKILLS"/*; do
+  [ -L "$entry" ] || continue
+  case "$(readlink "$entry")" in
+    "$LID"/*) [ -e "$entry" ] || rm "$entry" ;;
+  esac
+done
+# Link each skill; never replace an entry that is not a link into the clone.
+for plugin in $PLUGINS; do
+  for dir in "$LID/plugins/$plugin/skills"/*/; do
+    [ -d "$dir" ] || continue
+    dir="${dir%/}"
+    name="$(basename "$dir")"
+    dest="$SKILLS/$name"
+    if [ -L "$dest" ] || [ -e "$dest" ]; then
+      case "$(readlink "$dest" 2>/dev/null)" in
+        "$LID"/*) ;;
+        *) echo "skipped $name: $dest already exists and is not a link into $LID" >&2 ;;
+      esac
+      continue
+    fi
+    ln -s "$dir" "$dest"
+  done
+done
+EOF
+```
+
+- **Your own entries are safe.** A link into the clone is one whose target starts with `$LID`. Anything else in `~/.kiro/skills/` is yours, including a link into an earlier location of the clone or into a second clone. The block never replaces such an entry; it skips that skill, prints a warning naming the entry, and links the rest.
+- **Precedence.** A skill in a project's own `.kiro/skills/` takes precedence over the user-level skill of the same name.
+- **Experiments are opt-in.** To opt in, add `lid-experimental` to `PLUGINS` and run the block again.
+- **Kiro picks up the skills** in a new chat in the IDE or a new session in the CLI, after the first install and after each re-run.
+
+**Updating.** Pull the clone (`git -C "$HOME/src/lid" pull`), then run the linking block again. Each skill is linked separately, so a pull alone does not reach a skill a release adds. The re-run links new skills, leaves existing links in place, and removes links whose skill a release removed.
+
+**Moving the clone.** Moving or deleting the clone breaks the links, and links into the old location count as your own entries. Before moving it, run the uninstall block below; after the move, set `LID` to the new location and run the linking block again.
+
+**Uninstalling.** This removes every link into the clone, broken ones included, and leaves every other entry in `~/.kiro/skills/` in place. You can delete the clone afterwards.
+
+```sh
+sh <<'EOF'
+LID="$HOME/src/lid"
+for entry in "$HOME/.kiro/skills"/*; do
+  [ -L "$entry" ] || continue
+  case "$(readlink "$entry")" in
+    "$LID"/*) rm "$entry" ;;
+  esac
+done
+EOF
+```
+
+**Custom agents.** Kiro's default agent loads user-level skills on its own. A custom Kiro agent loads them only when its configuration lists them as a resource:
+
+```json
+"resources": ["skill://~/.kiro/skills/*/SKILL.md"]
+```
+
+**What Kiro does not load from the plugin layer:**
+
+- **Command aliases.** Kiro loads skills, not the plugins' `commands/` files, so `lid-experimental`'s `/differential-audit` alias is not available there. The skill it names is `bidirectional-differential`.
+- **The invocation guard.** Kiro does not document `disable-model-invocation`. Treat `lid-coach` and `map-codebase` as model-invocable there: on the plugin hosts these two run only when you invoke them, but in Kiro the model may also load them on its own when a task matches their descriptions.
+
+Sources: [kiro.dev/docs/skills](https://kiro.dev/docs/skills.md) and [kiro.dev/docs/steering](https://kiro.dev/docs/steering.md), which covers Kiro's `AGENTS.md` support.
+
+---
+
 ## Windsurf
 
 Windsurf's Cascade rules engine treats a root-level `AGENTS.md` as an always-on rule automatically — if your project has one, Windsurf is covered. A tool-specific adapter is only useful when you want glob-scoped rules or a Windsurf-scoped variant.
