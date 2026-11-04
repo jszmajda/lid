@@ -90,7 +90,7 @@ The host-loading check loads each plugin the way a host does and observes what t
 
 opencode 1.x ignores `disable-model-invocation` and loads no command files. The result reports both as known host limits ("guard: not honored", "command aliases: not loaded"), not as failures. It reports the guard as honored only when every guarded skill is absent from opencode's report or marked there as not model-invocable — as opencode's v2 line may do — so a pinned version that starts honoring the guard visibly changes the result, and the limit stated in `docs/setup.md` is revisited.
 
-**Other hosts.** Cursor, and the tools that read only `AGENTS.md`, have no harness in this repository. Their documentation and users' bug reports cover them.
+**Other hosts.** Cursor, Kiro, and the tools that read only `AGENTS.md` have no harness in this repository. Their documentation and users' bug reports cover them.
 
 ## Result states
 
