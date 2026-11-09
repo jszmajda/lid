@@ -8,381 +8,314 @@ description: Linked-Intent Development — how do you know your agent built what
 ---
 
 <!-- @spec MKT-SITE-007 (home page section ordering), MKT-SITE-061 (show-then-name vocabulary, page-wide), MKT-SITE-068 (heading register, page-wide), MKT-SITE-071 (antithesis budget, site-wide) -->
-<!-- @spec MKT-SITE-001, MKT-SITE-002, MKT-SITE-004, MKT-SITE-005, MKT-SITE-040, MKT-SITE-060 -->
-<section class="hero">
-  <div class="container hero-grid">
-    <div class="hero-text">
-      <div class="hero-eyebrow">
-        <span class="plate">Plate 00 / Intro</span>
-        <span class="dash" aria-hidden="true"></span>
-        <span class="tag">For agentic coding</span>
-      </div>
-
-      <h1 class="pitch">
-        How do you know your agent built what you <em>meant</em>?
-      </h1>
-
-      <ol class="framing" aria-label="Four-line framing">
-        {% for line in site.framing %}
-          <li>{{ line | safe }}</li>
-        {% endfor %}
-      </ol>
-
-      <p class="hero-lede">
-        Code that runs can still miss what you meant. Somewhere in there, the agent made a judgment call you never saw — and by the next session, nobody remembers why. With LID (Linked-Intent Development), the design stays linked to everything built from it: fix it once, the agent cascades the change, and you sign off or push back at every step. You'd type these sentences into the chat anyway — LID keeps them where the next session can find them.
-      </p>
-
-      <div class="cta-row">
-        <a class="button button-primary" href="#quickstart">
-          Install<span class="arr" aria-hidden="true">→</span>
-        </a>
-        <a class="button" href="{{ site.repoUrl }}">
-          Read the source<span class="arr" aria-hidden="true">↗</span>
-        </a>
-      </div>
-    </div>
-
-    <aside class="hero-aside" aria-label="Arrow-of-intent schematic">
-      {% include "hero-schematic.svg" %}
-    </aside>
-  </div>
-</section>
-
-<!-- @spec MKT-SITE-038, MKT-SITE-039, MKT-SITE-041, MKT-SITE-044, MKT-SITE-045, MKT-SITE-046, MKT-SITE-055, MKT-SITE-056, MKT-SITE-057, MKT-SITE-058, MKT-SITE-067, MKT-SITE-069, MKT-SITE-070 -->
-<section class="howitworks section" id="howitworks" aria-labelledby="howitworks-heading">
-  <div class="container howit-stack">
-    <header class="howit-head">
-      <span class="plate">Plate 01 / How it works</span>
-      <h2 id="howitworks-heading">Design first. <em>Everything below it cites an ID.</em></h2>
-      <p class="lede">
-        In a LID repo, every code file cites, by ID, the spec it implements; every test, the spec it asserts; every spec traces to a low-level design (LLD), and every design to the high-level design (HLD) at the top — one graph, rooted in your design docs. <em>Checking that code still traces to design is a walk through that graph</em> — mechanical enough to put in CI. Whether the design says what you <em>mean</em> stays your call. And green tests can't catch a misreading on their own: they may come from the same misreading as the code.
-      </p>
-    </header>
-
-    <!-- @spec MKT-SITE-039, MKT-SITE-045, MKT-SITE-047, MKT-SITE-048 -->
-    <div class="howit-trace" aria-label="One intent, traced from HLD through code">
-      <figure class="trace-legend">
-        <figcaption class="trace-legend-cap">
-          <span class="num">FIG · 001</span>
-          <strong>Legend.</strong> The HLD names the <em>why</em>; the LLD shapes the <em>how</em>; a spec makes one atomic claim in structured English — one line, one greppable ID (the format is called <em>EARS</em>, Easy Approach to Requirements Syntax); a failing-first test asserts that claim before code exists; code carries matching <code>@spec</code> annotations. The IDs — <code>AUTH-UI-001</code> and so on — make the graph navigable, and checkable, by name.
-        </figcaption>
-        <div aria-hidden="true">{% include "arrow-inset-schematic.svg" %}</div>
-      </figure>
-
-      <ol class="trace-strip" role="list" aria-label="One worked example at five levels of resolution">
-        <li class="trace-panel trace-panel-hld" style="--d: 0.10s">
-          <header class="trace-panel-head">
-            <span class="trace-panel-label">§ HLD <span class="trace-label-sep" aria-hidden="true">/</span> <em>the why</em></span>
-          </header>
-          <div class="trace-panel-body trace-panel-body--prose">
-            The app is account-scoped — only the account owner can see or change their data. Every request has to identify the caller.
-          </div>
-        </li>
-
-        <li class="trace-panel trace-panel-lld" style="--d: 0.20s">
-          <header class="trace-panel-head">
-            <span class="trace-panel-label">§ LLD <span class="trace-label-sep" aria-hidden="true">/</span> <em>the how</em></span>
-          </header>
-          <div class="trace-panel-body trace-panel-body--prose">
-            Credentials enter at the login form, pass to the auth service, and resolve to one of two outcomes: a session scoped to the user, or a structured <code>AuthError</code>. The UI translates <code>AuthError</code> into a user-safe message; the session rides subsequent requests.
-          </div>
-        </li>
-
-        <li class="trace-panel trace-panel-ears" style="--d: 0.30s">
-          <header class="trace-panel-head">
-            <span class="trace-panel-label">§ EARS <span class="trace-label-sep" aria-hidden="true">/</span> <em>the claim</em></span>
-            <span class="trace-id-chip">AUTH-UI-001</span>
-          </header>
-          <div class="trace-panel-body trace-panel-body--claim">
-            <span class="ears-kw">When</span> a user submits valid credentials, the authentication service <span class="ears-kw">shall</span> return a session scoped to that user.
-          </div>
-        </li>
-
-        <li class="trace-panel trace-panel-tests" style="--d: 0.40s">
-          <header class="trace-panel-head">
-            <span class="trace-panel-label">§ TESTS <span class="trace-label-sep" aria-hidden="true">/</span> <em>failing-first</em></span>
-            <span class="trace-id-chip">AUTH-UI-001</span>
-          </header>
-          <div class="trace-panel-body trace-panel-body--code"><code><span class="sn-k">test</span>(<span class="sn-s">"returns a session on valid credentials"</span>)
-<span class="trace-id-ref">▸ AUTH-UI-001</span>
-
-<span class="sn-k">test</span>(<span class="sn-s">"returns AuthError on invalid credentials"</span>)
-<span class="trace-id-ref">▸ AUTH-UI-002</span></code></div>
-        </li>
-
-        <li class="trace-panel trace-panel-code" style="--d: 0.50s">
-          <header class="trace-panel-head">
-            <span class="trace-panel-label">§ CODE <span class="trace-label-sep" aria-hidden="true">/</span> <em>@spec anchors</em></span>
-            <span class="trace-id-chip">AUTH-UI-001</span>
-          </header>
-          <div class="trace-panel-body trace-panel-body--code"><code><span class="sn-c">// services/auth.ts</span>
-<span class="sn-c">// @spec AUTH-UI-001, AUTH-UI-002</span>
-<span class="sn-k">async function</span> <span class="sn-fn">authenticate</span>(credentials) {
-  <span class="sn-c">// ...</span>
-}</code></div>
-        </li>
-      </ol>
-
-      <p class="trace-outro">
-        A spec ID is a grep target: run <code>grep -r AUTH-UI-001</code> and you get everything that cites it — the spec text, the failing-first tests asserting it, and the code implementing it. "This code does what the design says" stops being something you take on faith and becomes something you — or an auditing agent — can check.
-      </p>
-    </div>
-
-    <div class="howit-bridge">
-      <span class="howit-bridge-label">Scale <span class="howit-bridge-sep" aria-hidden="true">/</span> one <span class="howit-bridge-arr" aria-hidden="true">→</span> every</span>
-      <p>
-        That whole traced path — one thought, HLD down to code — is what LID calls an <em>arrow</em>. Now do that for every design, every spec, every test — all in the repo, next to the code. Your whole codebase looks like this:
-      </p>
-    </div>
-
-    <div class="howit-reveal">
-      <figure class="howit-visual" aria-label="Diagram of every intent arrow across the codebase">
-        {% include "dag-schematic.svg" %}
-        <figcaption>
-          <span class="num">FIG · 002</span>
-          <strong>Every arrow, for every piece of code.</strong> One HLD, many LLDs and specs, many tests, many files — one graph. Highlighted edges mark where one test covers more than one file, or one file is covered by more than one test.
-        </figcaption>
-      </figure>
-
-      <div class="howit-outro-col">
-        <span class="howit-outro-label">In practice</span>
-        <p class="howit-outro">
-          <strong>It looks like a waterfall; it behaves like source code.</strong> Nothing here is a one-way phase: every level stays editable for the life of the project, and an edit at any level recompiles what's below it.
-        </p>
-        <p class="howit-outro">
-          <strong>Your time goes into the design.</strong> The HLD and, more often, the LLDs — the agent drafts the specs, the tests, and most of the code, and your review lands on the deltas, stop by stop.
-        </p>
-        <p class="howit-outro">
-          <strong>Almost every change is an LLD edit, cascaded.</strong> A new feature, a bug, a shift in direction — you edit the design. The linkage underneath lets you — or an audit pass, or a fresh agent with no context — verify that everything below still traces to what you wrote down. The demo below is that loop, live.
-        </p>
-        <span class="howit-outro-label">The price</span>
-        <ul class="howit-costs">
-          <li>Every change walks design → specs → tests → code; you review at each step before code lands.</li>
-          <li>More design diffs to read, fewer generated lines.</li>
-          <li>Extra agent tokens spent keeping the links current.</li>
-        </ul>
-        <p class="howit-outro">
-          That's the trade — minutes of review per change, bought back as a codebase you can hand to any agent or teammate without a tour guide.
-        </p>
-        <p class="howit-outro">
-          I run LID on everything I build — the largest is a public <a href="https://github.com/jszmajda/portfolio-tracker">63k-line Rust project</a>, ~350 specs, with a CI gate that fails the build when a spec goes uncited — and these days it runs on plenty of projects that aren't mine.
-        </p>
-      </div>
+<!-- @spec MKT-SITE-001, MKT-SITE-002, MKT-SITE-004, MKT-SITE-040, MKT-SITE-060, MKT-SITE-111, MKT-SITE-129 -->
+<section class="wrap hero" id="hero">
+  <div class="hero-text">
+    <h1>How do you know your agent built what you meant?</h1>
+    <p class="lede">When your request leaves a detail unsaid, your agent fills the gap with its best guess, and when you come back later, the agent there won't remember why it chose what it did.</p>
+    <p class="lede">With LID (Linked-Intent Development), you and your agent write the design down in plain English, and everything the agent builds points back to it. When you change your mind, you change the design once, and the agent carries the change down while you review each step. You'd type the design into the chat anyway, and LID keeps it where your agent can find it next time.</p>
+    <div class="ctas">
+      <a class="btn btn-go" href="#quickstart">Install <span class="ptr" aria-hidden="true"></span></a>
+      <a class="btn btn-ghost" href="{{ site.repoUrl }}">Read the source</a>
     </div>
   </div>
-</section>
+  <figure class="hero-rings">{{ rings.hero | safe }}</figure>
+</section><!-- /section:hero -->
 
-<!-- @spec MKT-SITE-003 -->
-<section class="demo section" aria-labelledby="demo-heading">
-  <div class="container demo-grid">
-    <div class="section-head demo-head">
-      <span class="plate">Plate 02 / Demonstration</span>
-      <h2 id="demo-heading">Watch one edit <em style="font-style:italic;color:var(--nib)">reach the code</em>.</h2>
-      <p class="lede">
-        Change one sentence of the design and watch it arrive in the specs, the tests, and the code. Two minutes, one real project.
-      </p>
+<!-- @spec MKT-SITE-099, MKT-SITE-100, MKT-SITE-067, MKT-SITE-103 -->
+<section class="wrap sec" id="gap" aria-labelledby="gap-h">
+  <header class="sec-head">
+    <h2 id="gap-h">A short request leaves the decisions to your agent.</h2>
+    <p>Suppose you ask your agent to add a feature to your app:</p>
+  </header>
+  <div class="gap-ask"><div class="bubble"><span class="who">You, to your agent</span><p>Give new users a 30-day free trial.</p></div></div>
+  <p class="gap-intro">It sounds complete, but it leaves these decisions to the agent:</p>
+  <ul class="decisions">
+    <li class="node"><b>When the trial starts</b><span>At signup, or the first time they use the app.</span></li>
+    <li class="node"><b>What happens when it ends</b><span>The account locks, or the card on file is charged.</span></li>
+    <li class="node"><b>Second trials</b><span>Whether someone can start another with a new email address.</span></li>
+    <li class="node"><b>When exactly day 30 ends</b><span>Easy to miss, and someone will notice.</span></li>
+  </ul>
+  <div class="gap-after">
+    <p>Someone who signs up at 11 p.m. on the 1st, in Tokyo, will notice how the last one was decided.</p>
+    <p>And green tests won't catch a wrong guess. An agent writes its tests from the same guess as its code, so they pass either way.</p>
+  </div>
+</section><!-- /section:gap -->
+
+<!-- @spec MKT-SITE-101, MKT-SITE-102, MKT-SITE-103, MKT-SITE-104, MKT-SITE-105, MKT-SITE-112, MKT-SITE-116, MKT-SITE-117 -->
+<section class="wrap sec" id="narrowing" aria-labelledby="narrowing-h">
+  <header class="sec-head">
+    <h2 id="narrowing-h">Each level you write down rules out what you didn't mean.</h2>
+    <p>With LID, your intent is written down in levels, from the broad idea to the code. Each level is a constraint on what the agent can build, drawn here as a ring around the programs it still allows. Scroll through the free trial, one level at a time.</p>
+  </header>
+  <div class="scrolly">
+    <figure class="scrolly-fig" data-rings="narrowing">
+      {{ rings.narrowing | safe }}
+      <ul class="legend" aria-label="Key">
+        <li><svg viewBox="-9 -9 18 18" aria-hidden="true"><circle class="dot" r="3.6" opacity=".85"/></svg>a program the agent could build</li>
+        <li><svg viewBox="-9 -9 18 18" aria-hidden="true"><circle class="code-core" r="5"/></svg>the code that got built</li>
+        <li><svg viewBox="-12 -12 24 24" aria-hidden="true"><g class="reticle"><circle r="7"/><path d="M0 -5V-11M0 5V11M-5 0H-11M5 0H11"/></g></svg>a test</li>
+        <li><svg viewBox="0 0 18 18" aria-hidden="true"><g class="thread"><path d="M1 15C6 15 12 10 17 3"/></g></svg>an @spec link</li>
+      </ul>
+    </figure>
+    <ol class="steps" data-scene="narrowing">
+      <li class="step">
+        <h3>Start with the request</h3>
+        <div class="bubble"><span class="who">You, to your agent</span><p>Give new users a 30-day free trial.</p></div>
+        <p>Your agent could build that in many ways. The trial could start at signup or at first use, end at the server's midnight or after exactly 720 hours, and lock the account or charge the card. Picture each possible program as a dot in a field like this one. A request this short leaves the whole field open, and the agent picks one dot.</p>
+      </li><!-- /step -->
+      <li class="step">
+        <h3>Write down why</h3>
+        <figure class="file"><figcaption>docs/high-level-design.md</figcaption>
+<pre><span class="h">## Goals</span>
+New users can try the app free for 30 days before they pay.</pre></figure>
+        <p>This is a <b>high-level design</b>, or HLD: why the project exists and what it must get right. It lives in your repository, like every LID document. Its ring is the first constraint, and it rules out programs that miss the point of the trial.</p>
+      </li><!-- /step -->
+      <li class="step">
+        <h3>Write down which way to lean</h3>
+        <figure class="file"><figcaption>docs/high-level-design.md</figcaption>
+<pre><span class="h">## Tenets</span>
+- <b>Customer delight over perfect cost management.</b> When a choice could go either way, we lean toward the customer.</pre></figure>
+        <p>This is a <b>tenet</b>: your project's tie-breaker between two good options, kept in your HLD. Another business could reasonably choose the other side. This one rules out a whole region before anyone thinks to ask, including ending trials at the server's midnight, which would cut the Tokyo signup's trial 14 hours short.</p>
+      </li><!-- /step -->
+      <li class="step">
+        <h3>Write down how</h3>
+        <figure class="file"><figcaption>docs/intent/trial/trial-design.md</figcaption>
+<pre><span class="h">## When the trial ends</span>
+The trial ends 720 hours after signup.</pre></figure>
+        <p>This is a <b>low-level design</b>, or LLD: how one part works. Its smaller ring sits inside the HLD's, clear of what the tenet ruled out.</p>
+      </li><!-- /step -->
+      <li class="step">
+        <h3>Write down the rules</h3>
+        <figure class="file"><figcaption>docs/intent/trial/trial-specs.md</figcaption>
+<pre><span class="dim">- <b>TRIAL-001</b>: When a new user signs up, the system shall start a trial.
+- <b>TRIAL-002</b>: While a trial is active, the system shall give the user full access.</span>
+- <b>TRIAL-003</b>: When 720 hours have passed since signup, the system shall end the trial.</pre></figure>
+        <p>These are <b>requirements</b>: one line each, with an ID, in a pattern called EARS. Each one draws a smaller ring, and the program has to sit inside all of them. A few programs still fit.</p>
+      </li><!-- /step -->
+      <li class="step">
+        <h3>Test first, then code</h3>
+        <figure class="file"><figcaption>tests/trial.test.ts</figcaption>
+<pre><span class="c">// @spec <span class="id">TRIAL-003</span></span>
+it("ends the trial 720 hours after signup", () =&gt; {
+  <span class="c">// 11 p.m. on March 1st, in Tokyo</span>
+  const signup = new Date("2026-03-01T14:00:00Z");
+  const end = hoursAfter(signup, 720);
+  expect(trialEnded(signup, end)).toBe(true);
+});</pre></figure>
+        <div class="run" aria-label="Test runs">
+          <span class="fail"><b>✗</b>fails, before the code exists</span>
+          <span><b>✓</b>passes, once the code lands</span>
+        </div>
+        <p>The <b>test</b> aims at the one program you meant. The code carries the same <code>@spec TRIAL-003</code> comment, so the ID leads to everything built from that line.</p>
+      </li><!-- /step -->
+    </ol>
+  </div>
+</section><!-- /section:narrowing -->
+
+<!-- @spec MKT-SITE-003, MKT-SITE-106, MKT-SITE-107, MKT-SITE-108, MKT-SITE-109, MKT-SITE-110, MKT-SITE-103, MKT-SITE-105 -->
+<section class="wrap sec" id="change" aria-labelledby="change-h">
+  <header class="sec-head">
+    <h2 id="change-h">Change your mind in one place, and the agent carries it down.</h2>
+    <p>That may feel like a lot to write down for one free trial. It pays off when you change your mind. You change the highest level the change touches, and the agent follows the links from there to everything that has to change, while you review each level.</p>
+  </header>
+  <div class="scrolly">
+    <figure class="scrolly-fig" data-rings="change">
+      {{ rings.change | safe }}
+      <ul class="legend" aria-label="Key">
+        <li><svg viewBox="0 0 18 18" aria-hidden="true"><path d="M5 3.5H13A3 3 0 0 1 16 6.5V11.5A3 3 0 0 1 13 14.5H5A3 3 0 0 1 2 11.5V6.5A3 3 0 0 1 5 3.5Z" fill="none" stroke="var(--ptr)" stroke-width="1.8" stroke-dasharray="3.5 2.5"/></svg>being re-checked</li>
+        <li><svg viewBox="-9 -9 18 18" aria-hidden="true"><g class="badge"><circle r="8"/><path d="M-3.6 0.2L-1 2.8L3.8-2.6"/></g></svg>still holds</li>
+        <li><svg viewBox="-9 -9 18 18" aria-hidden="true"><g class="xbadge"><circle r="8"/><path d="M-3 -3L3 3M3 -3L-3 3"/></g></svg>ruled out</li>
+        <li><svg viewBox="0 0 18 18" aria-hidden="true"><g class="thread lit"><path d="M1 15C6 15 12 10 17 3"/></g></svg>an @spec link being followed</li>
+      </ul>
+    </figure>
+    <ol class="steps" data-scene="change">
+      <li class="step">
+        <h3>Say what should change</h3>
+        <div class="bubble"><span class="who">You, to your agent</span><p>End trials at midnight in each user's own time zone.</p></div>
+        <p>This changes how the trial ends. The low-level design no longer says what you mean, so the agent re-checks the decisions built on it and adjusts them.</p>
+      </li><!-- /step -->
+      <li class="step">
+        <h3>Check what still holds</h3>
+        <p>First the agent checks the change against the levels above it. New users still get 30 days free, and the tenet still favors the customer, so the HLD and its tenet still hold. They mark out where the new design can go.</p>
+      </li><!-- /step -->
+      <li class="step">
+        <h3>Find the new design</h3>
+        <p>Your request leaves one question open: which midnight? The agent drafts two answers for <code>trial-design.md</code>.</p>
+        <ol class="drafts">
+          <li class="draft d1"><span class="mk" aria-hidden="true"><span class="n">1</span><span class="r">✗</span></span><span class="label">Draft 1</span><span class="text">The trial ends at midnight on day 30, in the user's time zone.</span></li>
+          <li class="draft d2"><span class="mk" aria-hidden="true"><span class="n">2</span><span class="r">✓</span></span><span class="label">Draft 2</span><span class="text">The trial ends at the first midnight, in the user's time zone, after 720 hours.</span></li>
+        </ol>
+        <p class="why"><span class="w1">Draft 1 would cut a late-night signup's trial by most of a day, so the tenet rules it out.</span> <span class="w2">Draft 2 gives everyone at least 30 full days, and you approve it at the pause.</span></p>
+      </li><!-- /step -->
+      <li class="step">
+        <h3>Follow the ID down</h3>
+        <figure class="file"><figcaption>docs/intent/trial/trial-specs.md</figcaption>
+<pre>- <b>TRIAL-003</b>: When <span class="hl">the user's local time first reaches midnight after 720 hours from signup</span>, the system shall end the trial.</pre></figure>
+        <div class="run" aria-label="Test runs">
+          <span class="fail"><b>✗</b>ends a Tokyo trial at the first local midnight after 720 hours: fails</span>
+          <span><b>✓</b>the same test, after the code changes: passes</span>
+        </div>
+        <p>The agent searches for <code>TRIAL-003</code> and finds the test and the code that cite it. TRIAL-001 and TRIAL-002 still hold, so their rings stay put. TRIAL-003 changes, its test changes and fails, then the code changes and the test passes.</p>
+      </li><!-- /step -->
+    </ol>
+  </div>
+  <div class="demo">
+    <h3>Watch it happen in a real project</h3>
+    <p>Change one sentence of the design and watch it arrive in the specs, the tests, and the code. Two minutes, one real project.</p>
+    <figure class="term">
+      <div class="term-bar">cascade: LLD → specs → tests → code</div>
+      <div class="term-body"><script src="https://asciinema.org/a/Cmsq3CuOnSY6NbqP.js" id="asciicast-Cmsq3CuOnSY6NbqP" data-size="small" async="true"></script></div>
+    </figure>
+  </div>
+</section><!-- /section:change -->
+
+<!-- @spec MKT-SITE-038, MKT-SITE-042, MKT-SITE-043, MKT-SITE-044, MKT-SITE-045, MKT-SITE-055, MKT-SITE-056, MKT-SITE-058, MKT-SITE-061 -->
+<section class="wrap sec" id="check" aria-labelledby="check-h">
+  <header class="sec-head">
+    <h2 id="check-h">One search finds everything built from a line.</h2>
+  </header>
+  <div class="check-grid">
+    <div class="check-claim">
+      <p>In a LID project, the code cites the requirement it implements, the test cites the requirement it asserts, and each requirement traces to a design. So checking that the code still matches the design is mechanical: a walk through those links, regular enough to run in CI. Whether the design says what you mean stays your call.</p>
+      <p>One search on an ID returns everything that cites it: the requirement, the tests that assert it, and the code that implements it. That's how a reviewer, or an auditing agent, checks that what landed still traces to what you wrote down, without rereading the codebase.</p>
     </div>
+<pre class="grep"><span class="p">$</span> grep -r <span class="id">TRIAL-003</span> .
+<span class="gp">docs/intent/trial/trial-specs.md</span>  - <span class="id">TRIAL-003</span>: When the user's local time…
+<span class="gp">tests/trial.test.ts</span>               // @spec <span class="id">TRIAL-003</span>
+<span class="gp">src/trial.ts</span>                      // @spec <span class="id">TRIAL-003</span></pre>
+  </div>
+  <figure class="node dag-figure">
+    <p class="muted" style="max-width:62ch;margin-inline:auto">Each traced path like that, from a design down to code, is what LID calls an arrow. Every design, requirement, test, and file in a project make one graph of them:</p>
+    {% include "dag.svg" %}
+    <figcaption>
+      <span class="dag-key"><svg viewBox="0 0 28 10" aria-hidden="true"><path d="M1 5H21" class="dag-edge dag-edge-cross"/><path d="M19 1L27 5L19 9z" class="dag-head-cross"/></svg>Orange edges show a requirement reaching every file that needs it, anywhere in the system.</span>
+      <span>One high-level design, its low-level designs, their requirements, the tests written first, and the code.</span>
+    </figcaption>
+  </figure>
+</section><!-- /section:check -->
 
-    <div class="demo-frame">
-      <span class="demo-plate"><span class="num">001</span>CASCADE · LLD → SPECS → TESTS → CODE</span>
-      <script src="https://asciinema.org/a/Cmsq3CuOnSY6NbqP.js" id="asciicast-Cmsq3CuOnSY6NbqP" data-size="small" async="true"></script>
+<!-- @spec MKT-SITE-046, MKT-SITE-057, MKT-SITE-062, MKT-SITE-063, MKT-SITE-069, MKT-SITE-070 -->
+<section class="wrap sec" id="time" aria-labelledby="time-h">
+  <header class="sec-head">
+    <h2 id="time-h">Your time goes into the design.</h2>
+  </header>
+  <div class="time-grid">
+    <div class="beats">
+      <p><strong>You work in the HLD and, most often, the LLDs.</strong> The agent drafts the requirements, the tests, and most of the code, and you review them rather than write them.</p>
+      <p><strong>Almost every change is an LLD edit, carried down.</strong> A new feature, a bug fix, a shift in direction: you edit the design. The links underneath let you, an audit pass, or a fresh agent with no context verify that everything below still traces to what you wrote down.</p>
+      <p><strong>It looks like a waterfall; it behaves like source code.</strong> Nothing here is a one-way phase. Every level stays editable for the life of the project, and an edit at any level recompiles what's below it.</p>
+    </div>
+    <div class="node price">
+      <p class="price-label">The price</p>
+      <ul>
+        <li><span class="ptr" aria-hidden="true"></span><span>Every change walks design, specs, tests, and code, and you review each step before code lands.</span></li>
+        <li><span class="ptr" aria-hidden="true"></span><span>More design diffs to read, fewer generated lines.</span></li>
+        <li><span class="ptr" aria-hidden="true"></span><span>Extra agent tokens spent keeping the links current.</span></li>
+      </ul>
+      <p>That's the trade: minutes of review per change, bought back as a codebase you can hand to any agent or teammate without a tour guide.</p>
+      <p>I run LID on everything I build — the largest is a public <a href="https://github.com/jszmajda/portfolio-tracker">63k-line Rust project</a>, ~350 specs, with a CI gate that fails the build when a spec goes uncited — and these days it runs on plenty of projects that aren't mine.</p>
     </div>
   </div>
-</section>
+</section><!-- /section:time -->
 
 <!-- @spec MKT-SITE-064, MKT-SITE-058 -->
-<section class="teams section" aria-labelledby="teams-heading">
-  <div class="container">
-    <div class="section-head">
-      <span class="plate">Plate 03 / Teams</span>
-      <h2 id="teams-heading">Alignment is a <em style="font-style:italic;color:var(--nib)">pull request</em>.</h2>
-      <p class="lede">
-        When more than one person holds the intent, LID's artifacts turn design alignment into something your team already knows how to do.
-      </p>
-    </div>
-    <div class="teams-shell">
-      <figure class="teams-fig bracketed">
-        <div class="teams-fig-head">
-          <span class="teams-fig-path">docs/intent/checkout/checkout-design.md</span>
-          <span class="teams-fig-badge">design review</span>
-        </div>
-        <div class="teams-diff" aria-label="A design diff under review">
-          <code>
-<span class="df-ctx">## Cart retention</span>
+<section class="wrap sec" id="teams" aria-labelledby="teams-h">
+  <header class="sec-head">
+    <h2 id="teams-h">Alignment is a pull request.</h2>
+    <p>When more than one person holds the intent, LID's files turn design alignment into something your team already knows how to do.</p>
+  </header>
+  <div class="teams-grid">
+    <figure class="node teams-fig">
+      <div class="teams-fig-head"><span>docs/intent/checkout/checkout-design.md</span><span>design review</span></div>
+      <pre class="teams-diff" aria-label="A design diff under review"><span class="df-ctx">## Cart retention</span>
 <span class="df-del">- Carts expire after 30 days.</span>
 <span class="df-add">+ Signed-in carts expire after 90 days;</span>
-<span class="df-add">+ guest carts expire after 30 days.</span></code>
-        </div>
-        <div class="teams-thread">
-          <p class="teams-msg"><span class="teams-who">maya</span> does the 90-day window cover guest carts too?</p>
-          <p class="teams-msg"><span class="teams-who">sam</span> no — guest carts get 30 days. split it in the diff.</p>
-          <p class="teams-msg teams-msg--resolved"><span class="teams-check" aria-hidden="true">✓</span> resolved — merged; specs, tests, and code cascade from here</p>
-        </div>
-        <figcaption class="teams-fig-cap">
-          <span class="num">FIG · 003</span>
-          The review that matters: one page of design, argued and settled before any code exists.
-        </figcaption>
-      </figure>
-
-      <ol class="teams-beats" role="list">
-        <li>
-          <strong>The design conversation happens in the PR.</strong> Intent is files in the repo, so a teammate proposes a change to an HLD or LLD the same way they'd propose code. The deep conversation — what should the system <em>be</em> — happens on a one-page design diff before implementation, instead of halfway through a 500-line code review. Once the intent lands, anyone can cascade it to working code.
-        </li>
-        <li>
-          <strong>The intent tree is your onboarding doc.</strong> Every design doc is written to be read cold, rationale on the page — exactly what a new teammate needs. The <em>why</em> stays in the repo after its author moves on.
-        </li>
-        <li>
-          <strong>Mixed tools, one source of truth.</strong> The tree is plain markdown. One teammate on Claude Code, another on Cursor, a third in a JetBrains IDE — everyone reads and cascades the same intent. No per-tool lock-in.
-        </li>
-        <li>
-          <strong>A sub-team can adopt alone.</strong> Scoped mode draws an explicit boundary around your service or subsystem; inside it you get the full discipline, and the rest of the org doesn't have to care yet.
-        </li>
-        <li>
-          <strong>And at 3am, ship the fix.</strong> Hotfixes go out outside the workflow. When the fire's out, walk the change back through the design so the intent catches up. Nothing in LID gates a deploy.
-        </li>
-      </ol>
-    </div>
+<span class="df-add">+ guest carts expire after 30 days.</span></pre>
+      <div class="teams-thread">
+        <p class="teams-msg"><span class="teams-who">maya</span>does the 90-day window cover guest carts too?</p>
+        <p class="teams-msg"><span class="teams-who">sam</span>no, guest carts get 30 days. split it in the diff.</p>
+        <p class="teams-msg teams-msg--resolved">✓ resolved and merged; specs, tests, and code cascade from here</p>
+      </div>
+    </figure>
+    <ul class="teams-beats">
+      <li><strong>The design conversation happens in the PR.</strong> Intent is files in the repo, so a teammate proposes a change to an HLD or LLD the same way they'd propose code. The deep conversation, about what the system should <em>be</em>, happens on a one-page design diff before implementation, instead of halfway through a 500-line code review. Once the intent lands, anyone can cascade it to working code.</li>
+      <li><strong>The intent tree is your onboarding doc.</strong> Every design doc is written to be read cold, rationale on the page, which is exactly what a new teammate needs. The <em>why</em> stays in the repo after its author moves on.</li>
+      <li><strong>Mixed tools, one source of truth.</strong> The tree is plain markdown. One teammate on Claude Code, another on Cursor, a third in a JetBrains IDE: everyone reads and cascades the same intent.</li>
+      <li><strong>A sub-team can adopt alone.</strong> Scoped mode draws an explicit boundary around your service or subsystem. Inside it you get the full discipline, and the rest of the org doesn't have to care yet.</li>
+      <li><strong>And at 3am, ship the fix.</strong> Hotfixes go out outside the workflow. When the fire's out, walk the change back through the design so the intent catches up. Nothing in LID gates a deploy.</li>
+    </ul>
   </div>
-</section>
+</section><!-- /section:teams -->
 
 <!-- @spec MKT-SITE-006, MKT-SITE-008 -->
-<section class="quickstart section" id="quickstart" aria-labelledby="quickstart-heading">
-  <div class="container">
-    <div class="quickstart-shell">
-      {% set setupUrl = site.repoUrl + "/blob/main/docs/setup.md" %}
-      {% set agentsAnchor = setupUrl + "#the-simple-path-just-ship-agentsmd" %}
-      <div class="quickstart-meta">
-        <span class="plate">Plate 04 / Quickstart</span>
-        <h2 id="quickstart-heading"><em style="font-style:italic;color:var(--nib)">Four commands</em>, inside Claude&nbsp;Code.</h2>
-        <p class="lede">
-          Install the two plugins, bootstrap your project. After that you describe what you want to build and the skill walks you through design, specs, and tests before it writes any code.
-        </p>
-        <div class="extras">
-          <p class="extras-lede">
-            Using a different coding agent? Same workflow — most tools just need an <code>AGENTS.md</code> at your project root, some want one small rule file alongside. Pick yours:
-          </p>
-          <ul class="tool-chips" aria-label="Setup instructions for other coding agents">
-            <li><a class="chip" href="{{ setupUrl }}#cursor">Cursor <span class="chip-arr" aria-hidden="true">↗</span></a></li>
-            <li><a class="chip" href="{{ setupUrl }}#windsurf">Windsurf <span class="chip-arr" aria-hidden="true">↗</span></a></li>
-            <li><a class="chip" href="{{ setupUrl }}#github-copilot">GitHub Copilot <span class="chip-arr" aria-hidden="true">↗</span></a></li>
-            <li><a class="chip" href="{{ agentsAnchor }}">Codex CLI <span class="chip-arr" aria-hidden="true">↗</span></a></li>
-            <li><a class="chip" href="{{ setupUrl }}#aider">Aider <span class="chip-arr" aria-hidden="true">↗</span></a></li>
-            <li><a class="chip" href="{{ agentsAnchor }}">Pi <span class="chip-arr" aria-hidden="true">↗</span></a></li>
-            <li><a class="chip" href="{{ setupUrl }}#continuedev">Continue <span class="chip-arr" aria-hidden="true">↗</span></a></li>
-            <li><a class="chip" href="{{ setupUrl }}#jetbrains-junie">JetBrains Junie <span class="chip-arr" aria-hidden="true">↗</span></a></li>
-            <li><a class="chip" href="{{ agentsAnchor }}">Zed <span class="chip-arr" aria-hidden="true">↗</span></a></li>
-            <li><a class="chip" href="{{ agentsAnchor }}">Amp <span class="chip-arr" aria-hidden="true">↗</span></a></li>
-            <li><a class="chip" href="{{ agentsAnchor }}">Jules <span class="chip-arr" aria-hidden="true">↗</span></a></li>
-            <li><a class="chip chip-more" href="{{ setupUrl }}">all tools <span class="chip-arr" aria-hidden="true">↗</span></a></li>
-          </ul>
-        </div>
-        <p class="extras">
-          Corporate environment blocks third-party plugins? <a href="{{ site.repoUrl }}">Clone the repo directly</a> — same plugins, same behavior.
-        </p>
-      </div>
-
-      <div class="quickstart-card bracketed" role="region" aria-label="Install steps">
-        <ol class="quickstart-steps" aria-label="Quickstart steps">
-          {% for step in site.quickstart %}
-            <li>
-              <span class="qs-mark" aria-hidden="true"></span>
-              <div>
-                <code class="qs-cmd">{{ step.cmd }}</code>
-                <p class="qs-note">{{ step.note }}</p>
-              </div>
-            </li>
-          {% endfor %}
-        </ol>
-      </div>
+{% set setupUrl = site.repoUrl + "/blob/main/docs/setup.md" %}
+{% set agentsAnchor = setupUrl + "#the-simple-path-just-ship-agentsmd" %}
+<section class="wrap sec" id="quickstart" aria-labelledby="quickstart-h">
+  <div class="qs">
+    <header class="qs-head">
+      <h2 id="quickstart-h">Four commands, inside Claude Code.</h2>
+      <p>Install the two plugins, then describe what you want to build. The skill walks you through design, specs, and tests before it writes any code.</p>
+    </header>
+    <ol class="cmds">
+      {% for step in site.quickstart %}
+      <li><div style="min-width:0"><code>{{ step.cmd }}</code><small>{{ step.note }}</small></div><button class="copy" type="button" data-cmd="{{ step.cmd }}">Copy</button></li>
+      {% endfor %}
+    </ol>
+    <div class="qs-others">
+      <p>Using a different coding agent? Same workflow. Most tools need only an <code>AGENTS.md</code> at your project root, and some want one small rule file beside it.</p>
+      <ul class="chips" aria-label="Setup instructions for other coding agents">
+        <li><a href="{{ setupUrl }}#cursor">Cursor</a></li>
+        <li><a href="{{ setupUrl }}#windsurf">Windsurf</a></li>
+        <li><a href="{{ setupUrl }}#github-copilot">GitHub Copilot</a></li>
+        <li><a href="{{ agentsAnchor }}">Codex CLI</a></li>
+        <li><a href="{{ setupUrl }}#aider">Aider</a></li>
+        <li><a href="{{ agentsAnchor }}">Pi</a></li>
+        <li><a href="{{ setupUrl }}#continuedev">Continue</a></li>
+        <li><a href="{{ setupUrl }}#jetbrains-junie">JetBrains Junie</a></li>
+        <li><a href="{{ agentsAnchor }}">Zed</a></li>
+        <li><a href="{{ agentsAnchor }}">Amp</a></li>
+        <li><a href="{{ agentsAnchor }}">Jules</a></li>
+        <li><a href="{{ setupUrl }}">All tools</a></li>
+      </ul>
+      <p>Corporate environment blocks third-party plugins? <a href="{{ site.repoUrl }}">Clone the repo directly</a>: same plugins, same behavior.</p>
     </div>
-
   </div>
-</section>
+</section><!-- /section:quickstart -->
 
 <!-- @spec MKT-SITE-050 -->
 {% set experimentalReadme = site.repoUrl + "/blob/main/plugins/lid-experimental/README.md" %}
-<section class="experimental section" aria-labelledby="experimental-heading">
-  <div class="container">
-    <div class="section-head">
-      <span class="plate plate--annex">Annex 04A / Experimental</span>
-      <h2 id="experimental-heading">Beyond the core: <em style="font-style:italic;color:var(--nib)">experimental skills</em>.</h2>
-      <p class="lede">
-        The <code>lid-experimental</code> plugin bundles techniques that work in practice but aren't yet part of the core workflow. Right now it ships with <code>bidirectional-differential</code>, which checks whether your specs and your code still agree: two fresh AI sessions run in parallel — one writes naive code from your spec alone, the other reconstructs a spec from your code alone. Matches are evidence the two agree; differences point at drift worth investigating — unstated rules the code enforces, edge cases the spec misses, or genuine bugs.
-      </p>
-    </div>
-    <div class="annex bracketed">
-      <header class="annex-head">
-        <span class="annex-status" aria-hidden="true">Opt-in · experimental</span>
-      </header>
-      <p class="annex-aside">
-        Lifecycle is explicit — every experiment will either be <em>promoted</em> into core or <em>retired</em>. Adopt with eyes open.
-      </p>
-      <pre class="cmd cmd--annex"><code>{{ site.experimental.installCmd }}</code></pre>
-      <a class="annex-readmore" href="{{ experimentalReadme }}">
-        Read the experimental plugin README<span class="arr" aria-hidden="true">↗</span>
-      </a>
-    </div>
+<section class="wrap sec" id="experimental" aria-labelledby="experimental-h">
+  <div class="node annex">
+    <span class="status">Opt-in · experimental</span>
+    <h2 id="experimental-h">Beyond the core: experimental skills.</h2>
+    <p>The <code>lid-experimental</code> plugin bundles techniques that work in practice but aren't yet part of the core workflow. Right now it ships with <code>bidirectional-differential</code>, which checks whether your specs and your code still agree: two fresh AI sessions run in parallel, one writing naive code from your spec alone and the other reconstructing a spec from your code alone. Matches are evidence the two agree; differences point at drift worth investigating. Every experiment will either be promoted into core or retired.</p>
+    <pre class="cmd"><code>{{ site.experimental.installCmd }}</code></pre>
+    <a class="readmore" href="{{ experimentalReadme }}">Read the experimental plugin README</a>
   </div>
-</section>
+</section><!-- /section:experimental -->
 
 <!-- @spec MKT-SITE-054 -->
 {% set extensionsUrl = site.repoUrl + "/blob/main/EXTENSIONS.md" %}
-<section class="ecosystem section" aria-labelledby="ecosystem-heading">
-  <div class="container">
-    <div class="section-head">
-      <span class="plate plate--annex">Annex 04B / Ecosystem</span>
-      <h2 id="ecosystem-heading">What people have <em style="font-style:italic;color:var(--nib)">built on it</em>.</h2>
-      <p class="lede">
-        The core stays deliberately small; the day-to-day tooling comes from an independent, third-party ecosystem — editor plugins, language servers, CLIs, CI checkers, MCP servers. Discovery is an open convention: tag a repository <code>linked-intent-development</code> and link back, and it appears on the <a href="https://github.com/topics/linked-intent-development">topic page</a> — no submission, no gatekeeping.
-      </p>
-    </div>
-    <div class="annex bracketed">
-      <header class="annex-head">
-        <span class="annex-status" aria-hidden="true">Third-party · community</span>
-      </header>
-      <p class="annex-aside">
-        Listed projects are independent and <em>unvetted</em> — evaluate any extension yourself before use.
-      </p>
-      <a class="annex-readmore" href="{{ extensionsUrl }}">
-        Browse projects built on LID<span class="arr" aria-hidden="true">↗</span>
-      </a>
-    </div>
+<section class="wrap sec sec-tight" id="ecosystem" aria-labelledby="ecosystem-h">
+  <div class="node annex">
+    <span class="status">Third-party · community</span>
+    <h2 id="ecosystem-h">What people have built on it.</h2>
+    <p>The core stays deliberately small; the day-to-day tooling comes from an independent ecosystem: editor plugins, language servers, CLIs, CI checkers, MCP servers. Discovery is an open convention. Tag a repository <code>linked-intent-development</code> and link back, and it appears on the <a href="https://github.com/topics/linked-intent-development">topic page</a>, with no submission and no gatekeeping. Listed projects are independent and unvetted, so evaluate any extension yourself before use.</p>
+    <a class="readmore" href="{{ extensionsUrl }}">Browse projects built on LID</a>
   </div>
-</section>
+</section><!-- /section:ecosystem -->
 
-<section class="paths section" aria-labelledby="paths-heading">
-  <div class="container">
-    <div class="section-head">
-      <span class="plate">Plate 05 / Entry points</span>
-      <h2 id="paths-heading">Which path is yours?</h2>
-      <p class="lede">Four starting points, depending on where you're coming from. Each one has a short orientation on the Start page.</p>
-    </div>
-
-    <div class="paths-grid">
-      <a class="path-card" href="{{ '/start/#evaluating' | url }}">
-        <span class="plate-num"><span class="n">01</span> / Path</span>
-        <h3>Evaluating</h3>
-        <p>Decide if LID solves a problem you have. Skim, browse an example, read on.</p>
-        <span class="go">Orient</span>
-      </a>
-      <a class="path-card" href="{{ '/start/#greenfield' | url }}">
-        <span class="plate-num"><span class="n">02</span> / Path</span>
-        <h3>Starting new</h3>
-        <p>Greenfield project. Install, describe what you want, let the skill walk you through it.</p>
-        <span class="go">Begin</span>
-      </a>
-      <a class="path-card" href="{{ '/start/#brownfield' | url }}">
-        <span class="plate-num"><span class="n">03</span> / Path</span>
-        <h3>Existing codebase</h3>
-        <p>Brownfield. Map the code first, then layer LID's discipline on top of what exists.</p>
-        <span class="go">Map</span>
-      </a>
-      <a class="path-card" href="{{ '/start/#scoped' | url }}">
-        <span class="plate-num"><span class="n">04</span> / Path</span>
-        <h3>Scoped to a subsystem</h3>
-        <p>Solo trying LID on one slice of a larger non-LID project. Scoped mode is made for this.</p>
-        <span class="go">Scope</span>
-      </a>
-    </div>
+<!-- @spec MKT-SITE-005 -->
+<section class="wrap sec" id="paths" aria-labelledby="paths-h">
+  <header class="sec-head">
+    <h2 id="paths-h">Which path is yours?</h2>
+    <p>Four starting points, depending on where you're coming from. Each one has a short orientation on the Start page.</p>
+  </header>
+  <div class="paths">
+    <a class="node path" href="{{ '/start/#evaluating' | url }}"><h3>Evaluating</h3><p>Decide if LID solves a problem you have. Skim, browse an example, read on.</p><span class="ptr" aria-hidden="true"></span></a>
+    <a class="node path" href="{{ '/start/#greenfield' | url }}"><h3>Starting new</h3><p>Install, describe what you want, and let the skill walk you through it.</p><span class="ptr" aria-hidden="true"></span></a>
+    <a class="node path" href="{{ '/start/#brownfield' | url }}"><h3>Existing codebase</h3><p>Map the code first, then layer LID's discipline on top of what exists.</p><span class="ptr" aria-hidden="true"></span></a>
+    <a class="node path" href="{{ '/start/#scoped' | url }}"><h3>One subsystem</h3><p>Try LID on one slice of a larger project. Scoped mode is made for this.</p><span class="ptr" aria-hidden="true"></span></a>
   </div>
-</section>
+</section><!-- /section:paths -->

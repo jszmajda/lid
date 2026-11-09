@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 240" role="img" aria-label="LID wordmark: capitals whose top is hinged open like a lid">
+  <title>LID wordmark: capitals whose top is hinged open like a lid</title>
+  <rect id="ground" x="0" y="0" width="480" height="240" fill="#E23D28"/>
+  <g id="word" transform="translate(10 15)">
+    <g id="lid-of-the-word" fill="#FFF8F0" transform="rotate(-8 64 112)">
+      <rect id="l-top" x="70" y="58" width="46" height="54"/>
+      <rect id="i-top" x="196" y="58" width="46" height="54"/>
+      <path id="d-top" d="M262 58H330A80 71 0 0 1 407.7 112H359.8A38 31 0 0 0 328 98H308V112H262Z"/>
+    </g>
+    <g id="body-of-the-word" fill="#FFF8F0">
+      <path id="l-bottom" d="M70 112H116V160H176V200H70Z"/>
+      <rect id="i-bottom" x="196" y="112" width="46" height="88"/>
+      <path id="d-bottom" d="M262 112H308V160H328A38 31 0 0 0 359.8 112H407.7A80 71 0 0 1 330 200H262Z"/>
+    </g>
+    <g id="hinge">
+      <circle cx="64" cy="112" r="15" fill="#2A0F0A"/>
+      <circle cx="64" cy="112" r="4.5" fill="#FFF8F0"/>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="LID: a heavy-lidded eye">
+  <title>LID: a heavy-lidded eye</title>
+  <rect id="ground" x="0" y="0" width="240" height="240" fill="#FF5E8E"/>
+  <circle id="eye" cx="120" cy="120" r="90" fill="#FFFFFF"/>
+  <circle id="pupil" cx="120" cy="134" r="40" fill="#2B0B4A"/>
+  <circle id="glint" cx="136" cy="124" r="8" fill="#FFFFFF"/>
+  <path id="lid" d="M31.1 106A90 90 0 0 1 208.9 106Z" fill="#2B0B4A"/>
+  <circle id="outline" cx="120" cy="120" r="90" fill="none" stroke="#2B0B4A" stroke-width="12"/>
+</svg>

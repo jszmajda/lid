@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 240" role="img" aria-label="LID wordmark: capitals joined with woodworking dovetails">
+  <title>LID wordmark: capitals joined with woodworking dovetails</title>
+  <rect id="ground" x="0" y="0" width="480" height="240" fill="#163A2C"/>
+  <g id="word" transform="translate(22 0)">
+    <path id="l" d="M60 44H108V140H164V157L190 147V189L164 179V196H60Z" fill="#E2B57A"/>
+    <path id="i" d="M168 44H216V81L242 71V113L216 103V196H168V182L193 192V144L168 154Z" fill="#A85A30"/>
+    <path id="d" fill-rule="evenodd" fill="#E2B57A" d="M220 44H300A76 76 0 0 1 300 196H220V106L245 116V68L220 78ZM272 88V152H296A32 32 0 0 0 296 88Z"/>
+  </g>
+</svg>

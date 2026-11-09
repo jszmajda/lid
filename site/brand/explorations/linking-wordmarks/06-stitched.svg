@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 240" role="img" aria-label="LID wordmark: capitals sewn together along their seams">
+  <title>LID wordmark: capitals sewn together along their seams</title>
+  <rect id="ground" x="0" y="0" width="480" height="240" fill="#27407A"/>
+  <g id="word" fill="#EEF2FB">
+    <path id="l" d="M70 58H116V160H176V200H70Z"/>
+    <rect id="i" x="196" y="58" width="46" height="142"/>
+    <path id="d" fill-rule="evenodd" d="M262 58H330A80 71 0 0 1 330 200H262ZM308 98V160H328A38 31 0 0 0 328 98Z"/>
+  </g>
+  <g id="seams" fill="none" stroke="#FF6A1F" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round">
+    <path id="seam-l-i" d="M168 164L204 180L168 196"/>
+    <path id="seam-i-d" d="M234 66L270 84L234 102L270 120L234 138L270 156L234 174L270 192"/>
+  </g>
+</svg>

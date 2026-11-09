@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Stickers</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Recursive:slnt,wght,CASL,CRSV,MONO@-15..0,300..1000,0..1,0..1,0..1&display=swap">
+<style>
+/* Layout: full-width bands, each painted in one of the logo's other palettes (B to G); palette A stays on the logo. Stickers are the only raised objects on the page. */
+:root {
+  --page: #FFFFFF;
+  --ink: #1A0F0A;
+  --ink-2: #57504B;
+  --b-g: #DFF7F2; --b-h: #0B7A6B; --b-t: #0A3D36; --b-card: #FFFFFF;
+  --f-g: #2E1065; --f-h: #C4B5FD; --f-t: #E4DDFE;
+  --d-g: #FCE7F3; --d-h: #BE185D; --d-t: #4A0A26;
+  --e-g: #ECFCCB; --e-h: #3F6212; --e-t: #233A06; --e-card: #FFFFFF;
+  --c-g: #1C1917; --c-h: #FDE68A; --c-t: #E7E5E4;
+  --sticker-edge: #FFFFFF;
+  --font: "Recursive", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --casual: "CASL" 1, "MONO" 0, "CRSV" 0.5;
+  --linear: "CASL" 0, "MONO" 0;
+  --mono: "CASL" 0.25, "MONO" 1;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --page: #171412; --ink: #F5F0EC; --ink-2: #BDB3AC;
+    --b-g: #0F2B27; --b-h: #8EE6D3; --b-t: #CFF3EB; --b-card: #143A34;
+    --f-g: #22094F; --f-h: #C4B5FD; --f-t: #E4DDFE;
+    --d-g: #34111F; --d-h: #F9A8D4; --d-t: #FBD5E8;
+    --e-g: #1B2A0B; --e-h: #BEF264; --e-t: #E1F7BE; --e-card: #243810;
+    --c-g: #0E0C0B; --c-h: #FDE68A; --c-t: #E7E5E4;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --page: #171412; --ink: #F5F0EC; --ink-2: #BDB3AC;
+  --b-g: #0F2B27; --b-h: #8EE6D3; --b-t: #CFF3EB; --b-card: #143A34;
+  --f-g: #22094F; --f-h: #C4B5FD; --f-t: #E4DDFE;
+  --d-g: #34111F; --d-h: #F9A8D4; --d-t: #FBD5E8;
+  --e-g: #1B2A0B; --e-h: #BEF264; --e-t: #E1F7BE; --e-card: #243810;
+  --c-g: #0E0C0B; --c-h: #FDE68A; --c-t: #E7E5E4;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--page); color: var(--ink);
+  font: 420 18px/1.6 var(--font); font-variation-settings: var(--linear);
+}
+p, h1, h2, h3, ol, ul, figure { margin: 0; }
+h1, h2, h3 { text-wrap: balance; font-variation-settings: var(--casual); }
+code, pre { font-family: var(--font); font-variation-settings: var(--mono); }
+a { color: inherit; text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible { outline: 3px solid currentColor; outline-offset: 3px; border-radius: 8px; }
+
+.wrap {
+  max-width: 1160px; margin-inline: auto;
+  padding-left: max(20px, env(safe-area-inset-left, 0px));
+  padding-right: max(20px, env(safe-area-inset-right, 0px));
+}
+.band { padding-block: clamp(56px, 9vw, 104px); }
+.band h2 { font-size: clamp(2rem, 4vw, 3.2rem); line-height: 1.05; font-weight: 820; letter-spacing: -0.02em; }
+.head { display: grid; gap: 14px; max-width: 46rem; margin-bottom: 40px; }
+
+/* A sticker: die-cut white edge, the one thing on the page that casts a shadow */
+.sticker {
+  border: 6px solid var(--sticker-edge);
+  filter: drop-shadow(0 1px 1.5px rgba(26, 15, 10, .28)) drop-shadow(0 10px 16px rgba(26, 15, 10, .14));
+  transition: transform .2s ease;
+}
+
+/* Nav */
+.nav { display: flex; align-items: center; justify-content: space-between; gap: 16px 24px; padding-block: 20px; flex-wrap: wrap; }
+.nav .logo { display: block; transform: rotate(-2deg); border-radius: 26px; border-width: 4px; }
+.nav .wordmark { height: 40px; width: auto; display: block; border-radius: 22px; }
+.nav ul { list-style: none; padding: 0; display: flex; gap: 4px; flex-wrap: wrap; }
+.nav ul a { text-decoration: none; font-weight: 560; font-size: 15.5px; padding: 8px 12px; border-radius: 999px; color: var(--ink-2); }
+.nav ul a:hover { background: var(--b-g); color: var(--b-h); }
+
+/* Hero */
+.hero { display: grid; gap: 48px; align-items: center; padding-block: clamp(32px, 6vw, 80px) clamp(56px, 8vw, 96px); }
+@media (min-width: 980px) { .hero { grid-template-columns: 7fr 5fr; } }
+.hero-text { display: grid; gap: 26px; }
+.hero h1 { font-size: clamp(2.6rem, 6.2vw, 5.1rem); line-height: 0.98; font-weight: 880; letter-spacing: -0.025em; }
+.because { list-style: none; padding: 0; display: grid; gap: 6px; font-size: 1.1rem; }
+.because li { padding-left: 1.6em; position: relative; }
+.because li::before { content: ""; position: absolute; left: 0; top: 0.42em; width: 0.62em; height: 0.62em; border-radius: 4px; background: var(--b-h); }
+.because li:nth-child(2)::before { background: var(--d-h); }
+.because li:nth-child(3)::before { background: var(--e-h); }
+.because li:nth-child(4)::before { background: #FF6B3D; }
+.lede { color: var(--ink-2); max-width: 58ch; }
+.ctas { display: flex; flex-wrap: wrap; gap: 12px; }
+.btn { text-decoration: none; font-weight: 700; font-variation-settings: var(--casual); font-size: 17px; padding: 13px 22px; border-radius: 999px; border: 2.5px solid var(--ink); }
+.btn-ink { background: var(--ink); color: var(--page); }
+.btn:hover { transform: translateY(-1px); }
+
+/* The sticker sheet */
+.sheet { display: grid; grid-auto-flow: row dense; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 18px 14px; align-items: center; justify-items: center; padding: 8px; }
+.sheet > * { margin: 0; }
+.sheet .s-word { grid-column: 1 / 5; border-radius: 34px; transform: rotate(-4deg); width: 100%; }
+.sheet .s-word .wordmark { display: block; width: 100%; height: auto; border-radius: 28px; }
+.sheet .s-icon { grid-column: 5 / 7; border-radius: 22px; transform: rotate(7deg); width: 86%; }
+.sheet .s-icon .icon { display: block; width: 100%; height: auto; border-radius: 16px; }
+.pill { font-weight: 760; font-variation-settings: var(--mono); font-size: clamp(13px, 1.5vw, 17px); padding: 10px 16px; border-radius: 999px; white-space: nowrap; }
+.s-id { grid-column: 1 / 4; background: #FCE7F3; color: #BE185D; transform: rotate(-6deg); }
+.s-done { grid-column: 4 / 7; background: #ECFCCB; color: #3F6212; transform: rotate(4deg); }
+.s-spec { grid-column: 6 / 7; width: clamp(84px, 9vw, 112px); aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; background: #DFF7F2; color: #0B7A6B; font-weight: 800; font-variation-settings: var(--mono); font-size: clamp(14px, 1.5vw, 18px); transform: rotate(-10deg); }
+.s-arrow { grid-column: 1 / 6; white-space: nowrap; flex-wrap: nowrap; background: #2E1065; color: #C4B5FD; border-radius: 16px; padding: 12px 16px; font-weight: 700; font-variation-settings: var(--casual); font-size: clamp(13px, 1.4vw, 16px); transform: rotate(2deg); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; }
+.s-arrow i { display: inline-block; width: 9px; aspect-ratio: 28/32; background: #FDE68A; -webkit-mask: var(--ptr-mask) center / contain no-repeat; mask: var(--ptr-mask) center / contain no-repeat; }
+.sheet .sticker:hover { transform: rotate(0deg) scale(1.03); }
+@media (max-width: 560px) { .s-arrow { grid-column: 1 / 7; } .s-spec { grid-column: 3 / 5; } }
+
+/* Band B: how it works */
+.band-b { background: var(--b-g); color: var(--b-t); }
+.band-b h2 { color: var(--b-h); }
+.trace { list-style: none; padding: 0; display: grid; gap: 30px; }
+@media (min-width: 1040px) { .trace { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 30px; } }
+.trace li { position: relative; background: var(--b-card); border-radius: 18px; padding: 18px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.trace li + li::before {
+  content: ""; position: absolute; width: 14px; aspect-ratio: 28/32; background: var(--b-h);
+  -webkit-mask: var(--ptr-mask) center / contain no-repeat; mask: var(--ptr-mask) center / contain no-repeat;
+  left: 50%; top: -15px; transform: translate(-50%, -50%) rotate(90deg);
+}
+@media (min-width: 1040px) { .trace li + li::before { left: -15px; top: 50%; transform: translate(-50%, -50%); } }
+.tag { justify-self: start; font-weight: 800; font-variation-settings: var(--casual); font-size: 15px; background: var(--b-h); color: var(--b-g); padding: 4px 11px; border-radius: 999px; }
+.role { font-size: 13px; font-variation-settings: var(--mono); color: var(--b-h); }
+.trace p { font-size: 15.5px; line-height: 1.55; }
+.trace pre { font-size: 12.5px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.trace b { font-weight: 760; }
+.idc { font-variation-settings: var(--mono); font-weight: 700; font-size: 13px; color: var(--b-h); }
+.grep { margin-top: 32px; font-size: 17px; max-width: 62ch; }
+.grep code { font-weight: 650; color: var(--b-h); }
+
+/* Band F: demo */
+.band-f { background: var(--f-g); color: var(--f-t); }
+.band-f h2 { color: var(--f-h); }
+.demo { display: grid; gap: 36px; align-items: center; }
+@media (min-width: 980px) { .demo { grid-template-columns: 5fr 7fr; } .demo .head { margin: 0; } }
+.term { background: #1C1917; color: #FDE68A; border-radius: 22px; overflow: hidden; }
+.term-bar { padding: 12px 18px; font-variation-settings: var(--mono); font-size: 13px; color: #A8A29E; border-bottom: 1px solid #292524; }
+.term-body { aspect-ratio: 16 / 8; display: grid; place-content: center; justify-items: center; gap: 14px; text-align: center; padding: 20px; }
+.play { width: 70px; height: 70px; border-radius: 20px; background: #FF6B3D; display: grid; place-items: center; }
+.play i { display: block; width: 24px; aspect-ratio: 28/32; background: #1A0F0A; -webkit-mask: var(--ptr-mask) center / contain no-repeat; mask: var(--ptr-mask) center / contain no-repeat; transform: translateX(2px); }
+.term-body p { font-variation-settings: var(--mono); font-size: 13px; color: #D6D3D1; }
+
+/* Band D: quickstart */
+.band-d { background: var(--d-g); color: var(--d-t); }
+.band-d h2 { color: var(--d-h); }
+.qs { display: grid; gap: 36px; align-items: start; }
+@media (min-width: 980px) { .qs { grid-template-columns: 5fr 7fr; } .qs .head { margin: 0; } }
+.cmds { list-style: none; padding: 10px; border-radius: 22px; background: #1C1917; color: #FDE68A; display: grid; gap: 2px; counter-reset: s; }
+.cmds li { counter-increment: s; display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; gap: 4px 12px; align-items: center; padding: 12px; border-radius: 14px; }
+.cmds li:hover { background: #292524; }
+.cmds li::before { content: counter(s); font-weight: 800; font-variation-settings: var(--casual); color: #FF8A63; font-size: 18px; }
+.cmds code { font-size: 14.5px; font-weight: 560; overflow-wrap: anywhere; }
+.cmds small { display: block; color: #D6D3D1; font-size: 13.5px; font-variation-settings: var(--linear); margin-top: 2px; }
+.copy { font: inherit; font-size: 13px; font-weight: 700; font-variation-settings: var(--casual); color: #1C1917; background: #FDE68A; border: 0; border-radius: 999px; padding: 6px 12px; cursor: pointer; }
+.copy:hover { background: #FEF3C7; }
+.others { margin-top: 22px; display: grid; gap: 12px; }
+.chips { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.chips a { display: inline-block; text-decoration: none; font-weight: 600; font-size: 15px; padding: 7px 14px; border-radius: 999px; border: 2px solid var(--d-h); color: var(--d-h); }
+.chips a:hover { background: var(--d-h); color: var(--d-g); }
+
+/* Band E: paths, as stickers */
+.band-e { background: var(--e-g); color: var(--e-t); }
+.band-e h2 { color: var(--e-h); }
+.paths { display: grid; gap: 24px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (max-width: 980px) { .paths { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) { .paths { grid-template-columns: 1fr; } }
+.path { display: grid; gap: 8px; align-content: start; padding: 20px; border-radius: 24px; background: var(--e-card); text-decoration: none; color: var(--e-t); }
+.path:nth-child(odd) { transform: rotate(-1.2deg); }
+.path:nth-child(even) { transform: rotate(1deg); }
+.path:hover { transform: rotate(0) translateY(-3px); }
+.path h3 { font-size: 22px; font-weight: 800; color: var(--e-h); }
+.path p { font-size: 15.5px; }
+
+/* Footer in palette C */
+.foot { background: var(--c-g); color: var(--c-t); padding-block: 40px 104px; }
+.foot .wrap { display: flex; flex-wrap: wrap; gap: 20px 36px; align-items: center; justify-content: space-between; }
+.foot .brand { display: flex; align-items: center; gap: 14px; font-size: 15px; }
+.foot .s-mini { border-radius: 14px; border-width: 4px; transform: rotate(-5deg); display: block; }
+.foot .s-mini .icon { width: 40px; height: 40px; display: block; border-radius: 10px; }
+.foot p { font-size: 15px; }
+.foot a { color: var(--c-h); }
+
+@media (prefers-reduced-motion: reduce) { .sticker, .path, .btn { transition: none; } .sheet .sticker:hover, .path:hover, .btn:hover { transform: none; } }
+</style>
+<style>:root { --ptr-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='154 104 28 32'%3E%3Cpath d='M154 115.5Q154 113.5 156 113.5L164 113.5Q166 113.5 166 111.5L166 106Q166 104 167.41 105.41L180.59 118.59Q182 120 180.59 121.41L167.41 134.59Q166 136 166 134L166 128.5Q166 126.5 164 126.5L156 126.5Q154 126.5 154 124.5Z'/%3E%3C/svg%3E"); }</style>
+</head>
+<body>
+<header class="wrap nav">
+  <a class="logo sticker" href="https://linked-intent.dev/" aria-label="LID home"><svg class="wordmark" viewBox="18 42 444 156" role="img" aria-label="LID"><rect x="18" y="42" width="444" height="156" rx="34" fill="#FF6B3D"/><g fill="#1A0F0A"><path fill-rule="evenodd" d="M64 66H128A22 22 0 0 1 150 88V152A22 22 0 0 1 128 174H64A22 22 0 0 1 42 152V88A22 22 0 0 1 64 66ZM76.16 88Q76.16 85 79.16 85L94.16 85Q97.16 85 97.16 88L97.16 134Q97.16 137 100.16 137L120.16 137Q123.16 137 123.16 140L123.16 152Q123.16 155 120.16 155L79.16 155Q76.16 155 76.16 152Z"/><path fill-rule="evenodd" d="M208 66H272A22 22 0 0 1 294 88V152A22 22 0 0 1 272 174H208A22 22 0 0 1 186 152V88A22 22 0 0 1 208 66ZM216 88Q216 85 219 85L261 85Q264 85 264 88L264 100Q264 103 261 103L253.5 103Q250.5 103 250.5 106L250.5 134Q250.5 137 253.5 137L261 137Q264 137 264 140L264 152Q264 155 261 155L219 155Q216 155 216 152L216 140Q216 137 219 137L226.5 137Q229.5 137 229.5 134L229.5 106Q229.5 103 226.5 103L219 103Q216 103 216 100Z"/><path fill-rule="evenodd" d="M352 66H416A22 22 0 0 1 438 88V152A22 22 0 0 1 416 174H352A22 22 0 0 1 330 152V88A22 22 0 0 1 352 66ZM358.67 85H381.67A34 35 0 0 1 381.67 155H358.67Q355.67 155 355.67 152V88Q355.67 85 358.67 85ZM378.67 103H381.67A12 17 0 0 1 381.67 137H378.67Q376.67 137 376.67 135V105Q376.67 103 378.67 103Z"/><path d="M154 115.5Q154 113.5 156 113.5L164 113.5Q166 113.5 166 111.5L166 106Q166 104 167.41 105.41L180.59 118.59Q182 120 180.59 121.41L167.41 134.59Q166 136 166 134L166 128.5Q166 126.5 164 126.5L156 126.5Q154 126.5 154 124.5Z"/><path d="M298 115.5Q298 113.5 300 113.5L308 113.5Q310 113.5 310 111.5L310 106Q310 104 311.41 105.41L324.59 118.59Q326 120 324.59 121.41L311.41 134.59Q310 136 310 134L310 128.5Q310 126.5 308 126.5L300 126.5Q298 126.5 298 124.5Z"/></g></svg></a>
+  <nav aria-label="Primary">
+    <ul>
+      <li><a href="https://linked-intent.dev/start/">Start</a></li>
+      <li><a href="https://linked-intent.dev/examples/">Examples</a></li>
+      <li><a href="https://linked-intent.dev/anti-patterns/">Anti-patterns</a></li>
+      <li><a href="https://linked-intent.dev/tour/">Tour</a></li>
+      <li><a href="https://github.com/jszmajda/lid">GitHub</a></li>
+    </ul>
+  </nav>
+</header>
+
+<main>
+  <section class="wrap hero">
+    <div class="hero-text">
+      <h1>How do you know your agent built what you meant?</h1>
+      <ul class="because">
+        <li>Because you wrote it down: a design, in plain English.</li>
+        <li>Because everything the agent builds comes from that design.</li>
+        <li>Because you can check: one ID grep returns the requirement, its tests, and its code.</li>
+        <li>Because LID helped you get there.</li>
+      </ul>
+      <p class="lede">Code that runs can still miss what you meant. With LID (Linked-Intent Development), the design stays linked to everything built from it. Fix it once, the agent cascades the change, and you sign off or push back at every step.</p>
+      <div class="ctas">
+        <a class="btn btn-ink" href="#quickstart">Install</a>
+        <a class="btn" href="https://github.com/jszmajda/lid">Read the source</a>
+      </div>
+    </div>
+    <div class="sheet" aria-hidden="true">
+      <div class="sticker s-word"><svg class="wordmark" viewBox="18 42 444 156" role="img" aria-label="LID"><rect x="18" y="42" width="444" height="156" rx="34" fill="#FF6B3D"/><g fill="#1A0F0A"><path fill-rule="evenodd" d="M64 66H128A22 22 0 0 1 150 88V152A22 22 0 0 1 128 174H64A22 22 0 0 1 42 152V88A22 22 0 0 1 64 66ZM76.16 88Q76.16 85 79.16 85L94.16 85Q97.16 85 97.16 88L97.16 134Q97.16 137 100.16 137L120.16 137Q123.16 137 123.16 140L123.16 152Q123.16 155 120.16 155L79.16 155Q76.16 155 76.16 152Z"/><path fill-rule="evenodd" d="M208 66H272A22 22 0 0 1 294 88V152A22 22 0 0 1 272 174H208A22 22 0 0 1 186 152V88A22 22 0 0 1 208 66ZM216 88Q216 85 219 85L261 85Q264 85 264 88L264 100Q264 103 261 103L253.5 103Q250.5 103 250.5 106L250.5 134Q250.5 137 253.5 137L261 137Q264 137 264 140L264 152Q264 155 261 155L219 155Q216 155 216 152L216 140Q216 137 219 137L226.5 137Q229.5 137 229.5 134L229.5 106Q229.5 103 226.5 103L219 103Q216 103 216 100Z"/><path fill-rule="evenodd" d="M352 66H416A22 22 0 0 1 438 88V152A22 22 0 0 1 416 174H352A22 22 0 0 1 330 152V88A22 22 0 0 1 352 66ZM358.67 85H381.67A34 35 0 0 1 381.67 155H358.67Q355.67 155 355.67 152V88Q355.67 85 358.67 85ZM378.67 103H381.67A12 17 0 0 1 381.67 137H378.67Q376.67 137 376.67 135V105Q376.67 103 378.67 103Z"/><path d="M154 115.5Q154 113.5 156 113.5L164 113.5Q166 113.5 166 111.5L166 106Q166 104 167.41 105.41L180.59 118.59Q182 120 180.59 121.41L167.41 134.59Q166 136 166 134L166 128.5Q166 126.5 164 126.5L156 126.5Q154 126.5 154 124.5Z"/><path d="M298 115.5Q298 113.5 300 113.5L308 113.5Q310 113.5 310 111.5L310 106Q310 104 311.41 105.41L324.59 118.59Q326 120 324.59 121.41L311.41 134.59Q310 136 310 134L310 128.5Q310 126.5 308 126.5L300 126.5Q298 126.5 298 124.5Z"/></g></svg></div>
+      <div class="sticker s-icon"><svg class="icon" viewBox="0 0 64 64" role="img" aria-label="LID"><defs><clipPath id="stickers-icon-1"><rect width="64" height="24.5"/><rect y="31.5" width="64" height="32.5"/></clipPath></defs><rect width="64" height="64" rx="14" fill="#FF6B3D"/><path d="M10 14Q10 12 12 12L21 12Q23 12 23 14L23 39Q23 41 25 41L36 41Q38 41 38 43L38 50Q38 52 36 52L12 52Q10 52 10 50Z" fill="#1A0F0A" clip-path="url(#stickers-icon-1)"/><path d="M23 24.5H45V31.5H23Z" fill="#1A0F0A"/><path d="M44 18.5Q44 17 45.06 18.06L53.94 26.94Q55 28 53.94 29.06L45.06 37.94Q44 39 44 37.5Z" fill="#1A0F0A"/></svg></div>
+      <div class="sticker pill s-id">AUTH-UI-001</div>
+      <div class="sticker pill s-done">[x] implemented</div>
+      <div class="sticker s-spec">@spec</div>
+      <div class="sticker s-arrow">HLD <i></i> LLD <i></i> EARS <i></i> Tests <i></i> Code</div>
+    </div>
+  </section>
+
+  <section class="band band-b" id="how">
+    <div class="wrap">
+      <header class="head">
+        <h2>Design first. Everything below it cites an ID.</h2>
+        <p>Every code file cites, by ID, the spec it implements. Every test cites the spec it asserts, and every spec traces to a design. Checking that code still traces to design is a walk through that graph, mechanical enough to put in CI.</p>
+      </header>
+      <ol class="trace">
+        <li><span class="tag">HLD</span><span class="role">the why</span><p>The app is account-scoped. Only the account owner can see or change their data, so every request has to identify the caller.</p></li>
+        <li><span class="tag">LLD</span><span class="role">the how</span><p>Credentials enter at the login form, pass to the auth service, and resolve to a session scoped to the user or a structured <code>AuthError</code>.</p></li>
+        <li><span class="tag">EARS</span><span class="role">the claim · <span class="idc">AUTH-UI-001</span></span><p><b>When</b> a user submits valid credentials, the authentication service <b>shall</b> return a session scoped to that user.</p></li>
+        <li><span class="tag">Tests</span><span class="role">failing first</span><pre>test("returns a session
+  on valid credentials")
+// AUTH-UI-001</pre></li>
+        <li><span class="tag">Code</span><span class="role">@spec anchors</span><pre>// services/auth.ts
+// @spec AUTH-UI-001
+async function
+  authenticate(creds)</pre></li>
+      </ol>
+      <p class="grep">A spec ID is a grep target. <code>grep -r AUTH-UI-001</code> returns the spec, the tests that assert it, and the code that implements it.</p>
+    </div>
+  </section>
+
+  <section class="band band-f">
+    <div class="wrap demo">
+      <header class="head">
+        <h2>Watch one edit reach the code.</h2>
+        <p>Change one sentence of the design and watch it arrive in the specs, the tests, and the code. Two minutes, one real project.</p>
+      </header>
+      <figure class="term">
+        <div class="term-bar">cascade: LLD → specs → tests → code</div>
+        <div class="term-body"><div class="play" aria-hidden="true"><i></i></div><p>The two-minute recording plays here.</p></div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="band band-d" id="quickstart">
+    <div class="wrap qs">
+      <header class="head">
+        <h2>Four commands, inside Claude Code.</h2>
+        <p>Install the two plugins, then describe what you want to build. The skill walks you through design, specs, and tests before it writes any code.</p>
+        <div class="others">
+          <p>Using a different coding agent? Most tools need only an <code>AGENTS.md</code> at your project root.</p>
+          <ul class="chips">
+            <li><a href="https://github.com/jszmajda/lid/blob/main/docs/setup.md#cursor">Cursor</a></li>
+            <li><a href="https://github.com/jszmajda/lid/blob/main/docs/setup.md#windsurf">Windsurf</a></li>
+            <li><a href="https://github.com/jszmajda/lid/blob/main/docs/setup.md#github-copilot">Copilot</a></li>
+            <li><a href="https://github.com/jszmajda/lid/blob/main/docs/setup.md">Codex CLI</a></li>
+            <li><a href="https://github.com/jszmajda/lid/blob/main/docs/setup.md#aider">Aider</a></li>
+            <li><a href="https://github.com/jszmajda/lid/blob/main/docs/setup.md">All tools</a></li>
+          </ul>
+        </div>
+      </header>
+      <ol class="cmds">
+        <li><div style="min-width:0"><code>/plugin marketplace add jszmajda/lid</code><small>Register the plugin source in Claude Code.</small></div><button class="copy" type="button" data-cmd="/plugin marketplace add jszmajda/lid">Copy</button></li>
+        <li><div style="min-width:0"><code>/plugin install linked-intent-dev@jszmajda-lid</code><small>Install the core workflow plugin.</small></div><button class="copy" type="button" data-cmd="/plugin install linked-intent-dev@jszmajda-lid">Copy</button></li>
+        <li><div style="min-width:0"><code>/plugin install arrow-maintenance@jszmajda-lid</code><small>Track the links between specs and code in big projects.</small></div><button class="copy" type="button" data-cmd="/plugin install arrow-maintenance@jszmajda-lid">Copy</button></li>
+        <li><div style="min-width:0"><code>/linked-intent-dev</code><small>Describe what you want to build.</small></div><button class="copy" type="button" data-cmd="/linked-intent-dev">Copy</button></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="band band-e">
+    <div class="wrap">
+      <header class="head">
+        <h2>Which path is yours?</h2>
+        <p>Four starting points, depending on where you're coming from.</p>
+      </header>
+      <div class="paths">
+        <a class="path sticker" href="https://linked-intent.dev/start/#evaluating"><h3>Evaluating</h3><p>Decide if LID solves a problem you have.</p></a>
+        <a class="path sticker" href="https://linked-intent.dev/start/#greenfield"><h3>Starting new</h3><p>Install, describe what you want, and let the skill walk you through it.</p></a>
+        <a class="path sticker" href="https://linked-intent.dev/start/#brownfield"><h3>Existing codebase</h3><p>Map the code first, then layer LID on top of what exists.</p></a>
+        <a class="path sticker" href="https://linked-intent.dev/start/#scoped"><h3>One subsystem</h3><p>Try LID on one slice of a larger project.</p></a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="brand"><span class="sticker s-mini"><svg class="icon" viewBox="0 0 64 64" role="img" aria-label="LID"><defs><clipPath id="stickers-icon-2"><rect width="64" height="24.5"/><rect y="31.5" width="64" height="32.5"/></clipPath></defs><rect width="64" height="64" rx="14" fill="#FF6B3D"/><path d="M10 14Q10 12 12 12L21 12Q23 12 23 14L23 39Q23 41 25 41L36 41Q38 41 38 43L38 50Q38 52 36 52L12 52Q10 52 10 50Z" fill="#1A0F0A" clip-path="url(#stickers-icon-2)"/><path d="M23 24.5H45V31.5H23Z" fill="#1A0F0A"/><path d="M44 18.5Q44 17 45.06 18.06L53.94 26.94Q55 28 53.94 29.06L45.06 37.94Q44 39 44 37.5Z" fill="#1A0F0A"/></svg></span><span>Linked-Intent Development · MIT · © 2026 Jess Szmajda</span></div>
+    <p>This site is itself a segment of the arrow: <a href="https://github.com/jszmajda/lid/blob/main/docs/intent/marketing-site/marketing-site-design.md">LLD</a>, <a href="https://github.com/jszmajda/lid/blob/main/docs/intent/marketing-site/marketing-site-specs.md">EARS</a>.</p>
+  </div>
+</footer>
+
+<script>
+document.querySelectorAll('.copy').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var done = function () { b.textContent = 'Copied'; setTimeout(function () { b.textContent = 'Copy'; }, 1600); };
+    if (navigator.clipboard) navigator.clipboard.writeText(b.dataset.cmd).then(done, function () {});
+  });
+});
+</script>
+<nav class="xsw" aria-label="Site explorations"><a href="index.html">All</a><a href="linked-list.html"><b>A</b><span> Linked list</span></a><a href="plain-text.html"><b>B</b><span> Plain text</span></a><a href="stickers.html"><b>C</b><span> Stickers</span></a><a href="poster.html"><b>D</b><span> Poster</span></a><a href="rail.html"><b>E</b><span> Rail</span></a><button type="button" id="xsw-theme" aria-label="Color theme">Auto</button></nav><style>.xsw{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:100;display:flex;gap:2px;padding:4px;background:rgba(26,15,10,.94);border-radius:999px;font:500 13px/1 ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;letter-spacing:0;box-shadow:0 6px 24px rgba(0,0,0,.28);max-width:calc(100vw - 24px)}.xsw a,.xsw button{color:#F4EDE8;text-decoration:none;padding:8px 11px;border-radius:999px;border:0;background:none;font:inherit;cursor:pointer;white-space:nowrap}.xsw b{font-weight:700}.xsw a:hover,.xsw button:hover{background:rgba(255,255,255,.12)}.xsw a[aria-current=page]{background:#FF6B3D;color:#1A0F0A}.xsw a:focus-visible,.xsw button:focus-visible{outline:2px solid #FF6B3D;outline-offset:2px}@media (max-width:700px){.xsw span{display:none}}</style><script>(function(){var here=location.pathname.split('/').pop()||'index.html';document.querySelectorAll('.xsw a').forEach(function(a){if(a.getAttribute('href')===here)a.setAttribute('aria-current','page')});var root=document.documentElement,orig=root.getAttribute('data-theme'),btn=document.getElementById('xsw-theme');var modes=['auto','light','dark'],m='auto';try{m=localStorage.getItem('lid-site-theme')||'auto'}catch(e){}function apply(){if(m==='auto'){if(orig)root.setAttribute('data-theme',orig);else root.removeAttribute('data-theme')}else root.setAttribute('data-theme',m);btn.textContent=m==='auto'?'Auto':m==='light'?'Light':'Dark';btn.setAttribute('aria-label','Color theme: '+btn.textContent)}btn.addEventListener('click',function(){m=modes[(modes.indexOf(m)+1)%3];try{localStorage.setItem('lid-site-theme',m)}catch(e){}apply()});apply()})();</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 240" role="img" aria-label="LID wordmark: three rounded nodes joined by pointers">
+  <title>LID wordmark: three rounded nodes joined by pointers</title>
+  <rect id="ground" x="0" y="0" width="480" height="240" fill="#FFD60A"/>
+  <g id="nodes">
+    <rect x="42" y="66" width="108" height="108" rx="22" fill="#111111"/>
+    <path id="letter-l" d="M79 90V150H117" fill="none" stroke="#FFD60A" stroke-width="18" stroke-linejoin="round"/>
+    <rect x="186" y="66" width="108" height="108" rx="22" fill="#111111"/>
+    <path id="letter-i" d="M240 90V150" fill="none" stroke="#FFD60A" stroke-width="18" stroke-linejoin="round"/>
+    <rect x="330" y="66" width="108" height="108" rx="22" fill="#111111"/>
+    <path id="letter-d" d="M363 90H376A28 30 0 0 1 376 150H363Z" fill="none" stroke="#FFD60A" stroke-width="18" stroke-linejoin="round"/>
+  </g>
+  <g id="pointers" fill="#111111" stroke="#111111" stroke-width="9" stroke-linejoin="round">
+    <path d="M152 120H164M164 108L176 120L164 132Z"/>
+    <path d="M296 120H308M308 108L320 120L308 132Z"/>
+  </g>
+</svg>

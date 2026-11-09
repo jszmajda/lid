@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 240" role="img" aria-label="lid wordmark: the word styled as a classic blue underlined link">
+  <title>lid wordmark: the word styled as a classic blue underlined link</title>
+  <rect id="ground" x="0" y="0" width="480" height="240" fill="#FFFFFF"/>
+  <g id="word" fill="#0000EE" transform="translate(-28.65 -36.6) scale(1.35)">
+    <path id="l" d="M100 54L126 44V152Q126 160 137 161V166H98V161Q109 160 109 152V66Q109 58 100 58Z"/>
+    <path id="i" d="M154 104L180 94V152Q180 160 191 161V166H152V161Q163 160 163 152V116Q163 108 154 108Z"/>
+    <circle id="tittle" cx="171" cy="70" r="11"/>
+    <path id="d-bowl" fill-rule="evenodd" d="M238 94C258 94 276 110 276 131C276 152 258 168 238 168C216 168 200 152 200 131C200 110 216 94 238 94ZM243 101C229 101 220 114 220 131C220 148 229 161 243 161C257 161 268 148 268 131C268 114 257 101 243 101Z"/>
+    <path id="d-stem" d="M261 54L287 44V148Q287 158 299 155L300 159L271 168V66Q271 58 261 58Z"/>
+    <rect id="underline" x="92" y="179" width="214" height="6"/>
+  </g>
+</svg>

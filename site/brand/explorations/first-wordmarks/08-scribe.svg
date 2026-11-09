@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 240" role="img" aria-label="lid wordmark: blackletter lowercase with a red dot on the i">
+  <title>lid wordmark: blackletter lowercase with a red dot on the i</title>
+  <rect id="ground" x="0" y="0" width="480" height="240" fill="#EFE9DC"/>
+  <g id="word" fill="#17120E">
+    <polygon id="l" points="118,36 133.12,43 154,26 154,197.8 136.0,214 118,197.8"/>
+    <polygon id="i" points="182,102.2 200.0,86 218,102.2 218,197.8 200.0,214 182,197.8"/>
+    <g id="d">
+      <polygon points="246,102.2 264.0,86 282,102.2 282,197.8 264.0,214 246,197.8"/>
+      <polygon points="322,36 337.12,43 358,26 358,197.8 340.0,214 322,197.8"/>
+      <polygon points="264.0,86 324,71 324,93 282,102.2"/>
+      <polygon points="264.0,214 324,199 324,177 282,197.8"/>
+    </g>
+  </g>
+  <g id="joins" fill="none" stroke="#17120E" stroke-width="3.4">
+    <path d="M136.0 214L184 180"/>
+    <path d="M200.0 214L248 180"/>
+  </g>
+  <polygon id="tittle" points="200.0,34 216.0,52 200.0,70 184.0,52" fill="#C8281B"/>
+</svg>

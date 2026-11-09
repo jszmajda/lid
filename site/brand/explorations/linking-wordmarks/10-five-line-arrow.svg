@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 240" role="img" aria-label="LID wordmark: a five-line L runs under the word and ends as an arrow">
+  <title>LID wordmark: a five-line L runs under the word and ends as an arrow</title>
+  <rect id="ground" x="0" y="0" width="480" height="240" fill="#23110F"/>
+  <defs><clipPath id="arrow-tip"><path d="M0 0H427.75V163.75L456 192L427.75 220.25V240H0Z"/></clipPath></defs>
+  <g id="l-five-lines" fill="none" stroke-width="8.5" clip-path="url(#arrow-tip)">
+    <path d="M88 24V158A10 10 0 0 0 98 168H480" stroke="#FFC63D"/>
+    <path d="M76 24V158A22 22 0 0 0 98 180H480" stroke="#FF9A2E"/>
+    <path d="M64 24V158A34 34 0 0 0 98 192H480" stroke="#F4632B"/>
+    <path d="M52 24V158A46 46 0 0 0 98 204H480" stroke="#E0344F"/>
+    <path d="M40 24V158A58 58 0 0 0 98 216H480" stroke="#B22A85"/>
+  </g>
+  <g id="id" fill="#FFF1DE">
+    <rect id="i" x="116" y="24" width="32" height="124"/>
+    <path id="d" fill-rule="evenodd" d="M172 24H234A62 62 0 0 1 234 148H172ZM204 54V118H232A32 32 0 0 0 232 54Z"/>
+  </g>
+</svg>

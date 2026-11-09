@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="LID: L and D in one block, with the I as the gap between them">
+  <title>LID: L and D in one block, with the I as the gap between them</title>
+  <rect id="ground" x="0" y="0" width="240" height="240" fill="#FFD60A"/>
+  <path id="l" d="M30 34H72V166H112V206H30Z" fill="#111111"/>
+  <path id="d" d="M118 34H124A86 86 0 0 1 124 206H118Z" fill="#111111"/>
+</svg>

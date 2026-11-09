@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 240" role="img" aria-label="lid wordmark: the tails of l and i end as pointers to the next letter">
+  <title>lid wordmark: the tails of l and i end as pointers to the next letter</title>
+  <rect id="ground" x="0" y="0" width="480" height="240" fill="#BDE7FF"/>
+  <g id="word" transform="translate(-14 0)">
+    <g id="letters" fill="none" stroke="#0E2A47" stroke-width="28" stroke-linecap="round">
+      <path id="l" d="M104 44V158Q104 186 132 186H150"/>
+      <path id="i" d="M222 104V158Q222 186 250 186H268"/>
+      <circle id="d-bowl" cx="366" cy="146" r="38"/>
+      <path id="d-stem" d="M404 44V186"/>
+    </g>
+    <circle id="tittle" cx="222" cy="58" r="16" fill="#0E2A47"/>
+    <g id="pointers" fill="#FF5A36" stroke="#FF5A36" stroke-width="8" stroke-linejoin="round">
+      <path d="M154 162L184 186L154 210Z"/>
+      <path d="M272 162L302 186L272 210Z"/>
+    </g>
+  </g>
+</svg>

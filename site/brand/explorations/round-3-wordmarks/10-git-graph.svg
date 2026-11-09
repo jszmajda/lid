@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 240" role="img" aria-label="lid wordmark: letters branching from a git commit graph">
+  <title>lid wordmark: letters branching from a git commit graph</title>
+  <rect id="ground" x="0" y="0" width="480" height="240" fill="#F6F7FB"/>
+  <g id="branches" fill="none" stroke-width="15">
+    <path id="main" d="M58 186H428" stroke="#3B4252" stroke-linecap="round"/>
+    <path id="l" d="M116 186V54" stroke="#2F6BFF"/>
+    <path id="i" d="M204 186V114" stroke="#E5397F" stroke-linecap="round"/>
+    <circle id="d-bowl" cx="306" cy="139" r="47" stroke="#0E9F6E"/>
+    <path id="d-stem" d="M353 186V54" stroke="#0E9F6E"/>
+  </g>
+  <g id="commits">
+    <circle cx="116" cy="54" r="15" fill="#FFFFFF" stroke="#2F6BFF" stroke-width="9"/>
+    <circle cx="204" cy="72" r="14" fill="#FFFFFF" stroke="#E5397F" stroke-width="9"/>
+    <circle cx="353" cy="54" r="15" fill="#FFFFFF" stroke="#0E9F6E" stroke-width="9"/>
+    <circle cx="160" cy="186" r="11" fill="#FFFFFF" stroke="#3B4252" stroke-width="9"/>
+    <circle cx="252" cy="186" r="11" fill="#FFFFFF" stroke="#3B4252" stroke-width="9"/>
+    <circle cx="398" cy="186" r="11" fill="#FFFFFF" stroke="#3B4252" stroke-width="9"/>
+  </g>
+</svg>

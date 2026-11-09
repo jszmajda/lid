@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="LID: a lifted pot lid built from the letters l, i, d">
+  <title>LID: a lifted pot lid built from the letters l, i, d</title>
+  <rect id="ground" x="0" y="0" width="240" height="240" fill="#E23D28"/>
+  <g id="lifted-lid" transform="rotate(-13 120 128)">
+    <path id="d-dome" d="M34 150A86 62 0 0 1 206 150Z" fill="#FFF7EC"/>
+    <g id="i-knob" fill="#2A0F0A">
+      <rect x="111" y="72" width="18" height="17"/>
+      <circle cx="120" cy="54" r="12"/>
+    </g>
+    <rect id="l-rim" x="20" y="158" width="200" height="17" rx="8.5" fill="#2A0F0A"/>
+  </g>
+</svg>

@@ -9,26 +9,14 @@ description: A short walk-through of Linked-Intent Development — the same intr
 ---
 
 <!-- @spec MKT-SITE-072, MKT-SITE-074, MKT-SITE-075, MKT-SITE-077, MKT-SITE-078, MKT-SITE-079, MKT-SITE-080, MKT-SITE-081, MKT-SITE-082 -->
-<div class="page tour-page">
-  <div class="container">
+<div class="page tour-page wrap">
 
-    <header class="page-header">
-      <div class="page-header-main">
-        <span class="plate">Sheet 05 / Tour</span>
-        <h1>A short <em>tour</em> of LID.</h1>
+    <header class="page-head">
+        <h1>A short tour of LID.</h1>
         <p class="lede">
           This is the same introduction LID offers inside your coding agent the first time you meet it. Inside the agent you can ask questions as you go, and type <code>tour</code> any time to see it again.
         </p>
         <p class="muted">From LID version {{ tour.version }}.</p>
-      </div>
-      <aside class="page-header-aside" aria-label="Sheet notes">
-        <dl>
-          <dt>Sheet</dt>         <dd>05 / 05</dd>
-          <dt>Steps</dt>         <dd>{{ tour.steps | length }}</dd>
-          <dt>Topics</dt>        <dd>{{ tour.topics | length }}</dd>
-          <dt>Loop back</dt>     <dd><a href="{{ '/' | url }}">Home ↺</a></dd>
-        </dl>
-      </aside>
     </header>
 
     <div class="tour-layout">
@@ -79,7 +67,4 @@ description: A short walk-through of Linked-Intent Development — the same intr
     </section>
     </div>
 
-    </div>
-
-  </div>
 </div>

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="LID: one thread stitched through five narrowing layers">
+  <title>LID: one thread stitched through five narrowing layers</title>
+  <rect id="ground" x="0" y="0" width="240" height="240" fill="#16235C"/>
+  <defs><clipPath id="through-over"><rect x="0" y="29" width="240" height="22"/><rect x="0" y="101" width="240" height="22"/><rect x="0" y="173" width="240" height="22"/></clipPath></defs>
+  <path id="thread-behind" d="M145 22C145 35.11 95 44.89 95 58C95 71.11 145 80.89 145 94C145 107.11 95 116.89 95 130C95 143.11 145 152.89 145 166C145 179.11 95 188.89 95 202" fill="none" stroke="#FF4B33" stroke-width="10"/>
+  <g id="five-layers" fill="#EDF1FF">
+    <rect x="28" y="30" width="184" height="20"/>
+    <rect x="42" y="66" width="156" height="20"/>
+    <rect x="56" y="102" width="128" height="20"/>
+    <rect x="70" y="138" width="100" height="20"/>
+    <rect x="84" y="174" width="72" height="20"/>
+  </g>
+  <path id="thread-in-front" d="M145 22C145 35.11 95 44.89 95 58C95 71.11 145 80.89 145 94C145 107.11 95 116.89 95 130C95 143.11 145 152.89 145 166C145 179.11 95 188.89 95 202" fill="none" stroke="#FF4B33" stroke-width="10" clip-path="url(#through-over)"/>
+  <path id="needle" d="M90 202H100L95 228Z" fill="#FF4B33"/>
+</svg>

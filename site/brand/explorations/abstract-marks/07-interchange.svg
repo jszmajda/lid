@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="LID: five parallel lines bending into an L-shaped arrow">
+  <title>LID: five parallel lines bending into an L-shaped arrow</title>
+  <rect id="ground" x="0" y="0" width="240" height="240" fill="#23110F"/>
+  <defs><clipPath id="interchange-tip"><path d="M0 0H185.5V117.5L228 160L185.5 202.5V240H0Z"/></clipPath></defs>
+  <g id="five-lines" fill="none" stroke-width="13" clip-path="url(#interchange-tip)">
+    <path d="M108 22V104A20 20 0 0 0 128 124H240" stroke="#FFC63D"/>
+    <path d="M90 22V104A38 38 0 0 0 128 142H240" stroke="#FF9A2E"/>
+    <path d="M72 22V104A56 56 0 0 0 128 160H240" stroke="#F4632B"/>
+    <path d="M54 22V104A74 74 0 0 0 128 178H240" stroke="#E0344F"/>
+    <path d="M36 22V104A92 92 0 0 0 128 196H240" stroke="#B22A85"/>
+  </g>
+</svg>
