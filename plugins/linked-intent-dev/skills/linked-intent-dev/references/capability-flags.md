@@ -16,6 +16,7 @@ Look up the model you run as, at the reasoning effort you run at. How to tell wh
 | `google/gemini-3.8-flash` | medium | tenet or goal conflict | — |
 | `claude-opus-4-8` | medium | none | offers decision docs too readily |
 | `claude-sonnet-5` | medium | none | offers decision docs too readily |
+| `moonshotai/kimi-k3.1-pro` | medium | under-captured decision | — |
 | `openai/gpt-5.6-terra` | medium | under-captured decision | — |
 | `claude-haiku-5-5` | medium | none | — |
 | `claude-opus-5` | medium | none | — |
@@ -100,10 +101,11 @@ Test projects: lid-coach evals 15 (library holds) and 16 (home-visit openings).
 | `openai/gpt-6.1-sol` | opencode-ai@1.18.32 | medium | eval 15 10/10; eval 16 10/10 | passed | 2026-10-10 | 2026-09 | mid |
 | `google/gemini-4-argon` | opencode-ai@1.18.32 | medium | eval 15 10/10; eval 16 10/10 | passed | 2026-10-16 | 2026-10 | large |
 | `xiaomi/mimo-v2.6-flash` | opencode-ai@1.18.32 | medium | eval 15 10/10; eval 16 10/10 | passed | 2026-10-19 | 2026-09 | small |
+| `moonshotai/kimi-k3.1-pro` | opencode-ai@1.18.32 | medium | eval 15 10/10; eval 16 10/10 | passed | 2026-11-09 | 2026-10 | large |
 
 ### Under-captured decision
 
-Test projects: core evals 0 (an HLD-level choice) and 3 (a design-doc-level choice), where the doc should be offered; lid-coach evals 10 and 11, where a thin record should be flagged as a finding of its own, not folded into a design or tenet finding about the same choice. Every flagged row misses on both kinds, most of all on core 3.
+Test projects: core evals 0 (an HLD-level choice) and 3 (a design-doc-level choice), where the doc should be offered; lid-coach evals 10 and 11, where a thin record should be flagged as a finding of its own, not folded into a design or tenet finding about the same choice. Every flagged row misses most on core 3. All but `moonshotai/kimi-k3.1-pro` miss on both kinds; it misses only where the doc should be offered.
 
 | Configuration | Harness | Effort | Test projects (pass rate) | Result | Date | Released | Size |
 |---|---|---|---|---|---|---|---|
@@ -112,6 +114,7 @@ Test projects: core evals 0 (an HLD-level choice) and 3 (a design-doc-level choi
 | `meta/muse-glimmer-30b` | opencode-ai@1.18.32 | medium | core 0 0/10; core 3 0/10; coach 10 9/10; coach 11 1/10 | **flagged** | 2026-10-16 | 2026-08 | small |
 | `nvidia/nemotron-3-ultra-550b-a55b` | opencode-ai@1.18.32 | medium | core 0 0/10; core 3 0/10; coach 10 7/10; coach 11 2/10 | **flagged** | 2026-10-18 | 2026-06 | large |
 | `openai/gpt-5.6-terra` | opencode-ai@1.18.32 | medium | core 0 6/10; core 3 3/10; coach 10 10/10; coach 11 3/10 | **flagged** | 2026-10-10 | 2026-07 | mid |
+| `moonshotai/kimi-k3.1-pro` | opencode-ai@1.18.32 | medium | core 0 7/10; core 3 1/10; coach 10 8/10; coach 11 8/10 | **flagged** | 2026-11-09 | 2026-10 | large |
 | `claude-sonnet-4-6` | claude -p (Claude Code 2.1.296) | medium | core 0 9/10; core 3 3/10; coach 10 10/10; coach 11 9/10 | passed | 2026-10-10 | 2026-02 | mid |
 | `openai/gpt-6-luna` | opencode-ai@1.18.32 | medium | core 0 10/10; core 3 1/10; coach 10 10/10; coach 11 10/10 | passed | 2026-10-18 | 2026-09 | small |
 | `z-ai/glm-5.3-flash` | opencode-ai@1.18.32 | medium | core 0 10/10; core 3 10/10; coach 10 10/10; coach 11 1/10 | passed | 2026-10-10 | 2026-08 | small |
@@ -156,6 +159,7 @@ Test projects: core evals 1 (a constraint-settled choice) and 2 (a long debate o
 | `meta/muse-glimmer-30b` | opencode-ai@1.18.32 | medium | core 1 10/10; core 2 10/10 | not listed | 2026-10-16 | 2026-08 | small |
 | `openai/gpt-6-luna` | opencode-ai@1.18.32 | medium | core 1 10/10; core 2 10/10 | not listed | 2026-10-18 | 2026-09 | small |
 | `nvidia/nemotron-3-ultra-550b-a55b` | opencode-ai@1.18.32 | medium | core 1 10/10; core 2 10/10 | not listed | 2026-10-18 | 2026-06 | large |
+| `moonshotai/kimi-k3.1-pro` | opencode-ai@1.18.32 | medium | core 1 10/10; core 2 10/10 | not listed | 2026-11-09 | 2026-10 | large |
 
 ### Notes
 
@@ -164,7 +168,7 @@ Test projects: core evals 1 (a constraint-settled choice) and 2 (a long debate o
   - *Tenet or goal conflict:* on eval 15, `claude-sonnet-5` caught the conflict 3 of 10 times, `claude-sonnet-4-6` 6 of 10, and `openai/gpt-6-luna` 7 of 10 (eval 16: 10/10, 10/10, and 8/10).
   - *Under-captured decision:* `claude-sonnet-4-6` missed the design-doc-level offer (core 3, 3/10) while catching the HLD-level one (core 0, 9/10), and `openai/gpt-6-luna` did the same (core 3, 1/10; core 0, 10/10). On coach 11, `z-ai/glm-5.3-flash` flagged the thin record as a finding of its own 1 of 10 times (coach 10: 10/10) and `claude-haiku-5-5` 7 of 10, folding it into a tenet finding about the same queue in the rest.
   - *Offers decision docs too readily:* `google/gemini-3.8-flash` offered a doc on core 2 in 8 of 10 runs (core 1: none), `xiaomi/mimo-v2.6-flash` on core 1 in 3 of 7 (core 2: none), `deepseek/deepseek-v4.1-flash` on core 1 in 4 of 10 (core 2: 2 of 10), and `z-ai/glm-5.3` on core 2 in 3 of 10 (core 1: 2 of 10).
-- Some configurations report tenet conflicts too readily. On lid-coach eval 15, which carries a decoy mechanism that only costs something toward a goal, `claude-opus-5` and `claude-haiku-5-5` also flagged a mechanism other than the real conflict in 9 of 10 runs, `claude-opus-5-5` and `openai/gpt-6-luna` in 6, and `claude-sonnet-5` in 3; on eval 16, `claude-opus-5` did so in 3 of 10, `claude-haiku-5-5` and `claude-opus-5-5` in 2, and the other two in none. This is recorded as an observation, not a tendency: an extra tenet finding asks the user to look twice, which costs less than a missed one (HLD tenet *Lean toward the human's attention*). If you are one of these, check that each tenet finding names a condition the docs describe, rather than a cost the design already accepts.
+- Some configurations report tenet conflicts too readily. On lid-coach eval 15, which carries a decoy mechanism that only costs something toward a goal, `claude-opus-5` and `claude-haiku-5-5` also flagged a mechanism other than the real conflict in 9 of 10 runs, `claude-opus-5-5` and `openai/gpt-6-luna` in 6, `moonshotai/kimi-k3.1-pro` in 4, and `claude-sonnet-5` in 3; on eval 16, `claude-opus-5` did so in 3 of 10, `claude-haiku-5-5`, `claude-opus-5-5`, and `moonshotai/kimi-k3.1-pro` in 2, and the other two in none. This is recorded as an observation, not a tendency: an extra tenet finding asks the user to look twice, which costs less than a missed one (HLD tenet *Lean toward the human's attention*). If you are one of these, check that each tenet finding names a condition the docs describe, rather than a cost the design already accepts.
 - *Covered* listings rest on the maintainers' knowledge of the models, not on runs of their own; a run that shows a gap replaces the listing with a row.
 - Release month and size are data, not keys. Across vendor lines neither predicts a miss: a small model (`claude-haiku-5-5`) carries no flag, and a mid one (`claude-sonnet-4-5`) is flagged twice. Within one line, newer and larger models have done no worse, which is why a model with no row may take an earlier or smaller relative's row.
 - `meta/muse-glimmer-30b` and `nvidia/nemotron-3-ultra-550b-a55b` offered no decision doc in the first turn of any core run, so their core 1 and core 2 results show that they do not offer one, not that they held back where they should have.
