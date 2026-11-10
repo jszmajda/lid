@@ -157,7 +157,7 @@ arrows:
     blockedBy: [linked-intent-dev]
     detail: project-structure.md
     next: null
-    drift: "The build-time checks (039-041) are superseded by the packaging-checks segment (PKG-CHECK-018-020); 061 (No-Version section) superseded by the shared-version rule (045, 077). New rules: skill and command files (073-076, 084), shared version and release step (046, 077-081), opencode skills host (072, 085), Kiro skills host (087-109). 104 of 104 specs [x]."
+    drift: "The build-time checks (039-041) are superseded by the packaging-checks segment (PKG-CHECK-018-020); 061 (No-Version section) superseded by the shared-version rule (045, 077). New rules: skill and command files (073-076, 084), shared version and release step (046, 077-081), opencode skills host (072, 085), Kiro plugin host (087-102) and the Agent Plugins manifests it installs from (103-105). 100 of 100 specs [x]."
 
   extensions:
     status: AUDITED
@@ -201,7 +201,7 @@ arrows:
     blockedBy: [project-structure, linked-intent-dev, alt-model-evals]
     detail: packaging-checks.md
     next: null
-    drift: "New segment (#86, #87). Tool and tests built; PR-process obligations live in project-structure (PROJ-STRUCT-070, 079)."
+    drift: "New segment (#86, #87). Tool and tests built; PR-process obligations live in project-structure (PROJ-STRUCT-070, 079). Kiro plugin-host change: Agent Plugins manifest check (040); version checks 012 and 014 cover those manifests."
 
 unmapped:
   docs:

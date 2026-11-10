@@ -1,0 +1,18 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "arrow-maintenance",
+  "version": "1.4.3",
+  "description": "Scaling layer for linked-intent-dev. Tracks spec-to-code coherence across large projects via docs/arrows/ index. Includes brownfield bootstrap for mapping existing codebases.",
+  "author": {
+    "name": "Jess Szmajda"
+  },
+  "homepage": "https://linked-intent.dev",
+  "repository": "https://github.com/jszmajda/lid",
+  "license": "MIT",
+  "keywords": [
+    "lid",
+    "linked-intent",
+    "arrow-maintenance",
+    "arrow-of-intent"
+  ]
+}

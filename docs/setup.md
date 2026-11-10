@@ -39,14 +39,14 @@ Claude Code users get both for free: `/linked-intent-dev` (the workflow skill) b
 
 **Claude Code is different** — it reads `CLAUDE.md`, not `AGENTS.md`. See the [Claude Code section below](#claude-code) for how to keep a single source of truth across both files.
 
-Other tools that honor `AGENTS.md` per the [spec](https://agents.md/) and should work with just the root file: **Factory, goose, opencode, Warp, Devin, Gemini CLI, RooCode, Kilo Code, Augment Code**. opencode can also load the LID skills themselves — see the [opencode section below](#opencode).
+Other tools that honor `AGENTS.md` per the [spec](https://agents.md/) and should work with just the root file: **Factory, goose, opencode, Kiro, Warp, Devin, Gemini CLI, RooCode, Kilo Code, Augment Code**. Kiro can also install the LID plugins as Powers, and opencode can load the LID skills themselves — see the [Kiro section](#kiro) and the [opencode section](#opencode) below.
 
 Nearest-wins nesting is part of the spec; Codex and Amp implement hierarchical merge, while Zed and Cline pick a single file.
 
 **The workflow doc.** An `AGENTS.md` alone carries only LID's compact core — the arrow mandate, the inspection invariant, and navigation. The full workflow ships as `docs/lid/workflow.md`, a generated file vendored only into projects a harness without plugins works in. Your `AGENTS.md` tells such a harness to offer it: when the doc is missing, the agent asks once and, on a yes, fetches it from the LID release matching your project's `- Version:`; a no is recorded as `- Workflow doc: declined` in the `## LID` block. Projects on plugin hosts don't need it, and skipping it keeps them on the plugin's upgrade path: a vendored doc stays at the release that wrote it until someone re-syncs it. **Adding it by hand:** copy `plugins/linked-intent-dev/skills/update-lid/references/workflow-doc.md` from the LID repository (a clone, or the file as published at the release tag) to `docs/lid/workflow.md`. Re-syncing after a LID upgrade is the same copy at the newer version, or `/update-lid` where a plugin host is available. Edit it upstream or in `AGENTS.md`, never in place. Your `AGENTS.md` points to it: harnesses with plugin support load the skill instead; everything else should read the doc before making changes. Two notes on making that pointer reliable:
 
 - **Prose pointers are best-effort on most tools** — the model chooses whether to follow them. That is why the compact core in `AGENTS.md` carries the invariants that must survive an ignored pointer.
-- **Use deterministic loading where your tool has it:** Amp users can `@`-mention the doc from `AGENTS.md` (guaranteed inclusion, globs supported); Aider users should commit a `.aider.conf.yml` with `read: AGENTS.md` (see the [Aider section](#aider)); Claude Code and Cursor need nothing extra — the plugins carry the workflow.
+- **Use deterministic loading where your tool has it:** Amp users can `@`-mention the doc from `AGENTS.md` (guaranteed inclusion, globs supported); Aider users should commit a `.aider.conf.yml` with `read: AGENTS.md` (see the [Aider section](#aider)); Claude Code, Cursor, and Kiro (IDE and CLI V3) need nothing extra — the plugins carry the workflow.
 
 **New to LID?** The tour at [linked-intent.dev/tour](https://linked-intent.dev/tour) walks through what LID is and how it works, in a few minutes. It's the same introduction LID offers inside the agent on hosts with plugins.
 
@@ -134,6 +134,47 @@ Cursor supports four rule-application modes: **Always** (`alwaysApply: true`), *
 
 ---
 
+## Kiro
+
+**Plugin host.** Kiro installs each LID plugin as a *Power*, Kiro's name for a plugin in the open [Agent Plugins](https://agent-plugins.org/) format. Each plugin directory in this repository carries that format's manifest, a `plugin.json` at its root. Powers run in the Kiro IDE and in Kiro CLI 3.0 or later on its V3 harness, and the two share the Powers you install.
+
+**Install in the IDE.** Open the Powers panel, choose **Add Custom Power**, then **Import power from GitHub**, and import each core plugin by its folder URL:
+
+```
+https://github.com/jszmajda/lid/tree/main/plugins/linked-intent-dev
+https://github.com/jszmajda/lid/tree/main/plugins/arrow-maintenance
+```
+
+**Install from the CLI.** `kiro-cli powers install` takes a Power's name in Kiro's catalog or a local path, so install from a clone:
+
+```sh
+git clone https://github.com/jszmajda/lid "$HOME/src/lid"
+kiro-cli powers install "$HOME/src/lid/plugins/linked-intent-dev"
+kiro-cli powers install "$HOME/src/lid/plugins/arrow-maintenance"
+```
+
+- **Experiments are opt-in.** To opt in, install `plugins/lid-experimental` the same way.
+- **Updating.** In the IDE, choose each Power in the Powers panel, then **Check for updates** and **Install updates**. From the CLI, pull the clone (`git -C "$HOME/src/lid" pull`) and run the install commands again; Kiro replaces the installed copy. Start a new chat or session to pick up the change.
+- **Uninstalling.** Choose **Uninstall** on each Power in the Powers panel, or run `kiro-cli powers uninstall linked-intent-dev`, then the same for `arrow-maintenance` and, if you installed it, `lid-experimental`.
+- **Custom agents.** Kiro's default agent loads installed Powers on its own. A custom agent loads them only when its configuration sets:
+
+  ```json
+  "includePowers": true
+  ```
+
+**Where the workflow comes from.** The Power's `linked-intent-dev` skill carries the full workflow, so a project you work on in the Kiro IDE or Kiro CLI V3 needs no vendored workflow doc. Kiro also reads your project's `AGENTS.md` natively once you trust the workspace, but that file alone carries only LID's compact core. Kiro Mobile and Kiro CLI's V2 harness load no Powers, and a local headless run (`kiro-cli chat --no-interactive`) starts V2 unless you pass `--v3` or save V3 as your default (`kiro-cli settings chat.agentEngine v3`). If you work on the project there, add the vendored workflow doc (see [The workflow doc](#the-simple-path-just-ship-agentsmd)). Kiro Web loads a Power only once you upload it with Kiro's Configuration Sync.
+
+**Where Kiro differs from the other plugin hosts:**
+
+- **Command aliases.** Kiro loads a Power's skills, not its `commands/` files, so `lid-experimental`'s `/differential-audit` alias is not available there. The skill it names is `bidirectional-differential`.
+- **The invocation guard.** Kiro does not honor `disable-model-invocation`: in Kiro CLI 3.1.0, the model loaded `map-codebase` on its own when a request matched its description. Treat `lid-coach` and `map-codebase` as model-invocable in Kiro. On the other plugin hosts, these two run only when you invoke them.
+- **Reference files.** Kiro gives the model a Power skill's text but not the skill's directory. So when a skill points to one of its `references/` files, or `/update-lid` needs the plugin's `CHANGELOG.md`, the agent first searches your disk for the file. Under Kiro's default permissions, that search and each read outside your workspace ask for your approval. Installed Powers live in `~/.kiro/powers/installed/<plugin>/`.
+- **Long skills.** Kiro caps one tool result at 30,000 characters. `linked-intent-dev` and `lid-coach` are longer, so the model first sees their start and end, and Kiro saves the full text to a file under `~/.kiro/sessions/` that the agent then reads. Under Kiro's default permissions, that read asks for your approval too.
+
+Sources: [kiro.dev/docs/powers](https://kiro.dev/docs/powers/), [installing powers](https://kiro.dev/docs/powers/installation/), the [custom-agent configuration reference](https://kiro.dev/docs/custom-agents/configuration-reference/), [choosing a CLI harness](https://kiro.dev/docs/cli/agent-harness/), [permissions](https://kiro.dev/docs/permissions/), and [steering](https://kiro.dev/docs/steering/), which covers Kiro's `AGENTS.md` support.
+
+---
+
 ## opencode
 
 **Skills host.** opencode reads Agent Skills natively, so it loads the LID skills straight from a clone of this repository, with no plugin manifest or marketplace. Clone the repository, then list the core plugins' directories under `skills.paths` in your opencode config:
@@ -169,91 +210,6 @@ With the skills loaded, the agent loads `linked-intent-dev` through opencode's s
 - **The invocation guard, on opencode 1.x.** opencode 1.x ignores `disable-model-invocation`, so `lid-coach` and `map-codebase` are also model-invocable there. On the plugin hosts these two run only when you invoke them; on opencode 1.x the model may also load them on its own when a task matches their descriptions.
 
 Sources: [opencode.ai/docs/skills](https://opencode.ai/docs/skills/), [opencode.ai/docs/config](https://opencode.ai/docs/config/), and the config schema at [opencode.ai/config.json](https://opencode.ai/config.json), which defines `skills.paths`.
-
----
-
-## Kiro
-
-**Skills host.** Kiro reads Agent Skills natively, so it loads the LID skills from a clone of this repository, linked one by one into Kiro's user-level skills directory, `~/.kiro/skills/`. Kiro's default agent loads that directory in every project, in both the IDE and the CLI. Kiro also reads your project's `AGENTS.md` natively, so the project needs no vendored workflow doc.
-
-The commands below are for a POSIX shell on macOS and Linux. The setup depends on symlinks; where you cannot create them (for example, Windows without Developer Mode), there is no supported Kiro setup.
-
-**1. Clone the repository:**
-
-```sh
-git clone https://github.com/jszmajda/lid "$HOME/src/lid"
-```
-
-**2. Link the skills.** Set `LID` to the absolute path of your clone, without a trailing slash. The block links every skill directory of each plugin in `PLUGINS`, creating `~/.kiro/skills/` if needed. It runs itself under `sh`, so you can paste it into zsh, bash, or any other shell:
-
-```sh
-sh <<'EOF'
-LID="$HOME/src/lid"
-PLUGINS="linked-intent-dev arrow-maintenance"
-SKILLS="$HOME/.kiro/skills"
-mkdir -p "$SKILLS"
-# Remove links into the clone whose skill no longer exists.
-for entry in "$SKILLS"/*; do
-  [ -L "$entry" ] || continue
-  case "$(readlink "$entry")" in
-    "$LID"/*) [ -e "$entry" ] || rm "$entry" ;;
-  esac
-done
-# Link each skill; never replace an entry that is not a link into the clone.
-for plugin in $PLUGINS; do
-  for dir in "$LID/plugins/$plugin/skills"/*/; do
-    [ -d "$dir" ] || continue
-    dir="${dir%/}"
-    name="$(basename "$dir")"
-    dest="$SKILLS/$name"
-    if [ -L "$dest" ] || [ -e "$dest" ]; then
-      case "$(readlink "$dest" 2>/dev/null)" in
-        "$LID"/*) ;;
-        *) echo "skipped $name: $dest already exists and is not a link into $LID" >&2 ;;
-      esac
-      continue
-    fi
-    ln -s "$dir" "$dest"
-  done
-done
-EOF
-```
-
-- **Your own entries are safe.** A link into the clone is one whose target starts with `$LID`. Anything else in `~/.kiro/skills/` is yours, including a link into an earlier location of the clone or into a second clone. The block never replaces such an entry; it skips that skill, prints a warning naming the entry, and links the rest.
-- **Precedence.** A skill in a project's own `.kiro/skills/` takes precedence over the user-level skill of the same name.
-- **Experiments are opt-in.** To opt in, add `lid-experimental` to `PLUGINS` and run the block again.
-- **Kiro picks up the skills** in a new chat in the IDE or a new session in the CLI, after the first install and after each re-run.
-
-**Updating.** Pull the clone (`git -C "$HOME/src/lid" pull`), then run the linking block again. Each skill is linked separately, so a pull alone does not reach a skill a release adds. The re-run links new skills, leaves existing links in place, and removes links whose skill a release removed.
-
-**Moving the clone.** Moving or deleting the clone breaks the links, and links into the old location count as your own entries. Before moving it, run the uninstall block below; after the move, set `LID` to the new location and run the linking block again.
-
-**Uninstalling.** This removes every link into the clone, broken ones included, and leaves every other entry in `~/.kiro/skills/` in place. You can delete the clone afterwards.
-
-```sh
-sh <<'EOF'
-LID="$HOME/src/lid"
-for entry in "$HOME/.kiro/skills"/*; do
-  [ -L "$entry" ] || continue
-  case "$(readlink "$entry")" in
-    "$LID"/*) rm "$entry" ;;
-  esac
-done
-EOF
-```
-
-**Custom agents.** Kiro's default agent loads user-level skills on its own. A custom Kiro agent loads them only when its configuration lists them as a resource:
-
-```json
-"resources": ["skill://~/.kiro/skills/*/SKILL.md"]
-```
-
-**What Kiro does not load from the plugin layer:**
-
-- **Command aliases.** Kiro loads skills, not the plugins' `commands/` files, so `lid-experimental`'s `/differential-audit` alias is not available there. The skill it names is `bidirectional-differential`.
-- **The invocation guard.** Kiro does not document `disable-model-invocation`. Treat `lid-coach` and `map-codebase` as model-invocable there: on the plugin hosts these two run only when you invoke them, but in Kiro the model may also load them on its own when a task matches their descriptions.
-
-Sources: [kiro.dev/docs/skills](https://kiro.dev/docs/skills.md) and [kiro.dev/docs/steering](https://kiro.dev/docs/steering.md), which covers Kiro's `AGENTS.md` support.
 
 ---
 

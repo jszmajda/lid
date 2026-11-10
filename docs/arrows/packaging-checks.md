@@ -4,7 +4,7 @@ The packaging checks — a maintainer tool, run before every merge to `main`, th
 
 ## Status
 
-**MAPPED** — new leaf segment (#86, #87), sampled 2026-10-24, not yet audited. Tool and tests built; the specs are implemented apart from the pull-request process the tool cannot itself verify.
+**MAPPED** — new leaf segment (#86, #87), sampled 2026-10-24, not yet audited; revised 2026-11-09 by the Kiro plugin-host change, which added the Agent Plugins manifest check (`PKG-CHECK-040`) and extended the version checks (`012`, `014`) to those manifests. Tool and tests built; the specs are implemented apart from the pull-request process the tool cannot itself verify.
 
 ## References
 
@@ -29,7 +29,7 @@ The packaging checks — a maintainer tool, run before every merge to `main`, th
 
 **Key Components:**
 1. **Run target** — an export of one commit's tracked files (jj `@`/`@-` or git `HEAD` by default), checked by that export's copy of the tool against `main` fetched from `github.com/jszmajda/lid`.
-2. **Static part** — frontmatter outcomes under a strict parser (opening block, repeated keys, names, description length, `#` read as a comment, literal-boolean guard, name collisions), size limits, the shared version and its CHANGELOG entry and migration heading, the workflow doc against a fresh assembly, the tag for `main`'s version, links, manifests, symlink.
+2. **Static part** — frontmatter outcomes under a strict parser (opening block, repeated keys, names, description length, `#` read as a comment, literal-boolean guard, name collisions), size limits, the shared version and its CHANGELOG entry and migration heading, the workflow doc against a fresh assembly, the tag for `main`'s version, links, manifests (including each plugin's Agent Plugins manifest, held to the 1.0.0 schema and the fields Kiro requires), symlink.
 3. **Claude Code part** — `claude -p` with the plugins loaded by `--plugin-dir` in an isolated scratch directory; reads the session's opening event and transcript for registration, plugin versions, the model's skill listing, delivered bodies, and the refusal of guarded skills; removes the transcripts it writes.
 4. **opencode part** — the alternate-model runner's container and staging; reads `opencode debug skill`, with no model.
 5. **Result line** — commit and tree, `main`, each part's state (pass, fail, inconclusive, error, skipped, owed), host versions and model.

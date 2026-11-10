@@ -1,10 +1,10 @@
 # Arrow: project-structure
 
-The repo-meta segment — owns the artifacts that describe the project itself rather than any one piece of it: contributor onboarding (`CONTRIBUTING.md`), agent bootstrap (`AGENTS.md` + `CLAUDE.md` symlink), per-tool integration setup (`docs/setup.md`), the Claude Code and Cursor marketplace manifests, `CHANGELOG.md`, `.gitignore`, `LICENSE`, the community-health files (`CODE_OF_CONDUCT.md`, `SECURITY.md`, `CITATION.cff`, `.github/` contribution templates), and the `README`/`EXTENSIONS` ownership pointers.
+The repo-meta segment — owns the artifacts that describe the project itself rather than any one piece of it: contributor onboarding (`CONTRIBUTING.md`), agent bootstrap (`AGENTS.md` + `CLAUDE.md` symlink), per-tool integration setup (`docs/setup.md`), the Claude Code and Cursor marketplace manifests and the per-plugin Agent Plugins manifests, `CHANGELOG.md`, `.gitignore`, `LICENSE`, the community-health files (`CODE_OF_CONDUCT.md`, `SECURITY.md`, `CITATION.cff`, `.github/` contribution templates), and the `README`/`EXTENSIONS` ownership pointers.
 
 ## Status
 
-**AUDITED** — last audited 2026-06-07 (git SHA `527cf08c9150`); revised 2026-10-24 by the packaging-checks change (#86, #87) and 2026-11-04 by the Kiro skills-host change. 104 of 104 active specs implemented. The former build-time checks (`PROJ-STRUCT-039`–`041`) are superseded by the `packaging-checks` segment, which now verifies this segment's rules.
+**AUDITED** — last audited 2026-06-07 (git SHA `527cf08c9150`); revised 2026-10-24 by the packaging-checks change (#86, #87) and 2026-11-09 by the Kiro plugin-host change. 100 of 100 active specs implemented. The former build-time checks (`PROJ-STRUCT-039`–`041`) are superseded by the `packaging-checks` segment, which now verifies this segment's rules.
 
 ## References
 
@@ -15,19 +15,20 @@ The repo-meta segment — owns the artifacts that describe the project itself ra
 - `docs/intent/project-structure/project-structure-design.md`
 
 ### EARS
-- `docs/intent/project-structure/project-structure-specs.md` (104 active specs, prefix `PROJ-STRUCT-*`; `-014` retired; `-039`–`-041` and `-061` superseded)
+- `docs/intent/project-structure/project-structure-specs.md` (100 active specs, prefix `PROJ-STRUCT-*`; `-014` retired; `-039`–`-041` and `-061` superseded)
 
 ### Tests / Build checks
-- The `packaging-checks` segment's tool (`tools/packaging-checks/`) verifies this segment's rules before every merge: skill and command files, frontmatter, the shared version and CHANGELOG, the workflow doc, links in `CONTRIBUTING.md` and `docs/setup.md`, marketplace manifests, and the `CLAUDE.md` symlink.
+- The `packaging-checks` segment's tool (`tools/packaging-checks/`) verifies this segment's rules before every merge: skill and command files, frontmatter, the shared version and CHANGELOG, the workflow doc, links in `CONTRIBUTING.md` and `docs/setup.md`, marketplace manifests, the Agent Plugins manifests, and the `CLAUDE.md` symlink.
 - No skill-creator evals (content artifact, not a skill).
 
 ### Code (owned artifacts)
 - `CONTRIBUTING.md` — contributor onboarding
 - `AGENTS.md` — agent bootstrap (canonical)
 - `CLAUDE.md` — symlink to `AGENTS.md`
-- `docs/setup.md` — per-tool adapter + first-class plugin-host setup (Claude Code, Cursor) + skills hosts (opencode, Kiro)
+- `docs/setup.md` — per-tool adapter + plugin-host setup (Claude Code, Cursor, Kiro) + skills host (opencode)
 - `.claude-plugin/marketplace.json` + per-plugin `.claude-plugin/plugin.json` — Claude Code manifests (the shared version lives only in each `plugin.json`)
 - `.cursor-plugin/marketplace.json` + per-plugin `.cursor-plugin/plugin.json` — Cursor manifests (no `version`)
+- per-plugin root `plugin.json` — Agent Plugins manifests, from which Kiro installs each plugin as a Power (carry the shared version)
 - `CHANGELOG.md` — release history (canonical in `plugins/linked-intent-dev/`, root symlink)
 - `.gitignore` — excludes regenerable eval run-output trees
 - `CODE_OF_CONDUCT.md`, `SECURITY.md`, `CITATION.cff` — community-health artifacts
@@ -52,20 +53,21 @@ The repo-meta segment — owns the artifacts that describe the project itself ra
 |---|---|---|---|
 | CONTRIBUTING.md (audience, trivial, out-of-scope, variants, gate, mechanics incl. packaging checks `-070`) | 18 `[x]` | 0 | 0 |
 | AGENTS.md / CLAUDE.md (incl. `tools/` `-068`, editing guidelines `-071`) | 7 `[x]` | 0 | 0 |
-| docs/setup.md (incl. plugin hosts `-062`, opencode skills host `-072`, tour link `-086`, Kiro skills host `-087`–`-099`, `-101`–`-109`) | 29 `[x]` | 0 | 0 |
+| docs/setup.md (incl. plugin hosts `-062`, Kiro plugin host `-087`–`-099`, opencode skills host `-072`, tour link `-086`, host pointers `-101`) | 21 `[x]` | 0 | 0 |
 | .claude-plugin/marketplace.json (no `version`, `-030`) | 3 `[x]` | 0 | 0 |
 | .cursor-plugin manifests (`-056`–`-058`, `-060`) | 4 `[x]` | 0 | 0 |
+| Agent Plugins manifests (`-103`–`-105`) | 3 `[x]` | 0 | 0 |
 | Repo-root file pointers | 3 `[x]` | 0 | 0 |
 | .gitignore / .claude/settings.json | 5 `[x]` | 0 | 0 |
 | LICENSE, CODE_OF_CONDUCT, SECURITY, CITATION | 5 `[x]` | 0 | 0 |
 | .github/ contribution templates (PR template's *Packaging checks* line, `-053`) | 3 `[x]` | 0 | 0 |
 | Skill and command files (`-073`–`-076`, `-084`) | 5 `[x]` | 0 | 0 |
 | CHANGELOG, versions, releases (`-043`–`-046`, `-054`, `-063`, `-077`–`-081`) | 11 `[x]` | 0 | 0 |
-| Cascade obligations (incl. `-082`, `-083`, `-085`, `-100`) | 10 `[x]` | 0 | 0 |
+| Cascade obligations (incl. `-082`, `-083`, `-085`, `-100`, `-102`) | 11 `[x]` | 0 | 0 |
 | Arrow registration | 1 `[x]` | 0 | 0 |
-| **Total** (recounted from the spec file) | **104** | **0** | **0** |
+| **Total** (recounted from the spec file) | **100** | **0** | **0** |
 
-**Summary:** 104 of 104 active specs implemented. The Kiro skills-host change added `docs/setup.md`'s Kiro section (`087`–`099`, `101`–`109`) and its cascade obligation (`100`), and narrowed `083` to the opencode section and `085` to each skills-host section. The packaging-checks change (#86, #87) added the rules for skill and command files (`073`–`076`, `084`), the shared version and the release step that travels with each change (`046`, `077`–`081`), the opencode skills host (`072`, `085`), and the pull-request record (`053`, `070`); it superseded the build-time-check specs `039`–`041` (now `PKG-CHECK-018`–`020`) and the No-Version-Update section `061`.
+**Summary:** 100 of 100 active specs implemented. The Kiro plugin-host change added `docs/setup.md`'s Kiro section (`087`–`099`), its pointer from the `AGENTS.md` tool list (`101`), the Agent Plugins manifests Kiro installs from (`103`–`105`), and two cascade obligations (`100`, `102`); it extended `046` and `060` to the new manifests and `038` to hosts that install from them, and narrowed `083` to the opencode section and `085` to each section that lists model-invocable skills. The packaging-checks change (#86, #87) added the rules for skill and command files (`073`–`076`, `084`), the shared version and the release step that travels with each change (`046`, `077`–`081`), the opencode skills host (`072`, `085`), and the pull-request record (`053`, `070`); it superseded the build-time-check specs `039`–`041` (now `PKG-CHECK-018`–`020`) and the No-Version-Update section `061`.
 
 ## Key Findings
 

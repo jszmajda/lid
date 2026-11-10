@@ -139,7 +139,7 @@ The operating principles that tie the preceding approaches to day-to-day work:
 
 LID is for developers using agentic coding systems — Claude Code, Cursor, Windsurf, GitHub Copilot, Aider, Continue, Codex, JetBrains Junie, Zed, and their descendants — who have noticed that English is a surprisingly imprecise programming language. A prompt that feels complete in your head emerges as something close to, but not exactly, what you meant. Most of the delta is latent intent — constraints you assumed were obvious and never wrote down. The agent fills those in plausibly, sometimes correctly, often close-but-wrong, and the gap compounds: one session's close-but-wrong becomes the next session's starting assumption.
 
-LID treats the agent as an *english compiler* (see Glossary) and adds the minimum scaffolding for that compilation to stay faithful to the intent it was given. The target user has already noticed the compounding problem and is looking for tooling that is opinionated enough to help and small enough not to get in the way. LID does not depend on any specific agent, harness, or IDE; the plugins described here ship for the plugin-capable hosts — Claude Code (richest integration) and Cursor — and rule-file adapters for tools without a plugin system are documented in `docs/setup.md`. The methodology applies anywhere a developer is compiling English into running software.
+LID treats the agent as an *english compiler* (see Glossary) and adds the minimum scaffolding for that compilation to stay faithful to the intent it was given. The target user has already noticed the compounding problem and is looking for tooling that is opinionated enough to help and small enough not to get in the way. LID does not depend on any specific agent, harness, or IDE; the plugins described here ship for the plugin-capable hosts — Claude Code (richest integration), Cursor, and Kiro — and rule-file adapters for tools without a plugin system are documented in `docs/setup.md`. The methodology applies anywhere a developer is compiling English into running software.
 
 ### Adoption modes
 
@@ -178,7 +178,7 @@ Intent flows in one direction. Changes originate upstream and cascade down. Docs
 
 ### 2. Plugins
 
-Three first-party plugins, distributed from this repository and run by plugin-capable hosts (Claude Code — the richest integration, with auto-invoking skills and phase gates — and Cursor). Two are core, installed together by default; one is opt-in:
+Three first-party plugins, distributed from this repository and run by plugin-capable hosts (Claude Code — the richest integration, with auto-invoking skills and phase gates — Cursor, and Kiro). Two are core, installed together by default; one is opt-in:
 
 - **`linked-intent-dev`** — three skills under one plugin. The pure-prose **`linked-intent-dev`** workflow skill (auto-triggered on code-changing prompts in Full mode; also invokable as `/linked-intent-dev` to start a fresh project — give it a description of what you want to build and the workflow handles bootstrap as part of Phase 1) walks every change through HLD → LLD → EARS → Tests → Code with stops at every phase boundary. **`/update-lid`** is an idempotent command for reconciling an already-configured project — drift, mode transitions, convention updates — and is also reachable as a sub-step from the workflow skill (Phase 1) and from `/map-codebase` when bootstrap is needed. **`/lid-coach`** is an advisory principle-review command that reads the project's current LID artifacts and produces a prioritized report of recommendations for getting more out of the methodology — it does not edit files. Mandatory.
 - **`arrow-maintenance`** — navigation overlay (`docs/arrows/index.yaml`) plus two commands: `/arrow-maintenance` (audit-and-update pass; bootstraps the overlay on existing LID projects) and `/map-codebase` (brownfield bootstrap from raw code). Installed by default, **optional at runtime** — projects that do not need the overlay carry none of its overhead.
@@ -188,7 +188,7 @@ All three plugins are mode-aware. A skill detects the project's mode from its st
 
 ### 3. Distribution
 
-The plugins are authored once and delivered through each host's native mechanism. A plugin's content — its skills (`skills/<name>/SKILL.md`), commands, and reference files — sits in a layout that plugin-capable hosts read directly; the only per-host artifact is a thin **manifest** that registers the directory as a plugin, plus a repo-root catalog listing all of them. Distribution is therefore **one shared content source plus one thin manifest per host**, never a forked copy of the skill text. Adding a host later adds its manifest format and leaves the shared content untouched.
+The plugins are authored once and delivered through each host's native mechanism. A plugin's content — its skills (`skills/<name>/SKILL.md`), commands, and reference files — sits in a layout that plugin-capable hosts read directly; the only per-host artifact is a thin **manifest** that registers the directory as a plugin, plus, for a host that installs from a catalog, a repo-root catalog listing all of them. Distribution is therefore **one shared content source plus one thin manifest per host**, never a forked copy of the skill text. Adding a host later adds its manifest format and leaves the shared content untouched.
 
 **First-class plugin hosts.** Two today, each reading the same `plugins/` content through its own manifest:
 
@@ -202,6 +202,8 @@ The plugins are authored once and delivered through each host's native mechanism
   ```
 
 - **Cursor** — reads `.cursor-plugin/plugin.json` per plugin and a repo-root `.cursor-plugin/marketplace.json`. Cursor discovers the same `SKILL.md` skills and `commands/` natively; once published to Cursor's marketplace the plugins install from the marketplace panel or via `/add-plugin`.
+
+**Kiro** reads the open Agent Plugins format: a `plugin.json` at each plugin's root, beside the `.claude-plugin/` and `.cursor-plugin/` directories, with no repo-root catalog. Each plugin installs as a Kiro *Power*, imported from its folder in this repository, and Kiro loads its skills and none of its commands. The manifest carries the shared version, because Kiro requires one.
 
 Using each host's marketplace is a technical detail of that host, not a statement that LID accepts third-party plugin submissions — every plugin is first-party. Two core plugins (`linked-intent-dev` and `arrow-maintenance`) install together by default; `lid-experimental` is opt-in for novel capabilities under evaluation.
 
