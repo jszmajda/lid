@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "linked-intent-dev",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "description": "Structured design-before-code workflow: HLD → LLD → EARS specs → Tests → Code. Includes /linked-intent-dev (workflow + bootstrap), /update-lid (configuration reconcile), and /lid-coach (principle-level review).",
   "author": {
     "name": "Jess Szmajda"
