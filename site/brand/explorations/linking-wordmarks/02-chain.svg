@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 240" role="img" aria-label="lid wordmark: the word as interlocked chain links">
+  <title>lid wordmark: the word as interlocked chain links</title>
+  <rect id="ground" x="0" y="0" width="480" height="240" fill="#FF7A1A"/>
+  <defs>
+    <clipPath id="chain-gap-0"><circle cx="116.0" cy="92.9" r="14"/></clipPath>
+    <clipPath id="chain-top-0"><circle cx="116.0" cy="92.9" r="16"/></clipPath>
+    <clipPath id="chain-gap-1"><circle cx="105.0" cy="195.7" r="14"/></clipPath>
+    <clipPath id="chain-top-1"><circle cx="105.0" cy="195.7" r="16"/></clipPath>
+    <clipPath id="chain-gap-2"><circle cx="148.0" cy="106.3" r="14"/></clipPath>
+    <clipPath id="chain-top-2"><circle cx="148.0" cy="106.3" r="16"/></clipPath>
+    <clipPath id="chain-gap-3"><circle cx="148.0" cy="187.7" r="14"/></clipPath>
+    <clipPath id="chain-top-3"><circle cx="148.0" cy="187.7" r="16"/></clipPath>
+    <clipPath id="chain-gap-4"><circle cx="218.0" cy="103.0" r="14"/></clipPath>
+    <clipPath id="chain-top-4"><circle cx="218.0" cy="103.0" r="16"/></clipPath>
+    <clipPath id="chain-gap-5"><circle cx="222.0" cy="187.7" r="14"/></clipPath>
+    <clipPath id="chain-top-5"><circle cx="222.0" cy="187.7" r="16"/></clipPath>
+  </defs>
+  <g id="word" transform="translate(240 120) scale(1.14) translate(-167 -116)">
+    <g id="links" fill="none" stroke-width="12">
+      <path id="l" d="M58 59.0A29.0 29.0 0 0 1 116 59.0V173.0A29.0 29.0 0 0 1 58 173.0Z" stroke="#171717"/>
+      <path id="i" d="M94 121.0A29.0 29.0 0 0 1 152 121.0V173.0A29.0 29.0 0 0 1 94 173.0Z" stroke="#FFF3E0"/>
+      <path id="d-bowl" d="M130 147A55 55 0 1 1 240 147A55 55 0 1 1 130 147Z" stroke="#171717"/>
+      <path id="d-stem" d="M218 59.0A29.0 29.0 0 0 1 276 59.0V173.0A29.0 29.0 0 0 1 218 173.0Z" stroke="#171717"/>
+    </g>
+    <g id="crossings" fill="none">
+      <g clip-path="url(#chain-gap-0)"><path d="M58 59.0A29.0 29.0 0 0 1 116 59.0V173.0A29.0 29.0 0 0 1 58 173.0Z" stroke="#FF7A1A" stroke-width="21"/></g>
+      <g clip-path="url(#chain-top-0)"><path d="M58 59.0A29.0 29.0 0 0 1 116 59.0V173.0A29.0 29.0 0 0 1 58 173.0Z" stroke="#171717" stroke-width="12"/></g>
+      <g clip-path="url(#chain-gap-1)"><path d="M94 121.0A29.0 29.0 0 0 1 152 121.0V173.0A29.0 29.0 0 0 1 94 173.0Z" stroke="#FF7A1A" stroke-width="21"/></g>
+      <g clip-path="url(#chain-top-1)"><path d="M94 121.0A29.0 29.0 0 0 1 152 121.0V173.0A29.0 29.0 0 0 1 94 173.0Z" stroke="#FFF3E0" stroke-width="12"/></g>
+      <g clip-path="url(#chain-gap-2)"><path d="M94 121.0A29.0 29.0 0 0 1 152 121.0V173.0A29.0 29.0 0 0 1 94 173.0Z" stroke="#FF7A1A" stroke-width="21"/></g>
+      <g clip-path="url(#chain-top-2)"><path d="M94 121.0A29.0 29.0 0 0 1 152 121.0V173.0A29.0 29.0 0 0 1 94 173.0Z" stroke="#FFF3E0" stroke-width="12"/></g>
+      <g clip-path="url(#chain-gap-3)"><path d="M130 147A55 55 0 1 1 240 147A55 55 0 1 1 130 147Z" stroke="#FF7A1A" stroke-width="21"/></g>
+      <g clip-path="url(#chain-top-3)"><path d="M130 147A55 55 0 1 1 240 147A55 55 0 1 1 130 147Z" stroke="#171717" stroke-width="12"/></g>
+      <g clip-path="url(#chain-gap-4)"><path d="M130 147A55 55 0 1 1 240 147A55 55 0 1 1 130 147Z" stroke="#FF7A1A" stroke-width="21"/></g>
+      <g clip-path="url(#chain-top-4)"><path d="M130 147A55 55 0 1 1 240 147A55 55 0 1 1 130 147Z" stroke="#171717" stroke-width="12"/></g>
+      <g clip-path="url(#chain-gap-5)"><path d="M218 59.0A29.0 29.0 0 0 1 276 59.0V173.0A29.0 29.0 0 0 1 218 173.0Z" stroke="#FF7A1A" stroke-width="21"/></g>
+      <g clip-path="url(#chain-top-5)"><path d="M218 59.0A29.0 29.0 0 0 1 276 59.0V173.0A29.0 29.0 0 0 1 218 173.0Z" stroke="#171717" stroke-width="12"/></g>
+    </g>
+    <circle id="tittle" cx="137" cy="62" r="11" fill="#FFF3E0"/>
+  </g>
+</svg>

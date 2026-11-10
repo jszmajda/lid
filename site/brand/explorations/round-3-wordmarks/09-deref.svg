@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 240" role="img" aria-label="lid wordmark: the word as a chain of C pointer dereferences">
+  <title>lid wordmark: the word as a chain of C pointer dereferences</title>
+  <rect id="ground" x="0" y="0" width="480" height="240" fill="#E9F8EC"/>
+  <g id="word" transform="translate(33 174) scale(1.36)" fill="none" stroke-width="10.29" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M14 -80H30V-16Q30 0 46 0H50" transform="translate(0 0)" stroke="#15301F"/>
+    <path d="M6 -26H52M36 -42L54 -26L36 -10" transform="translate(60 0)" stroke="#12A150"/>
+    <path d="M14 -52H30V-16Q30 0 46 0H50M30 -77h.01" transform="translate(122 0)" stroke="#15301F"/>
+    <path d="M6 -26H52M36 -42L54 -26L36 -10" transform="translate(182 0)" stroke="#12A150"/>
+    <path d="M46 -80V0M46 -26C46 -42 38 -52 28 -52C18 -52 11 -42 11 -26C11 -10 18 0 28 0C38 0 46 -10 46 -26" transform="translate(244 0)" stroke="#15301F"/>
+  </g>
+</svg>

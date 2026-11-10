@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 240" role="img" aria-label="LID wordmark: letters growing from hairline to black">
+  <title>LID wordmark: letters growing from hairline to black</title>
+  <rect id="ground" x="0" y="0" width="480" height="240" fill="#BFF3DE"/>
+  <g id="word" fill="#0D3B36">
+    <path id="l-hairline" d="M72 44H81V187H150V196H72Z"/>
+    <rect id="i-medium" x="176" y="44" width="30" height="152"/>
+    <path id="d-black" fill-rule="evenodd" d="M240 44H326A78 76 0 0 1 326 196H240ZM306 74V166H322A24 46 0 0 0 322 74Z"/>
+  </g>
+</svg>

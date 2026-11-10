@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 240" role="img" aria-label="LID wordmark: an open arrow runs through rounded capitals">
+  <title>LID wordmark: an open arrow runs through rounded capitals</title>
+  <rect id="ground" x="0" y="0" width="480" height="240" fill="#FFE27A"/>
+  <defs>
+    <mask id="soft-letters" maskUnits="userSpaceOnUse" x="0" y="0" width="480" height="240">
+      <g fill="none" stroke="#FFFFFF" stroke-width="38" stroke-linecap="round" stroke-linejoin="round"><path d="M90 64V176H172"/><path d="M216 64V176"/><path d="M274 64H316A56 56 0 0 1 316 176H274Z"/></g>
+    </mask>
+  </defs>
+  <g id="word" fill="none" stroke="#3A1F4D" stroke-width="38" stroke-linecap="round" stroke-linejoin="round"><path d="M90 64V176H172"/><path d="M216 64V176"/><path d="M274 64H316A56 56 0 0 1 316 176H274Z"/></g>
+  <path id="arrow" d="M38 120H438M404 86L438 120L404 154" stroke="#3A1F4D" fill="none" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  <path id="arrow-cut-out" d="M38 120H438M404 86L438 120L404 154" stroke="#FFE27A" fill="none" stroke-width="12" stroke-linecap="round" stroke-linejoin="round" mask="url(#soft-letters)"/>
+</svg>

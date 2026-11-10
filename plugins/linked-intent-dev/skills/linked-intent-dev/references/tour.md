@@ -86,9 +86,9 @@ Usually, most of your attention in LID goes here, to reading the designs and cor
 
 A tenet is a one-line tie-breaker that lives in the high-level design. It tells me which way to lean when a choice could reasonably go either way and nobody has decided it yet. Many of the choices I'll meet later in a project are like that.
 
-Not every principle makes a good tenet. A real tenet's opposite is a choice another project could reasonably make. "Write good code" isn't a tenet, because nobody would choose its opposite, so it settles nothing. "The same for everyone: where a rule could work out differently for users in different places, lean toward the version that treats them all alike" is a tenet, because another product could reasonably lean the other way and follow each user's local calendar instead, as a calendar app might.
+Not every principle makes a good tenet. A real tenet's opposite is a choice another project could reasonably make. "Write good code" isn't a tenet, because nobody would choose its opposite, so it settles nothing. "Customer delight over perfect cost management: when a choice could go either way, we lean toward the customer" is a tenet, because another business could reasonably lean the other way and keep its costs as low as it can.
 
-With that tenet in the trial app's high-level design, I'd have leaned toward giving everyone exactly 720 hours without being asked, because ending the trial at the server's midnight gives people different amounts of time depending on where and when they sign up. The tenet settles the day-30 question, and many other questions like it, before anyone thinks to ask them.
+With that tenet in the trial app's high-level design, I'd have leaned toward giving everyone the full 720 hours without being asked, because ending the trial at the server's midnight takes hours away from some customers, depending on where and when they sign up. The tenet settles the day-30 question, and many other questions like it, before anyone thinks to ask them.
 
 When we write a high-level design together, I'll ask you about the few leanings that matter most to you, and we'll write them down as tenets.
 

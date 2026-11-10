@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 240" role="img" aria-label="LID wordmark: arcs linking the letters forward above and backward below">
+  <title>LID wordmark: arcs linking the letters forward above and backward below</title>
+  <rect id="ground" x="0" y="0" width="480" height="240" fill="#BFF3DE"/>
+  <g id="word" fill="#0D3B36">
+    <path id="l" d="M96 78H114V144H158V162H96Z"/>
+    <rect id="i" x="214" y="78" width="18" height="84"/>
+    <path id="d" fill-rule="evenodd" d="M296 78H342A47 42 0 0 1 342 162H296ZM314 96V144H340A27 24 0 0 0 340 96Z"/>
+  </g>
+  <g id="forward" fill="none" stroke="#0D3B36" stroke-width="6">
+    <path d="M105 66C105 18 211 18 211 58"/>
+    <path d="M235 66C235 18 332 18 332 58"/>
+  </g>
+  <g fill="#0D3B36">
+    <path d="M203 58H219L211 72Z"/>
+    <path d="M324 58H340L332 72Z"/>
+  </g>
+  <g id="backward" fill="none" stroke="#D8432B" stroke-width="6">
+    <path d="M332 174C332 222 235 222 235 182"/>
+    <path d="M211 174C211 222 127 222 127 182"/>
+  </g>
+  <g fill="#D8432B">
+    <path d="M227 182H243L235 168Z"/>
+    <path d="M119 182H135L127 168Z"/>
+  </g>
+</svg>

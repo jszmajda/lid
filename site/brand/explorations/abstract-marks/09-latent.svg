@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="LID: many lines narrowing into one">
+  <title>LID: many lines narrowing into one</title>
+  <rect id="ground" x="0" y="0" width="240" height="240" fill="#9DF2D4"/>
+  <g id="possible-programs" fill="none" stroke="#0D3B36" stroke-width="2.6" stroke-linecap="round">
+    <path d="M26 24C26 96 120 104 120 158"/>
+    <path d="M41.67 24C41.67 96 120 104 120 158"/>
+    <path d="M57.33 24C57.33 96 120 104 120 158"/>
+    <path d="M73 24C73 96 120 104 120 158"/>
+    <path d="M88.67 24C88.67 96 120 104 120 158"/>
+    <path d="M104.33 24C104.33 96 120 104 120 158"/>
+    <path d="M120 24C120 96 120 104 120 158"/>
+    <path d="M135.67 24C135.67 96 120 104 120 158"/>
+    <path d="M151.33 24C151.33 96 120 104 120 158"/>
+    <path d="M167 24C167 96 120 104 120 158"/>
+    <path d="M182.67 24C182.67 96 120 104 120 158"/>
+    <path d="M198.33 24C198.33 96 120 104 120 158"/>
+    <path d="M214 24C214 96 120 104 120 158"/>
+  </g>
+  <path id="the-one-you-meant" d="M120 132V216" fill="none" stroke="#0D3B36" stroke-width="9" stroke-linecap="round"/>
+</svg>

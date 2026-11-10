@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 240" role="img" aria-label="LID wordmark: Roman capitals with a bar over the word">
+  <title>LID wordmark: Roman capitals with a bar over the word</title>
+  <rect id="ground" x="0" y="0" width="480" height="240" fill="#CFCBC2"/>
+  <g id="word" fill="#1C1A18">
+    <path id="vinculum" d="M84 54Q240 34 396 54Q240 46 84 54Z"/>
+    <path id="l" d="M84 78H136V80Q124 82 124 94V186Q124 192 132 192H156Q176 192 188 164L192 165L184 202H84V200Q98 198 98 186V94Q98 82 84 80Z"/>
+    <path id="i" d="M208 78H260V80Q247 82 247 94V186Q247 198 260 200V202H208V200Q221 198 221 186V94Q221 82 208 80Z"/>
+    <path id="d" fill-rule="evenodd" d="M280 78H334C372 78 398 104 398 140C398 176 370 202 334 202H280V200Q293 198 293 186V94Q293 82 280 80ZM319 88V182Q319 192 334 192C358 192 372 170 372 140C372 110 358 88 334 88Z"/>
+  </g>
+</svg>

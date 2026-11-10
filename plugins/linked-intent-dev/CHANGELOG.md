@@ -2,6 +2,13 @@
 
 All notable changes to LID (Linked-Intent Development) are recorded here. The format follows [Keep a Changelog](https://keepachangelog.com/); LID uses [Semantic Versioning](https://semver.org/). It records what the plugins ship, one entry per version. The three plugins share one version, carried in each plugin's manifest; it is also the "LID conventions" version a project records as the `- Version:` bullet in the `## LID` block. A minor or major entry carries the migration steps `/update-lid` walks a project through; a patch asks nothing of a project.
 
+## [1.4.4] — 2026-11-09
+
+A patch to the newcomer tour's example. Nothing is asked of your project.
+
+### Changed
+- **The tour's example tenet.** Step 3 now shows "Customer delight over perfect cost management: when a choice could go either way, we lean toward the customer." It is written as a preference between two good options, which is what a tenet is, and it settles the free trial's day-30 question the same way the old one did, by giving everyone the full 720 hours. The site's home page uses the same tenet in the same example. (`TOUR-122`)
+
 ## [1.4.3] — 2026-11-01
 
 A patch that adds a newcomer tour. The first time someone meets LID inside their coding agent, LID offers them a short, friendly introduction, and carrying on with their work declines it. Nothing is written to your project's files, and nothing is asked of your project.

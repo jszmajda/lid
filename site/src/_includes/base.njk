@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{% if title %}{{ title }} — {% endif %}{{ site.title }}</title>
     <meta name="description" content="{{ description or site.description }}" />
-    {% if unlisted %}<meta name="robots" content="noindex" /><!-- @spec MKT-SITE-085 -->{% endif %}
-    <!-- Typography: Bunny Fonts — GDPR-compliant, no tracking. Per MKT-SITE-030. -->
+    <!-- Typefaces from Bunny Fonts, a no-tracking service. @spec MKT-SITE-030, MKT-SITE-130 -->
     <link rel="preconnect" href="https://fonts.bunny.net" crossorigin />
-    <link rel="stylesheet" href="https://fonts.bunny.net/css?family=fraunces:ital,wght@0,400;0,500;0,600;1,400;1,500&family=jetbrains-mono:wght@400;500&display=swap" />
+    <link rel="stylesheet" href="https://fonts.bunny.net/css?family=geologica:wght@400;500;600;700;800&family=spline-sans-mono:wght@400;500;600&display=swap" />
     <link rel="stylesheet" href="{{ '/assets/css/main.css' | url }}?v={{ buildId }}" />
+    <!-- @spec MKT-SITE-126 -->
     <link rel="icon" href="{{ '/assets/favicon.svg' | url }}" type="image/svg+xml" />
-    <meta name="theme-color" content="#0c1117" media="(prefers-color-scheme: dark)" />
-    <meta name="theme-color" content="#f2ecd8" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#14100D" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#F6F6F4" media="(prefers-color-scheme: light)" />
     <meta property="og:title" content="{% if title %}{{ title }} — {% endif %}{{ site.title }}" />
     <meta property="og:description" content="{{ description or site.description }}" />
     <meta property="og:type" content="website" />
@@ -23,27 +23,14 @@
     <main id="main">
       {{ content | safe }}
     </main>
-    <script src="{{ '/assets/js/site.js' | url }}?v={{ buildId }}" defer></script>
+    <!-- @spec MKT-SITE-131, MKT-SITE-069 -->
     <footer class="site-footer">
-      <div class="container">
-        <div class="footer-grid">
-          <div class="footer-brand">
-            <span class="mark">LID · LINKED-INTENT DEVELOPMENT</span>
-            <span class="meta">{{ site.repoSlug }} · MIT · © {{ "" | year }} JESS SZMAJDA</span>
-            <p class="trace">
-              This site is itself a segment of the arrow —
-              <a href="{{ site.repoUrl }}/blob/main/docs/intent/marketing-site/marketing-site-design.md">LLD</a> ·
-              <a href="{{ site.repoUrl }}/blob/main/docs/intent/marketing-site/marketing-site-specs.md">EARS</a>.
-              If you spot drift, <a href="{{ site.repoUrl }}/issues">open an issue</a>.
-            </p>
-          </div>
-          <div class="footer-meta">
-            {# @spec MKT-SITE-095 #}{% if not unlisted %}<span>SHEET {% if eleventyNavigation and eleventyNavigation.order %}{% if eleventyNavigation.order < 10 %}0{% endif %}{{ eleventyNavigation.order }}{% else %}01{% endif %} OF 05</span>{% endif %}
-            <span class="coord">DRAWN · JS</span>
-            <span class="coord">REV · {{ "" | year }}</span>
-          </div>
-        </div>
+      <div class="wrap footer-inner">
+        <div class="footer-brand">{% include "icon.svg" %}<span>Linked-Intent Development · MIT · © {{ "" | year }} Jess Szmajda</span></div>
+        <p>This site is built with LID too: read its <a href="{{ site.repoUrl }}/blob/main/docs/intent/marketing-site/marketing-site-design.md">design doc</a> and <a href="{{ site.repoUrl }}/blob/main/docs/intent/marketing-site/marketing-site-specs.md">specs</a>. If you spot drift, <a href="{{ site.repoUrl }}/issues">open an issue</a>.</p>
       </div>
     </footer>
+    <script src="{{ '/assets/js/site.js' | url }}?v={{ buildId }}" defer></script>
+    {% if page.url == "/" %}<script type="module" src="{{ '/assets/js/rings.js' | url }}?v={{ buildId }}"></script>{% endif %}
   </body>
 </html>

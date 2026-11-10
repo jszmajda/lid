@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Plain Text</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Martian+Mono:wdth,wght@75..112.5,300..800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap">
+<style>
+/* Layout: the page is typeset like a spec file. A narrow margin carries the ID of the spec each block implements; one text column holds the prose; headings keep their markdown marks. */
+:root {
+  --paper: #FBFBFA;
+  --ink: #1A0F0A;
+  --ink-2: #554C47;
+  --faint: #7A6F69;
+  --rule: #E7E3E0;
+  --mark: #FFE0D3;
+  --mark-ink: #8A2A08;
+  --link: #B83C0F;
+  --mono: "Martian Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --text: "Newsreader", "Iowan Old Style", Charter, Georgia, ui-serif, serif;
+  --gutter: 168px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #131110; --ink: #EEE8E4; --ink-2: #B9AFA9; --faint: #8E837C; --rule: #2B2522;
+    --mark: #4D2516; --mark-ink: #FFC9B2; --link: #FF9A73; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #131110; --ink: #EEE8E4; --ink-2: #B9AFA9; --faint: #8E837C; --rule: #2B2522;
+  --mark: #4D2516; --mark-ink: #FFC9B2; --link: #FF9A73; color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font: 400 19px/1.62 var(--text); font-optical-sizing: auto;
+  padding-bottom: 88px;
+}
+::selection { background: var(--mark); color: var(--mark-ink); }
+a { color: var(--link); text-decoration-thickness: 1px; text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
+p, h1, h2, h3, ol, ul, dl, pre, figure { margin: 0; }
+h1, h2 { text-wrap: balance; }
+code, pre, .mono { font-family: var(--mono); font-variation-settings: "wdth" 87.5; }
+
+.wrap {
+  max-width: 1120px; margin-inline: auto;
+  padding-left: max(20px, env(safe-area-inset-left, 0px));
+  padding-right: max(20px, env(safe-area-inset-right, 0px));
+}
+
+/* Nav */
+.nav { display: flex; align-items: center; justify-content: space-between; gap: 16px 28px; padding-block: 20px; border-bottom: 1px solid var(--rule); flex-wrap: wrap; }
+.brand { display: flex; align-items: center; gap: 12px; color: var(--ink); text-decoration: none; }
+.brand .icon { width: 32px; height: 32px; display: block; }
+.brand span { font: 600 13px var(--mono); font-variation-settings: "wdth" 100; letter-spacing: -0.01em; }
+.nav ul { list-style: none; padding: 0; display: flex; gap: 6px 22px; flex-wrap: wrap; font: 400 13px var(--mono); }
+.nav ul a { color: var(--ink-2); text-decoration: none; }
+.nav ul a:hover { color: var(--link); text-decoration: underline; }
+
+/* A block: margin ID, then content */
+.blk { display: grid; grid-template-columns: var(--gutter) minmax(0, 1fr); gap: 0 32px; padding-block: clamp(48px, 7vw, 88px) 0; }
+.gut { font: 400 11.5px/2.2 var(--mono); color: var(--faint); padding-top: 0.55em; }
+.gut a { color: var(--faint); text-decoration: none; }
+.gut a:hover { color: var(--link); text-decoration: underline; }
+.main { display: grid; gap: 22px; min-width: 0; }
+.prose { max-width: 64ch; }
+.prose p + p { margin-top: 0.8em; }
+@media (max-width: 760px) {
+  .blk { grid-template-columns: minmax(0, 1fr); }
+  .gut { padding: 0 0 6px; line-height: 1.6; }
+}
+
+/* Headings keep their markdown marks */
+h1 {
+  font: 700 clamp(2rem, 5vw, 3.7rem)/1.08 var(--mono); font-variation-settings: "wdth" 100;
+  letter-spacing: -0.045em; max-width: 18ch;
+}
+h2 { font: 650 clamp(1.4rem, 2.6vw, 2rem)/1.2 var(--mono); font-variation-settings: "wdth" 87.5; letter-spacing: -0.03em; max-width: 30ch; }
+h1 .md, h2 .md { color: var(--faint); font-weight: 400; }
+
+.because { list-style: none; padding: 0; display: grid; gap: 4px; counter-reset: b; }
+.because li { counter-increment: b; display: grid; grid-template-columns: 2.2em minmax(0, 1fr); font-size: 1.08em; }
+.because li::before { content: counter(b) "."; font: 400 0.68em/2.2 var(--mono); color: var(--faint); }
+.lede { color: var(--ink-2); }
+
+/* Links styled as markdown links */
+.ctas { display: flex; flex-wrap: wrap; gap: 10px 26px; font: 500 15px var(--mono); }
+.ctas a { text-decoration: none; color: var(--ink); padding: 10px 0; }
+.ctas a .b { color: var(--faint); }
+.ctas a .t { text-decoration: underline; text-decoration-color: var(--link); text-decoration-thickness: 2px; text-underline-offset: 5px; }
+.ctas a.primary .t { background: var(--mark); color: var(--mark-ink); text-decoration: none; padding: 4px 8px; border-radius: 3px; }
+.ctas a .u { color: var(--faint); font-weight: 400; }
+.ctas a:hover .t { color: var(--link); }
+
+/* grep, the hero's picture */
+.grep { border: 1px solid var(--rule); border-radius: 6px; overflow: hidden; }
+.grep-cmd { padding: 14px 18px; border-bottom: 1px solid var(--rule); font: 500 13.5px var(--mono); }
+.grep-cmd .p { color: var(--faint); }
+.grep pre { padding: 14px 18px; overflow-x: auto; font-size: 12.5px; line-height: 2; }
+.grep .f { color: var(--ink-2); }
+.grep .n { color: var(--faint); }
+mark { background: var(--mark); color: var(--mark-ink); padding: 1px 3px; border-radius: 2px; }
+.cap { font-size: 15px; color: var(--ink-2); font-style: italic; }
+
+/* The trace as a file tree */
+.tree, .tree ol { list-style: none; padding: 0; }
+.tree ol { margin-left: 6px; }
+.tree li { display: grid; gap: 6px; }
+.tree ol > li { position: relative; padding: 18px 0 0 30px; }
+.tree ol > li::before {
+  content: ""; position: absolute; left: 0; top: 0; height: calc(18px + 0.85em); width: 20px;
+  border-left: 1.5px solid var(--faint); border-bottom: 1.5px solid var(--faint); border-bottom-left-radius: 6px;
+}
+.tree ol > li:not(:last-child)::after { content: ""; position: absolute; left: 0; top: 0; bottom: 0; border-left: 1.5px solid var(--faint); }
+.file { font: 500 13px/1.7 var(--mono); display: flex; flex-wrap: wrap; gap: 0 12px; }
+.file .r { color: var(--faint); font-weight: 400; }
+.ex { color: var(--ink-2); max-width: 60ch; font-size: 17px; }
+.ex b { color: var(--ink); font-weight: 500; }
+.tree pre { font-size: 12.5px; line-height: 1.75; color: var(--ink-2); overflow-x: auto; }
+
+/* Demo as a fenced block */
+.fence { border: 1px solid var(--rule); border-radius: 6px; }
+.fence-head { display: flex; justify-content: space-between; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--rule); font: 400 12px var(--mono); color: var(--faint); }
+.fence-body { aspect-ratio: 16 / 7; display: grid; place-content: center; justify-items: center; gap: 14px; padding: 24px; text-align: center; }
+.play { width: 56px; height: 56px; border-radius: 14px; background: #FF6B3D; display: grid; place-items: center; }
+.play i { display: block; width: 20px; aspect-ratio: 28/32; background: #1A0F0A; -webkit-mask: var(--ptr-mask) center / contain no-repeat; mask: var(--ptr-mask) center / contain no-repeat; transform: translateX(2px); }
+.fence-body p { font: 400 12.5px var(--mono); color: var(--faint); }
+
+/* Quickstart as a shell listing */
+.qs { border: 1px solid var(--rule); border-radius: 6px; padding: 8px 0; }
+.qs li { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; align-items: center; padding: 10px 18px; }
+.qs li + li { border-top: 1px dashed var(--rule); }
+.qs .c { grid-column: 1 / -1; font: 400 12px var(--mono); color: var(--faint); }
+.qs code { font-size: 14px; font-weight: 500; overflow-wrap: anywhere; }
+.copy { font: 500 12px var(--mono); color: var(--link); background: none; border: 1px solid var(--rule); border-radius: 4px; padding: 5px 9px; cursor: pointer; }
+.copy:hover { border-color: var(--link); }
+
+/* Paths as a listing */
+.paths { display: grid; border-top: 1px solid var(--rule); }
+.paths a { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 4px 24px; padding: 16px 8px; border-bottom: 1px solid var(--rule); text-decoration: none; color: var(--ink); }
+.paths a:hover { background: var(--mark); }
+.paths a:hover .d { color: var(--mark-ink); }
+.paths .d { font: 500 14px/1.9 var(--mono); color: var(--link); }
+.paths p { color: var(--ink-2); font-size: 17px; }
+@media (max-width: 560px) { .paths a { grid-template-columns: 1fr; } }
+
+.foot { margin-top: clamp(64px, 9vw, 112px); border-top: 1px solid var(--rule); }
+.foot .blk { padding-block: 24px; }
+.foot p { font-size: 15px; color: var(--ink-2); }
+.foot .mono { font-size: 12px; color: var(--faint); }
+</style>
+<style>:root { {{PTR_MASK}} }</style>
+</head>
+<body>
+<header class="wrap nav">
+  <a class="brand" href="https://linked-intent.dev/" aria-label="LID home">{{ICON}}<span>linked-intent.dev</span></a>
+  <nav aria-label="Primary">
+    <ul>
+      <li><a href="https://linked-intent.dev/start/">start</a></li>
+      <li><a href="https://linked-intent.dev/examples/">examples</a></li>
+      <li><a href="https://linked-intent.dev/anti-patterns/">anti-patterns</a></li>
+      <li><a href="https://linked-intent.dev/tour/">tour</a></li>
+      <li><a href="https://github.com/jszmajda/lid">github</a></li>
+    </ul>
+  </nav>
+</header>
+
+<main class="wrap">
+  <section class="blk">
+    <div class="gut"><a href="https://github.com/jszmajda/lid/blob/main/docs/intent/marketing-site/marketing-site-specs.md">MKT-SITE-001</a></div>
+    <div class="main">
+      <h1><span class="md"># </span>How do you know your agent built what you meant?</h1>
+      <ol class="because">
+        <li>Because you wrote it down: a design, in plain English.</li>
+        <li>Because everything the agent builds comes from that design.</li>
+        <li>Because you can check: one ID grep returns the requirement, its tests, and its code.</li>
+        <li>Because LID helped you get there.</li>
+      </ol>
+      <p class="lede prose">Code that runs can still miss what you meant. With LID (Linked-Intent Development), the design stays linked to everything built from it. Fix it once, the agent cascades the change, and you sign off or push back at every step.</p>
+      <div class="ctas">
+        <a class="primary" href="#quickstart"><span class="b">[</span><span class="t">Install</span><span class="b">]</span><span class="u">(#quickstart)</span></a>
+        <a href="https://github.com/jszmajda/lid"><span class="b">[</span><span class="t">Read the source</span><span class="b">]</span><span class="u">(github)</span></a>
+      </div>
+      <figure class="grep" style="margin-top:18px">
+        <div class="grep-cmd"><span class="p">$ </span>grep -rn AUTH-UI-001 .</div>
+<pre><span class="f">docs/intent/auth/auth-specs.md</span><span class="n">:14:</span> <mark>AUTH-UI-001</mark>: When a user submits valid credentials, the
+<span class="f">tests/auth.test.ts</span><span class="n">:8:</span>  test("returns a session on valid credentials") // <mark>AUTH-UI-001</mark>
+<span class="f">src/services/auth.ts</span><span class="n">:2:</span> // @spec <mark>AUTH-UI-001</mark>, AUTH-UI-002</pre>
+      </figure>
+      <p class="cap">One grep returns the requirement, the test that asserts it, and the code that implements it.</p>
+    </div>
+  </section>
+
+  <section class="blk" id="how">
+    <div class="gut"><a href="https://github.com/jszmajda/lid/blob/main/docs/intent/marketing-site/marketing-site-specs.md">MKT-SITE-038</a></div>
+    <div class="main">
+      <h2><span class="md">## </span>Design first. Everything below it cites an ID.</h2>
+      <div class="prose"><p>Every code file cites, by ID, the spec it implements. Every test cites the spec it asserts, and every spec traces to a design. Checking that code still traces to design is a walk through that graph, mechanical enough to put in CI.</p></div>
+      <ol class="tree" aria-label="One intent, traced from design to code">
+        <li>
+          <div class="file">docs/high-level-design.md <span class="r"># the why</span></div>
+          <p class="ex">The app is account-scoped. Only the account owner can see or change their data, so every request has to identify the caller.</p>
+          <ol>
+            <li>
+              <div class="file">docs/intent/auth/auth-design.md <span class="r"># the how</span></div>
+              <p class="ex">Credentials enter at the login form, pass to the auth service, and resolve to a session scoped to the user or a structured <code>AuthError</code>.</p>
+              <ol>
+                <li>
+                  <div class="file">docs/intent/auth/auth-specs.md <span class="r"># the claim</span></div>
+                  <p class="ex"><mark>AUTH-UI-001</mark> <b>When</b> a user submits valid credentials, the authentication service <b>shall</b> return a session scoped to that user.</p>
+                  <ol>
+                    <li>
+                      <div class="file">tests/auth.test.ts <span class="r"># failing first</span></div>
+<pre>test("returns a session on valid credentials") // <mark>AUTH-UI-001</mark></pre>
+                    </li>
+                    <li>
+                      <div class="file">src/services/auth.ts <span class="r"># @spec anchors</span></div>
+<pre>// @spec <mark>AUTH-UI-001</mark>, AUTH-UI-002
+async function authenticate(credentials) { … }</pre>
+                    </li>
+                  </ol>
+                </li>
+              </ol>
+            </li>
+          </ol>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="blk">
+    <div class="gut"><a href="https://github.com/jszmajda/lid/blob/main/docs/intent/marketing-site/marketing-site-specs.md">MKT-SITE-003</a></div>
+    <div class="main">
+      <h2><span class="md">## </span>Watch one edit reach the code.</h2>
+      <p class="prose">Change one sentence of the design and watch it arrive in the specs, the tests, and the code. Two minutes, one real project.</p>
+      <figure class="fence">
+        <div class="fence-head"><span>cascade.cast</span><span>2 min</span></div>
+        <div class="fence-body">
+          <div class="play" aria-hidden="true"><i></i></div>
+          <p>The recording plays here.</p>
+        </div>
+      </figure>
+    </div>
+  </section>
+
+  <section class="blk" id="quickstart">
+    <div class="gut"><a href="https://github.com/jszmajda/lid/blob/main/docs/intent/marketing-site/marketing-site-specs.md">MKT-SITE-006</a></div>
+    <div class="main">
+      <h2><span class="md">## </span>Four commands, inside Claude Code.</h2>
+      <p class="prose">Install the two plugins, then describe what you want to build. The skill walks you through design, specs, and tests before it writes any code.</p>
+      <ol class="qs" style="list-style:none">
+        <li><span class="c"># Register the plugin source in Claude Code.</span><code>/plugin marketplace add jszmajda/lid</code><button class="copy" type="button" data-cmd="/plugin marketplace add jszmajda/lid">copy</button></li>
+        <li><span class="c"># Install the core workflow plugin.</span><code>/plugin install linked-intent-dev@jszmajda-lid</code><button class="copy" type="button" data-cmd="/plugin install linked-intent-dev@jszmajda-lid">copy</button></li>
+        <li><span class="c"># Track the links between specs and code in big projects.</span><code>/plugin install arrow-maintenance@jszmajda-lid</code><button class="copy" type="button" data-cmd="/plugin install arrow-maintenance@jszmajda-lid">copy</button></li>
+        <li><span class="c"># Describe what you want to build.</span><code>/linked-intent-dev</code><button class="copy" type="button" data-cmd="/linked-intent-dev">copy</button></li>
+      </ol>
+      <p class="prose" style="font-size:17px;color:var(--ink-2)">Using a different coding agent? Most tools need only an <code>AGENTS.md</code> at your project root. Setup for <a href="https://github.com/jszmajda/lid/blob/main/docs/setup.md#cursor">Cursor</a>, <a href="https://github.com/jszmajda/lid/blob/main/docs/setup.md#windsurf">Windsurf</a>, <a href="https://github.com/jszmajda/lid/blob/main/docs/setup.md#github-copilot">GitHub Copilot</a>, <a href="https://github.com/jszmajda/lid/blob/main/docs/setup.md">Codex CLI</a>, <a href="https://github.com/jszmajda/lid/blob/main/docs/setup.md#aider">Aider</a>, <a href="https://github.com/jszmajda/lid/blob/main/docs/setup.md">Zed</a>, and <a href="https://github.com/jszmajda/lid/blob/main/docs/setup.md">every other tool</a>.</p>
+    </div>
+  </section>
+
+  <section class="blk">
+    <div class="gut"><a href="https://github.com/jszmajda/lid/blob/main/docs/intent/marketing-site/marketing-site-specs.md">MKT-SITE-005</a></div>
+    <div class="main">
+      <h2><span class="md">## </span>Which path is yours?</h2>
+      <nav class="paths" aria-label="Starting points">
+        <a href="https://linked-intent.dev/start/#evaluating"><span class="d">start/evaluating</span><p>Decide if LID solves a problem you have.</p></a>
+        <a href="https://linked-intent.dev/start/#greenfield"><span class="d">start/greenfield</span><p>Install, describe what you want, and let the skill walk you through it.</p></a>
+        <a href="https://linked-intent.dev/start/#brownfield"><span class="d">start/brownfield</span><p>Map the existing code first, then layer LID on top of what exists.</p></a>
+        <a href="https://linked-intent.dev/start/#scoped"><span class="d">start/scoped</span><p>Try LID on one slice of a larger project.</p></a>
+      </nav>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <div class="blk">
+      <div class="gut">MIT · 2026</div>
+      <div class="main" style="gap:8px">
+        <p>The IDs in the margin are this page's own specs. This site is a segment of LID's arrow, with its own <a href="https://github.com/jszmajda/lid/blob/main/docs/intent/marketing-site/marketing-site-design.md">design doc</a> and <a href="https://github.com/jszmajda/lid/blob/main/docs/intent/marketing-site/marketing-site-specs.md">specs</a>.</p>
+        <p class="mono">jszmajda/lid · © 2026 Jess Szmajda</p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+document.querySelectorAll('.copy').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var done = function () { b.textContent = 'copied'; setTimeout(function () { b.textContent = 'copy'; }, 1600); };
+    if (navigator.clipboard) navigator.clipboard.writeText(b.dataset.cmd).then(done, function () {});
+  });
+});
+</script>
+{{SWITCHER}}
+</body>
+</html>

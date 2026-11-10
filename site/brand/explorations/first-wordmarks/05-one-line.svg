@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 240" role="img" aria-label="lid wordmark: the word written in one continuous line">
+  <title>lid wordmark: the word written in one continuous line</title>
+  <rect id="ground" x="0" y="0" width="480" height="240" fill="#F4F4FF"/>
+  <g id="word" transform="translate(89 -14) scale(1.26)">
+    <path id="lid-stroke" d="M18 164C42 158 82 112 88 74C92 48 70 40 62 66C54 92 50 132 58 154C66 176 88 166 100 146C106 136 110 124 112 114C108 134 104 154 114 164C122 172 134 160 141 132C145 118 156 110 166 110C172 110 178 112 181 116C178 112 172 110 166 110C156 110 145 118 141 132C137 148 146 168 162 167C176 166 186 150 189 128C192 104 197 72 200 44C197 72 192 104 189 128C186 150 184 170 198 170C208 170 216 162 224 152" fill="none" stroke="#2A1BE0" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle id="tittle" cx="117" cy="86" r="8" fill="#FF4D2E"/>
+  </g>
+</svg>

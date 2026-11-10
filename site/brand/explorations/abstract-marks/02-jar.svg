@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="LID: canning jar lid seen from above">
+  <title>LID: canning jar lid seen from above</title>
+  <rect id="ground" x="0" y="0" width="240" height="240" fill="#0A2E36"/>
+  <circle id="knurled-edge" cx="120" cy="120" r="108" fill="none" stroke="#0B5A66" stroke-width="10" stroke-dasharray="4 3.03"/>
+  <circle id="screw-band" cx="120" cy="120" r="103" fill="#0B5A66"/>
+  <circle id="lid-disc" cx="120" cy="120" r="97" fill="#2FA6B0"/>
+  <circle id="seal-ring" cx="120" cy="120" r="63" fill="none" stroke="#EFFFFC" stroke-width="2.6"/>
+  <g stroke="#EFFFFC" id="linked-intent" fill="none" stroke-width="0.17" stroke-linecap="square" stroke-linejoin="miter">
+    <path d="M0 0V1H.56" transform="rotate(-57.04 120 120) translate(115.8 33) scale(15)"/>
+    <path d="M0 0V1" transform="rotate(-50.77 120 120) translate(120 33) scale(15)"/>
+    <path d="M0 1V0L.7 1V0" transform="rotate(-43.03 120 120) translate(114.75 33) scale(15)"/>
+    <path d="M0 0V1M.62 0L0 .6M.2 .42L.64 1" transform="rotate(-31.82 120 120) translate(115.2 33) scale(15)"/>
+    <path d="M.56 0H0V1H.56M0 .5H.46" transform="rotate(-21.37 120 120) translate(115.8 33) scale(15)"/>
+    <path d="M0 0V1H.2A.5 .5 0 0 0 .2 0Z" transform="rotate(-10.59 120 120) translate(114.75 33) scale(15)"/>
+    <path d="M0 0V1" transform="rotate(3.86 120 120) translate(120 33) scale(15)"/>
+    <path d="M0 1V0L.7 1V0" transform="rotate(11.6 120 120) translate(114.75 33) scale(15)"/>
+    <path d="M0 0H.62M.31 0V1" transform="rotate(22.7 120 120) translate(115.35 33) scale(15)"/>
+    <path d="M.56 0H0V1H.56M0 .5H.46" transform="rotate(31.96 120 120) translate(115.8 33) scale(15)"/>
+    <path d="M0 1V0L.7 1V0" transform="rotate(42.74 120 120) translate(114.75 33) scale(15)"/>
+    <path d="M0 0H.62M.31 0V1" transform="rotate(53.84 120 120) translate(115.35 33) scale(15)"/>
+  </g>
+  <g stroke="#EFFFFC" id="development" fill="none" stroke-width="0.17" stroke-linecap="square" stroke-linejoin="miter">
+    <path d="M0 0V1H.2A.5 .5 0 0 0 .2 0Z" transform="rotate(55.46 120 120) translate(114.75 192) scale(15)"/>
+    <path d="M.56 0H0V1H.56M0 .5H.46" transform="rotate(44.68 120 120) translate(115.8 192) scale(15)"/>
+    <path d="M0 0L.35 1L.7 0" transform="rotate(33.91 120 120) translate(114.75 192) scale(15)"/>
+    <path d="M.56 0H0V1H.56M0 .5H.46" transform="rotate(23.13 120 120) translate(115.8 192) scale(15)"/>
+    <path d="M0 0V1H.56" transform="rotate(13.12 120 120) translate(115.8 192) scale(15)"/>
+    <path d="M.43 0A.43 .5 0 1 1 .43 1A.43 .5 0 1 1 .43 0Z" transform="rotate(4 120 120) translate(113.55 192) scale(15)"/>
+    <path d="M0 1V0H.3A.28 .27 0 0 1 .3 .54H0" transform="rotate(-7.75 120 120) translate(115.65 192) scale(15)"/>
+    <path d="M0 1V0L.43 .72L.86 0V1" transform="rotate(-19.49 120 120) translate(113.55 192) scale(15)"/>
+    <path d="M.56 0H0V1H.56M0 .5H.46" transform="rotate(-31.13 120 120) translate(115.8 192) scale(15)"/>
+    <path d="M0 1V0L.7 1V0" transform="rotate(-41.91 120 120) translate(114.75 192) scale(15)"/>
+    <path d="M0 0H.62M.31 0V1" transform="rotate(-53.01 120 120) translate(115.35 192) scale(15)"/>
+  </g>
+  <circle cx="33" cy="120" r="3.4" fill="#EFFFFC"/>
+  <circle cx="207" cy="120" r="3.4" fill="#EFFFFC"/>
+  <g id="lid-centre" fill="none" stroke="#EFFFFC" stroke-width="0.21" stroke-linecap="square" stroke-linejoin="miter">
+    <path d="M0 0V1H.56" transform="translate(78.8 100.0) scale(40)"/>
+    <path d="M0 0V1" transform="translate(117.2 100.0) scale(40)"/>
+    <path d="M0 0V1H.2A.5 .5 0 0 0 .2 0Z" transform="translate(133.2 100.0) scale(40)"/>
+  </g>
+</svg>

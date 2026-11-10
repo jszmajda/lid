@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rail</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;500;700;800&family=Atkinson+Hyperlegible+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: one rail runs down the left of the page like git log --graph. Every section is a node on it, and the design's cascade branches off it. Dark first. */
+:root {
+  --page: #16100D;
+  --raise: #211915;
+  --line: #3A2E27;
+  --ink: #F3ECE6;
+  --ink-2: #BCAFA6;
+  --accent: #FFB08F;
+  --id: #7FD8C4;
+  --rail: #4F3E34;
+  --add: #9FE3A8;
+  --del: #FFA3A3;
+  --sans: "Atkinson Hyperlegible Next", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "Atkinson Hyperlegible Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --railx: 22px;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --page: #F5F3F1; --raise: #FFFFFF; --line: #DDD6D1; --ink: #1A0F0A; --ink-2: #5C514A;
+    --accent: #B5441C; --id: #0B7A6B; --rail: #CBBFB7; --add: #1F7A35; --del: #B42318; color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --page: #F5F3F1; --raise: #FFFFFF; --line: #DDD6D1; --ink: #1A0F0A; --ink-2: #5C514A;
+  --accent: #B5441C; --id: #0B7A6B; --rail: #CBBFB7; --add: #1F7A35; --del: #B42318; color-scheme: light;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--page); color: var(--ink); font: 400 18px/1.6 var(--sans); padding-bottom: 88px; }
+p, h1, h2, h3, ol, ul, figure, pre { margin: 0; }
+h1, h2, h3 { text-wrap: balance; }
+code, pre, .mono { font-family: var(--mono); }
+a { color: var(--accent); text-underline-offset: 3px; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+
+.wrap {
+  max-width: 1180px; margin-inline: auto;
+  padding-left: max(20px, env(safe-area-inset-left, 0px));
+  padding-right: max(20px, env(safe-area-inset-right, 0px));
+}
+
+/* Nav */
+.nav { display: flex; align-items: center; justify-content: space-between; gap: 14px 24px; padding-block: 20px; flex-wrap: wrap; }
+.nav .wordmark { height: 36px; width: auto; display: block; }
+.nav ul { list-style: none; padding: 0; display: flex; gap: 4px 20px; flex-wrap: wrap; font-size: 16px; font-weight: 500; }
+.nav ul a { color: var(--ink-2); text-decoration: none; }
+.nav ul a:hover { color: var(--ink); }
+
+/* The rail */
+.railed { position: relative; padding-left: calc(var(--railx) * 2 + 16px); }
+.railed::before { content: ""; position: absolute; left: var(--railx); top: 12px; bottom: 0; width: 2px; background: var(--rail); transform: translateX(-1px); }
+.node { position: relative; }
+.node::before {
+  content: ""; position: absolute; left: calc(-1 * (var(--railx) + 16px)); top: 0.42em;
+  width: 16px; height: 16px; border-radius: 5px; transform: translateX(-50%);
+  background: var(--page); border: 2.5px solid var(--accent);
+}
+.node.on::before { background: var(--accent); }
+.node.sm::before { width: 12px; height: 12px; border-radius: 4px; border-width: 2px; border-color: var(--ink-2); top: 0.5em; }
+@media (max-width: 640px) { :root { --railx: 8px; } .railed { padding-left: 32px; } .node::before { left: -24px; } }
+
+/* Hero */
+.hero { display: grid; gap: 40px; padding-block: clamp(32px, 6vw, 72px) 0; }
+@media (min-width: 1040px) { .hero { grid-template-columns: 6fr 6fr; align-items: start; } }
+.hero-text { display: grid; gap: 24px; }
+.hero h1 { font-size: clamp(2.4rem, 5.2vw, 4.4rem); line-height: 1.02; font-weight: 800; letter-spacing: -0.03em; }
+.because { list-style: none; padding: 0; display: grid; gap: 6px; font-size: 1.06rem; }
+.because li { display: grid; grid-template-columns: 1.4em minmax(0, 1fr); }
+.because li::before { content: "+"; font-family: var(--mono); color: var(--add); font-weight: 600; }
+.lede { color: var(--ink-2); max-width: 58ch; }
+.ctas { display: flex; flex-wrap: wrap; gap: 12px; }
+.btn { text-decoration: none; font-weight: 700; font-size: 16px; padding: 12px 20px; border-radius: 10px; border: 2px solid var(--line); color: var(--ink); }
+.btn-accent { background: var(--accent); border-color: var(--accent); color: var(--page); }
+.btn:hover { border-color: var(--accent); }
+
+/* The graph log */
+.log { background: var(--raise); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.log-head { display: flex; justify-content: space-between; gap: 12px; padding: 12px 18px; border-bottom: 1px solid var(--line); font: 500 13px var(--mono); color: var(--ink-2); }
+.log pre { padding: 16px 18px 18px; font-size: 13.5px; line-height: 1.85; overflow-x: auto; color: var(--ink-2); }
+.log .g { color: var(--rail); }
+.log .k { color: var(--ink); font-weight: 600; }
+.log .a { color: var(--accent); }
+.log .i { color: var(--id); }
+.log .plus { color: var(--add); }
+.log .minus { color: var(--del); }
+.log-cap { padding: 0 18px 16px; font-size: 14.5px; color: var(--ink-2); }
+
+/* Sections */
+.sec { padding-block: clamp(64px, 9vw, 112px) 0; }
+.sec-head { display: grid; gap: 14px; align-content: start; max-width: 46rem; margin-bottom: 36px; }
+.sec h2 { font-size: clamp(1.9rem, 3.6vw, 2.9rem); line-height: 1.06; font-weight: 800; letter-spacing: -0.025em; }
+.sec-head p { color: var(--ink-2); }
+
+/* Trace: stops on the rail */
+.trace { list-style: none; padding: 0; display: grid; gap: 14px; }
+.stop { display: grid; gap: 6px 28px; background: var(--raise); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; }
+@media (min-width: 860px) { .stop { grid-template-columns: 170px minmax(0, 1fr); } }
+.stop h3 { font-size: 22px; font-weight: 800; letter-spacing: -0.01em; line-height: 1.2; }
+.stop h3 small { display: block; font: 400 13px var(--mono); color: var(--ink-2); letter-spacing: 0; margin-top: 2px; }
+.stop p { color: var(--ink); font-size: 17px; max-width: 62ch; }
+.stop pre { font-size: 13.5px; line-height: 1.7; color: var(--ink-2); overflow-x: auto; }
+.stop .c { color: var(--ink-2); }
+.stop .i, .idt { color: var(--id); font-family: var(--mono); font-weight: 600; }
+.stop b { font-weight: 800; }
+.trace .stop.node::before { top: 26px; }
+.grep { margin-top: 22px; color: var(--ink-2); max-width: 62ch; }
+.grep code { color: var(--id); }
+
+/* Demo */
+.term { background: #0D0907; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; color: #F3ECE6; }
+.term-bar { padding: 12px 18px; border-bottom: 1px solid #2A211C; font: 500 13px var(--mono); color: #BCAFA6; }
+.term-body { aspect-ratio: 16 / 6; display: grid; place-content: center; justify-items: center; gap: 14px; padding: 20px; text-align: center; }
+.play { width: 64px; height: 64px; border-radius: 16px; background: #FF6B3D; display: grid; place-items: center; }
+.play i { display: block; width: 22px; aspect-ratio: 28/32; background: #1A0F0A; -webkit-mask: var(--ptr-mask) center / contain no-repeat; mask: var(--ptr-mask) center / contain no-repeat; transform: translateX(2px); }
+.term-body p { font: 400 13px var(--mono); color: #BCAFA6; }
+
+/* Quickstart */
+.qs { display: grid; gap: 28px; }
+@media (min-width: 1040px) { .qs { grid-template-columns: 5fr 7fr; } .qs .sec-head { margin: 0; } }
+.cmds { list-style: none; padding: 8px; background: var(--raise); border: 1px solid var(--line); border-radius: 14px; display: grid; }
+.cmds li { display: grid; grid-template-columns: 18px minmax(0, 1fr) auto; gap: 4px 12px; align-items: center; padding: 12px 12px; border-radius: 10px; }
+.cmds li + li { border-top: 1px solid var(--line); border-radius: 0; }
+.cmds li::before { content: "›"; font: 600 18px var(--mono); color: var(--accent); }
+.cmds code { font-size: 14.5px; font-weight: 500; overflow-wrap: anywhere; display: block; }
+.cmds small { display: block; font-size: 14.5px; color: var(--ink-2); margin-top: 2px; }
+.copy { font: 600 13px var(--sans); color: var(--ink); background: none; border: 1.5px solid var(--line); border-radius: 8px; padding: 6px 10px; cursor: pointer; }
+.copy:hover { border-color: var(--accent); color: var(--accent); }
+.others { margin-top: 18px; font-size: 16px; color: var(--ink-2); }
+.chips { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.chips a { display: inline-block; text-decoration: none; color: var(--ink); font-size: 15px; font-weight: 500; padding: 6px 12px; border-radius: 8px; border: 1.5px solid var(--line); }
+.chips a:hover { border-color: var(--accent); }
+
+/* Paths */
+.paths { display: grid; gap: 14px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 760px) { .paths { grid-template-columns: 1fr; } }
+.path { display: grid; gap: 6px; padding: 20px; border-radius: 14px; background: var(--raise); border: 1px solid var(--line); text-decoration: none; color: var(--ink); }
+.path h3 { font-size: 20px; font-weight: 800; }
+.path h3 .mono { color: var(--ink-2); font-weight: 400; font-size: 15px; margin-right: 6px; }
+.path p { color: var(--ink-2); font-size: 16px; }
+.path:hover { border-color: var(--accent); }
+
+.foot { padding-block: clamp(72px, 10vw, 120px) 24px; display: flex; flex-wrap: wrap; gap: 14px 32px; justify-content: space-between; align-items: center; color: var(--ink-2); font-size: 15px; }
+.foot .brand { display: flex; gap: 12px; align-items: center; }
+.foot .icon { width: 30px; height: 30px; display: block; }
+</style>
+<style>:root { --ptr-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='154 104 28 32'%3E%3Cpath d='M154 115.5Q154 113.5 156 113.5L164 113.5Q166 113.5 166 111.5L166 106Q166 104 167.41 105.41L180.59 118.59Q182 120 180.59 121.41L167.41 134.59Q166 136 166 134L166 128.5Q166 126.5 164 126.5L156 126.5Q154 126.5 154 124.5Z'/%3E%3C/svg%3E"); }</style>
+</head>
+<body>
+<header class="wrap nav">
+  <a href="https://linked-intent.dev/" aria-label="LID home"><svg class="wordmark" viewBox="18 42 444 156" role="img" aria-label="LID"><rect x="18" y="42" width="444" height="156" rx="34" fill="#FF6B3D"/><g fill="#1A0F0A"><path fill-rule="evenodd" d="M64 66H128A22 22 0 0 1 150 88V152A22 22 0 0 1 128 174H64A22 22 0 0 1 42 152V88A22 22 0 0 1 64 66ZM76.16 88Q76.16 85 79.16 85L94.16 85Q97.16 85 97.16 88L97.16 134Q97.16 137 100.16 137L120.16 137Q123.16 137 123.16 140L123.16 152Q123.16 155 120.16 155L79.16 155Q76.16 155 76.16 152Z"/><path fill-rule="evenodd" d="M208 66H272A22 22 0 0 1 294 88V152A22 22 0 0 1 272 174H208A22 22 0 0 1 186 152V88A22 22 0 0 1 208 66ZM216 88Q216 85 219 85L261 85Q264 85 264 88L264 100Q264 103 261 103L253.5 103Q250.5 103 250.5 106L250.5 134Q250.5 137 253.5 137L261 137Q264 137 264 140L264 152Q264 155 261 155L219 155Q216 155 216 152L216 140Q216 137 219 137L226.5 137Q229.5 137 229.5 134L229.5 106Q229.5 103 226.5 103L219 103Q216 103 216 100Z"/><path fill-rule="evenodd" d="M352 66H416A22 22 0 0 1 438 88V152A22 22 0 0 1 416 174H352A22 22 0 0 1 330 152V88A22 22 0 0 1 352 66ZM358.67 85H381.67A34 35 0 0 1 381.67 155H358.67Q355.67 155 355.67 152V88Q355.67 85 358.67 85ZM378.67 103H381.67A12 17 0 0 1 381.67 137H378.67Q376.67 137 376.67 135V105Q376.67 103 378.67 103Z"/><path d="M154 115.5Q154 113.5 156 113.5L164 113.5Q166 113.5 166 111.5L166 106Q166 104 167.41 105.41L180.59 118.59Q182 120 180.59 121.41L167.41 134.59Q166 136 166 134L166 128.5Q166 126.5 164 126.5L156 126.5Q154 126.5 154 124.5Z"/><path d="M298 115.5Q298 113.5 300 113.5L308 113.5Q310 113.5 310 111.5L310 106Q310 104 311.41 105.41L324.59 118.59Q326 120 324.59 121.41L311.41 134.59Q310 136 310 134L310 128.5Q310 126.5 308 126.5L300 126.5Q298 126.5 298 124.5Z"/></g></svg></a>
+  <nav aria-label="Primary">
+    <ul>
+      <li><a href="https://linked-intent.dev/start/">Start</a></li>
+      <li><a href="https://linked-intent.dev/examples/">Examples</a></li>
+      <li><a href="https://linked-intent.dev/anti-patterns/">Anti-patterns</a></li>
+      <li><a href="https://linked-intent.dev/tour/">Tour</a></li>
+      <li><a href="https://github.com/jszmajda/lid">GitHub</a></li>
+    </ul>
+  </nav>
+</header>
+
+<main class="wrap">
+  <div class="railed">
+    <section class="hero">
+      <div class="hero-text">
+        <h1 class="node on">How do you know your agent built what you meant?</h1>
+        <ul class="because">
+          <li>Because you wrote it down: a design, in plain English.</li>
+          <li>Because everything the agent builds comes from that design.</li>
+          <li>Because you can check: one ID grep returns the requirement, its tests, and its code.</li>
+          <li>Because LID helped you get there.</li>
+        </ul>
+        <p class="lede">Code that runs can still miss what you meant. With LID (Linked-Intent Development), the design stays linked to everything built from it. Fix it once, the agent cascades the change, and you sign off or push back at every step.</p>
+        <div class="ctas">
+          <a class="btn btn-accent" href="#quickstart">Install</a>
+          <a class="btn" href="https://github.com/jszmajda/lid">Read the source</a>
+        </div>
+      </div>
+      <figure class="log" aria-label="One design edit cascading to specs, tests, and code">
+        <div class="log-head"><span>one design edit</span><span>4 stops</span></div>
+<pre><span class="a">●</span>  <span class="k">LLD</span>   checkout-design.md
+<span class="g">│</span>        <span class="minus">- Carts expire after 30 days.</span>
+<span class="g">│</span>        <span class="plus">+ Signed-in carts expire after 90 days;</span>
+<span class="g">│</span>        <span class="plus">+ guest carts expire after 30 days.</span>
+<span class="g">└─</span><span class="i">●</span>  <span class="k">EARS</span>  <span class="i">CART-RET-002</span> updated
+<span class="g">   ├─</span><span class="a">●</span>  <span class="k">Test</span>  cart-retention.test.ts, failing first
+<span class="g">   └─</span><span class="a">●</span>  <span class="k">Code</span>  retention.ts, @spec <span class="i">CART-RET-002</span></pre>
+        <p class="log-cap">The agent walks the change down the arrow. You review it at each stop.</p>
+      </figure>
+    </section>
+
+    <section class="sec" id="how">
+      <header class="sec-head">
+        <h2 class="node">Design first. Everything below it cites an ID.</h2>
+        <p>Every code file cites, by ID, the spec it implements. Every test cites the spec it asserts, and every spec traces to a design. Checking that code still traces to design is a walk through that graph, mechanical enough to put in CI.</p>
+      </header>
+      <ol class="trace">
+        <li class="stop node sm"><h3>HLD<small>the why</small></h3><p>The app is account-scoped. Only the account owner can see or change their data, so every request has to identify the caller.</p></li>
+        <li class="stop node sm"><h3>LLD<small>the how</small></h3><p>Credentials enter at the login form, pass to the auth service, and resolve to a session scoped to the user or a structured <code>AuthError</code>.</p></li>
+        <li class="stop node sm"><h3>EARS<small>the claim</small></h3><p><span class="i">AUTH-UI-001</span> <b>When</b> a user submits valid credentials, the authentication service <b>shall</b> return a session scoped to that user.</p></li>
+        <li class="stop node sm"><h3>Tests<small>failing first</small></h3><pre>test("returns a session on valid credentials")
+<span class="c">  ▸ </span><span class="i">AUTH-UI-001</span></pre></li>
+        <li class="stop node sm"><h3>Code<small>@spec anchors</small></h3><pre><span class="c">// services/auth.ts
+// @spec </span><span class="i">AUTH-UI-001</span><span class="c">, AUTH-UI-002</span>
+async function authenticate(credentials) { … }</pre></li>
+      </ol>
+      <p class="grep">A spec ID is a grep target. <code>grep -r AUTH-UI-001</code> returns the spec, the tests that assert it, and the code that implements it.</p>
+    </section>
+
+    <section class="sec">
+      <header class="sec-head">
+        <h2 class="node">Watch one edit reach the code.</h2>
+        <p>Change one sentence of the design and watch it arrive in the specs, the tests, and the code. Two minutes, one real project.</p>
+      </header>
+      <figure class="term">
+        <div class="term-bar">cascade: LLD → specs → tests → code</div>
+        <div class="term-body"><div class="play" aria-hidden="true"><i></i></div><p>The two-minute recording plays here.</p></div>
+      </figure>
+    </section>
+
+    <section class="sec qs" id="quickstart">
+      <header class="sec-head">
+        <h2 class="node">Four commands, inside Claude Code.</h2>
+        <p>Install the two plugins, then describe what you want to build. The skill walks you through design, specs, and tests before it writes any code.</p>
+      </header>
+      <div>
+        <ol class="cmds">
+          <li><div style="min-width:0"><code>/plugin marketplace add jszmajda/lid</code><small>Register the plugin source in Claude Code.</small></div><button class="copy" type="button" data-cmd="/plugin marketplace add jszmajda/lid">Copy</button></li>
+          <li><div style="min-width:0"><code>/plugin install linked-intent-dev@jszmajda-lid</code><small>Install the core workflow plugin.</small></div><button class="copy" type="button" data-cmd="/plugin install linked-intent-dev@jszmajda-lid">Copy</button></li>
+          <li><div style="min-width:0"><code>/plugin install arrow-maintenance@jszmajda-lid</code><small>Track the links between specs and code in big projects.</small></div><button class="copy" type="button" data-cmd="/plugin install arrow-maintenance@jszmajda-lid">Copy</button></li>
+          <li><div style="min-width:0"><code>/linked-intent-dev</code><small>Describe what you want to build.</small></div><button class="copy" type="button" data-cmd="/linked-intent-dev">Copy</button></li>
+        </ol>
+        <p class="others">Using a different coding agent? Most tools need only an <code>AGENTS.md</code> at your project root.</p>
+        <ul class="chips">
+          <li><a href="https://github.com/jszmajda/lid/blob/main/docs/setup.md#cursor">Cursor</a></li>
+          <li><a href="https://github.com/jszmajda/lid/blob/main/docs/setup.md#windsurf">Windsurf</a></li>
+          <li><a href="https://github.com/jszmajda/lid/blob/main/docs/setup.md#github-copilot">GitHub Copilot</a></li>
+          <li><a href="https://github.com/jszmajda/lid/blob/main/docs/setup.md">Codex CLI</a></li>
+          <li><a href="https://github.com/jszmajda/lid/blob/main/docs/setup.md#aider">Aider</a></li>
+          <li><a href="https://github.com/jszmajda/lid/blob/main/docs/setup.md">All tools</a></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="sec">
+      <header class="sec-head">
+        <h2 class="node">Which path is yours?</h2>
+        <p>Four starting points, depending on where you're coming from.</p>
+      </header>
+      <div class="paths">
+        <a class="path" href="https://linked-intent.dev/start/#evaluating"><h3>Evaluating</h3><p>Decide if LID solves a problem you have.</p></a>
+        <a class="path" href="https://linked-intent.dev/start/#greenfield"><h3>Starting new</h3><p>Install, describe what you want, and let the skill walk you through it.</p></a>
+        <a class="path" href="https://linked-intent.dev/start/#brownfield"><h3>Existing codebase</h3><p>Map the code first, then layer LID on top of what exists.</p></a>
+        <a class="path" href="https://linked-intent.dev/start/#scoped"><h3>One subsystem</h3><p>Try LID on one slice of a larger project.</p></a>
+      </div>
+    </section>
+  </div>
+
+  <footer class="foot">
+    <div class="brand"><svg class="icon" viewBox="0 0 64 64" role="img" aria-label="LID"><defs><clipPath id="rail-icon-1"><rect width="64" height="24.5"/><rect y="31.5" width="64" height="32.5"/></clipPath></defs><rect width="64" height="64" rx="14" fill="#FF6B3D"/><path d="M10 14Q10 12 12 12L21 12Q23 12 23 14L23 39Q23 41 25 41L36 41Q38 41 38 43L38 50Q38 52 36 52L12 52Q10 52 10 50Z" fill="#1A0F0A" clip-path="url(#rail-icon-1)"/><path d="M23 24.5H45V31.5H23Z" fill="#1A0F0A"/><path d="M44 18.5Q44 17 45.06 18.06L53.94 26.94Q55 28 53.94 29.06L45.06 37.94Q44 39 44 37.5Z" fill="#1A0F0A"/></svg><span>Linked-Intent Development · MIT · © 2026 Jess Szmajda</span></div>
+    <p>This site is itself a segment of the arrow: <a href="https://github.com/jszmajda/lid/blob/main/docs/intent/marketing-site/marketing-site-design.md">LLD</a>, <a href="https://github.com/jszmajda/lid/blob/main/docs/intent/marketing-site/marketing-site-specs.md">EARS</a>.</p>
+  </footer>
+</main>
+
+<script>
+document.querySelectorAll('.copy').forEach(function (b) {
+  b.addEventListener('click', function () {
+    var done = function () { b.textContent = 'Copied'; setTimeout(function () { b.textContent = 'Copy'; }, 1600); };
+    if (navigator.clipboard) navigator.clipboard.writeText(b.dataset.cmd).then(done, function () {});
+  });
+});
+</script>
+<nav class="xsw" aria-label="Site explorations"><a href="index.html">All</a><a href="linked-list.html"><b>A</b><span> Linked list</span></a><a href="plain-text.html"><b>B</b><span> Plain text</span></a><a href="stickers.html"><b>C</b><span> Stickers</span></a><a href="poster.html"><b>D</b><span> Poster</span></a><a href="rail.html"><b>E</b><span> Rail</span></a><button type="button" id="xsw-theme" aria-label="Color theme">Auto</button></nav><style>.xsw{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:100;display:flex;gap:2px;padding:4px;background:rgba(26,15,10,.94);border-radius:999px;font:500 13px/1 ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;letter-spacing:0;box-shadow:0 6px 24px rgba(0,0,0,.28);max-width:calc(100vw - 24px)}.xsw a,.xsw button{color:#F4EDE8;text-decoration:none;padding:8px 11px;border-radius:999px;border:0;background:none;font:inherit;cursor:pointer;white-space:nowrap}.xsw b{font-weight:700}.xsw a:hover,.xsw button:hover{background:rgba(255,255,255,.12)}.xsw a[aria-current=page]{background:#FF6B3D;color:#1A0F0A}.xsw a:focus-visible,.xsw button:focus-visible{outline:2px solid #FF6B3D;outline-offset:2px}@media (max-width:700px){.xsw span{display:none}}</style><script>(function(){var here=location.pathname.split('/').pop()||'index.html';document.querySelectorAll('.xsw a').forEach(function(a){if(a.getAttribute('href')===here)a.setAttribute('aria-current','page')});var root=document.documentElement,orig=root.getAttribute('data-theme'),btn=document.getElementById('xsw-theme');var modes=['auto','light','dark'],m='auto';try{m=localStorage.getItem('lid-site-theme')||'auto'}catch(e){}function apply(){if(m==='auto'){if(orig)root.setAttribute('data-theme',orig);else root.removeAttribute('data-theme')}else root.setAttribute('data-theme',m);btn.textContent=m==='auto'?'Auto':m==='light'?'Light':'Dark';btn.setAttribute('aria-label','Color theme: '+btn.textContent)}btn.addEventListener('click',function(){m=modes[(modes.indexOf(m)+1)%3];try{localStorage.setItem('lid-site-theme',m)}catch(e){}apply()});apply()})();</script>
+</body>
+</html>
