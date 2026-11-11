@@ -44,3 +44,8 @@ docs/research/experiments/*/**
 !docs/research/experiments/b10-differential-catch-rate/answer-key/**
 !docs/research/experiments/b10-differential-catch-rate/harness/
 !docs/research/experiments/b10-differential-catch-rate/harness/**
+
+# Cascade recording: takes and the trial project's dependencies
+tools/cascade-recording/takes/
+tools/cascade-recording/trial-app/node_modules/
+tools/cascade-recording/shell/.zcompdump*

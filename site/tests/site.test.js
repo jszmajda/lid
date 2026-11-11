@@ -259,7 +259,24 @@ describe("home page", () => {
     const steps = change.lastIndexOf("<!-- /step -->");
     const recording = change.indexOf("asciinema.org/a/");
     assert.ok(steps > 0 && recording > steps);
-    assert.match(text(change.slice(steps)), /Watch it happen in a real project/);
+    const after = text(change.slice(steps));
+    assert.match(after, /Watch Claude Code make the same change/);
+    assert.match(after, /working time is sped up/);
+    assert.match(after, /each pause for review plays at full speed/);
+  });
+
+  // @spec MKT-SITE-003, MKT-SITE-134
+  it("embeds the committed recording of the change explainer's change", () => {
+    const recordings = join(siteDir, "recordings");
+    const log = JSON.parse(readFileSync(join(recordings, "cascade.take.json"), "utf8"));
+    const id = log.published_url.match(/^https:\/\/asciinema\.org\/a\/([A-Za-z0-9]+)$/)[1];
+    assert.match(section("change"), new RegExp(`src="https://asciinema\\.org/a/${id}\\.js" id="asciicast-${id}"`));
+    assert.match(log.poster, /^npt:\d+:\d{2}$/);
+    assert.match(section("change"), new RegExp(`id="asciicast-${id}"[^>]*data-poster="${log.poster}"`));
+    const header = JSON.parse(readFileSync(join(recordings, "cascade.cast"), "utf8").split("\n")[0]);
+    assert.equal(header.title, "LID cascade: end trials at local midnight");
+    assert.equal(log.request, "End trials at midnight in each user's own time zone.");
+    assert.equal(log.outcome.complete, true);
   });
 
   // @spec MKT-SITE-112

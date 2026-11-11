@@ -1,5 +1,5 @@
 schema_version: 2
-last_updated: 2026-10-28
+last_updated: 2026-11-11
 
 taxonomy:
   core:
@@ -15,6 +15,7 @@ taxonomy:
   tooling:
     - alt-model-evals
     - packaging-checks
+    - cascade-recording
 
 arrows:
   linked-intent-dev:
@@ -146,7 +147,7 @@ arrows:
     blockedBy: [linked-intent-dev, arrow-maintenance, extensions, tour]
     detail: marketing-site.md
     next: "Close the 12 active MKT-SITE gaps (notably MKT-SITE-009 README/Quickstart cascade and the build-time checks -026/-027/-028/-029); reconcile the audited-SHA mismatch between marketing-site.md and this entry."
-    drift: "100 of 112 MKT-SITE specs [x]; 12 [ ] (build-time checks + process specs). The 2026-11 site refresh replaced the Logo Ideas page (MKT-SITE-083–098, removed) and the five-panel trace (MKT-SITE-039/041/047/048/049, removed) with the free-trial Home: the gap, two scrolling explainers over the rings drawing, check it yourself, and where your time goes (MKT-SITE-099–124, with the hero drawing set small beside the h1 on narrow screens in MKT-SITE-133), plus the Nodes visual identity and sticky navigation (MKT-SITE-125–132); MKT-SITE-007, -038, -045, -046, -055–057, -062–064, -067–069 re-homed to the new sections."
+    drift: "101 of 113 MKT-SITE specs [x]; 12 [ ] (build-time checks + process specs). The 2026-11 site refresh replaced the Logo Ideas page (MKT-SITE-083–098, removed) and the five-panel trace (MKT-SITE-039/041/047/048/049, removed) with the free-trial Home: the gap, two scrolling explainers over the rings drawing, check it yourself, and where your time goes (MKT-SITE-099–124, with the hero drawing set small beside the h1 on narrow screens in MKT-SITE-133), plus the Nodes visual identity and sticky navigation (MKT-SITE-125–132); MKT-SITE-007, -038, -045, -046, -055–057, -062–064, -067–069 re-homed to the new sections."
 
   project-structure:
     status: AUDITED
@@ -202,6 +203,17 @@ arrows:
     detail: packaging-checks.md
     next: null
     drift: "New segment (#86, #87). Tool and tests built; PR-process obligations live in project-structure (PROJ-STRUCT-070, 079)."
+
+  cascade-recording:
+    status: MAPPED
+    sampled: 2026-11-11
+    audited: null
+    audited_sha: null
+    blocks: []
+    blockedBy: [linked-intent-dev, marketing-site]
+    detail: cascade-recording.md
+    next: "When the LID skills change materially, make new takes, pick one, upload it, and replace site/recordings/cascade.cast, its log, and the home page embed (MKT-SITE-035)."
+    drift: "New leaf segment. 47 of 47 CASCADE-REC specs [x]; first published take 20261111-052857 (asciinema.org/a/lXapOyQCdrPq4ENe, 2:51)."
 
 unmapped:
   docs:
