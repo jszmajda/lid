@@ -1,0 +1,224 @@
+{
+  "started": "2026-11-11T05:28:57",
+  "claude_code_version": "2.1.322 (Claude Code)",
+  "model": "claude-opus-5-5",
+  "effort": "medium",
+  "lid_version": "1.4.4",
+  "request": "End trials at midnight in each user's own time zone.",
+  "take_dir": "/tmp/trial-app",
+  "stretches": [
+    [
+      61.969,
+      89.405
+    ],
+    [
+      109.567,
+      183.075
+    ],
+    [
+      207.756,
+      240.795
+    ],
+    [
+      252.968,
+      273.671
+    ],
+    [
+      295.875,
+      369.62
+    ]
+  ],
+  "pauses": [
+    [
+      14.515,
+      18.324
+    ],
+    [
+      29.163,
+      34.345
+    ],
+    [
+      36.489,
+      37.915
+    ],
+    [
+      39.845,
+      42.849
+    ],
+    [
+      50.667,
+      53.552
+    ],
+    [
+      102.573,
+      106.676
+    ],
+    [
+      194.063,
+      197.516
+    ],
+    [
+      248.878,
+      251.534
+    ],
+    [
+      283.277,
+      286.137
+    ],
+    [
+      377.465,
+      380.046
+    ],
+    [
+      392.539,
+      398.248
+    ],
+    [
+      406.815,
+      411.122
+    ],
+    [
+      413.518,
+      415.125
+    ]
+  ],
+  "stops": [
+    {
+      "at": 107.04,
+      "reply": "recommendation",
+      "aside": "(The HLD and its tenet still hold. Claude asks which midnight you mean, and recommends the one that never shortens a trial.)"
+    },
+    {
+      "at": 197.89,
+      "reply": "correction",
+      "aside": "(Claude rewrote the trial's design: a trial now ends at the first local midnight after 720 hours.)"
+    },
+    {
+      "at": 251.71,
+      "reply": "approved",
+      "aside": "(Claude added the Tokyo signup to the design as a worked example.)"
+    },
+    {
+      "at": 286.31,
+      "reply": "handoff",
+      "aside": "(Claude rewrote TRIAL-002 and TRIAL-003 and added TRIAL-004 to TRIAL-007.)"
+    },
+    {
+      "at": 380.23,
+      "reply": "exit",
+      "aside": "(Claude updated the tests and the code, and all 13 tests pass.)"
+    }
+  ],
+  "outcome": {
+    "complete": true
+  },
+  "typing": [
+    [
+      0.713,
+      6.582
+    ],
+    [
+      7.224,
+      13.881
+    ],
+    [
+      18.324,
+      25.13
+    ],
+    [
+      25.734,
+      28.53
+    ],
+    [
+      34.346,
+      35.879
+    ],
+    [
+      37.915,
+      38.77
+    ],
+    [
+      43.464,
+      50.025
+    ],
+    [
+      53.552,
+      53.873
+    ],
+    [
+      56.38,
+      61.849
+    ],
+    [
+      91.53,
+      102.573
+    ],
+    [
+      107.037,
+      109.432
+    ],
+    [
+      185.22,
+      194.063
+    ],
+    [
+      197.888,
+      207.623
+    ],
+    [
+      243.055,
+      248.878
+    ],
+    [
+      251.709,
+      252.832
+    ],
+    [
+      275.811,
+      283.277
+    ],
+    [
+      286.313,
+      295.733
+    ],
+    [
+      372.132,
+      377.465
+    ],
+    [
+      380.229,
+      380.449
+    ],
+    [
+      381.896,
+      390.061
+    ],
+    [
+      390.661,
+      391.829
+    ],
+    [
+      398.248,
+      402.994
+    ],
+    [
+      403.597,
+      406.196
+    ],
+    [
+      411.122,
+      412.92
+    ],
+    [
+      415.125,
+      415.901
+    ]
+  ],
+  "seed": 143156839,
+  "real_length": 418.06,
+  "retimed_length": 171.15,
+  "request_typed": 61.849,
+  "poster": "npt:0:48",
+  "take": "20261111-052857",
+  "published_url": "https://asciinema.org/a/lXapOyQCdrPq4ENe"
+}

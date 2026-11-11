@@ -1,7 +1,7 @@
 {
   "name": "arrow-maintenance",
   "description": "Scaling layer for linked-intent-dev. Tracks spec-to-code coherence across large projects via docs/arrows/ index. Includes brownfield bootstrap for mapping existing codebases.",
-  "version": "1.4.4",
+  "version": "1.4.5",
   "author": {
     "name": "Jess Szmajda"
   },
