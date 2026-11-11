@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "lid-experimental",
-  "version": "1.4.4",
+  "version": "1.4.5",
   "description": "Experimental LID skills with opt-in installation and explicit lifecycle (promotion or retirement). Layers on top of linked-intent-dev and arrow-maintenance.",
   "author": {
     "name": "Jess Szmajda"

@@ -162,14 +162,33 @@ kiro-cli powers install "$HOME/src/lid/plugins/arrow-maintenance"
   "includePowers": true
   ```
 
-**Where the workflow comes from.** The Power's `linked-intent-dev` skill carries the full workflow, so a project you work on in the Kiro IDE or Kiro CLI V3 needs no vendored workflow doc. Kiro also reads your project's `AGENTS.md` natively once you trust the workspace, but that file alone carries only LID's compact core. Kiro Mobile and Kiro CLI's V2 harness load no Powers, and a local headless run (`kiro-cli chat --no-interactive`) starts V2 unless you pass `--v3` or save V3 as your default (`kiro-cli settings chat.agentEngine v3`). If you work on the project there, add the vendored workflow doc (see [The workflow doc](#the-simple-path-just-ship-agentsmd)). Kiro Web loads a Power only once you upload it with Kiro's Configuration Sync.
+**Where the workflow comes from.** The Power's `linked-intent-dev` skill carries the full workflow, so a project you work on in the Kiro IDE or Kiro CLI V3 needs no vendored workflow doc. Kiro also reads your project's `AGENTS.md` natively once you trust the workspace, but that file alone carries only LID's compact core. Kiro Mobile and Kiro CLI's V2 harness load no Powers (Kiro's Powers documentation lists the CLI as V3-only, and Kiro CLI 3.1.0's V2 harness loaded none), and a local headless run (`kiro-cli chat --no-interactive`) starts V2 unless you pass `--v3` or save V3 as your default (`kiro-cli settings chat.agentEngine v3`). If you work on the project there, add the vendored workflow doc (see [The workflow doc](#the-simple-path-just-ship-agentsmd)). Kiro Web loads a Power only once you upload it with Kiro's Configuration Sync.
 
-**Where Kiro differs from the other plugin hosts:**
+**Headless runs.** A headless run refuses every action that would ask for approval, and under Kiro's default permissions activating a Power asks. So with the defaults, a headless run can't load LID's skills at all: in Kiro CLI 3.1.0 the agent said the skill hadn't loaded and worked from `AGENTS.md` alone. To use LID headless, allow the two capabilities in `~/.kiro/settings/permissions.yaml` (one `rules:` list holds every rule in the file):
 
-- **Command aliases.** Kiro loads a Power's skills, not its `commands/` files, so `lid-experimental`'s `/differential-audit` alias is not available there. The skill it names is `bidirectional-differential`.
+```yaml
+rules:
+  - capability: power
+    effect: allow
+  - capability: skill
+    effect: allow
+```
+
+**Where Kiro differs from the other plugin hosts.** Kiro doesn't document these, so each names the version it was seen in; a later version may differ.
+
+- **Command aliases.** Kiro loads a Power's skills, not its `commands/` files (Kiro CLI 3.1.0), so `lid-experimental`'s `/differential-audit` alias is not available there. The skill it names is `bidirectional-differential`.
 - **The invocation guard.** Kiro does not honor `disable-model-invocation`: in Kiro CLI 3.1.0, the model loaded `map-codebase` on its own when a request matched its description. Treat `lid-coach` and `map-codebase` as model-invocable in Kiro. On the other plugin hosts, these two run only when you invoke them.
-- **Reference files.** Kiro gives the model a Power skill's text but not the skill's directory. So when a skill points to one of its `references/` files, or `/update-lid` needs the plugin's `CHANGELOG.md`, the agent first searches your disk for the file. Under Kiro's default permissions, that search and each read outside your workspace ask for your approval. Installed Powers live in `~/.kiro/powers/installed/<plugin>/`.
-- **Long skills.** Kiro caps one tool result at 30,000 characters. `linked-intent-dev` and `lid-coach` are longer, so the model first sees their start and end, and Kiro saves the full text to a file under `~/.kiro/sessions/` that the agent then reads. Under Kiro's default permissions, that read asks for your approval too.
+- **Reference files.** Kiro gives the model a Power skill's text but not the skill's directory (Kiro CLI 3.1.0 and Kiro IDE 1.4.121). So when a skill points to one of its `references/` files, or `/update-lid` needs the plugin's `CHANGELOG.md`, the agent first searches your disk for the file. Under Kiro's default permissions, that search and each read outside your workspace ask for your approval. Installed Powers live in `~/.kiro/powers/installed/<plugin>/`. To stop the prompt on reads of those files, add this entry to the `rules:` list in `~/.kiro/settings/permissions.yaml`:
+
+  ```yaml
+  rules:
+    - capability: fs_read
+      match: ["~/.kiro/powers/installed/**"]
+      effect: allow
+  ```
+
+  The rule covers reads, not the agent's search: a `find` or `grep` to locate the file still asks.
+- **Long skills.** Kiro caps one tool result at 30,000 characters (Kiro CLI 3.1.0 and Kiro IDE 1.4.121). `linked-intent-dev` and `lid-coach` are longer, so the model first sees their start and end with a notice that names a file under `~/.kiro/sessions/` holding the full text, and the agent then reads that file. Under Kiro's default permissions, that read asks for your approval too. A read of more than 30,000 characters of the file is cut in turn: in Kiro CLI 3.1.0 the agent read `linked-intent-dev` back whole, but it ran `/lid-coach` with about half the skill missing and didn't say so.
 
 Sources: [kiro.dev/docs/powers](https://kiro.dev/docs/powers/), [installing powers](https://kiro.dev/docs/powers/installation/), the [custom-agent configuration reference](https://kiro.dev/docs/custom-agents/configuration-reference/), [choosing a CLI harness](https://kiro.dev/docs/cli/agent-harness/), [permissions](https://kiro.dev/docs/permissions/), and [steering](https://kiro.dev/docs/steering/), which covers Kiro's `AGENTS.md` support.
 
