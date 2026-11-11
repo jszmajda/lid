@@ -2,6 +2,14 @@
 
 All notable changes to LID (Linked-Intent Development) are recorded here. The format follows [Keep a Changelog](https://keepachangelog.com/); LID uses [Semantic Versioning](https://semver.org/). It records what the plugins ship, one entry per version. The three plugins share one version, carried in each plugin's manifest; it is also the "LID conventions" version a project records as the `- Version:` bullet in the `## LID` block. A minor or major entry carries the migration steps `/update-lid` walks a project through; a patch asks nothing of a project.
 
+## [1.4.6] — 2026-11-11
+
+A patch that lets more untested models find a row in the capability flags.
+
+### Changed
+- **Capability flags: untested releases covered on a vendor's evidence.** The maintainers may list an untested model as covered by a tested model that carries no flag, when the vendor's model card names that model as the new one's base or predecessor and shows the new one matching or beating it on agentic coding and reasoning. A covered model takes the tested model's row until it is run, and each listing says what it rests on. On that basis `google/gemini-4-carbon` takes the `google/gemini-4-argon` row. Every later Fable release now takes the `claude-opus-5-5` row, as Fable 5 and 5.1 already did, on the maintainers' knowledge of the line.
+- **The workflow doc carries the new listings.** Projects that vendor `docs/lid/workflow.md` can re-sync it. Nothing else asks for action.
+
 ## [1.4.5] — 2026-11-11
 
 A patch that adds one more model configuration to the capability flags.

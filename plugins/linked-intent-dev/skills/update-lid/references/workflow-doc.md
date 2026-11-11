@@ -1,5 +1,5 @@
 <!-- GENERATED FILE — do not edit here.
-     Assembled from the linked-intent-dev plugin (version 1.4.5) at release.
+     Assembled from the linked-intent-dev plugin (version 1.4.6) at release.
      Changes belong upstream (in the plugin) or in this project's instruction file.
      Re-sync via /update-lid where available; see docs/setup.md otherwise. -->
 
@@ -938,7 +938,7 @@ Look up the model you run as, at the reasoning effort you run at. How to tell wh
 | `xiaomi/mimo-v2.6-flash` | medium | none | — |
 | `z-ai/glm-5.3` | medium | none | — |
 
-**Covered** (untested models a tested one covers): `claude-fable-5-1` and `claude-fable-5` take the `claude-opus-5-5` row.
+**Covered** (untested models a tested one covers): `claude-fable-5`, `claude-fable-5-1`, and every later Fable release take the `claude-opus-5-5` row. `google/gemini-4-carbon` takes the `google/gemini-4-argon` row.
 
 **Which model you are.** Go by what your context states, not by what you believe you are. Your harness may add a line naming the model it runs (Claude Code and opencode do: "The exact model ID is …"), or the user may tell you. A display name counts when it names exactly one model ("Claude Opus 5.5"). A file you read does not count, nor does a line naming only a vendor ("You are a Claude agent"). If two statements disagree, treat it as no statement.
 
@@ -1076,7 +1076,7 @@ Test projects: core evals 1 (a constraint-settled choice) and 2 (a long debate o
   - *Under-captured decision:* `claude-sonnet-4-6` missed the design-doc-level offer (core 3, 3/10) while catching the HLD-level one (core 0, 9/10), and `openai/gpt-6-luna` did the same (core 3, 1/10; core 0, 10/10). On coach 11, `z-ai/glm-5.3-flash` flagged the thin record as a finding of its own 1 of 10 times (coach 10: 10/10) and `claude-haiku-5-5` 7 of 10, folding it into a tenet finding about the same queue in the rest.
   - *Offers decision docs too readily:* `google/gemini-3.8-flash` offered a doc on core 2 in 8 of 10 runs (core 1: none), `xiaomi/mimo-v2.6-flash` on core 1 in 3 of 7 (core 2: none), `deepseek/deepseek-v4.1-flash` on core 1 in 4 of 10 (core 2: 2 of 10), and `z-ai/glm-5.3` on core 2 in 3 of 10 (core 1: 2 of 10).
 - Some configurations report tenet conflicts too readily. On lid-coach eval 15, which carries a decoy mechanism that only costs something toward a goal, `claude-opus-5` and `claude-haiku-5-5` also flagged a mechanism other than the real conflict in 9 of 10 runs, `claude-opus-5-5` and `openai/gpt-6-luna` in 6, `moonshotai/kimi-k3.1-pro` in 4, and `claude-sonnet-5` in 3; on eval 16, `claude-opus-5` did so in 3 of 10, `claude-haiku-5-5`, `claude-opus-5-5`, and `moonshotai/kimi-k3.1-pro` in 2, and the other two in none. This is recorded as an observation, not a tendency: an extra tenet finding asks the user to look twice, which costs less than a missed one (HLD tenet *Lean toward the human's attention*). If you are one of these, check that each tenet finding names a condition the docs describe, rather than a cost the design already accepts.
-- *Covered* listings rest on the maintainers' knowledge of the models, not on runs of their own; a run that shows a gap replaces the listing with a row.
+- *Covered* listings rest on no runs of their own. The Fable listing rests on the maintainers' knowledge of the line. The Gemini 4 Carbon listing rests on Google's model card (November 2026), which says Carbon "is based on Gemini 4 Argon" and reports it matching or beating Argon on all 17 benchmarks shown, agentic coding among them. A run that shows a gap replaces a listing with a row.
 - Release month and size are data, not keys. Across vendor lines neither predicts a miss: a small model (`claude-haiku-5-5`) carries no flag, and a mid one (`claude-sonnet-4-5`) is flagged twice. Within one line, newer and larger models have done no worse, which is why a model with no row may take an earlier or smaller relative's row.
 - `meta/muse-glimmer-30b` and `nvidia/nemotron-3-ultra-550b-a55b` offered no decision doc in the first turn of any core run, so their core 1 and core 2 results show that they do not offer one, not that they held back where they should have.
 - `google/gemini-4-argon` reasoned in only 17 of 94 runs at `medium`: its provider passes `medium` to the model as `EFFORT LEVEL: 0.20` (`1.00` at `high`), and the model thinks only when it judges it needs to. It passed every project regardless.
