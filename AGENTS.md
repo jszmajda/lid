@@ -10,7 +10,7 @@ This is the **Linked-Intent Development (LID)** project — a methodology for ke
 - **Three Claude Code plugins** under `plugins/` (two core, one opt-in experimental) — richest integration, with auto-invoking skills and slash commands. Cursor reads the same plugins through its own manifests, and Kiro installs each one as a Power from the Agent Plugins manifest (`plugin.json`) at its root.
 - Rule-file adapters for other agentic coding tools (Cursor, Windsurf, GitHub Copilot, Aider, Continue, JetBrains Junie, Zed, Codex, and any tool that reads `AGENTS.md`). See `docs/setup.md` for per-tool setup.
 
-There is no build system or application code. The plugins are prose (skills, references, templates); the only executable code is maintainer tooling under `tools/` (the alternate-model eval runner and the packaging checks), which ships in no plugin. The repo is simultaneously the distribution source for the plugins and the canonical LID-on-LID reference — its own `docs/` tree is LID applied to LID.
+There is no build system or application code. The plugins are prose (skills, references, templates); the only executable code is maintainer tooling under `tools/` (the alternate-model eval runner, the packaging checks, and the cascade recorder), which ships in no plugin. The repo is simultaneously the distribution source for the plugins and the canonical LID-on-LID reference — its own `docs/` tree is LID applied to LID.
 
 ## Structure
 
@@ -24,6 +24,7 @@ There is no build system or application code. The plugins are prose (skills, ref
 - **`tools/`**: Maintainer tooling that ships in no plugin
   - **`alt-model-evals/`**: runs the skills' eval suites on non-Claude models (optional evidence, never a merge gate; see `docs/intent/alt-model-evals/`)
   - **`packaging-checks/`**: checks that the plugins are well-formed and load whole on a host (the merge gate; see `docs/intent/packaging-checks/`); also regenerates the shipped workflow doc
+  - **`cascade-recording/`**: records the home page's cascade demo by driving Claude Code through one change in a small free-trial project (see `docs/intent/cascade-recording/`)
 
 ## Plugin Architecture (Claude Code)
 
