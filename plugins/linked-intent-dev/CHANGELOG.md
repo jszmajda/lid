@@ -2,6 +2,14 @@
 
 All notable changes to LID (Linked-Intent Development) are recorded here. The format follows [Keep a Changelog](https://keepachangelog.com/); LID uses [Semantic Versioning](https://semver.org/). It records what the plugins ship, one entry per version. The three plugins share one version, carried in each plugin's manifest; it is also the "LID conventions" version a project records as the `- Version:` bullet in the `## LID` block. A minor or major entry carries the migration steps `/update-lid` walks a project through; a patch asks nothing of a project.
 
+## [1.4.5] — 2026-11-11
+
+A patch that adds one more model configuration to the capability flags.
+
+### Changed
+- **Capability flags: `moonshotai/kimi-k3.1-pro`** at `medium` is flagged for *under-captured decision*. When the user settled a choice that would stay live, it seldom offered a decision doc (core 0 7/10, core 3 1/10), though in review it flagged a thin decision record as a finding of its own (lid-coach evals 10 and 11, 8/10 each). It passed both *tenet or goal conflict* projects (10/10 each) and is not listed for offering decision docs too readily. It was measured on the same copy of the skills, with the capability subsystem removed, as the configurations added in 1.4.1.
+- **The workflow doc carries the new row.** Projects that vendor `docs/lid/workflow.md` can re-sync it. Nothing else asks for action.
+
 ## [1.4.4] — 2026-11-09
 
 A patch to the newcomer tour's example. Nothing is asked of your project.
