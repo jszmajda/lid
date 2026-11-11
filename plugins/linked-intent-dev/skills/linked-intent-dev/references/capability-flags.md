@@ -161,6 +161,35 @@ Test projects: core evals 1 (a constraint-settled choice) and 2 (a long debate o
 | `nvidia/nemotron-3-ultra-550b-a55b` | opencode-ai@1.18.32 | medium | core 1 10/10; core 2 10/10 | not listed | 2026-10-18 | 2026-06 | large |
 | `moonshotai/kimi-k3.1-pro` | opencode-ai@1.18.32 | medium | core 1 10/10; core 2 10/10 | not listed | 2026-11-09 | 2026-10 | large |
 
+### Output per run
+
+What each configuration generated in its evidence runs, recorded as data. Providers bill reasoning as output, so the two figures let a user estimate how output cost differs between configurations on the same work; they say nothing about which judgment reaches the user. Each figure is the median over the configuration's completed runs on core evals 0–3 (both turns counted) and lid-coach evals 10, 11, 15, and 16, as its harness reported it: Claude Code's thinking tokens and the rest of its output tokens, or the reasoning and output tokens OpenRouter returns through opencode. Each harness passes on the provider's own count, so figures compare closely within a harness and roughly across them.
+
+| Configuration | Harness | Effort | Runs | Reasoning tokens per run (median) | Other output tokens per run (median) |
+|---|---|---|---|---|---|
+| `z-ai/glm-5.3` | opencode-ai@1.18.32 | medium | 80 | 10,266 | 2,529 |
+| `claude-opus-4-8` | claude -p (Claude Code 2.1.296) | medium | 80 | 7,052 | 4,535 |
+| `claude-haiku-5-5` | claude -p (Claude Code 2.1.296) | medium | 80 | 7,888 | 3,367 |
+| `deepseek/deepseek-v4.1-flash` | opencode-ai@1.18.32 | medium | 80 | 7,296 | 2,556 |
+| `xiaomi/mimo-v2.6-flash` | opencode-ai@1.18.32 | medium | 74 | 8,094 | 1,748 |
+| `claude-sonnet-5` | claude -p (Claude Code 2.1.310) | medium | 80 | 5,826 | 3,886 |
+| `claude-sonnet-4-6` | claude -p (Claude Code 2.1.296) | medium | 80 | 5,712 | 3,336 |
+| `claude-opus-5` | claude -p (Claude Code 2.1.310) | medium | 80 | 3,386 | 5,252 |
+| `claude-opus-5-5` | claude -p (Claude Code 2.1.296) | medium | 80 | 2,158 | 4,874 |
+| `meta/muse-glimmer-30b` | opencode-ai@1.18.32 | medium | 80 | 4,257 | 2,387 |
+| `claude-haiku-4-5` | claude -p (Claude Code 2.1.296) | medium | 80 | 3,062 | 3,306 |
+| `claude-sonnet-4-5` | claude -p (Claude Code 2.1.296) | medium | 80 | 2,519 | 3,304 |
+| `openai/gpt-6-luna` | opencode-ai@1.18.32 | medium | 80 | 4,058 | 1,526 |
+| `claude-sonnet-5-5` | claude -p (Claude Code 2.1.296) | medium | 80 | 1,157 | 3,554 |
+| `openai/gpt-5.6-sol` | opencode-ai@1.18.32 | medium | 80 | 2,178 | 2,252 |
+| `moonshotai/kimi-k3.1-pro` | opencode-ai@1.18.32 | medium | 80 | 1,782 | 1,860 |
+| `z-ai/glm-5.3-flash` | opencode-ai@1.18.32 | medium | 80 | 1,464 | 2,057 |
+| `nvidia/nemotron-3-ultra-550b-a55b` | opencode-ai@1.18.32 | medium | 80 | 1,277 | 2,078 |
+| `google/gemini-4-argon` | opencode-ai@1.18.32 | medium | 80 | 0 | 2,622 |
+| `openai/gpt-6.1-sol` | opencode-ai@1.18.32 | medium | 80 | 478 | 2,032 |
+| `openai/gpt-5.6-terra` | opencode-ai@1.18.32 | medium | 80 | 788 | 1,630 |
+| `google/gemini-3.8-flash` | opencode-ai@1.18.32 | medium | 76 | 0 | 1,908 |
+
 ### Notes
 
 - `claude-sonnet-4-5` is deprecated: Anthropic retires it on its API on 2026-11-30, and Amazon Bedrock ends it on 2027-04-08. `claude-haiku-4-5` may be deprecated soon (its committed availability runs to 2026-10-15). `claude-haiku-5-5` is the tested successor and carries no flag.
