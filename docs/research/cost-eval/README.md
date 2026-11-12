@@ -14,7 +14,7 @@ The goal is to be able to tell a user, with the size of the effect and the stren
 
 This is a research spike to collect data, not a merge gate for LID's own development. We build the instrument so that it can later become a measuring eval, or a gate, without a rewrite: arms, seeds, and change scripts are data, runs are repeatable, and every result records the versions it ran on.
 
-The work happens in public. A draft pull request stays open and gets regular pushes, so other people can give feedback as it goes.
+The work happens in public. The draft pull request [#120](https://github.com/jszmajda/lid/pull/120) stays open and gets regular pushes, so other people can give feedback as it goes.
 
 ## Resume here
 
