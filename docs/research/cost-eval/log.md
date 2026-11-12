@@ -2,6 +2,30 @@
 
 Newest entries first. Each entry says what was done, what was decided, and who decided it.
 
+## 2026-11-12 (later): Seeds chosen, plan review adopted, costs constrained
+
+**Decided by the maintainer.**
+
+- **Seeds.** BenchTime is the pilot seed and ReleaseDesk the second, as recommended in the main session.
+- **Every point in the plan review is adopted.** [design.md](design.md), [hypotheses.md](hypotheses.md), and [plan.md](plan.md) were rewritten to match. The main changes:
+  - the pilot measures without repairing;
+  - a bounded-attention policy joins the diligent and rubber-stamp ones;
+  - the simulator keeps a record of its answers and is audited for leaks;
+  - level 1 grading is black-box only, through the interface;
+  - probes are one identical request forked from several ages;
+  - redirect costs are marginal, measured against a twin run;
+  - an interrupt timing doesn't depend on the arm's stopping points;
+  - each arm runs with its own configuration;
+  - the pilot runs in four stages with stopping criteria, about 200 sessions instead of about 700;
+  - the A/A check and positive control;
+  - an equivalence margin;
+  - LID's ablations and a medium seed come before the competitors;
+  - the competitors' maintainers are invited before pre-registration.
+- **The owner's latent intent can arrive late.** The maintainer's idea: intent shouldn't only be bounded by the owner's attention. Some of it should be released later in the work, the way an owner realises something weeks on, or a requirement passed through a business group loses detail, or a product manager forgets to pass it on. Every oracle item now has a disclosure point: stated, askable, recognised on sight, emerging at change k, or realised on a symptom. Emerging intent became part of H4, and relayed briefs became a later variant.
+- **Cost is a real constraint.** Costs should stay small without weakening the research. Graders should run on the maintainer's Claude subscription where possible. Graders, the simulator, and the classifier therefore run through `claude -p`, with Haiku 5.5 tried first for grading. The risk of Claude grading Claude is handled by black-box grading, blind grading, calibration, and a small cross-family sample. OpenRouter money is limited to authorship, that sample, and the later stage with other executor families.
+
+**Also changed.** H2 and the change-type table now agree, so adding a field is an ordinary local feature. H4 compares marginal costs at the same timing. H7 states its metrics and threshold. H8 (proportional cost and size), H9 (intent surviving over time), and H10 (the cold reader) are new.
+
 ## 2026-11-12: Graders are models; collecting project proposals
 
 **Decided by the maintainer.**

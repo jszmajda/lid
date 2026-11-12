@@ -1,6 +1,12 @@
 # Plan and milestones
 
-Status marks: `[x]` done, `[~]` in progress, `[ ]` not started. Spend on repetitions before breadth: three model families with one run each teach less than one family with five runs.
+Status marks: `[x]` done, `[~]` in progress, `[ ]` not started.
+
+**Principles:**
+
+- **Spend on repetitions before breadth.** Three model families with one run each teach less than one family with five runs.
+- **Claude roles run on the maintainer's subscription.** Real dollars go only to OpenRouter, for authorship, a small cross-family grader sample, and the later stage with other executor families ([design.md](design.md), "Budget").
+- **Every pilot stage has a stopping criterion.** If a stage fails its threshold, fix the instrument before spending more.
 
 ## M0: Start the notebook `[x]`
 
@@ -8,31 +14,51 @@ Status marks: `[x]` done, `[~]` in progress, `[ ]` not started. Spend on repetit
 - `[x]` Collect three independent takes on the design and merge them into [design.md](design.md).
 - `[x]` Survey the other SDD systems and the published research ([landscape.md](landscape.md), [sources.md](sources.md)).
 - `[x]` Check whether existing Claude Code transcripts from real LID projects can give a cheap first answer. Result: they can't (see the 2026-11-11 entry in [log.md](log.md)).
+- `[x]` Collect candidate projects from three model families, and choose the pilot seed (BenchTime) and the second seed (ReleaseDesk).
+- `[x]` Get a fresh review of the plan, and fold the adopted changes into the design.
 
-## M1: Design the pilot `[ ]`
+## M1: Build the pilot's instrument `[ ]`
 
-- `[~]` Collect candidate project domains from GPT-6.1 Sol and Gemini 4 Argon, alongside the main session's three (in `seed-proposals/`). The maintainer picks.
-- `[~]` Have Claude Fable review the notebook's plan with fresh eyes.
-- `[ ]` Write the product brief for the chosen domain, with its fixed external interface. Consider having briefs written by models from several families, for variety.
-- `[ ]` Have a model from another family write the hidden oracle as narrative product prose, and review it.
-- `[ ]` Write the change script: about 8 to 10 changes, including probe changes at different ages and two redirects (one change of mind, one clarification; one early, one late).
-- `[ ]` Write the grading rubric: the oracle's requirements as checkable statements, each tagged stated or latent and linked to the change that introduced it.
-- `[ ]` Calibrate the grader on labelled pairs (the same behaviour under different names, and different behaviour under the same names), and try a small model such as Haiku.
-- `[ ]` Write the user simulator's prompt for both policies, and the four-kind attention rubric.
-- `[ ]` Write the arm configurations for the bare agent, cheap discipline, and LID Full.
-- `[ ]` Decide where the harness lives and walk LID's arrow for it (an intent node under `docs/intent/`, then specs, then tests, then code).
+**Seed materials.** These are written by models from families other than Claude, reviewed by the maintainer, and hashed before any counted run.
 
-## M2: Run the pilot `[ ]`
+- `[ ]` Write BenchTime's product brief. It fixes the interface, the run command, the state reset, the settable clock, and the stack.
+- `[ ]` Write the hidden oracle as narrative product prose, with a disclosure point for every item: stated, askable, recognised on sight, emerging at change k, or realised on a symptom.
+- `[ ]` Write the change script: about 10 changes covering the change types, two redirects for testing the plumbing, at least one emerging item, and one probe request that makes sense at any age.
+- `[ ]` Write the grading rubric. Each requirement is a checkable statement with its disclosure, the change that introduced it, and the change that retires it, if any.
 
-One seed, three arms, Claude Opus 5.5 and Sonnet 5.5 through `claude -p` at medium effort, three trajectories per arm, forked checkpoints, both user policies.
+**Simulator and graders:**
 
-The pilot tests the instrument, so its runs don't count as evidence. It should answer these questions:
+- `[ ]` Write the user simulator's prompt for the three policies, with its answer record, its rules for broad questions and for silence, and a leak audit.
+- `[ ]` Write the touchpoint rubric for the six kinds of request, and the classifier prompt.
+- `[ ]` Calibrate the level 1 grader on Haiku 5.5 through `claude -p`, using labelled pairs in both directions, and fall back to Sonnet 5.5 if Haiku misses the threshold. Measure test-retest flips.
+- `[ ]` Work out how the level 1 grader reaches the software without seeing its source.
 
-- Do the graded requirements tell the arms apart at all, or does the bare agent meet nearly all of them (the ceiling check)? If it does, make the seed harder before spending more.
-- How noisy are cost and fidelity between repeated runs?
-- Does the user simulator behave believably? (The maintainer plays the user on a few trajectories to compare.)
-- Can a judge sort touchpoints into the four attention kinds reliably?
-- What does one trajectory cost, so that later stages can be budgeted?
+**Arms and harness:**
+
+- `[ ]` Write the configurations for the bare agent, cheap discipline, and LID Full.
+- `[ ]` Write the isolation recipe: a separate Claude Code configuration directory per arm, and a check of each session's start-up record.
+- `[ ]` Check the headless plumbing under `claude -p`: plan-mode approval, LID's phase stops, questions by stopping and resuming, and the rule that tells "done" from "waiting".
+- `[ ]` Check that the recorded token usage includes subagent sessions.
+- `[ ]` Decide where the harness lives, and walk LID's arrow for it (an intent node under `docs/intent/`, then specs, then tests, then code).
+
+## M2: Run the pilot, in stages `[ ]`
+
+The pilot tests the instrument, so its runs don't count as evidence. Each stage has a threshold. The thresholds below are proposals and get settled before the stage runs.
+
+| Stage | What runs | Rough size | Go on only if |
+|---|---|---|---|
+| 0. Plumbing | All three arms on Sonnet 5.5: a build plus two changes | About 9 sessions | Every arm completes, isolation holds, stops and questions work, and usage records are complete |
+| 1. Ceiling | Bare arm only, on Opus 5.5: the full script, 2 trajectories | About 20 sessions | The bare arm meets no more than about 85% of requirements in force. If it meets more, harden the seed before going on |
+| 2. Variance | All three arms on Sonnet 5.5, 3 trajectories each, one policy, with identical-probe forks; plus the A/A check and the positive control | About 120 sessions | Graders agree with the maintainer's spot checks on at least about 90% of verdicts; test-retest flips stay under about 5%; the positive control shows worse fidelity; the A/A check shows no difference |
+| 3. Second tier and policy | LID Full and cheap discipline on Opus 5.5, and under a second user policy | About 50 sessions | Variance is low enough to size the counted runs |
+
+In total that is about 200 sessions, against about 700 for the pilot as first drafted.
+
+Alongside the stages:
+
+- `[ ]` The maintainer plays the owner on a few trajectories, to calibrate the bounded-attention policy and check the simulator.
+- `[ ]` Two people label about 100 requests to check the touchpoint rubric (target kappa 0.7 or better).
+- `[ ]` A small cross-family grader sample (GPT-6.1 Terra) measures self-preference.
 
 ## M2b: Check against SlopCodeBench `[ ]`
 
@@ -41,27 +67,36 @@ The pilot tests the instrument, so its runs don't count as evidence. It should a
 
 ## M3: Pre-register `[ ]`
 
-- `[ ]` Freeze [hypotheses.md](hypotheses.md), the primary comparison, the analysis plan, and the exclusion rules, and commit them before the first counted run.
+- `[ ]` Draft the competitor arm configurations (OpenSpec, Spec Kit with its living-spec model, cc-sdd), and invite their maintainers to review them, and the design, before the freeze.
+- `[ ]` Freeze [hypotheses.md](hypotheses.md), the primary comparison, the analysis plan, the equivalence margin, and the exclusion rules, and commit them before the first counted run.
 - `[ ]` Choose the number of repetitions from the pilot's measured variance.
 
-## M4: Add competitors `[ ]`
+## M4: LID against itself, and a larger project `[ ]`
 
-- `[ ]` Add arms for OpenSpec, Spec Kit (living-spec model), and cc-sdd, plus LID Scoped.
-- `[ ]` Add a second, medium-sized seed.
-- `[ ]` Publish the guide to running the eval on one's own system, and invite the maintainers of the compared systems to review their arms.
+- `[ ]` Run LID Scoped, and LID with and without the arrow-maintenance overlay (H8).
+- `[ ]` Add a medium size tier, near the executor's context window.
+- `[ ]` Add ReleaseDesk as the second seed.
+- `[ ]` Run the single-session and memory-on ablations.
+- `[ ]` Add repairs, with delayed, symptom-only reports confirmed by a replayed reproduction.
 
-## M5: Add model families `[ ]`
+## M5: Add competitors `[ ]`
 
-- `[ ]` Run the OpenAI family (GPT-6.1 Sol and Terra) through opencode over OpenRouter, with a hard dollar cap set from the pilot's measured cost per trajectory.
-- `[ ]` Decide whether to add a third family.
+- `[ ]` Run OpenSpec, Spec Kit, and cc-sdd with the configurations their maintainers reviewed.
+- `[ ]` Publish the guide to running the eval on one's own system.
 
-## M6: Larger and older projects `[ ]`
+## M6: Add model families `[ ]`
+
+- `[ ]` Run the OpenAI family (GPT-6.1 Sol and Terra) through opencode over OpenRouter, with a hard dollar cap set from the pilot's measured tokens per trajectory.
+- `[ ]` Decide whether to add a third family, and a Haiku 5.5 tier.
+
+## M7: Larger and older projects `[ ]`
 
 - `[ ]` A brownfield seed, onboarded by each arm.
 - `[ ]` History replay from an open-source project.
+- `[ ]` Relayed briefs, where an intermediary product manager loses and reinterprets some intent.
 - `[ ]` Measure design-level fidelity (HLD to LLD to EARS) for LID, and file a separate issue for any change to LID's skills that comes out of it.
 
-## M7: Answer #75 `[ ]`
+## M8: Answer #75 `[ ]`
 
 - `[ ]` Rewrite or support HLD Goal 3's "proportional cost" claim with graded evidence.
 - `[ ]` Write what LID can tell users about cost: where it pays, where it doesn't, and how strong the evidence is. This may go in a users' guide or on the site, with every claim tracing to graded results.

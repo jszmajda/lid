@@ -6,7 +6,10 @@ Three models from three families each answered the same prompt ([prompt.md](prom
 - [gpt-6.1-sol.md](gpt-6.1-sol.md): one OpenRouter call at high reasoning effort.
 - [gemini-4-argon.md](gemini-4-argon.md): one OpenRouter call at high reasoning effort.
 
-**Status:** waiting for the maintainer to pick.
+**Status:** chosen on 2026-11-12. BenchTime (Sol) is the pilot seed, and ReleaseDesk (Sol) is the second seed.
+
+- **BenchTime** mixes rules about time, state, and qualifications, so date arithmetic doesn't dominate it. It is small enough to build cheaply, and two families picked its domain first independently.
+- **ReleaseDesk** tests a different kind of rule: one that every new surface must respect, which a black-box grader can check by looking for a leak. It depends much less on dates.
 
 ## All fifteen at a glance
 

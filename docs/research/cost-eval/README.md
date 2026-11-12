@@ -20,14 +20,14 @@ The work happens in public. The draft pull request [#120](https://github.com/jsz
 
 Read this section first when you pick the work up in a new session. Update it at the end of every working session.
 
-**Where things stand.** The design has a first full draft in [design.md](design.md), built from three independent takes: a brainstorm in the main session, a brainstorm by a second model, and a literature and landscape survey. A fresh review of the plan by Claude Fable came back on 2026-11-12 with a list of risks and gaps ([inputs/2026-11-12-fable-plan-review.md](inputs/2026-11-12-fable-plan-review.md)). Its proposed changes aren't in [design.md](design.md) yet, because the maintainer hasn't decided on them. Fifteen candidate projects for the pilot seed are in [seed-proposals/](seed-proposals/README.md), waiting for the maintainer to pick one. The maintainer's decisions so far are in [log.md](log.md). Nothing has been built or run.
+**Where things stand.** The design in [design.md](design.md) is a second full draft. It merges three independent takes from kickoff, a fresh review of the plan ([inputs/2026-11-12-fable-plan-review.md](inputs/2026-11-12-fable-plan-review.md)), and the maintainer's decisions recorded in [log.md](log.md). The pilot seed is BenchTime, a reservation service for shared lab instruments, and the second seed is ReleaseDesk, an embargoed archive. The candidates and the reasons are in [seed-proposals/](seed-proposals/README.md). Claude roles (executors, simulator, graders) run on the maintainer's subscription to keep costs down. Nothing has been built or run.
 
-**Next actions** (the matching milestone in [plan.md](plan.md) is M1):
+**Next actions** (milestone M1 in [plan.md](plan.md)):
 
-1. The maintainer picks the pilot seed from [seed-proposals/](seed-proposals/README.md), and decides which of the plan review's changes to adopt. Then update [design.md](design.md), [hypotheses.md](hypotheses.md), and [plan.md](plan.md) to match.
-2. Write the chosen seed's product brief, then have a model from another family write the hidden oracle as narrative product prose.
-3. Write the pilot's change script, the user simulator's prompt, the attention rubric, and the grading rubric.
-4. Write the configurations for the three pilot arms: bare agent, cheap discipline, and LID Full.
+1. Have models from families other than Claude write BenchTime's product brief, its hidden oracle with a disclosure point for every item, and its change script. The maintainer reviews them.
+2. Write the grading rubric, the user simulator's prompt, and the touchpoint rubric.
+3. Calibrate the level 1 grader on Haiku 5.5 through `claude -p`.
+4. Write the configurations for the three pilot arms (bare agent, cheap discipline, LID Full) and the per-arm isolation recipe, then check the headless plumbing and subagent token accounting.
 5. Decide where the harness code lives, then walk LID's arrow for it before writing any code (see "Harness code" below).
 
 ## Files
