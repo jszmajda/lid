@@ -1,0 +1,55 @@
+# Research notebook: what LID costs, compared with other ways of working
+
+**Status: designing the pilot. No counted runs yet.** Last updated 2026-11-11.
+
+## The question
+
+People who try LID ask what it costs, and they most often ask how it compares with other spec-driven development (SDD) systems such as OpenSpec, GitHub Spec Kit, and BMAD. LID can't answer either question today. Issue [#75](https://github.com/jszmajda/lid/issues/75) records the gap. LID has never stated what walking the arrow costs. HLD Goal 3's claim that the adoption modes let teams use LID "at proportional cost" has no evidence behind it. Nobody knows the project size or change count at which walking the arrow starts to pay for itself.
+
+The working hypothesis is that LID costs more to build a system and less to change it later. A change made months later should find the intent it needs in the design docs and specs, so it should cost less and break less than it would where that intent lives only in code. The hypothesis is about long-term maintenance, especially of complex systems, so the research measures sequences of changes, not single tasks.
+
+The goal is to be able to tell a user, with the size of the effect and the strength of the evidence stated, "LID is cheaper (or more expensive) than X under Y conditions." Cost here means two things. It means tokens and dollars, and it also means the human attention each way of working asks for. The human cost is the more interesting of the two, because a person saying "ok" to a plan is a very different cost from a person having to think hard about what they want.
+
+## What kind of work this is
+
+This is a research spike to collect data, not a merge gate for LID's own development. We build the instrument so that it can later become a measuring eval, or a gate, without a rewrite: arms, seeds, and change scripts are data, runs are repeatable, and every result records the versions it ran on.
+
+The work happens in public. A draft pull request stays open and gets regular pushes, so other people can give feedback as it goes.
+
+## Resume here
+
+Read this section first when you pick the work up in a new session. Update it at the end of every working session.
+
+**Where things stand.** The design has a first full draft in [design.md](design.md), built from three independent takes: a brainstorm in the main session, a brainstorm by a second model, and a literature and landscape survey. The maintainer has settled the first decisions, which are listed in the 2026-11-11 entry of [log.md](log.md). Nothing has been built or run.
+
+**Next actions** (the matching milestone in [plan.md](plan.md) is M1):
+
+1. Choose the pilot's seed domain and write its product brief, then have a model from another family write the hidden oracle as narrative product prose.
+2. Write the pilot's change script, about 8 to 10 changes, with probe changes at different project ages and two redirects.
+3. Write the user simulator's prompt and the attention rubric.
+4. Write the configurations for the three pilot arms: bare agent, cheap discipline, and LID Full.
+5. Decide where the harness code lives, then walk LID's arrow for it before writing any code (see "Harness code" below).
+
+## Files
+
+| File | What it holds |
+|---|---|
+| [README.md](README.md) | This page: the question, where things stand, and how to keep the notebook |
+| [hypotheses.md](hypotheses.md) | The working hypotheses, each with its predicted direction and what would show it wrong |
+| [design.md](design.md) | The current eval design: arms, executors, seeds, changes, the user simulator, measures, statistics, fairness |
+| [plan.md](plan.md) | Milestones, with status |
+| [landscape.md](landscape.md) | A dated snapshot of the other SDD systems and how each one handles later changes |
+| [sources.md](sources.md) | Papers, benchmarks, and articles, each labelled by how closely we read it |
+| [log.md](log.md) | A dated journal: what was done, what was decided, and who decided it |
+
+## How to keep this notebook
+
+- **Write a log entry for every working session.** Say what was done, what was decided, and who decided it. When something in [design.md](design.md) or [hypotheses.md](hypotheses.md) changes, edit that file in place so it always shows the current state, and put the reason in the log.
+- **Freeze the hypotheses before the first counted run.** Pilot runs exist to test the instrument and don't count as evidence. Once the hypotheses, the primary comparison, and the analysis plan are frozen, any later change is a dated amendment that says why it was made.
+- **Label every source by how closely it was read.** Several numbers in [sources.md](sources.md) came from a fetch tool's summary of a page rather than from the page itself. Check a number against the original before quoting it anywhere public.
+- **Keep the public notebook free of private material.** Don't record personal details, private project names, or local paths.
+- **Hand work to subagents with this README as the brief.** A subagent given this page and one milestone from [plan.md](plan.md) has what it needs to start. Record what it found in the log and in the file it changed.
+
+## Harness code
+
+The notebook is research and sits outside LID's arrow. The harness that runs the eval is code, so it walks the arrow like the repository's other maintainer tooling: an intent node under `docs/intent/`, then specs, then tests, then code. The alternate-model runner (`docs/intent/alt-model-evals/`) and the cascade recorder (`docs/intent/cascade-recording/`) are the closest examples, and the runner's sandbox and opencode setup can probably be reused.
