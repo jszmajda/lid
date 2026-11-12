@@ -21,9 +21,9 @@ Status marks: `[x]` done, `[~]` in progress, `[ ]` not started.
 
 **Seed materials.** These are written by models from families other than Claude, reviewed by the maintainer, and hashed before any counted run.
 
-- `[ ]` Write BenchTime's product brief. It fixes the interface, the run command, the state reset, the settable clock, and the stack.
-- `[ ]` Write the hidden oracle as narrative product prose, with a disclosure point for every item: stated, askable, recognised on sight, emerging at change k, or realised on a symptom.
-- `[ ]` Write the change script: about 10 changes covering the change types, two redirects for testing the plumbing, at least one emerging item, and one probe request that makes sense at any age.
+- `[~]` Write BenchTime's product brief. It fixes the interface, the run command, the state reset, the settable clock, and the stack. Drafted by Argon and edited; awaiting the maintainer's review.
+- `[~]` Write the hidden oracle as narrative product prose, with a disclosure point for every item: stated, askable, recognised on sight, emerging at change k, or realised on a symptom. Drafted by Sol and edited; awaiting the maintainer's review.
+- `[~]` Write the change script: about 10 changes covering the change types, two redirects for testing the plumbing, at least one emerging item, and one probe request that makes sense at any age. Drafted by Sol and edited; awaiting the maintainer's review.
 - `[ ]` Write the grading rubric. Each requirement is a checkable statement with its disclosure, the change that introduced it, and the change that retires it, if any.
 
 **Simulator and graders:**

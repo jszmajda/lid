@@ -87,7 +87,21 @@ Everything behind the interface is the arm's own choice.
 
 **Size tiers** are set by the size of the code relative to the executor's context window, not by lines of code: well under the window, near it, and several times larger. LID's claim about cheap navigation depends on the window, so a medium tier comes before the competitor arms, and the largest tier will have to be brownfield.
 
-**Authorship.** Models from families other than Claude write the brief, the hidden oracle, and the change script, and the maintainer reviews them. The oracle is narrative product prose. It is never written as EARS requirements, because an oracle shaped like LID's specs would line up with LID's tests by construction. These materials are written without knowledge of the arms, and their hashes are recorded before any counted run.
+**Authorship.** Models from families other than Claude draft the brief, the hidden oracle, and the change script, without knowledge of the arms. The oracle is narrative product prose. It is never written as EARS requirements, because an oracle shaped like LID's specs would line up with LID's tests by construction.
+
+The main session then edits the drafts for quality before the maintainer reviews them. The main session knows the arms, so its edits could tilt the materials toward LID, and three rules guard against that:
+
+- **Edits may fix:**
+  - inconsistencies between the documents;
+  - items that can't be graded through the interface;
+  - names or values a grader needs that no disclosure contains;
+  - disclosure kinds a real owner wouldn't plausibly have;
+  - unclear wording;
+  - scope that would make the first build too large.
+- **Edits may not** change the mix of change types, add or remove changes, or move items between disclosure kinds in order to favour a predicted direction.
+- **Every edit is logged with its reason, and the drafts are kept unedited** beside the edited versions.
+
+**Hidden materials stay private until their runs finish.** The oracle and the change script, with the drafts and edit log, stay out of the public repository until every counted run that uses them is done, because an agent under test could otherwise find them. Their hashes are recorded publicly before any counted run. The brief and the authoring prompts are public.
 
 **Later seeds and variants:**
 

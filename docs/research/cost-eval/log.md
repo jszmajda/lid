@@ -2,6 +2,20 @@
 
 Newest entries first. Each entry says what was done, what was decided, and who decided it.
 
+## 2026-11-12 (evening): BenchTime's materials drafted and edited
+
+**Decided by the maintainer.**
+- The maintainer will review the brief, oracle, and change script together.
+- The main session should use its own judgment on Sol's drafts rather than pass them through unchanged.
+
+**Done.**
+- **Drafting.** GPT-6.1 Sol drafted the interface, the oracle, and the change script, from [prompts/01-oracle-and-changes.md](seeds/benchtime/prompts/01-oracle-and-changes.md). Gemini 4 Argon drafted the brief from only the interface and the items stated at the start ([prompts/02-brief.md](seeds/benchtime/prompts/02-brief.md)). Together they cost about $0.40.
+- **Editing.** The main session edited both. The edits are logged privately, because they reveal the hidden materials.
+  - Three are marked for the maintainer's review: moving one emerging item later, replacing an emerging item that wasn't really emerging, and replacing the probe.
+  - The others fix a brief that would have contradicted an askable rule, and stop the simulator receiving later intent early.
+- **Editing rules.** These went into [design.md](design.md) because the main session knows the arms. Edits may fix consistency, gradability, realism, and scope. They may not change the mix of change types or move items to favour a predicted direction. Every edit is logged with its reason, and the drafts are kept unedited.
+- **Hidden materials stay private.** The oracle and change script stay out of the public repository until the runs that use them finish, because an agent under test could find them with a web search. They live in a git-ignored `hidden/` folder, and their hashes will be published before any counted run. The brief and the prompts are public.
+
 ## 2026-11-12 (later): Seeds chosen, plan review adopted, costs constrained
 
 **Decided by the maintainer.**

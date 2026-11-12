@@ -24,7 +24,7 @@ Read this section first when you pick the work up in a new session. Update it at
 
 **Next actions** (milestone M1 in [plan.md](plan.md)):
 
-1. Have models from families other than Claude write BenchTime's product brief, its hidden oracle with a disclosure point for every item, and its change script. The maintainer reviews them.
+1. The maintainer reviews BenchTime's materials: the public [brief](seeds/benchtime/brief.md), and the oracle, change script, and edit log in `seeds/benchtime/hidden/` (kept out of the repository until the runs finish; see [seeds/benchtime/README.md](seeds/benchtime/README.md)). Then record their hashes.
 2. Write the grading rubric, the user simulator's prompt, and the touchpoint rubric.
 3. Calibrate the level 1 grader on Haiku 5.5 through `claude -p`.
 4. Write the configurations for the three pilot arms (bare agent, cheap discipline, LID Full) and the per-arm isolation recipe, then check the headless plumbing and subagent token accounting.
