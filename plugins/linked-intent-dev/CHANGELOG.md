@@ -4,7 +4,7 @@ All notable changes to LID (Linked-Intent Development) are recorded here. The fo
 
 ## [1.4.6] — 2026-11-11
 
-A patch to the capability flags: four more model configurations, cover for untested releases on a vendor's evidence, and what each configuration's output costs.
+A patch to the capability flags (four more model configurations, cover for untested releases on a vendor's evidence, and what each configuration's output costs) and a fix to two links in `map-codebase`.
 
 ### Changed
 - **Capability flags: four more configurations**, each at `medium`. `minimax/minimax-m3.1-flash` is flagged for *under-captured decision*. `openai/gpt-6.1-terra` carries no flag, so it no longer takes `openai/gpt-5.6-terra`'s flag. `tencent/hy4` carries no flag. `deepseek/deepseek-v4.1-flash-1017`, a dated snapshot, already took the `deepseek/deepseek-v4.1-flash` row; its own runs, now in the evidence, agree with that row. All four were measured on the same copy of the skills, with the capability subsystem removed, as the configurations added in 1.4.1.
@@ -12,6 +12,9 @@ A patch to the capability flags: four more model configurations, cover for untes
 - **Capability flags: output per run.** The evidence now records each configuration's median reasoning tokens and other output tokens per run, so a user choosing a model can estimate how its output cost compares. Configurations range from a few hundred reasoning tokens per run to over 36,000 (`tencent/hy4`).
 - **Capability-flag evidence: runs cut short twice.** When a rerun of a run cut short by a timeout is cut short again, the test project is judged by its pass rate over the runs that completed, against the same 70% line. `minimax/minimax-m3.1-flash` is the first configuration this applies to.
 - **The workflow doc carries the new rows and listings.** Projects that vendor `docs/lid/workflow.md` can re-sync it. Nothing else asks for action.
+
+### Fixed
+- **`map-codebase` reaches the arrow-doc template and the index schema.** Two links in the skill climbed one directory too far and pointed at files that exist on no host; they now resolve to `arrow-maintenance`'s references. (#115)
 
 ## [1.4.5] — 2026-11-11
 
