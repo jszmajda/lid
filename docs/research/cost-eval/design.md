@@ -54,7 +54,7 @@ Claude Code's auto-memory is turned off in every arm, because it would carry int
 
 ## Seed projects
 
-**Greenfield from a brief comes first.** Every arm starts from the same product brief, so no arm starts with an advantage and nobody has to map an existing codebase's intent first. The brief fixes an external interface, either a CLI or an HTTP API, including every name, path, and output format the hidden tests use. Everything behind that interface is the arm's own choice.
+**Greenfield from a brief comes first.** Every arm starts from the same product brief, so no arm starts with an advantage and nobody has to map an existing codebase's intent first. The brief fixes an external interface, either a CLI or an HTTP API, so graders can exercise every arm's software the same way. Everything behind that interface is the arm's own choice.
 
 **Interesting seed data** means domains with rules that aren't obvious from the code: billing with exceptions, scheduling across time zones, permissions, and state machines. A good seed has at least three components with contracts between them that nobody wrote down, and requirements that later conflict with each other. The free-trial question ("when exactly does day 30 end, and in whose time zone?") is the kind of rule a seed should contain.
 
@@ -96,7 +96,13 @@ Each seed has a scripted sequence of changes, written in plain product language 
 
 For each redirect we measure the cost from the redirect to an accepted change, how much the person had to say to get the change of direction across, and whether any artifact still states the abandoned intent afterwards.
 
-**Stating names (the oracle-gap rule).** A hidden test may depend on a name, path, or literal value only if the current change request, or an earlier change, states it. A published audit found that hidden tests that depend on unstated names fail mostly for that reason, not for wrong behaviour (see [sources.md](sources.md)). A requirement stated once in an earlier change and not repeated is fair to test, and testing it is exactly how we measure whether intent survives. A requirement never stated anywhere isn't fair to test. Each hidden test is audited against the whole change history, not just the current change.
+**Which requirements are fair to grade.** Every graded requirement is tagged by how the agent could know it:
+
+- **Stated:** the brief or a change request says it. A requirement stated once in an earlier change and not repeated is fair to grade, and grading it is how we measure whether intent survives.
+- **Latent:** only the hidden oracle holds it, but the owner gives it when asked. Grading it measures whether an arm finds out what the owner wants without being told.
+- **Unreachable:** neither stated nor something the owner would give when asked. This kind isn't graded.
+
+Stated and latent requirements are reported separately.
 
 Open: how to set the mix of change types. The pilot uses a hand-written mix. Later stages could match the mix to the frequencies seen in real commit histories.
 
@@ -130,7 +136,7 @@ Every point where the arm turns to the person is counted, along with the words i
 | Judgment | Chooses between options the agent sets out | "Should late fees apply to partial payments, or only to full ones?" |
 | Origination | Works out intent nobody has stated yet | "What should happen to a subscription when its owner's account is merged with another account?" |
 
-Each touchpoint also records its yield: whether the answer brought out intent that a later hidden test checks. That separates attention that was wasted from attention that prevented a failure.
+Each touchpoint also records its yield: whether the answer brought out intent that a later graded requirement checks. That separates attention that was wasted from attention that prevented a failure.
 
 A judge model sorts touchpoints into the four kinds using a rubric, and is checked against a sample sorted by people before its results are trusted. Wall-clock time and the time a person would spend waiting are recorded too.
 
@@ -138,13 +144,15 @@ A judge model sorts touchpoints into the four kinds using a rubric, and is check
 
 Fidelity is measured at three levels. Not every arm has all three.
 
-1. **Behaviour against the oracle (every arm).** Hidden black-box tests run at the fixed external interface. They split into acceptance tests, for what the current change adds, and regression tests, for what earlier changes established. The full suite runs after every change. Some regression tests check latent intent: requirements stated once, early on, and never repeated.
+1. **Behaviour against the oracle (every arm).** A grader model checks each requirement against the running software and returns a verdict with its evidence. It gets the requirement, can exercise the software through the external interface (running commands or making requests), and can read the code. Requirements split into new ones, from the current change, and preserved ones, from earlier changes, and every requirement is checked again after every change.
+   - Model graders are primary because what's being graded is meaning. The agent chooses its own names, messages, and structure, and a deterministic test can't tell when two different outputs mean the same thing.
+   - Executable checks are kept only where the brief fixes the output exactly, for example a stated output format. There they serve as a cheap cross-check on the graders.
 2. **Artifacts against code and against the oracle (arms that keep artifacts).** A cold reader, a fresh agent that sees only the arm's artifacts (for the bare arm, the code and README), answers questions about how the system behaves. We score the answers against the oracle and against what the running code does. This generalizes the idea behind LID's bidirectional-differential skill, a naive reader working intent out again, so it can apply to any system. Some arms may not produce artifacts for which this measure makes sense. If so, that is a finding, and we report it.
 3. **Design levels against each other (LID only).** No instrument today checks that LID's HLD, LLDs, and EARS agree with each other. The bidirectional-differential skill covers only EARS against code. Measuring this level here may lead to a separate change to LID, either extending that skill or adding a new one. That change would be its own issue and arrow walk.
 
 LID's own instruments aren't used as the scoring metric when comparing arms, because that would measure LID on its own terms. Their methods can be adapted into neutral measures, as level 2 does.
 
-**Judges** come from a different family from the executor and don't know which arm produced what they are judging. Before a judge is trusted, it is checked against labelled pairs in both directions: the same behaviour under different names (which should pass) and different behaviour under the same names (which should fail).
+**Graders** come from a different family from the executor and don't know which arm produced what they are judging. Before a grader is trusted, it is checked against labelled pairs in both directions: the same behaviour under different names (which should pass) and different behaviour under the same names (which should fail). Once runs start, the maintainer spot-checks a sample of verdicts at every level, with the heaviest sampling at level 2, because grading artifacts against code is the least well understood. The agreement rate between the graders and the maintainer is reported with the results. A small model such as Haiku may be enough for many of these checks, and the calibration tells us whether it is.
 
 ## Whether intent can be checked in CI
 
@@ -154,7 +162,7 @@ LID's own instruments aren't used as the scoring metric when comparing arms, bec
 
 ## Failures become cost
 
-When hidden tests fail after a change, the simulator files a bug report describing only the symptom, the way a user would, and that report becomes the next change, in a new session. Repair rounds are capped at K. A change still failing at the cap is counted as unresolved, reported separately, and handled in the analysis with a sensitivity check. A regression that slips past one change is charged when it is detected, and its dwell time (how many changes it survived) is recorded.
+When graders find that a requirement no longer holds after a change, the simulator files a bug report describing only the symptom, the way a user would, and that report becomes the next change, in a new session. Repair rounds are capped at K. A change still failing at the cap is counted as unresolved, reported separately, and handled in the analysis with a sensitivity check. A regression that slips past one change is charged when it is detected, and its dwell time (how many changes it survived) is recorded.
 
 ## Cost accounting
 
@@ -197,6 +205,7 @@ When hidden tests fail after a change, the simulator files a bug report describi
 ## Open questions
 
 - Where the harness code lives, and how much of the alternate-model runner it reuses.
+- Which model family is third: Gemini 4, or the latest DeepSeek.
 - Which domain the pilot seed uses.
 - Whether the simulator's model should come from a different family from the executor's.
 - The repair cap K, and the time limits for builds and for changes.

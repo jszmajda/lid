@@ -79,7 +79,7 @@ All sources were gathered on 2026-11-11 unless marked otherwise.
   - Example: a server-sent-events task needed a constant named `valueSSE`. Of 34 analysed runs, 32 built the behaviour, but the 23 that named the constant something else (most often `valueEventStream`) passed none of the 84 tests.
   - Units with a gap failed in 80.6% of runs, against 48.4% for comparable units without one.
   - The paper's fix is to state the names the tests need, or to exclude tests that reach into internals.
-  - This is the source of the oracle-gap rule in [design.md](design.md).
+  - The lesson for us is narrow: a deterministic test can't grade output whose names the agent chooses. That is one reason our graders are models.
 - **DeepSWE** (arXiv 2607.07946, 2026-07). [link](https://arxiv.org/abs/2607.07946), skim. Hand-written verifiers disagreed with an LLM judge 1.4% of the time, against 32.4% for tests inherited from upstream repositories.
 
 ## Measuring cost

@@ -11,10 +11,13 @@ Status marks: `[x]` done, `[~]` in progress, `[ ]` not started. Spend on repetit
 
 ## M1: Design the pilot `[ ]`
 
-- `[ ]` Choose the pilot seed's domain, and write the product brief with its fixed external interface.
+- `[~]` Collect candidate project domains from GPT-6.1 Sol and Gemini 4 Argon, alongside the main session's three (in `seed-proposals/`). The maintainer picks.
+- `[~]` Have Claude Fable review the notebook's plan with fresh eyes.
+- `[ ]` Write the product brief for the chosen domain, with its fixed external interface. Consider having briefs written by models from several families, for variety.
 - `[ ]` Have a model from another family write the hidden oracle as narrative product prose, and review it.
 - `[ ]` Write the change script: about 8 to 10 changes, including probe changes at different ages and two redirects (one change of mind, one clarification; one early, one late).
-- `[ ]` Write the hidden tests: acceptance and regression tests for each change, audited against the oracle-gap rule.
+- `[ ]` Write the grading rubric: the oracle's requirements as checkable statements, each tagged stated or latent and linked to the change that introduced it.
+- `[ ]` Calibrate the grader on labelled pairs (the same behaviour under different names, and different behaviour under the same names), and try a small model such as Haiku.
 - `[ ]` Write the user simulator's prompt for both policies, and the four-kind attention rubric.
 - `[ ]` Write the arm configurations for the bare agent, cheap discipline, and LID Full.
 - `[ ]` Decide where the harness lives and walk LID's arrow for it (an intent node under `docs/intent/`, then specs, then tests, then code).
@@ -25,7 +28,7 @@ One seed, three arms, Claude Opus 5.5 and Sonnet 5.5 through `claude -p` at medi
 
 The pilot tests the instrument, so its runs don't count as evidence. It should answer these questions:
 
-- Do the hidden tests tell the arms apart at all, or does the bare agent pass nearly everything (the ceiling check)? If it does, make the seed harder before spending more.
+- Do the graded requirements tell the arms apart at all, or does the bare agent meet nearly all of them (the ceiling check)? If it does, make the seed harder before spending more.
 - How noisy are cost and fidelity between repeated runs?
 - Does the user simulator behave believably? (The maintainer plays the user on a few trajectories to compare.)
 - Can a judge sort touchpoints into the four attention kinds reliably?

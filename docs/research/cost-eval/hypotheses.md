@@ -22,7 +22,7 @@ Each hypothesis states a prediction, why we expect it, and what result would sho
 
 ## H3: LID asks for more human attention, and more of it is deep
 
-**Prediction.** LID asks the person for attention more often than the bare and cheap-discipline arms do. A larger share of it is judgment or working out new intent, rather than acknowledgement. A larger share of LID's questions also turns out to matter: the answer brings out intent the person hadn't stated, and a later hidden test checks that intent.
+**Prediction.** LID asks the person for attention more often than the bare and cheap-discipline arms do. A larger share of it is judgment or working out new intent, rather than acknowledgement. A larger share of LID's questions also turns out to matter: the answer brings out intent the person hadn't stated, and a later graded requirement checks that intent.
 
 **Why we expect it.** LID stops for inspection after every phase, and its tenets lean toward asking the person. The question is whether that attention buys anything.
 
@@ -62,4 +62,4 @@ Each hypothesis states a prediction, why we expect it, and what result would sho
 
 ## The result we commit to publishing either way
 
-At the project sizes we can afford, a bare agent on a frontier model may pass nearly every hidden test. If so, the likely result is that "LID costs k times more with no fidelity gain we could measure at these sizes." That answers #75's requirement that LID say honestly where it isn't worth the spend, and we publish it if it's what we find.
+At the project sizes we can afford, a bare agent on a frontier model may meet nearly every graded requirement. If so, the likely result is that "LID costs k times more with no fidelity gain we could measure at these sizes." That answers #75's requirement that LID say honestly where it isn't worth the spend, and we publish it if it's what we find.

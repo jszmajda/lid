@@ -2,6 +2,30 @@
 
 Newest entries first. Each entry says what was done, what was decided, and who decided it.
 
+## 2026-11-12: Graders are models; collecting project proposals
+
+**Decided by the maintainer.**
+
+- **Graders are models.** The oracle-gap result shows only that deterministic tests can't grade output the agent words and names for itself. What we grade is meaning, which models handle well, and even a small model such as Haiku may catch a lot. Graders are calibrated before they're trusted, and the maintainer spot-checks their verdicts, most heavily at fidelity level 2 (artifacts against code). [design.md](design.md) now treats model graders as primary, keeps executable checks only where the brief fixes the output exactly, and tags each graded requirement as stated or latent.
+- **Collect project proposals from other model families before choosing the pilot seed.** GPT-6.1 Sol and Gemini 4 Argon each answer the same prompt ([seed-proposals/prompt.md](seed-proposals/prompt.md)), and the maintainer picks. Briefs, even for a domain Claude proposed, can also be written by models from several families, for variety.
+- **Get one more read of the plan from Claude Fable** before starting M1.
+
+**Done.**
+
+- The same prompt also went to a fresh Claude Opus 5.5 session through `claude -p`, with no tools and no project context. Claude's proposals then come from the same inputs as the other two, rather than from the main session, which already knew the design.
+- **Fifteen candidate projects came back.** They are in [seed-proposals/](seed-proposals/README.md), with a comparison table. The OpenRouter calls cost about $0.09 (Sol) and $0.16 (Argon). Claude Code estimated $1.05 for the Opus session.
+  - Sol's top pick and Argon's are nearly the same domain: shared lab equipment booking.
+  - All three proposers asked, unprompted, for a clock the grader can set.
+- **Claude Fable reviewed the plan** with no context beyond the notebook. Its report is saved as [inputs/2026-11-12-fable-plan-review.md](inputs/2026-11-12-fable-plan-review.md). Its top concerns:
+  - the repair loop acts as a free QA team for every arm;
+  - the diligent simulator acts as a perfect proofreader, which rewards whichever arm shows the most text;
+  - graders that read the repository can't be blind to the arm;
+  - a small pilot can't show the slope it is meant to measure;
+  - redirect costs aren't comparable across arms with different stopping points.
+
+  Its proposed changes wait on the maintainer's decision.
+- **Kept the kickoff brainstorm** by the second model as [inputs/2026-11-11-fable-brainstorm.md](inputs/2026-11-11-fable-brainstorm.md), so a later reader can see where the design came from.
+
 ## 2026-11-11: Kickoff
 
 **Done.**
