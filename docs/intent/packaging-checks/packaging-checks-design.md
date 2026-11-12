@@ -10,7 +10,7 @@ prefix: PKG-CHECK
 Users install LID's plugins from `main`, so a merge to `main` ships (HLD § Key Design Decisions / *Code and tests for LID*, test layer 3). The packaging checks confirm, before each merge, that what the plugins ship is well-formed and loads whole on a host that reads it.
 
 They enforce rules other segments own, and leave those rules with their owners:
-- the skill and command layout, the frontmatter form, the version and CHANGELOG rules, and the marketplace manifests, in `project-structure`;
+- the skill and command layout, the frontmatter form, the version and CHANGELOG rules, the marketplace manifests, and the Agent Plugins manifests, in `project-structure`;
 - the skill size limits, in the `linked-intent-dev` core design.
 
 The tool also assembles the shipped workflow doc, so the release step and the check use one recipe.
@@ -59,9 +59,9 @@ The checks therefore test outcomes, whatever scalar form a value is written in:
 
 **Versions.** "The version" below is the shared version, read from `linked-intent-dev`'s `plugin.json` even when the plugins disagree.
 
-- The three `.claude-plugin/plugin.json` files carry the same `version`, of the form `X.Y.Z`. No Cursor manifest and no entry in either marketplace manifest carries one.
+- The three `.claude-plugin/plugin.json` files and the three Agent Plugins manifests (`plugins/<plugin>/plugin.json`) carry the same `version`, of the form `X.Y.Z`. No Cursor manifest and no entry in either marketplace manifest carries one.
 - Every `## ` heading in the CHANGELOG is a version heading, `## [X.Y.Z]` optionally followed by ` — YYYY-MM-DD`, in descending order with none repeated, and the first is the version.
-- When any plugin's shipped files differ from `main`, the version is the next one after `main`'s: its next patch (`X.Y.Z+1`), next minor (`X.Y+1.0`), or next major (`X+1.0.0`). When none differ, it equals `main`'s.
+- When any plugin's shipped files differ from `main`, the version is the next one after `main`'s: its next patch (`X.Y.Z+1`), next minor (`X.Y+1.0`), or next major (`X+1.0.0`). When none differ, it equals `main`'s. A manifest that differs from `main`'s only in its `version` is not a changed shipped file, so raising the version is not itself a change that needs one.
 - When the major.minor rises, the top entry holds exactly one `### Migration` heading, and it reads `### Migration (v<main's major.minor> → v<new major.minor>)`. A patch entry holds none.
 - The shipped workflow doc, apart from its stamp line, equals a fresh assembly of the current core skill source (see *Workflow-doc assembly*). Its stamp names the version in which that content last changed: the new version when the assembled content differs from the doc on `main`, otherwise `main`'s stamp.
 - `main`'s version has a `v<version>` tag, so a forgotten tag is caught by the next pull request's run.
@@ -69,6 +69,7 @@ The checks therefore test outcomes, whatever scalar form a value is written in:
 **Repository structure:**
 - internal markdown links in `CONTRIBUTING.md` and `docs/setup.md` resolve to existing files and anchors;
 - both marketplace manifests are valid JSON whose plugin `source` paths resolve to directories under `plugins/`;
+- each plugin has an Agent Plugins manifest at `plugins/<plugin>/plugin.json` that is a JSON object whose `$schema` is the 1.0.0 identifier, whose fields are only those the format permits and each of the type its schema sets, whose `name` equals the plugin's directory, and which carries the fields Kiro requires: a non-empty `description`, an `author` with a non-empty `name`, and a non-empty `keywords` list of strings. A conforming client rejects a plugin whose manifest breaks the schema, so Kiro would refuse the install;
 - `CLAUDE.md` is a symlink resolving to `AGENTS.md`.
 
 ## Host-loading check
@@ -90,7 +91,7 @@ The host-loading check loads each plugin the way a host does and observes what t
 
 opencode 1.x ignores `disable-model-invocation` and loads no command files. The result reports both as known host limits ("guard: not honored", "command aliases: not loaded"), not as failures. It reports the guard as honored only when every guarded skill is absent from opencode's report or marked there as not model-invocable — as opencode's v2 line may do — so a pinned version that starts honoring the guard visibly changes the result, and the limit stated in `docs/setup.md` is revisited.
 
-**Other hosts.** Cursor, and the tools that read only `AGENTS.md`, have no harness in this repository. Their documentation and users' bug reports cover them.
+**Other hosts.** Cursor, Kiro, and the tools that read only `AGENTS.md` have no harness in this repository. Their documentation and users' bug reports cover them. For Kiro, the static checks hold the Agent Plugins manifests to the format Kiro installs from and the `SKILL.md` frontmatter to the limits Kiro reads.
 
 ## Result states
 
@@ -135,7 +136,7 @@ The release step runs it (`project-structure` § *Versions and releases*), and t
 
 ## Cascade
 
-- **`project-structure`'s rules change** (*Skill and command files*, *Versions and releases*, *`CHANGELOG.md`*, the marketplace manifests) → the static checks update in the same change.
+- **`project-structure`'s rules change** (*Skill and command files*, *Versions and releases*, *`CHANGELOG.md`*, the marketplace manifests, the Agent Plugins manifests) → the static checks update in the same change.
 - **The `linked-intent-dev` core design's size limits change** → the size check updates in the same change.
 - **Where a host reads skills or commands changes** → the checks' file discovery updates in the same change.
 - **A host is found to misread frontmatter in a way the checks do not cover** → the checks gain a rule, and `project-structure`'s preferred form is re-examined against it.
@@ -159,6 +160,7 @@ The release step runs it (`project-structure` § *Versions and releases*), and t
 | Result states | pass, fail, inconclusive, error, skipped, owed, with fail taking precedence in a part, then error, then inconclusive; only pass and skipped allow a merge; *owed* only by opting out with `--no-host` | Pass and fail only; *owed* inferred whenever a host part cannot start | An infrastructure failure or a model that did not act says nothing about the plugins. Reporting either as a failure sends people chasing bugs that do not exist; reporting either as a pass lets a broken plugin merge. A real failure is the most useful thing a part can report, so it outranks an infrastructure problem in the same part. An explicit opt-out keeps a missing login from silently becoming someone else's job: without the flag, the run says what went wrong and how to opt out. |
 | Where the checks run | On the machine of whoever prepares a pull request, before it merges, with the result line recorded in the pull request; the maintainer's final run gates the merge | A hosted CI workflow on each pull request; a run only when a version is cut | The repository has one maintainer and runs no hosted CI. The host-loading check needs a Claude Code login and a container runtime, which hosted CI would have to provide, holding the login as a secret and paying for model use on every run. Every merge to `main` ships, so a run only at version cuts would miss what merges between them. The result line names the commit and tree it checked, so a reviewer can see whether the run covers the final commit. The checks are one command, so moving them into hosted CI later takes only a workflow file. |
 | Workflow-doc assembly | A deterministic assembly in this tool, run by the release step and re-run by the check | Assembly by hand at release, following a prose recipe | A hand assembly cannot be checked: a doc left stale after a later source edit still differs from `main` and carries the new stamp. One assembly serves both the release step and the check. It is repository tooling that ships in no plugin. |
+| Agent Plugins manifest validation | Hand-written checks of the 1.0.0 schema's fields and types, plus the fields Kiro requires | The `jsonschema` package against the published schema; installing each plugin in Kiro | The schema is short and closed, so a direct check needs no second dependency and its messages name the field. The run never fetches a schema, as conforming clients must not either. A Kiro install needs a login and no host record the check could read; the fields Kiro requires are the ones its documentation names. |
 | Untagged version | The static checks fail when `main`'s version has no `v<version>` tag | Rely on the release step alone | A project's instruction file links to the workflow doc at the tag of its recorded version, so a missing tag is a broken link for every project recorded at that version. The next pull request's run is the first point a check can see it. |
 | Host parts after a static failure | Run anyway | Stop after the static part, with a state for "not run" | What a host loads from a tree with a known fault still tells the author something — often the same fault, seen from the host's side — and the host parts are cheap. Stopping early would need a seventh state for little gain. |
 | Size limit in bytes | A `SKILL.md` body under 50,000 bytes | 51,200 bytes (opencode's cut) | The hazard is opencode cutting a tool's output past 51,200 bytes, and that output wraps the body in the host's own text, so a body just under the cut would still lose its tail. 50,000 bytes reads the core design's "under 50 KB" in the way that leaves room for the wrapper. |

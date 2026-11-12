@@ -59,6 +59,15 @@ def changelog(version, earlier=("1.4.0",), top_extra=""):
     return "# Changelog\n\nIntro.\n\n" + "\n".join(entries)
 
 
+AGENT_SCHEMA = "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json"
+
+
+def agent_manifest(plugin, version):
+    return {"$schema": AGENT_SCHEMA, "name": plugin, "version": version, "description": "x",
+            "author": {"name": "x"}, "homepage": "https://example.com", "repository": "https://example.com/r",
+            "license": "MIT", "keywords": ["lid", plugin]}
+
+
 def build_tree(root, version="1.4.0", earlier=("1.4.0",), stamp=None, top_extra=""):
     """A minimal well-formed repository tree at `version`."""
     root = Path(root)
@@ -67,6 +76,7 @@ def build_tree(root, version="1.4.0", earlier=("1.4.0",), stamp=None, top_extra=
               json.dumps({"name": plugin, "description": "x", "version": version}))
         write(root / "plugins" / plugin / ".cursor-plugin" / "plugin.json",
               json.dumps({"name": plugin, "description": "x"}))
+        write(root / "plugins" / plugin / "plugin.json", json.dumps(agent_manifest(plugin, version)))
     core = root / "plugins" / "linked-intent-dev"
     write(core / "CHANGELOG.md", changelog(version, earlier, top_extra))
     write(core / "skills" / "linked-intent-dev" / "SKILL.md",
@@ -292,6 +302,15 @@ class VersionsTest(TreeCase):
         self.assertIn(".claude-plugin/marketplace.json", found)
         self.assertIn("arrow-maintenance/.cursor-plugin/plugin.json", found)
 
+    def test_agent_plugins_manifest_carries_the_shared_version(self):
+        # @spec PKG-CHECK-012
+        self.raise_to("1.4.1")
+        write(self.tree / "plugins/arrow-maintenance/plugin.json",
+              json.dumps(agent_manifest("arrow-maintenance", "1.4.0")))
+        found = self.reasons(self.findings(self.SHIPPED))
+        self.assertIn("same version", found)
+        self.assertIn("arrow-maintenance/plugin.json", found)
+
     def test_changelog_headings(self):
         # @spec PKG-CHECK-013
         self.raise_to("1.4.1")
@@ -335,6 +354,19 @@ class VersionsTest(TreeCase):
         path = self.tree / "plugins/arrow-maintenance/.claude-plugin/plugin.json"
         data = json.loads(path.read_text())
         data["description"] = "changed"
+        write(path, json.dumps(data))
+        self.assertEqual(self.findings(manifests), [])
+
+    def test_version_only_raise_of_agent_plugins_manifests_is_not_a_shipped_change(self):
+        # @spec PKG-CHECK-014
+        self.raise_to("1.4.1")
+        manifests = ["plugins/%s/%splugin.json" % (p, d)
+                     for p in ("linked-intent-dev", "arrow-maintenance", "lid-experimental")
+                     for d in (".claude-plugin/", "")]
+        self.assertTrue(any("equal" in f.reason for f in self.findings(manifests + ["docs/setup.md"])))
+        path = self.tree / "plugins/lid-experimental/plugin.json"
+        data = json.loads(path.read_text())
+        data["keywords"] = ["lid", "changed"]
         write(path, json.dumps(data))
         self.assertEqual(self.findings(manifests), [])
 
@@ -428,6 +460,48 @@ class StructureTest(TreeCase):
         found = self.reasons(pc.structure_findings(self.tree))
         self.assertIn(".cursor-plugin/marketplace.json", found)
         self.assertIn("plugins/gone", found)
+
+    def test_agent_plugins_manifests(self):
+        # @spec PKG-CHECK-040
+        path = self.tree / "plugins/arrow-maintenance/plugin.json"
+        good = agent_manifest("arrow-maintenance", "1.4.0")
+
+        def case(label, manifest=None, raw=None):
+            write(path, raw if raw is not None else json.dumps(manifest))
+            found = [f for f in pc.structure_findings(self.tree) if "arrow-maintenance/plugin.json" in f.where]
+            self.assertTrue(found, label)
+            return self.reasons(found)
+
+        def changed(**fields):
+            m = json.loads(json.dumps(good))
+            for k, v in fields.items():
+                if v is None:
+                    m.pop(k, None)
+                else:
+                    m[k] = v
+            return m
+
+        self.assertIn("not valid JSON", case("bad json", raw="{nope"))
+        self.assertIn("JSON object", case("array", raw="[]"))
+        self.assertIn("$schema", case("other schema", changed(**{"$schema": AGENT_SCHEMA.replace("1.0.0", "1.1.0")})))
+        self.assertIn("$schema", case("no schema", changed(**{"$schema": None})))
+        self.assertIn("displayName", case("unknown field", changed(displayName="Arrow Maintenance")))
+        self.assertIn("version", case("wrong type", changed(version=143)))
+        self.assertIn("keywords", case("keyword not a string", changed(keywords=["lid", 3])))
+        self.assertIn("author", case("author field", changed(author={"name": "x", "twitter": "y"})))
+        self.assertIn("extensions", case("extension not an object",
+                                         changed(extensions={"dev.kiro": "on"})))
+        self.assertIn("name", case("name differs", changed(name="arrows")))
+        self.assertIn("description", case("no description", changed(description=None)))
+        self.assertIn("description", case("empty description", changed(description="")))
+        self.assertIn("author", case("no author name", changed(author={"email": "x@example.com"})))
+        self.assertIn("keywords", case("no keywords", changed(keywords=[])))
+        path.unlink()
+        found = self.reasons(pc.structure_findings(self.tree))
+        self.assertIn("arrow-maintenance/plugin.json", found)
+        self.assertIn("missing", found)
+        write(path, json.dumps(changed(extensions={"dev.kiro": {"x": 1}})))
+        self.assertEqual(pc.structure_findings(self.tree), [])
 
     def test_claude_symlink(self):
         # @spec PKG-CHECK-020

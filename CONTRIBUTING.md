@@ -46,6 +46,7 @@ Every contribution walks an arrow, but the arrow shape varies by what is being c
 - **HLD or methodology change** — cascade through every affected LLD and spec in the same PR. Cross-segment cascade pauses for verification (per the HLD tenet *within-segment cascade is free; across-segment cascade pauses*); call those pauses out in the PR description.
 - **Site, examples, or positioning content** — `HLD → LLD → EARS → content + assets`. Build-time link and structural checks substitute for evals.
 - **New first-class plugin host** (a tool with its own plugin/skill marketplace, e.g. Cursor) — add its marketplace manifest and per-plugin manifests reusing the existing `plugins/` source, plus a plugin-host section in [`docs/setup.md`](docs/setup.md). `HLD → LLD → EARS → content + assets`.
+- **New host that installs from the Agent Plugins manifests** (e.g. Kiro) — no new manifest: each plugin's root `plugin.json` already serves it. Add a plugin-host section in [`docs/setup.md`](docs/setup.md) stating what the host does not load or deliver from the plugin layer. `HLD → LLD → EARS → content + assets`.
 - **New rule-file tool adapter** (Aider, Continue, etc.) — adapter file plus an entry in [`docs/setup.md`](docs/setup.md). The adapter points the agent at `AGENTS.md`; LID itself stays one source of truth.
 
 The principle behind these variants: **tests when the artifact has a runtime to assert against; dogfooding-or-justify when it does not.** "I could not write a test" is a fine answer for pure-prose skills. It is not a fine answer for behavioral skills or content artifacts — those have established verification modes, and skipping them is breaking the arrow.
@@ -101,7 +102,7 @@ On a contributor's pull request, the run that gates the merge is the maintainer'
 
 ## Release / versioning
 
-The three plugins share one semver version, set in each plugin's `.claude-plugin/plugin.json`. It is also the LID conventions version a project records as `- Version:` in its `## LID` block. No marketplace manifest carries a version: Claude Code reads it from `plugin.json`, and the Cursor manifests omit it.
+The three plugins share one semver version, set in each plugin's `.claude-plugin/plugin.json` and in its Agent Plugins manifest (the `plugin.json` at its root, which Kiro reads). It is also the LID conventions version a project records as `- Version:` in its `## LID` block. No marketplace manifest carries a version: Claude Code reads it from `plugin.json`, and the Cursor manifests omit it.
 
 **Every merge that changes shipped plugin files raises the version.** Claude Code updates an existing install only when the version changes, and users install from `main`, so a merge that leaves the version alone never reaches existing installs. A plugin's shipped files are its tracked files under `plugins/<plugin>/`, except any `evals/` directory; the CHANGELOG counts. A merge that changes no shipped file leaves the version equal to `main`'s.
 
@@ -115,7 +116,7 @@ A patch demands no migration. It may carry optional refreshes — template rewor
 
 **The release travels with the change.** A pull request that changes shipped plugin files also:
 
-- sets the raised version in the three `plugin.json` files;
+- sets the raised version in the six manifests that carry it (each plugin's `.claude-plugin/plugin.json` and root `plugin.json`);
 - adds the version's entry at the top of [`CHANGELOG.md`](CHANGELOG.md). A minor or major entry carries exactly one migration section, headed with the two major.minor versions (`### Migration (v1.4 → v1.5)`), which `update-lid`'s version-walk reads to guide projects through the upgrade. A patch entry carries none;
 - regenerates the shipped workflow doc (`plugins/linked-intent-dev/skills/update-lid/references/workflow-doc.md`) from the core skill source with `tools/packaging-checks/packaging_checks.py --write-workflow-doc`. The doc takes the new version as its stamp only when its assembled content changed.
 
