@@ -7,7 +7,10 @@ these optional setting files (files rather than environment variables, because
 the runner strips the harness's environment):
 
   mode              how the emulated harness behaves (default "ok"); a comma
-                    list applies per harness call in order, the last repeating
+                    list applies per harness call in order, the last repeating.
+                    "sleep" hangs silently (a follow-up turn too), "trickle" emits
+                    an event a second for six seconds and then finishes, and
+                    "chatter" emits an event a second until stopped
   docker-info-fail  when present, `docker info` exits 1
   build-sleep       seconds `docker build` sleeps before succeeding
   mem-total         bytes `docker info --format {{.MemTotal}}` reports (default 8 GiB)
@@ -97,6 +100,19 @@ def harness(project, plugins, config_path, argv, pidfile):
     if mode == "error_event":
         emit({"type": "error", "error": {"name": "APIError", "data": {"message": "Missing Authentication header"}}})
         sys.exit(0)
+    if mode == "sleep":
+        with open(os.path.join(project, "partial.txt"), "w") as f:
+            f.write("written before the hang\n")
+        os.makedirs(os.path.join(project, ".git"), exist_ok=True)
+        open(os.path.join(project, ".git", "index.lock"), "w").close()
+        time.sleep(120)
+        sys.exit(0)
+    if mode in ("trickle", "chatter"):
+        # Steady output: one event a second, for six seconds (trickle, which then
+        # finishes normally) or until the runner stops it (chatter).
+        for _ in range(6 if mode == "trickle" else 120):
+            emit({"type": "step_start", "part": {}})
+            time.sleep(1)
     if "--continue" in argv:
         # A follow-up turn: answer in the same session and leave one more file behind.
         with open(os.path.join(project, "second-turn.txt"), "w") as f:
@@ -111,13 +127,6 @@ def harness(project, plugins, config_path, argv, pidfile):
         os.symlink(decoy, os.path.join(project, ".git"))
     if mode == "fifo":
         os.mkfifo(os.path.join(project, "pipe"))
-    if mode == "sleep":
-        with open(os.path.join(project, "partial.txt"), "w") as f:
-            f.write("written before the hang\n")
-        os.makedirs(os.path.join(project, ".git"), exist_ok=True)
-        open(os.path.join(project, ".git", "index.lock"), "w").close()
-        time.sleep(120)
-        sys.exit(0)
 
     if mode == "gitlink":
         emit({"type": "text", "part": {"type": "text", "text": "swapped .git"}})

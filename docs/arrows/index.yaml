@@ -191,7 +191,7 @@ arrows:
     blockedBy: [linked-intent-dev]
     detail: alt-model-evals.md
     next: null
-    drift: "82 specs, 82 [x] (CLI to 012, STAGE to 013, RUN to 011, OUT to 018, REC 001-004 satisfied by the 1.4.0 roster entries in tested_with, REC-005 by the 2026-10-16 Gemini 4 Argon and Muse Glimmer 30B entries, run on a capability-stripped copy). 77 runner tests green. Used for the 1.4.0 capability roster on six OpenRouter models and for eleven more from 2026-10-16 to 2026-11-11."
+    drift: "85 specs, 85 [x] (CLI to 013, STAGE to 013, RUN to 012, OUT to 019, REC 001-004 satisfied by the 1.4.0 roster entries in tested_with, REC-005 by the 2026-10-16 Gemini 4 Argon and Muse Glimmer 30B entries, run on a capability-stripped copy). 83 runner tests green; runs stop on a 10-minute inactivity limit or a 30-minute run limit. Used for the 1.4.0 capability roster on six OpenRouter models and for eleven more from 2026-10-16 to 2026-11-11."
 
   packaging-checks:
     status: MAPPED
