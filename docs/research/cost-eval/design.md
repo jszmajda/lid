@@ -77,7 +77,7 @@ Each change runs in a fresh session. The agent continues in its own workspace, t
 - the language and stack, to cut variance (Python 3.12, FastAPI, and SQLite for BenchTime);
 - one command, documented in the README, that starts the software;
 - one data location that the start command uses, so the harness can reset state by starting from an empty location;
-- reading the current time from the system clock. The harness controls that clock from outside, so time-dependent rules can be graded reproducibly without the arm building a clock of its own.
+- reading the current time from the system clock. The harness controls that clock from outside, with `libfaketime` in the Linux container the software runs in, so time-dependent rules can be graded reproducibly without the arm building a clock of its own. The container runs in UTC; the lab's time zone is setup data.
 
 **The chosen seeds.** All fifteen candidates and the reasons for the choice are in [seed-proposals/](seed-proposals/README.md).
 
@@ -225,7 +225,7 @@ Level 3 is never folded into any score that compares arms. LID's own instruments
 
 ## Graders
 
-**Graders run on the maintainer's Claude subscription,** through `claude -p`, to keep costs down. Haiku 5.5 is the first choice, and Sonnet 5.5 is used if Haiku fails calibration. Execution and judgment (see "Grading protocol") each take one session per checkpoint, covering every item in force, rather than one session per item.
+**Graders run on the maintainer's Claude subscription,** through `claude -p`, to keep costs down. Haiku 5.5 is the first choice, and Sonnet 5.5 is used if Haiku fails calibration. Execution (see "Grading protocol") runs in batches of a few probes per session, because each probe takes a dozen or more calls and a session's cost grows with its length. Judgment reads each batch's execution log in one session.
 
 **Grading Claude with Claude risks a family bias,** so four safeguards apply:
 
@@ -275,7 +275,7 @@ An item is met only if every one of its probes passes. The share of probes passe
 
 ### Running and judging are separate steps
 
-1. **Execution.** A grading session works through the probes against the running software, using the interface reference, and records every request, response, and clock setting in an execution log. It records what it observes and doesn't decide verdicts.
+1. **Execution.** A grading session works through the probes against the running software, using the interface reference, and records every request, response, and clock setting in an execution log. It records what it observes and doesn't decide verdicts. The grader reaches the software only through a harness tool that sets the clock, resets state, and makes requests from inside the software's container, and the tool writes the execution log itself. Setup data that the software takes from a file or a command goes through the same tool, which never opens the source to the grader.
 2. **Judgment.** A separate session compares each probe's expected observation with the log, and returns a verdict with a short justification that cites the log entries it relied on. A verdict that cites no evidence from the log is invalid.
 
 Keeping the two steps apart means a verdict can be judged again, checked by another model, or corrected without running the software again.
@@ -327,7 +327,7 @@ The scheduled realised-on-a-symptom items in the oracle already work this way, b
 ## Cost accounting
 
 - **Token classes.** Every run records uncached input, cache writes, cache reads, and output tokens separately. Dollars come from a dated table of list prices, whoever actually paid. Claude Code's `total_cost_usd` is its own estimate, so it is recorded but not trusted on its own.
-- **Subagents count.** Before any counted run, we check that the recorded usage includes subagent sessions. Old transcripts suggest it may not.
+- **Subagents count.** A session's `modelUsage` and `total_cost_usd` include its subagents. After a resume they are cumulative for the session, so a turn's tokens are the difference between consecutive results. The `usage` field covers only the main thread, so it isn't used.
 - **Failed runs count.** Timeouts and harness errors are outcomes, and their spend counts. This differs from the alternate-model runner, which leaves them out of its results. In a cost eval, leaving them out would favour heavy systems, which time out more.
 - **Standing context.** Each arm's fixed per-session overhead (its instruction files and skills loaded every session) is measured separately from its per-change work.
 - **Run scheduling.** Trajectories are spread across several days, because infrastructure noise varies over time. Re-pricing every run as if it had no cache hits gives a sensitivity check.
@@ -388,8 +388,7 @@ The maintainer pays for this research, so the design keeps real spending small w
 ## Open questions
 
 - Where the harness code lives, and how much of the alternate-model runner it reuses.
-- Whether the harness can control time from outside for every arm, for example with `libfaketime` in the container, or whether the brief has to ask for a settable clock instead.
-- How the grader reaches the running software without seeing its source, for example by running the software in its own container and giving the grader only network access to it.
+- Whether executor sessions run in a Linux container per session, which isolates every harness the same way and keeps the maintainer's machine out of reach, using a long-lived subscription token.
 - Which model family is third: Gemini 4, or the latest DeepSeek.
 - Whether to add a Haiku 5.5 executor tier for H5.
 - The time limits for builds and for changes, and the repair cap for later stages.

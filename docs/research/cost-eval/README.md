@@ -26,19 +26,16 @@ Read this section first when you pick the work up in a new session. Update it at
 - **The pilot seed** is BenchTime, a reservation service for shared lab instruments. Each arm designs its own interface from a brief in the owner's words. A step before grading extracts the interface, and graders follow the grading protocol in [design.md](design.md): probes, separate execution and judgment, and checks on the graders.
 - **The seed's materials** are accepted by the maintainer, and their hashes are recorded as version 1. The public [brief](seeds/benchtime/brief.md) is in the repository. The oracle, change script, and edit log are in `seeds/benchtime/hidden/`, which git ignores, so they exist only in this workspace on the maintainer's machine. See [seeds/benchtime/README.md](seeds/benchtime/README.md).
 - **Claude roles** (executors, the simulator, and graders) run on the maintainer's subscription to keep costs down.
-- **The plumbing test is half done** (see [log.md](log.md), 2026-11-13 afternoon). LID's phase stops work headless, cost accounting is understood, and `libfaketime` works in a Linux container. Running executor sessions in a container is proposed, and waits on a subscription token from the maintainer.
+- **The plumbing test is done** (see [log.md](log.md), 2026-11-13 afternoon and evening). LID's phase stops work headless, and cost accounting is understood. A bare build of BenchTime ran in a container, its interface was extracted, and a Haiku grader ran four probes through the reference and judged them, catching both violations seeded into a mutant.
+- **Executor sessions in a Linux container** are proposed as the standard recipe, and wait on the maintainer's confirmation. The trial used the maintainer's subscription token.
 - **No counted runs yet.**
 
 **Next actions** (milestone M1 in [plan.md](plan.md)):
 
-1. Finish the plumbing test, using the scripts in [plumbing/](plumbing/README.md):
-   - With the maintainer's token from `claude setup-token`, check that `claude -p` works in the executor container, and whether the account email still reaches the session.
-   - A bare Sonnet session in the container builds BenchTime from the brief.
-   - An extraction session writes the interface reference from the draft template.
-   - A Haiku grader runs the four plumbing probes (in `seeds/benchtime/hidden/plumbing-probes.md`) through `gt`, and a separate Haiku session judges the execution log.
+1. Confirm the container recipe with the maintainer.
 2. Have Sol draft the probes for every item, then edit them and get them reviewed.
-3. Walk LID's arrow for the harness: an intent node under `docs/intent/`, then specs, then tests, then code (see "Harness code" below).
-4. In parallel: the user simulator's prompt, the touchpoint rubric, and the seeded-violation calibration set.
+3. Walk LID's arrow for the harness: an intent node under `docs/intent/`, then specs, then tests, then code (see "Harness code" below) The plumbing test's lessons for the harness are in the log's 2026-11-13 evening entry: probes in batches, snapshots of the data location, a `gt` that can't open the source, a commit at the end of each change, and extraction under the fake clock.
+4. In parallel: the user simulator's prompt, the touchpoint rubric, and the seeded-violation calibration set. The simulator has to recognise a finished change, and the design has to say whether an agent's list of its own interpretations counts as asking.
 
 ## Files
 

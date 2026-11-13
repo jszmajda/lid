@@ -32,22 +32,17 @@ Status marks: `[x]` done, `[~]` in progress, `[ ]` not started.
 - `[ ]` Write the user simulator's prompt for the three policies, with its answer record, its rules for broad questions and for silence, and a leak audit.
 - `[ ]` Write the touchpoint rubric for the six kinds of request, and the classifier prompt.
 - `[ ]` Calibrate execution and judgment on Haiku 5.5 through `claude -p`, using seeded violations and labelled pairs in both directions, and fall back to Sonnet 5.5 if Haiku misses the threshold. Measure test-retest flips at both steps.
-- `[ ]` Write the interface-extraction prompt and its fixed template, and check it on a few builds: does the reference let a grader exercise every operation, without describing intended behaviour?
-- `[ ]` Work out how the level 1 grader reaches the running software without seeing its source.
+- `[ ]` Write the interface-extraction prompt and its fixed template, and check it on a few builds: does the reference let a grader exercise every operation, without describing intended behaviour? A draft is in [plumbing/](plumbing/README.md) and worked on one build. It needs to run under the fake clock, so it doesn't wait out real time.
+- `[x]` Work out how the level 1 grader reaches the running software without seeing its source: through `gt`, a harness tool that works from inside the software's container and writes the execution log. Its command operation still has to be kept away from the source.
 
 **Arms and harness:**
 
 - `[ ]` Write the configurations for the bare agent, cheap discipline, and LID Full.
-- `[ ]` Write the isolation recipe: a separate Claude Code configuration directory per arm, and a check of each session's start-up record.
-- `[ ]` Check the headless plumbing under `claude -p`:
-  - plan-mode approval;
-  - LID's phase stops;
-  - questions answered by stopping and resuming;
-  - the rule that tells "done" from "waiting";
-  - controlling time from outside (for example with `libfaketime`);
-  - resetting by starting from an empty data location;
-  - whether an extraction reference lets a Haiku grader run probes against an interface it hasn't seen.
-- `[ ]` Check that the recorded token usage includes subagent sessions.
+- `[ ]` Write the isolation recipe. Proposed: each executor session runs in a Linux container from [plumbing/executor.Dockerfile](plumbing/executor.Dockerfile), with the arm's configuration in its own volume, the maintainer's subscription token, and a check of each session's start-up record. Waiting on the maintainer.
+- `[x]` Check the headless plumbing under `claude -p` (see [log.md](log.md), 2026-11-13): LID's phase stops; questions answered by stopping and resuming; controlling time from outside with `libfaketime`; resetting by starting from an empty data location; and whether an extraction reference lets a Haiku grader run probes against an interface it hasn't seen.
+- `[ ]` Check plan-mode approval headless, for the cheap-discipline arm.
+- `[ ]` Write the rule that tells "done" from "waiting", and check it against labelled transcripts.
+- `[x]` Check that the recorded token usage includes subagent sessions.
 - `[ ]` Decide where the harness lives, and walk LID's arrow for it (an intent node under `docs/intent/`, then specs, then tests, then code).
 
 ## M2: Run the pilot, in stages `[ ]`

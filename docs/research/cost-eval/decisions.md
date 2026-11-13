@@ -32,4 +32,6 @@ When a decision is replaced, remove its line and add the new one, so this list o
 - 2026-11-13 (later), maintainer: BenchTime's materials are accepted, including the three edits marked for review.
 - 2026-11-13 (later), maintainer: The log is compacted from time to time by a subagent, which can be Haiku.
 - 2026-11-13 (later), main session: Compact when log.md passes about 2,000 words. Keep the newest entries up to about 1,000 words, move older ones word for word to log-archive/, and keep standing decisions in this ledger.
+- 2026-11-13 (later), main session: The "Earlier, in brief" summary stays under about 300 words.
 - 2026-11-13, main session: the grading container runs in UTC. The brief makes the lab's time zone setup data, so a service that relies on the server's time zone is the arm's choice and is graded like any other.
+- 2026-11-13 (evening), main session: grading execution runs in batches of a few probes per session, and judgment reads each batch's log in one session.
