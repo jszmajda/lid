@@ -57,7 +57,7 @@ The pilot starts on Sonnet 5.5 and adds Opus 5.5 once the instrument works (see 
 
 Each change runs in a fresh session. The agent continues in its own workspace, the repository as the previous change left it, and nothing from earlier sessions carries over except what is in that repository. This is how the maintenance hypothesis works in practice: an agent that comes to change 6 without remembering changes 1 to 5 has to find the intent it needs.
 
-- **Each arm gets its own configuration.** Each arm runs with its own Claude Code configuration directory, holding only that arm's plugins, skills, and settings, with no global instruction file and no memory. The machine running the eval has LID's plugins installed for everyday use, so without this the bare arm would load them. Every session's start-up record is checked for the plugins and skills it loaded, and a session that loaded anything outside its arm's list is invalid.
+- **Each session runs in a container, with its arm's own configuration.** Every executor session runs in a Linux container from one pinned executor image, as a non-root user with a neutral git identity. The container is the permission boundary, so the agent runs with permissions bypassed, and every harness (Claude Code or opencode) is isolated the same way. Each arm's configuration lives in its own volume, holding only that arm's plugins, skills, settings, and session transcripts, with no global instruction file and no memory. The machine running the eval has LID's plugins installed for everyday use, and its account details would otherwise reach the agent, so nothing from that machine enters the container except the arm's workspace and a subscription token. Every session's start-up record is checked for the plugins and skills it loaded, and a session that loaded anything outside its arm's list is invalid.
 - **Auto-memory is off in every arm,** because it would carry intent between sessions outside the repository.
 - **Versions are pinned.** The Claude Code version and the model snapshot are pinned and recorded with every run.
 - **Every arm hears that someone can answer questions.** Every arm's first prompt for a change includes the same neutral sentence saying the product owner is available to answer questions.
@@ -388,7 +388,6 @@ The maintainer pays for this research, so the design keeps real spending small w
 ## Open questions
 
 - Where the harness code lives, and how much of the alternate-model runner it reuses.
-- Whether executor sessions run in a Linux container per session, which isolates every harness the same way and keeps the maintainer's machine out of reach, using a long-lived subscription token.
 - Which model family is third: Gemini 4, or the latest DeepSeek.
 - Whether to add a Haiku 5.5 executor tier for H5.
 - The time limits for builds and for changes, and the repair cap for later stages.

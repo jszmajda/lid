@@ -38,7 +38,7 @@ Status marks: `[x]` done, `[~]` in progress, `[ ]` not started.
 **Arms and harness:**
 
 - `[ ]` Write the configurations for the bare agent, cheap discipline, and LID Full.
-- `[ ]` Write the isolation recipe. Proposed: each executor session runs in a Linux container from [plumbing/executor.Dockerfile](plumbing/executor.Dockerfile), with the arm's configuration in its own volume, the maintainer's subscription token, and a check of each session's start-up record. Waiting on the maintainer.
+- `[x]` Write the isolation recipe: each executor session runs in a Linux container from [plumbing/executor.Dockerfile](plumbing/executor.Dockerfile), with the arm's configuration in its own volume, the maintainer's subscription token, and a check of each session's start-up record. Accepted by the maintainer on 2026-11-13.
 - `[x]` Check the headless plumbing under `claude -p` (see [log.md](log.md), 2026-11-13): LID's phase stops; questions answered by stopping and resuming; controlling time from outside with `libfaketime`; resetting by starting from an empty data location; and whether an extraction reference lets a Haiku grader run probes against an interface it hasn't seen.
 - `[ ]` Check plan-mode approval headless, for the cheap-discipline arm.
 - `[ ]` Write the rule that tells "done" from "waiting", and check it against labelled transcripts.

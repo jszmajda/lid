@@ -4,6 +4,18 @@ Newest entries first. Each entry says what was done, what was decided, and who d
 
 Older entries move to [log-archive/](log-archive/) when this file passes about 2,000 words, and 'Earlier, in brief' at the bottom summarizes them.
 
+## 2026-11-13 (night): The container recipe is standard; probes requested
+
+**Decided by the maintainer.**
+- Every executor session runs in a Linux container from the pinned executor image, with each arm's configuration in its own volume and the maintainer's subscription token. [design.md](design.md) ("Sessions and isolation") now says so.
+- No force-pushes to the pull request branch, because they could disturb a collaborator's checkout. A pushed commit named the private file holding the token and had the maintainer's home-directory paths. The next commit moved those into a git-ignored local file, and the earlier commit stays in the history.
+
+**Done.** GPT-6.1 Sol was asked to draft probes for every graded BenchTime item ([prompts/05-probes.md](seeds/benchtime/prompts/05-probes.md)). The prompt asks for:
+- scenarios that name every inspection without hinting at the answer, because the executor never sees the expected observations;
+- named starting setups, so the harness can prepare each once and restore it;
+- the change each probe applies from and until;
+- what each probe needs beyond the clock, reset, requests, and setup commands, such as concurrent requests, a restart on existing data, or data from an earlier checkpoint.
+
 ## 2026-11-13 (evening): The plumbing test, second half
 
 **The maintainer supplied** a long-lived subscription token (an OAuth token from `claude setup-token`, kept outside the repository), so executor sessions could be tried in a container. The whole plumbing test came to about 30 invocations and $4.15 at list price, all on the subscription.
