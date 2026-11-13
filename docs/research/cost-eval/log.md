@@ -4,6 +4,52 @@ Newest entries first. Each entry says what was done, what was decided, and who d
 
 Older entries move to [log-archive/](log-archive/) when this file passes about 2,000 words, and 'Earlier, in brief' at the bottom summarizes them.
 
+## 2026-11-13 (afternoon): The plumbing test, first half
+
+**Done.** About 25 throwaway `claude -p` sessions on Sonnet 5.5, about $1.60 at list price on the subscription, plus a container check of `libfaketime`. The scripts worth keeping are in [plumbing/](plumbing/README.md).
+
+**LID's phase stops work headless.**
+- Each stop ends the turn with a question, and `--resume` with an answer carries on to the next stop.
+- A full walk of a toy change (a temperature converter) took nine stops: options for the HLD, then reviews of the HLD, LLD, EARS, the edge audit, its revisions, the tests, and the code, then a question about committing.
+- It cost $1.07 at list price up to finished code, with every answer "Approved."
+- Answering "Approved." after the work was finished made the session offer the same choices three more times. The user simulator has to recognise when a change is finished.
+
+**Isolation on the maintainer's machine.**
+- `--setting-sources project,local` keeps the maintainer's plugins, personal skills, and personal instructions out of a session, and keeps the subscription login.
+- `autoMemoryEnabled: false` turns memory off.
+- `--plugin-dir` loads only the LID plugin. The plugin's reference files then sit outside the project, so they also need `--add-dir`.
+- A git identity set inside the repository keeps the maintainer's name out.
+- `--safe-mode` drops the project's own CLAUDE.md, which the LID and cheap-discipline arms need, so it can't be used.
+- A fresh `CLAUDE_CONFIG_DIR` isolates everything but isn't logged in, because the login lives in the macOS keychain.
+- AGENTS.md is read when there's no CLAUDE.md. When both exist, only CLAUDE.md was read.
+
+**Two problems remain on the maintainer's machine.**
+- The account email reaches every session, with an instruction to use it for authorship. Arm repositories may be published.
+- Claude Code's sandbox would let an arm run commands safely, but it blocks uv's cache and PyPI. Narrow command allowlists break on compound commands such as `cd x && mkdir y`.
+
+**Cost accounting.**
+- `modelUsage` and `total_cost_usd` in a session's result include subagents. The main transcript plus the subagent's transcript matched them to the token.
+- The `usage` field covers the main thread only. The Agent tool's own usage figure covers only the subagent's last message.
+- After `--resume`, the totals are cumulative for the session, so a turn's cost is the difference between consecutive results.
+
+**`libfaketime` controls time in a Linux container.**
+- Python's clock and SQLite's `datetime('now')` both follow it.
+- A new time written to the clock file inside the container takes effect on the next request, without a restart. A time written with `@` keeps ticking; one without it stays frozen.
+- Data in a Docker volume survives restarts, so a new volume resets the app.
+- The faked time is read in the container's time zone.
+- On macOS, colima doesn't share `/private/tmp` with its virtual machine, so the clock file is written with `docker exec` instead of a mounted folder.
+
+**Proposed by the main session, waiting on the maintainer.** Run every executor session in a Linux container with permissions bypassed, from the same image family as grading.
+- It isolates every arm the same way, whatever the harness.
+- It keeps the maintainer's machine out of reach.
+- Competitor maintainers can run the eval unchanged.
+- It needs a long-lived subscription token from `claude setup-token`.
+- An image with Claude Code 2.1.323, uv, and Python 3.12 is built.
+
+**Decided by the main session.** The grading container runs in UTC. The brief makes the lab's time zone setup data, so a service that relies on the server's time zone is the arm's choice and is graded like any other.
+
+**Still open.** Whether a Haiku grader can work from an extraction reference. That needs an app built in the container. Four plumbing probes, a draft extraction template, and the logging tool `gt` are ready.
+
 ## 2026-11-13 (later): Seed materials accepted; the log gets compacted
 
 **Decided by the maintainer.**

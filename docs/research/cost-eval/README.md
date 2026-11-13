@@ -24,22 +24,21 @@ Read this section first when you pick the work up in a new session. Update it at
 
 - **The design** in [design.md](design.md) is a second full draft. It merges the kickoff takes, a fresh review of the plan, and the maintainer's decisions recorded in [log.md](log.md).
 - **The pilot seed** is BenchTime, a reservation service for shared lab instruments. Each arm designs its own interface from a brief in the owner's words. A step before grading extracts the interface, and graders follow the grading protocol in [design.md](design.md): probes, separate execution and judgment, and checks on the graders.
-- **The seed's materials** are drafted and edited, and wait for the maintainer's review. The public [brief](seeds/benchtime/brief.md) is in the repository. The oracle, change script, and edit log are in `seeds/benchtime/hidden/`, which git ignores, so they exist only in this workspace on the maintainer's machine. See [seeds/benchtime/README.md](seeds/benchtime/README.md).
+- **The seed's materials** are accepted by the maintainer, and their hashes are recorded as version 1. The public [brief](seeds/benchtime/brief.md) is in the repository. The oracle, change script, and edit log are in `seeds/benchtime/hidden/`, which git ignores, so they exist only in this workspace on the maintainer's machine. See [seeds/benchtime/README.md](seeds/benchtime/README.md).
 - **Claude roles** (executors, the simulator, and graders) run on the maintainer's subscription to keep costs down.
-- **Nothing has been built or run yet.**
+- **The plumbing test is half done** (see [log.md](log.md), 2026-11-13 afternoon). LID's phase stops work headless, cost accounting is understood, and `libfaketime` works in a Linux container. Running executor sessions in a container is proposed, and waits on a subscription token from the maintainer.
+- **No counted runs yet.**
 
 **Next actions** (milestone M1 in [plan.md](plan.md)):
 
-1. The maintainer reviews BenchTime's brief, oracle, change script, and edit log. Fold in their changes, then record the hidden files' hashes in the seed's README.
-2. The plumbing test: a dozen or so throwaway `claude -p` sessions on Sonnet 5.5, run before any harness code is written. The scripts go in the scratchpad and the findings go in the log. It answers these questions:
-   - Does LID's phase stop end a turn in headless mode, and does resuming with an answer work?
-   - Does a separate configuration directory per arm keep the maintainer's installed plugins out of the bare arm?
-   - Does the usage record include subagents?
-   - Does `libfaketime` control time for a FastAPI and SQLite app?
-   - Can an extraction reference let a Haiku grader run probes against an interface it hasn't seen?
-3. Have Sol draft the probes for every item, then edit them and get them reviewed.
-4. Walk LID's arrow for the harness: an intent node under `docs/intent/`, then specs, then tests, then code (see "Harness code" below).
-5. In parallel: the user simulator's prompt, the touchpoint rubric, and the seeded-violation calibration set.
+1. Finish the plumbing test, using the scripts in [plumbing/](plumbing/README.md):
+   - With the maintainer's token from `claude setup-token`, check that `claude -p` works in the executor container, and whether the account email still reaches the session.
+   - A bare Sonnet session in the container builds BenchTime from the brief.
+   - An extraction session writes the interface reference from the draft template.
+   - A Haiku grader runs the four plumbing probes (in `seeds/benchtime/hidden/plumbing-probes.md`) through `gt`, and a separate Haiku session judges the execution log.
+2. Have Sol draft the probes for every item, then edit them and get them reviewed.
+3. Walk LID's arrow for the harness: an intent node under `docs/intent/`, then specs, then tests, then code (see "Harness code" below).
+4. In parallel: the user simulator's prompt, the touchpoint rubric, and the seeded-violation calibration set.
 
 ## Files
 
@@ -53,6 +52,7 @@ Read this section first when you pick the work up in a new session. Update it at
 | [sources.md](sources.md) | Papers, benchmarks, and articles, each labelled by how closely we read it |
 | [log.md](log.md) | A dated journal: what was done, what was decided, and who decided it. Older entries are in [log-archive/](log-archive/) |
 | [decisions.md](decisions.md) | Every decision that still stands, with its date and who made it |
+| [plumbing/](plumbing/README.md) | Throwaway scripts from the plumbing test: the executor image, the clock check, the grading tool, and a draft extraction template |
 | [upkeep/](upkeep/) | Procedures for keeping the notebook, such as compacting the log |
 | [seed-proposals/](seed-proposals/README.md) | Candidate projects for the pilot seed from three model families, with a comparison table |
 | [inputs/](inputs/) | Design inputs kept as they were written: the second model's kickoff brainstorm and its later review of the plan |

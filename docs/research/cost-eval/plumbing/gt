@@ -1,0 +1,20 @@
+#!/bin/bash
+# macOS host script (uses BSD date). The container clock file is read in the container time zone (GT_TZ, default UTC).
+# Grading tool: every call is appended to $GT_LOG. Usage:
+#   gt clock <ISO-8601 UTC time, e.g. 2026-01-05T08:00:00Z>     set the service's clock (frozen at that instant)
+#   gt reset                                                    restart the service on an empty data location, clock kept
+#   gt http <METHOD> <PATH> [JSON body]                         make a request; prints status and body
+set -u; LOG=${GT_LOG:?}; C=${GT_CONTAINER:?}; BASE=${GT_BASE:-http://localhost:18001}
+ts(){ date -u +%FT%TZ; }
+case "${1:-}" in
+  clock) T=$(date -j -u -f '%Y-%m-%dT%H:%M:%SZ' "$2" +%s) || exit 2
+         LOCAL=$(TZ=${GT_TZ:-UTC} date -r $T '+%Y-%m-%d %H:%M:%S')
+         docker exec $C sh -c "echo '$LOCAL' > /clock/faketime" && printf '{"at":"%s","op":"clock","utc":"%s"}\n' "$(ts)" "$2" >> $LOG && echo "clock set to $2";;
+  reset) ${GT_RESET:?} >/dev/null 2>&1 && printf '{"at":"%s","op":"reset"}\n' "$(ts)" >> $LOG && echo "reset done";;
+  http)  M=$2; PTH=$3; BODY=${4:-}
+         if [ -n "$BODY" ]; then OUT=$(curl -s -o /tmp/gt.$$ -w '%{http_code}' -X $M -H 'content-type: application/json' --data "$BODY" "$BASE$PTH"); else OUT=$(curl -s -o /tmp/gt.$$ -w '%{http_code}' -X $M "$BASE$PTH"); fi
+         RESP=$(cat /tmp/gt.$$); rm -f /tmp/gt.$$
+         python3 -c 'import json,sys; print(json.dumps({"at":sys.argv[1],"op":"http","method":sys.argv[2],"path":sys.argv[3],"body":sys.argv[4],"status":sys.argv[5],"response":sys.argv[6]}))' "$(ts)" "$M" "$PTH" "$BODY" "$OUT" "$RESP" >> $LOG
+         echo "status $OUT"; echo "$RESP";;
+  *) sed -n '3,6p' $0; exit 2;;
+esac
