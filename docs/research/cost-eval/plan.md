@@ -24,13 +24,14 @@ Status marks: `[x]` done, `[~]` in progress, `[ ]` not started.
 - `[~]` Write BenchTime's product brief in the owner's words, with no fixed interface. It fixes only the stack, one start command, one data location, and reading time from the system clock. A first version with a full interface contract was drafted and then set aside on 2026-11-12. The owner-voice version is drafted and edited; awaiting the maintainer's review.
 - `[~]` Write the hidden oracle as narrative product prose, with a disclosure point for every item: stated, askable, recognised on sight, emerging at change k, or realised on a symptom. Drafted by Sol and edited; awaiting the maintainer's review.
 - `[~]` Write the change script: about 10 changes covering the change types, two redirects for testing the plumbing, at least one emerging item, and one probe request that makes sense at any age. Drafted by Sol and edited; awaiting the maintainer's review.
-- `[ ]` Write the grading rubric. Each requirement is a checkable statement with its disclosure, the change that introduced it, and the change that retires it, if any.
+- `[~]` Write the grading rubric. Each requirement is a checkable statement with its disclosure, the change that introduced it, and the change that retires it, if any. This is the oracle's item table; awaiting the maintainer's review.
+- `[ ]` Write the probes: one or more per item, each a scenario and an expected observation in terms of operations ([design.md](design.md), "Grading protocol"). Sol drafts them, the main session edits them, and the maintainer reviews them. They are kept hidden with the oracle.
 
 **Simulator and graders:**
 
 - `[ ]` Write the user simulator's prompt for the three policies, with its answer record, its rules for broad questions and for silence, and a leak audit.
 - `[ ]` Write the touchpoint rubric for the six kinds of request, and the classifier prompt.
-- `[ ]` Calibrate the level 1 grader on Haiku 5.5 through `claude -p`, using labelled pairs in both directions, and fall back to Sonnet 5.5 if Haiku misses the threshold. Measure test-retest flips.
+- `[ ]` Calibrate execution and judgment on Haiku 5.5 through `claude -p`, using seeded violations and labelled pairs in both directions, and fall back to Sonnet 5.5 if Haiku misses the threshold. Measure test-retest flips at both steps.
 - `[ ]` Write the interface-extraction prompt and its fixed template, and check it on a few builds: does the reference let a grader exercise every operation, without describing intended behaviour?
 - `[ ]` Work out how the level 1 grader reaches the running software without seeing its source.
 
@@ -44,7 +45,8 @@ Status marks: `[x]` done, `[~]` in progress, `[ ]` not started.
   - questions answered by stopping and resuming;
   - the rule that tells "done" from "waiting";
   - controlling time from outside (for example with `libfaketime`);
-  - resetting by starting from an empty data location.
+  - resetting by starting from an empty data location;
+  - whether an extraction reference lets a Haiku grader run probes against an interface it hasn't seen.
 - `[ ]` Check that the recorded token usage includes subagent sessions.
 - `[ ]` Decide where the harness lives, and walk LID's arrow for it (an intent node under `docs/intent/`, then specs, then tests, then code).
 

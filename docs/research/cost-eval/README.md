@@ -1,6 +1,6 @@
 # Research notebook: what LID costs, compared with other ways of working
 
-**Status: designing the pilot. No counted runs yet.** Last updated 2026-11-12.
+**Status: designing the pilot. No counted runs yet.** Last updated 2026-11-13.
 
 ## The question
 
@@ -20,15 +20,26 @@ The work happens in public. The draft pull request [#120](https://github.com/jsz
 
 Read this section first when you pick the work up in a new session. Update it at the end of every working session.
 
-**Where things stand.** The design in [design.md](design.md) is a second full draft. It merges three independent takes from kickoff, a fresh review of the plan ([inputs/2026-11-12-fable-plan-review.md](inputs/2026-11-12-fable-plan-review.md)), and the maintainer's decisions recorded in [log.md](log.md). The pilot seed is BenchTime, a reservation service for shared lab instruments, and the second seed is ReleaseDesk, an embargoed archive. The candidates and the reasons are in [seed-proposals/](seed-proposals/README.md). Claude roles (executors, simulator, graders) run on the maintainer's subscription to keep costs down. Nothing has been built or run.
+**Where things stand.**
+
+- **The design** in [design.md](design.md) is a second full draft. It merges the kickoff takes, a fresh review of the plan, and the maintainer's decisions recorded in [log.md](log.md).
+- **The pilot seed** is BenchTime, a reservation service for shared lab instruments. Each arm designs its own interface from a brief in the owner's words. A step before grading extracts the interface, and graders follow the grading protocol in [design.md](design.md): probes, separate execution and judgment, and checks on the graders.
+- **The seed's materials** are drafted and edited, and wait for the maintainer's review. The public [brief](seeds/benchtime/brief.md) is in the repository. The oracle, change script, and edit log are in `seeds/benchtime/hidden/`, which git ignores, so they exist only in this workspace on the maintainer's machine. See [seeds/benchtime/README.md](seeds/benchtime/README.md).
+- **Claude roles** (executors, the simulator, and graders) run on the maintainer's subscription to keep costs down.
+- **Nothing has been built or run yet.**
 
 **Next actions** (milestone M1 in [plan.md](plan.md)):
 
-1. The maintainer reviews BenchTime's materials: the public [brief](seeds/benchtime/brief.md), and the oracle, change script, and edit log in `seeds/benchtime/hidden/` (kept out of the repository until the runs finish; see [seeds/benchtime/README.md](seeds/benchtime/README.md)). Then record their hashes.
-2. Write the grading rubric, the user simulator's prompt, and the touchpoint rubric.
-3. Calibrate the level 1 grader on Haiku 5.5 through `claude -p`.
-4. Write the configurations for the three pilot arms (bare agent, cheap discipline, LID Full) and the per-arm isolation recipe, then check the headless plumbing and subagent token accounting.
-5. Decide where the harness code lives, then walk LID's arrow for it before writing any code (see "Harness code" below).
+1. The maintainer reviews BenchTime's brief, oracle, change script, and edit log. Fold in their changes, then record the hidden files' hashes in the seed's README.
+2. The plumbing test: a dozen or so throwaway `claude -p` sessions on Sonnet 5.5, run before any harness code is written. The scripts go in the scratchpad and the findings go in the log. It answers these questions:
+   - Does LID's phase stop end a turn in headless mode, and does resuming with an answer work?
+   - Does a separate configuration directory per arm keep the maintainer's installed plugins out of the bare arm?
+   - Does the usage record include subagents?
+   - Does `libfaketime` control time for a FastAPI and SQLite app?
+   - Can an extraction reference let a Haiku grader run probes against an interface it hasn't seen?
+3. Have Sol draft the probes for every item, then edit them and get them reviewed.
+4. Walk LID's arrow for the harness: an intent node under `docs/intent/`, then specs, then tests, then code (see "Harness code" below).
+5. In parallel: the user simulator's prompt, the touchpoint rubric, and the seeded-violation calibration set.
 
 ## Files
 

@@ -2,6 +2,31 @@
 
 Newest entries first. Each entry says what was done, what was decided, and who decided it.
 
+## 2026-11-13: A grading protocol
+
+**The gap the maintainer found.** The design said how graders would be calibrated and spot-checked, but not what a verdict is, how one is reached, or how verdicts are scored and reported. The oracle's grading sketches also leave room for interpretation.
+
+**Done.** [design.md](design.md) now has a "Grading protocol" section:
+
+- **Verdicts.** Each item in force gets a verdict at each checkpoint: met, not met, or couldn't exercise.
+- **Probes.** Each item gets one or more probes, written before any counted run. A probe is a scenario plus an expected observation, in terms of operations. An item is met only if all its probes pass.
+- **Separate execution and judgment.**
+  - Execution records every request, response, and clock setting in a log, without deciding anything.
+  - A separate judgment session compares each expected observation with the log and cites its evidence.
+  - A verdict can therefore be judged again or checked by another model without running the software again.
+- **Checks on the graders:**
+  - seeded violations, which give known answers;
+  - labelled pairs;
+  - test-retest at both steps;
+  - cross-family judging of logs;
+  - maintainer spot checks that over-represent "not met", "couldn't exercise", and latent items.
+
+  Graders are trusted at about 90% agreement and under 5% flips.
+- **Disagreements.** The maintainer's verdict stands, and a pattern of disagreement on one item leads to a new version of its probes and a re-judgment of every log.
+- **Scoring.** Verdicts are rows. Fidelity is met divided by met plus not met. "Couldn't exercise" is reported separately and, as a sensitivity check, also counted as not met. Breakdowns are by disclosure kind, new against preserved items, and change type. Regressions are reported with the change that caused them and how long they survived.
+
+Probes and the seeded-violation calibration set were added to M1 in [plan.md](plan.md). The plumbing test now also checks whether a Haiku grader can work from an extraction reference.
+
 ## 2026-11-12 (night): Each arm designs its own interface
 
 **The problem the maintainer raised.** The first brief held a 1,500-word API contract alongside the owner's rules. That has three costs:

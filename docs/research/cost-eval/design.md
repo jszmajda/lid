@@ -225,7 +225,7 @@ Level 3 is never folded into any score that compares arms. LID's own instruments
 
 ## Graders
 
-**Graders run on the maintainer's Claude subscription,** through `claude -p`, to keep costs down. Haiku 5.5 is the first choice, and Sonnet 5.5 is used if Haiku fails calibration. One grader session per checkpoint grades every requirement in force, rather than one session per requirement.
+**Graders run on the maintainer's Claude subscription,** through `claude -p`, to keep costs down. Haiku 5.5 is the first choice, and Sonnet 5.5 is used if Haiku fails calibration. Execution and judgment (see "Grading protocol") each take one session per checkpoint, covering every item in force, rather than one session per item.
 
 **Grading Claude with Claude risks a family bias,** so four safeguards apply:
 
@@ -251,11 +251,58 @@ The extraction session works as follows:
 
 A requirement the grader can't find a way to exercise gets a third verdict, "couldn't exercise", reported separately from "not met". An awkward API therefore shows up as itself rather than as lost intent.
 
-**Graders are checked before they're trusted:**
+## Grading protocol
 
-- **Labelled pairs in both directions:** the same behaviour under different names, which should pass, and different behaviour under the same names, which should fail.
-- **Test-retest:** a sample of snapshots is graded twice, and the share of verdicts that flip is reported.
-- **Spot checks:** once runs start, the maintainer spot-checks a sample of verdicts at every level, sampling level 2 most heavily, because grading artifacts against code is the least well understood. The agreement rate is reported with the results.
+### What a verdict is
+
+Graders give one verdict for each item in force, at each checkpoint, in each trajectory. Items that aren't in force at a checkpoint get no verdict. A verdict is one of:
+
+- **met**;
+- **not met**;
+- **couldn't exercise:** the grader couldn't find a way, through the interface reference, to perform what the check needs.
+
+### Probes turn each item into concrete checks
+
+The oracle's grading sketches leave room for interpretation. Before any counted run, each item therefore gets one or more probes. A probe is a scenario and an expected observation, both in terms of operations:
+
+- the lab data to load and the clock settings;
+- the operations to perform, in order;
+- what should be observable afterwards.
+
+For example, one of BT-43's probes reads: "At 08:00, Maya places a hold on scope-1. At 08:01, Maya places a hold on spin-1. Expected: the second request is refused, and Maya has exactly one live hold."
+
+An item is met only if every one of its probes passes. The share of probes passed is reported as a secondary figure. Probes are written the same way as the rest of the seed: a model from another family drafts them, the main session edits them under the same rules, and the maintainer reviews them. They are kept hidden with the oracle.
+
+### Running and judging are separate steps
+
+1. **Execution.** A grading session works through the probes against the running software, using the interface reference, and records every request, response, and clock setting in an execution log. It records what it observes and doesn't decide verdicts.
+2. **Judgment.** A separate session compares each probe's expected observation with the log, and returns a verdict with a short justification that cites the log entries it relied on. A verdict that cites no evidence from the log is invalid.
+
+Keeping the two steps apart means a verdict can be judged again, checked by another model, or corrected without running the software again.
+
+### How the graders' work is checked
+
+- **Seeded violations.** Before the pilot, a few builds are checked by hand. Copies are then changed to break one item each, and the grader must return "not met" on the broken item and leave its other verdicts unchanged. This gives known answers in both directions, on interfaces that different arms designed.
+- **Labelled pairs.** Judgment is also checked on pairs in both directions: the same behaviour under different names, which should pass, and different behaviour under the same names, which should fail.
+- **Test-retest at both steps.** Judging the same logs again measures how consistent judgment is. Running the probes again on the same snapshot measures how consistent execution is. Concurrency probes are watched closely, because they may flip for reasons unrelated to grading.
+- **Cross-family judging.** GPT-6.1 Terra judges a sample of logs again. It needs only the logs, not the running software, so this costs little.
+- **Spot checks by the maintainer.** The maintainer reviews a sample of verdicts together with their evidence. The sample over-represents "not met" and "couldn't exercise" verdicts and latent items, where interpretation matters most. A starting point is about 10% of verdicts, and at least 30 per pilot stage, adjusted after the pilot. The same checks apply to the cold reader's scoring at fidelity level 2, which is sampled most heavily, because grading artifacts against code is the least well understood.
+- **Thresholds.** Graders are trusted when they agree with the maintainer on at least about 90% of sampled verdicts, and fewer than about 5% of verdicts flip when judged again (the pilot's stage 2 thresholds in [plan.md](plan.md)). Agreement is reported with every result, as a percentage and as Cohen's kappa.
+
+### Disagreements
+
+When the maintainer and a grader disagree, the maintainer's verdict stands for that case, and both are recorded. If the disagreements on one item follow a pattern, its probes or wording are fixed in a new version, and every log for that item is judged again. Each verdict records the probe version it was judged against.
+
+### Scoring and reporting
+
+- **Every verdict is a row.** It records the trajectory, arm, executor, checkpoint, item, disclosure kind, whether the item is new or preserved at that checkpoint, the verdict, the share of probes passed, and pointers to its evidence and probe version.
+- **Fidelity at a checkpoint** is the number of items met divided by the number met plus not met, over the items in force. "Couldn't exercise" verdicts are left out of that fraction and reported as their own rate per arm. As a sensitivity check, they are also counted as not met.
+- **Breakdowns.** Fidelity is reported overall and broken down three ways:
+  - by disclosure kind (stated, askable, recognised on sight, emerging, and realised on a symptom);
+  - by new against preserved items;
+  - by change type.
+- **Regressions.** A regression is an item met at one checkpoint and not met at a later one. Each is reported with the change that caused it and how many changes it survived.
+- **Publication.** All verdict rows, execution logs, probes, and judging prompts are published after the runs, together with the oracle.
 
 ## Whether intent can be checked in CI
 
