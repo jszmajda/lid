@@ -25,7 +25,7 @@ Status marks: `[x]` done, `[~]` in progress, `[ ]` not started.
 - `[x]` Write the hidden oracle as narrative product prose, with a disclosure point for every item: stated, askable, recognised on sight, emerging at change k, or realised on a symptom. Drafted by Sol, edited, and accepted on 2026-11-13.
 - `[x]` Write the change script: about 10 changes covering the change types, two redirects for testing the plumbing, at least one emerging item, and one probe request that makes sense at any age. Drafted by Sol, edited, and accepted on 2026-11-13.
 - `[x]` Write the grading rubric. Each requirement is a checkable statement with its disclosure, the change that introduced it, and the change that retires it, if any. This is the oracle's item table, accepted on 2026-11-13.
-- `[ ]` Write the probes: one or more per item, each a scenario and an expected observation in terms of operations ([design.md](design.md), "Grading protocol"). Sol drafts them, the main session edits them, and the maintainer reviews them. They are kept hidden with the oracle.
+- `[ ]` Write the probes: one or more per item, each a scenario and an expected observation in terms of operations ([design.md](design.md), "Grading protocol"). Sol drafts them, the main session edits them, and the maintainer reviews them. They are kept hidden with the oracle. Drafted (88 probes) and edited on 2026-11-13; waiting for review.
 
 **Simulator and graders:**
 

@@ -16,6 +16,12 @@ Older entries move to [log-archive/](log-archive/) when this file passes about 2
 - the change each probe applies from and until;
 - what each probe needs beyond the clock, reset, requests, and setup commands, such as concurrent requests, a restart on existing data, or data from an earlier checkpoint.
 
+**Sol's draft** came back with 88 probes for all 53 graded items, in 8 named setups, for $0.37. It was careful in places: it swaps one race probe for another at change 8, when one live hold per person arrives, and it found the right instants for the offset-transition cases. The main session made 14 edits (E16 to E29, logged privately). Most apply one rule: **a probe for one item mustn't fail because of another item's answer.** Otherwise an arm that settled an askable rule its own way would lose points on stated items too, and one decision would be graded twice. Two boundaries kept leaking into other items' probes: the end of the cleaning allowance (BT-15) and the exact instant a hold expires (BT-17). Two probes also couldn't have run as drafted, because they gave Maya four upcoming bookings before testing the waiting list. The judge prompt now says that reasons in expected observations needn't appear in responses.
+
+**Grading is the study's biggest cost.** A trajectory grades 627 probe-runs across its 11 checkpoints. At the plumbing test's rate, that is about 18,500 calls and $130 at Haiku's list price, or about 7,300 calls and $50 with snapshots of each setup. An executor trajectory probably costs $10 to $30. Most of those runs repeat a probe that passed at the previous checkpoint against an unchanged interface.
+
+**Proposed by the main session, for the harness:** replay instead of re-running. At each checkpoint, the harness replays the previous checkpoint's calls for each probe without a model, matching identifiers by position, and compares the responses. A model executes a probe only when it is new, or when the replay fails because the interface changed. The judge sees only probes whose responses changed, and the others keep their verdicts. A sample of carried-over verdicts is judged again, to check that replay doesn't hide regressions.
+
 ## 2026-11-13 (evening): The plumbing test, second half
 
 **The maintainer supplied** a long-lived subscription token (an OAuth token from `claude setup-token`, kept outside the repository), so executor sessions could be tried in a container. The whole plumbing test came to about 30 invocations and $4.15 at list price, all on the subscription.

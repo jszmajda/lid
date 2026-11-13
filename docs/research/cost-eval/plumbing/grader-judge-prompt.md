@@ -10,4 +10,6 @@ For each probe, reach one verdict:
 
 Judge meaning, not wording: a refusal can be any response that clearly declines the request, whatever its status code or message. Don't give credit for steps the log doesn't show.
 
+An expected observation sometimes gives a reason ("refused because Nora has no qualification"). The reason explains the scenario: don't require the response to state it. Where a probe runs several independent cases, every case must show its part of the expected observation.
+
 Reply with only a JSON array, one object per probe: {"probe": "<id>", "verdict": "met" | "not met" | "couldn't exercise", "evidence": [<log line numbers>], "reason": "<one or two sentences>"}.
