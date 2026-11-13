@@ -4,7 +4,7 @@ The alternate-model eval runner — runs LID's existing behavioral eval suites o
 
 ## Status
 
-**MAPPED** — new leaf segment (#78), sampled 2026-09-27, not yet audited. 82 of 82 specs implemented; the `ALT-EVAL-REC` process specs are satisfied by `tested_with` entries: 001 to 004 by the 1.4.0 capability roster's, and `ALT-EVAL-REC-005` (recording a batch run on a copy with the capability subsystem removed) by the Gemini 4 Argon and Muse Glimmer 30B entries of 2026-10-16.
+**MAPPED** — new leaf segment (#78), sampled 2026-09-27, not yet audited. 85 of 85 specs implemented; the `ALT-EVAL-REC` process specs are satisfied by `tested_with` entries: 001 to 004 by the 1.4.0 capability roster's, and `ALT-EVAL-REC-005` (recording a batch run on a copy with the capability subsystem removed) by the Gemini 4 Argon and Muse Glimmer 30B entries of 2026-10-16.
 
 ## References
 
@@ -18,7 +18,7 @@ The alternate-model eval runner — runs LID's existing behavioral eval suites o
 - `docs/intent/alt-model-evals/alt-model-evals-specs.md` (82 specs, prefix `ALT-EVAL-*`, facets `CLI`, `KEY`, `STAGE`, `BOX`, `RUN`, `OUT`, `REC`)
 
 ### Tests
-- `tools/alt-model-evals/test_run_eval.py` — 77 tests against a stub `docker`/`npx`/`git` (`testdata/stub_harness.py`), plus recorded opencode 1.18.32 event streams (`testdata/opencode-events-*.jsonl`). Run: `python3 tools/alt-model-evals/test_run_eval.py`.
+- `tools/alt-model-evals/test_run_eval.py` — 83 tests against a stub `docker`/`npx`/`git` (`testdata/stub_harness.py`), plus recorded opencode 1.18.32 event streams (`testdata/opencode-events-*.jsonl`). Run: `python3 tools/alt-model-evals/test_run_eval.py`.
 
 ### Code
 - `tools/alt-model-evals/run_eval.py` — the runner (stdlib Python, 3.9+)

@@ -193,6 +193,15 @@ class FollowUpTests(RepoTest):
     def harness_calls(self):
         return [c for c in self.repo.calls("docker-run") if c["cmd"][:1] == ["opencode"]]
 
+    # @spec ALT-EVAL-RUN-009, ALT-EVAL-RUN-012, ALT-EVAL-OUT-019
+    def test_follow_up_turn_has_its_own_limits(self):
+        self.repo.run("demo-skill", "1", "m/x", "--timeout", "60", "--idle-timeout", "3", STUB_MODE="ok,sleep")
+        t = json.loads((self.repo.run_dir("eval-1-first-eval") / "timing.json").read_text())
+        self.assertEqual(t["status"], "completed")
+        self.assertIsNone(t["timeout_limit"])
+        self.assertEqual(t["follow_up"]["status"], "timeout")
+        self.assertEqual(t["follow_up"]["timeout_limit"], "inactivity")
+
     # @spec ALT-EVAL-RUN-009, ALT-EVAL-OUT-016, ALT-EVAL-OUT-018
     def test_second_turn_continues_session(self):
         self.ok_run("demo-skill", "1", "m/x", STUB_REASONING="900")
@@ -922,12 +931,13 @@ class LifecycleTests(RepoTest):
         self.assertEqual(t["status"], "harness_error")
         self.assertEqual(t["exit_code"], 1)
 
-    # @spec ALT-EVAL-RUN-004, ALT-EVAL-RUN-005, ALT-EVAL-RUN-006
+    # @spec ALT-EVAL-RUN-004, ALT-EVAL-RUN-005, ALT-EVAL-RUN-006, ALT-EVAL-OUT-019
     def test_timeout(self):
         start = time.time()
         self.repo.run("demo-skill", "1", "m/x", "--timeout", "5", STUB_MODE="sleep")
         self.assertLess(time.time() - start, 60)
         self.assertEqual(self.timing()["status"], "timeout")
+        self.assertEqual(self.timing()["timeout_limit"], "run")
         stops = [c for c in self.repo.calls("docker") if c["argv"][0] in ("stop", "kill")]
         self.assertTrue(stops)
         self.assertEqual(stops[0]["argv"][0], "stop")
@@ -944,6 +954,48 @@ class LifecycleTests(RepoTest):
         pid = int((self.repo.state / "npx.pid").read_text())
         with self.assertRaises(ProcessLookupError):
             os.kill(pid, 0)
+
+    # @spec ALT-EVAL-RUN-012, ALT-EVAL-CLI-013, ALT-EVAL-OUT-019
+    def test_inactivity_limit_stops_a_silent_run(self):
+        start = time.time()
+        self.repo.run("demo-skill", "1", "m/x", "--timeout", "60", "--idle-timeout", "3", STUB_MODE="sleep")
+        self.assertLess(time.time() - start, 40)
+        t = self.timing()
+        self.assertEqual(t["status"], "timeout")
+        self.assertEqual(t["timeout_limit"], "inactivity")
+
+    # @spec ALT-EVAL-RUN-012, ALT-EVAL-RUN-005
+    def test_inactivity_limit_no_container(self):
+        self.repo.run("demo-skill", "1", "m/x", "--timeout", "60", "--idle-timeout", "3", "--no-container",
+                      STUB_MODE="sleep")
+        t = self.timing()
+        self.assertEqual(t["status"], "timeout")
+        self.assertEqual(t["timeout_limit"], "inactivity")
+
+    # @spec ALT-EVAL-CLI-013, ALT-EVAL-RUN-012, ALT-EVAL-OUT-019
+    def test_steady_output_outlasts_inactivity_limit(self):
+        self.repo.run("demo-skill", "1", "m/x", "--timeout", "60", "--idle-timeout", "3", STUB_MODE="trickle")
+        t = self.timing()
+        self.assertEqual(t["status"], "completed")
+        self.assertGreater(t["duration_ms"], 5000)
+        self.assertIn("timeout_limit", t)
+        self.assertIsNone(t["timeout_limit"])
+
+    # @spec ALT-EVAL-RUN-004, ALT-EVAL-CLI-006, ALT-EVAL-OUT-019
+    def test_run_limit_stops_a_busy_run(self):
+        start = time.time()
+        self.repo.run("demo-skill", "1", "m/x", "--timeout", "5", "--idle-timeout", "3", STUB_MODE="chatter")
+        self.assertLess(time.time() - start, 60)
+        t = self.timing()
+        self.assertEqual(t["status"], "timeout")
+        self.assertEqual(t["timeout_limit"], "run")
+
+    # @spec ALT-EVAL-CLI-006, ALT-EVAL-CLI-013, ALT-EVAL-OUT-011
+    def test_default_limits_recorded(self):
+        self.ok_run("demo-skill", "1", "m/x")
+        b = json.loads((self.repo.batch() / "batch.json").read_text())
+        self.assertEqual(b["timeout"], 1800)
+        self.assertEqual(b["idle_timeout"], 600)
 
     # @spec ALT-EVAL-RUN-007, ALT-EVAL-OUT-012
     def test_abort_after_two_harness_errors_across_evals(self):
@@ -1036,12 +1088,13 @@ class OutputTests(RepoTest):
         self.assertEqual(os.readlink(project / "link.txt"), "made.txt")
         self.assertTrue((project / "leak.sh").stat().st_mode & stat.S_IXUSR)
 
-    # @spec ALT-EVAL-OUT-010
+    # @spec ALT-EVAL-OUT-010, ALT-EVAL-OUT-019
     def test_timing(self):
         self.ok_run("demo-skill", "1", "m/x")
         t = json.loads((self.repo.run_dir("eval-1-first-eval") / "timing.json").read_text())
         self.assertEqual(set(t), {"model", "harness", "status", "duration_ms", "total_cost_usd",
-                                  "tokens", "tool_calls", "exit_code", "error_message"})
+                                  "tokens", "tool_calls", "exit_code", "error_message", "timeout_limit"})
+        self.assertIsNone(t["timeout_limit"])
         self.assertEqual(t["model"], "m/x")
         self.assertAlmostEqual(t["total_cost_usd"], 0.75)
         self.assertEqual(t["tokens"], {"input": 11, "output": 7, "reasoning": 0, "cache": {"read": 3, "write": 1}})
