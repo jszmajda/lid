@@ -51,7 +51,9 @@ Read this section first when you pick the work up in a new session. Update it at
 | [plan.md](plan.md) | Milestones, with status |
 | [landscape.md](landscape.md) | A dated snapshot of the other SDD systems and how each one handles later changes |
 | [sources.md](sources.md) | Papers, benchmarks, and articles, each labelled by how closely we read it |
-| [log.md](log.md) | A dated journal: what was done, what was decided, and who decided it |
+| [log.md](log.md) | A dated journal: what was done, what was decided, and who decided it. Older entries are in [log-archive/](log-archive/) |
+| [decisions.md](decisions.md) | Every decision that still stands, with its date and who made it |
+| [upkeep/](upkeep/) | Procedures for keeping the notebook, such as compacting the log |
 | [seed-proposals/](seed-proposals/README.md) | Candidate projects for the pilot seed from three model families, with a comparison table |
 | [inputs/](inputs/) | Design inputs kept as they were written: the second model's kickoff brainstorm and its later review of the plan |
 
@@ -71,6 +73,7 @@ Read this section first when you pick the work up in a new session. Update it at
 ## How to keep this notebook
 
 - **Write a log entry for every working session.** Say what was done, what was decided, and who decided it. When something in [design.md](design.md) or [hypotheses.md](hypotheses.md) changes, edit that file in place so it always shows the current state, and put the reason in the log.
+- **Compact the log when it passes about 2,000 words.** Check `wc -w log.md` whenever you update the log at the end of a working session. If it's over, hand [upkeep/compact-log.md](upkeep/compact-log.md) to a subagent (Haiku is enough), then check its work as that file describes. Recent entries stay, older ones move word for word to [log-archive/](log-archive/), an "Earlier, in brief" section at the bottom keeps the arc, and [decisions.md](decisions.md) keeps the decisions that still stand.
 - **Freeze the hypotheses before the first counted run.** Pilot runs exist to test the instrument and don't count as evidence. Once the hypotheses, the primary comparison, and the analysis plan are frozen, any later change is a dated amendment that says why it was made.
 - **Label every source by how closely it was read.** Several numbers in [sources.md](sources.md) came from a fetch tool's summary of a page rather than from the page itself. Check a number against the original before quoting it anywhere public.
 - **Keep the public notebook free of private material.** Don't record personal details, private project names, or local paths.

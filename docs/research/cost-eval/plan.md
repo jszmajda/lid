@@ -21,10 +21,10 @@ Status marks: `[x]` done, `[~]` in progress, `[ ]` not started.
 
 **Seed materials.** These are written by models from families other than Claude, reviewed by the maintainer, and hashed before any counted run.
 
-- `[~]` Write BenchTime's product brief in the owner's words, with no fixed interface. It fixes only the stack, one start command, one data location, and reading time from the system clock. A first version with a full interface contract was drafted and then set aside on 2026-11-12. The owner-voice version is drafted and edited; awaiting the maintainer's review.
-- `[~]` Write the hidden oracle as narrative product prose, with a disclosure point for every item: stated, askable, recognised on sight, emerging at change k, or realised on a symptom. Drafted by Sol and edited; awaiting the maintainer's review.
-- `[~]` Write the change script: about 10 changes covering the change types, two redirects for testing the plumbing, at least one emerging item, and one probe request that makes sense at any age. Drafted by Sol and edited; awaiting the maintainer's review.
-- `[~]` Write the grading rubric. Each requirement is a checkable statement with its disclosure, the change that introduced it, and the change that retires it, if any. This is the oracle's item table; awaiting the maintainer's review.
+- `[x]` Write BenchTime's product brief in the owner's words, with no fixed interface. It fixes only the stack, one start command, one data location, and reading time from the system clock. A first version with a full interface contract was drafted and then set aside on 2026-11-12. The owner-voice version was reviewed and accepted on 2026-11-13.
+- `[x]` Write the hidden oracle as narrative product prose, with a disclosure point for every item: stated, askable, recognised on sight, emerging at change k, or realised on a symptom. Drafted by Sol, edited, and accepted on 2026-11-13.
+- `[x]` Write the change script: about 10 changes covering the change types, two redirects for testing the plumbing, at least one emerging item, and one probe request that makes sense at any age. Drafted by Sol, edited, and accepted on 2026-11-13.
+- `[x]` Write the grading rubric. Each requirement is a checkable statement with its disclosure, the change that introduced it, and the change that retires it, if any. This is the oracle's item table, accepted on 2026-11-13.
 - `[ ]` Write the probes: one or more per item, each a scenario and an expected observation in terms of operations ([design.md](design.md), "Grading protocol"). Sol drafts them, the main session edits them, and the maintainer reviews them. They are kept hidden with the oracle.
 
 **Simulator and graders:**
