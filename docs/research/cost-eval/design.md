@@ -269,7 +269,7 @@ The oracle's grading sketches leave room for interpretation. Before any counted 
 - the operations to perform, in order;
 - what should be observable afterwards.
 
-For example, one of BT-43's probes reads: "At 08:00, Maya places a hold on scope-1. At 08:01, Maya places a hold on spin-1. Expected: the second request is refused, and Maya has exactly one live hold."
+For example, a probe for the brief's three-booking limit reads: "Maya makes three confirmed bookings, then asks for a fourth on another instrument. Then Leo asks for a booking. Expected: Maya's fourth booking is refused, and Leo's succeeds."
 
 An item is met only if every one of its probes passes. The share of probes passed is reported as a secondary figure. Probes are written the same way as the rest of the seed: a model from another family drafts them, the main session edits them under the same rules, and the maintainer reviews them. They are kept hidden with the oracle.
 
