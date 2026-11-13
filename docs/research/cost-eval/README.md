@@ -28,15 +28,14 @@ Read this section first when you pick the work up in a new session. Update it at
 - **Claude roles** (executors, the simulator, and graders) run on the maintainer's subscription to keep costs down.
 - **The plumbing test is done** (see [log.md](log.md), 2026-11-13 afternoon and evening). LID's phase stops work headless, and cost accounting is understood. A bare build of BenchTime ran in a container, its interface was extracted, and a Haiku grader ran four probes through the reference and judged them, catching both violations seeded into a mutant.
 - **Executor sessions run in a Linux container,** the standard recipe the maintainer accepted, using the maintainer's subscription token.
-- **BenchTime's probes** (88, for all 53 graded items) are drafted by Sol and edited, and wait for the maintainer's review.
+- **BenchTime's probes** (92, for all 53 graded items) are drafted by Sol, edited, reviewed by Claude Fable in the maintainer's place, and recorded as version 1. The oracle is at version 2.
 - **Grading is the study's biggest cost:** about $50 to $130 per trajectory at Haiku's list price if every probe runs at every checkpoint. Replaying the previous checkpoint's calls without a model is proposed (see the log's 2026-11-13 night entry).
 - **No counted runs yet.**
 
 **Next actions** (milestone M1 in [plan.md](plan.md)):
 
-1. The maintainer reviews the probes and the edit log (E16 to E29) in `seeds/benchtime/hidden/`. Then record the probes' hash in the seed's README.
-2. Walk LID's arrow for the harness: an intent node under `docs/intent/`, then specs, then tests, then code (see "Harness code" below). The plumbing test's lessons for the harness are in the log's 2026-11-13 evening entry: probes in batches, snapshots of the data location, a `gt` that can't open the source, a commit at the end of each change, and extraction under the fake clock. The night entry adds replaying probes between checkpoints, and the harness abilities the probes need: concurrent requests, a restart on existing data, and data carried from an earlier checkpoint.
-3. In parallel: the user simulator's prompt, the touchpoint rubric, and the seeded-violation calibration set. The simulator has to recognise a finished change, and the design has to say whether an agent's list of its own interpretations counts as asking.
+1. Walk LID's arrow for the harness: an intent node under `docs/intent/`, then specs, then tests, then code (see "Harness code" below). The plumbing test's lessons for the harness are in the log's 2026-11-13 evening entry: probes in batches, snapshots of the data location, a `gt` that can't open the source, a commit at the end of each change, and extraction under the fake clock. The night entry adds replaying probes between checkpoints, and the harness abilities the probes need: concurrent requests, a restart on existing data, and data carried from an earlier checkpoint.
+2. In parallel: the user simulator's prompt, the touchpoint rubric, and the seeded-violation calibration set. The simulator has to recognise a finished change, and the design has to say whether an agent's list of its own interpretations counts as asking.
 
 ## Files
 

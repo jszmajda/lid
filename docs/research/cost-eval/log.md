@@ -4,7 +4,7 @@ Newest entries first. Each entry says what was done, what was decided, and who d
 
 Older entries move to [log-archive/](log-archive/) when this file passes about 2,000 words, and 'Earlier, in brief' at the bottom summarizes them.
 
-## 2026-11-13 (night): The container recipe is standard; probes requested
+## 2026-11-13 (night): The container recipe is standard; probes drafted and reviewed
 
 **Decided by the maintainer.**
 - Every executor session runs in a Linux container from the pinned executor image, with each arm's configuration in its own volume and the maintainer's subscription token. [design.md](design.md) ("Sessions and isolation") now says so.
@@ -17,6 +17,14 @@ Older entries move to [log-archive/](log-archive/) when this file passes about 2
 - what each probe needs beyond the clock, reset, requests, and setup commands, such as concurrent requests, a restart on existing data, or data from an earlier checkpoint.
 
 **Sol's draft** came back with 88 probes for all 53 graded items, in 8 named setups, for $0.37. It was careful in places: it swaps one race probe for another at change 8, when one live hold per person arrives, and it found the right instants for the offset-transition cases. The main session made 14 edits (E16 to E29, logged privately). Most apply one rule: **a probe for one item mustn't fail because of another item's answer.** Otherwise an arm that settled an askable rule its own way would lose points on stated items too, and one decision would be graded twice. Two boundaries kept leaking into other items' probes: the end of the cleaning allowance (BT-15) and the exact instant a hold expires (BT-17). Two probes also couldn't have run as drafted, because they gave Maya four upcoming bookings before testing the waiting list. The judge prompt now says that reasons in expected observations needn't appear in responses.
+
+**Claude Fable reviewed the probes in the maintainer's place,** at the maintainer's request, because checking 88 probes line by line is beyond a useful human review.
+- **First pass:** Fable reviewed them cold against the oracle, recomputing every time and boundary, then read the edit log. It found 1 blocker, 7 major, and 12 minor problems. The blocker was a setup step that an arm honoring one askable rule would refuse, so the probe could never pass for a careful arm.
+- **The main lesson:** the main session's edits had swept for leaks from two askable items only. The same leak ran through five more, so other items' probes would have failed arms for answers they were entitled to give differently.
+- **An oracle fix:** one item stated in a change carried a clause that belongs to an askable item, so an arm could fail a stated item whatever the probes did. The clause moved to the askable item, as an earlier accepted edit did for a similar case. The oracle is now version 2.
+- **A reversal:** one earlier edit had treated a rule as askable, but a redirect in the change script states it, so the case went back in.
+- **Second pass:** the main session adopted every blocker and major fix and most minor ones (E30 to E47, logged privately). Fable then checked the fixes and found no remaining or new blockers or majors.
+- **Result:** 92 probes, recorded as version 1 with the oracle's version 2 in [seeds/benchtime/README.md](seeds/benchtime/README.md).
 
 **Grading is the study's biggest cost.** A trajectory grades 627 probe-runs across its 11 checkpoints. At the plumbing test's rate, that is about 18,500 calls and $130 at Haiku's list price, or about 7,300 calls and $50 with snapshots of each setup. An executor trajectory probably costs $10 to $30. Most of those runs repeat a probe that passed at the previous checkpoint against an unchanged interface.
 

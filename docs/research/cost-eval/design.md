@@ -271,7 +271,7 @@ The oracle's grading sketches leave room for interpretation. Before any counted 
 
 For example, a probe for the brief's three-booking limit reads: "Maya makes three confirmed bookings, then asks for a fourth on another instrument. Then Leo asks for a booking. Expected: Maya's fourth booking is refused, and Leo's succeeds."
 
-An item is met only if every one of its probes passes. The share of probes passed is reported as a secondary figure. Probes are written the same way as the rest of the seed: a model from another family drafts them, the main session edits them under the same rules, and the maintainer reviews them. They are kept hidden with the oracle.
+An item is met only if every one of its probes passes. The share of probes passed is reported as a secondary figure. Probes are written the same way as the rest of the seed: a model from another family drafts them, and the main session edits them under the same rules. A review by Claude Fable stands in for the maintainer's detailed review: it checks every probe against the oracle, recomputing times and boundaries, and the fixes are checked again. They are kept hidden with the oracle.
 
 ### Running and judging are separate steps
 

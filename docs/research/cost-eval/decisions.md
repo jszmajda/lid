@@ -37,3 +37,4 @@ When a decision is replaced, remove its line and add the new one, so this list o
 - 2026-11-13 (evening), main session: grading execution runs in batches of a few probes per session, and judgment reads each batch's log in one session.
 - 2026-11-13 (evening), maintainer: every executor session runs in a Linux container from the pinned executor image, with each arm's configuration in its own volume and the maintainer's subscription token.
 - 2026-11-13 (evening), maintainer: no force-pushes to the pull request branch, because they could disturb a collaborator's checkout. Mistakes in pushed commits get a forward fix.
+- 2026-11-13 (night), maintainer: a Claude Fable review stands in for the maintainer's detailed review of probes; the main session applies its fixes and Fable checks them again.
