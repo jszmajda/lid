@@ -2,6 +2,35 @@
 
 Newest entries first. Each entry says what was done, what was decided, and who decided it.
 
+## 2026-11-12 (night): Each arm designs its own interface
+
+**The problem the maintainer raised.** The first brief held a 1,500-word API contract alongside the owner's rules. That has three costs:
+- no real owner hands over a contract like that;
+- it leaves the processes little to do, because turning loose intent into a design is where they are supposed to earn their cost;
+- it makes a ceiling more likely.
+
+**Decided by the maintainer.** Each arm defines its own interface. A step before grading extracts the interface for the grader.
+
+**What that changed in [design.md](design.md):**
+- **The brief.** It is in the owner's words and fixes only the stack, one start command documented in the README, one data location, and reading the current time from the system clock.
+- **Interface extraction.** A new step reads each checkpoint's repository and running software and writes a neutral reference to the interface. It follows a fixed template, says how to call things but never what they should do, and isn't charged to the arm.
+- **A third verdict.** Graders can now return "couldn't exercise", so an awkward API doesn't count as lost intent.
+- **Clock and reset.** The harness controls the clock from outside (for example with `libfaketime`, to be confirmed in the plumbing test) and resets state by starting from an empty data location. The brief needs no test hooks.
+
+**Done.**
+
+- **Sol revised the oracle and change script** for this ([prompts/03-revise-without-interface.md](seeds/benchtime/prompts/03-revise-without-interface.md)), keeping the main session's earlier edits. Rules that had lived in each change's interface additions became owner wording or new items (BT-44 to BT-55), and pure API shape was dropped.
+- **Argon wrote an owner-voice brief** ([prompts/04-owner-brief.md](seeds/benchtime/prompts/04-owner-brief.md)).
+- **The main session made six more edits** (E10 to E15, logged privately):
+  - dropped two items that were only API validation limits;
+  - reclassified one item as stated;
+  - stopped one item from marking an arm down for adding a feature;
+  - reworded a stated item so it doesn't give away an askable one;
+  - rewrote the brief in the lab manager's voice, about 550 words against 2,300 before.
+- **The fixed-interface versions stay** in `hidden/fixed-interface-v1/` as a fallback, in case graders can't work through interfaces they discover.
+
+The revision cost about $0.25.
+
 ## 2026-11-12 (evening): BenchTime's materials drafted and edited
 
 **Decided by the maintainer.**

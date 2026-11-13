@@ -68,15 +68,16 @@ Each change runs in a fresh session. The agent continues in its own workspace, t
 
 ## Seed projects
 
-**Greenfield from a brief comes first.** Every arm starts from the same product brief, so no arm starts with an advantage and nobody has to map an existing codebase's intent first. The brief fixes:
+**Greenfield from a brief comes first.** Every arm starts from the same product brief, so no arm starts with an advantage and nobody has to map an existing codebase's intent first.
 
-- the external interface, either a CLI or an HTTP API;
-- the command that runs the software;
-- a way to reset its state;
-- a clock the grader can set (an `as_of` value), so time-dependent rules can be graded reproducibly;
-- the language and stack, to cut variance.
+**The brief is in the owner's own words:** what they need, and the rules they state up front. It doesn't fix an interface, so each arm designs its own API. Turning loose intent into a design is part of the work being compared. A brief that settled the design would leave the processes little to do, and would make a ceiling more likely.
 
-Everything behind the interface is the arm's own choice.
+**The brief fixes only what the harness needs to run every arm the same way:**
+
+- the language and stack, to cut variance (Python 3.12, FastAPI, and SQLite for BenchTime);
+- one command, documented in the README, that starts the software;
+- one data location that the start command uses, so the harness can reset state by starting from an empty location;
+- reading the current time from the system clock. The harness controls that clock from outside, so time-dependent rules can be graded reproducibly without the arm building a clock of its own.
 
 **The chosen seeds.** All fifteen candidates and the reasons for the choice are in [seed-proposals/](seed-proposals/README.md).
 
@@ -216,9 +217,7 @@ The last two kinds apply to every arm, so a bare agent that never asks anything 
 
 Fidelity is measured at three levels. Not every arm has all three.
 
-1. **Behaviour against the oracle (every arm).** A grader checks each requirement in force against the running software, through the external interface only. It can run commands or make requests, set the clock, and reset state. It never sees the source, the docs, or anything else that would identify the arm or persuade it that a behaviour exists because a spec says so.
-   - Graders are models because what's being graded is meaning. The agent chooses its own names, messages, and structure, and a deterministic test can't tell when two different outputs mean the same thing.
-   - Executable checks are kept only where the brief fixes the output exactly, for example a stated output format. There they serve as a cheap cross-check on the graders.
+1. **Behaviour against the oracle (every arm).** A grader checks each requirement in force against the running software, through the interface the arm built, using the reference that interface extraction writes (see "Graders"). The grader can make requests, and the harness sets the clock and resets state on its behalf. It never sees the source, the docs, or anything else that would identify the arm or persuade it that a behaviour exists because a spec says so. Graders are models because what's being graded is meaning: each arm designs its own interface and chooses its own names, messages, and structure, and a deterministic test can't tell when two different outputs mean the same thing.
 2. **Artifacts against code and against the oracle (arms that keep artifacts).** A cold reader, a fresh agent with the whole repository and a fixed token budget, answers questions about how the system behaves and points to where each behaviour is implemented and tested. We score its answers against the oracle and against what the running software does, and record what each answer cost. This generalises the idea behind LID's bidirectional-differential skill, a naive reader working intent out again, so it can apply to any arm. Some arms may not produce artifacts for which this measure makes sense. If so, that is a finding, and we report it.
 3. **Design levels against each other (LID only).** No instrument today checks that LID's HLD, LLDs, and EARS agree with each other. The bidirectional-differential skill covers only EARS against code. Measuring this level may lead to a separate change to LID, either extending that skill or adding a new one. That change would be its own issue and arrow walk.
 
@@ -236,6 +235,21 @@ Level 3 is never folded into any score that compares arms. LID's own instruments
 - A small sample of checkpoints is also graded by a model from another family (GPT-6.1 Terra), which costs a few dollars and measures any self-preference directly.
 
 When a later stage runs executors from other families, a Claude grader is already from a different family.
+
+**Interface extraction comes before grading.** Before each checkpoint is graded, a separate session reads the arm's repository and its running software. It writes a neutral reference covering:
+
+- how to start the software and where its data lives;
+- how to load the lab's setup data;
+- every operation, with its inputs and outputs.
+
+The extraction session works as follows:
+
+- **It describes calls, not behaviour.** The reference follows a fixed template and says only how to call the software, never what it is meant to do, so an arm's specs and docs can't reach the grader.
+- **It starts from the generated description when there is one.** It begins from FastAPI's OpenAPI description where that is available.
+- **It isn't charged to the arm.** Extraction is evaluation overhead.
+- **It is checked like grading.** The maintainer spot-checks references against the code.
+
+A requirement the grader can't find a way to exercise gets a third verdict, "couldn't exercise", reported separately from "not met". An awkward API therefore shows up as itself rather than as lost intent.
 
 **Graders are checked before they're trusted:**
 
@@ -327,7 +341,8 @@ The maintainer pays for this research, so the design keeps real spending small w
 ## Open questions
 
 - Where the harness code lives, and how much of the alternate-model runner it reuses.
-- How the level 1 grader reaches the software without seeing its source, for example by running the software in a separate container and giving the grader only the CLI or HTTP interface.
+- Whether the harness can control time from outside for every arm, for example with `libfaketime` in the container, or whether the brief has to ask for a settable clock instead.
+- How the grader reaches the running software without seeing its source, for example by running the software in its own container and giving the grader only network access to it.
 - Which model family is third: Gemini 4, or the latest DeepSeek.
 - Whether to add a Haiku 5.5 executor tier for H5.
 - The time limits for builds and for changes, and the repair cap for later stages.

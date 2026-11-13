@@ -21,7 +21,7 @@ Status marks: `[x]` done, `[~]` in progress, `[ ]` not started.
 
 **Seed materials.** These are written by models from families other than Claude, reviewed by the maintainer, and hashed before any counted run.
 
-- `[~]` Write BenchTime's product brief. It fixes the interface, the run command, the state reset, the settable clock, and the stack. Drafted by Argon and edited; awaiting the maintainer's review.
+- `[~]` Write BenchTime's product brief in the owner's words, with no fixed interface. It fixes only the stack, one start command, one data location, and reading time from the system clock. A first version with a full interface contract was drafted and then set aside on 2026-11-12. The owner-voice version is drafted and edited; awaiting the maintainer's review.
 - `[~]` Write the hidden oracle as narrative product prose, with a disclosure point for every item: stated, askable, recognised on sight, emerging at change k, or realised on a symptom. Drafted by Sol and edited; awaiting the maintainer's review.
 - `[~]` Write the change script: about 10 changes covering the change types, two redirects for testing the plumbing, at least one emerging item, and one probe request that makes sense at any age. Drafted by Sol and edited; awaiting the maintainer's review.
 - `[ ]` Write the grading rubric. Each requirement is a checkable statement with its disclosure, the change that introduced it, and the change that retires it, if any.
@@ -31,13 +31,20 @@ Status marks: `[x]` done, `[~]` in progress, `[ ]` not started.
 - `[ ]` Write the user simulator's prompt for the three policies, with its answer record, its rules for broad questions and for silence, and a leak audit.
 - `[ ]` Write the touchpoint rubric for the six kinds of request, and the classifier prompt.
 - `[ ]` Calibrate the level 1 grader on Haiku 5.5 through `claude -p`, using labelled pairs in both directions, and fall back to Sonnet 5.5 if Haiku misses the threshold. Measure test-retest flips.
-- `[ ]` Work out how the level 1 grader reaches the software without seeing its source.
+- `[ ]` Write the interface-extraction prompt and its fixed template, and check it on a few builds: does the reference let a grader exercise every operation, without describing intended behaviour?
+- `[ ]` Work out how the level 1 grader reaches the running software without seeing its source.
 
 **Arms and harness:**
 
 - `[ ]` Write the configurations for the bare agent, cheap discipline, and LID Full.
 - `[ ]` Write the isolation recipe: a separate Claude Code configuration directory per arm, and a check of each session's start-up record.
-- `[ ]` Check the headless plumbing under `claude -p`: plan-mode approval, LID's phase stops, questions by stopping and resuming, and the rule that tells "done" from "waiting".
+- `[ ]` Check the headless plumbing under `claude -p`:
+  - plan-mode approval;
+  - LID's phase stops;
+  - questions answered by stopping and resuming;
+  - the rule that tells "done" from "waiting";
+  - controlling time from outside (for example with `libfaketime`);
+  - resetting by starting from an empty data location.
 - `[ ]` Check that the recorded token usage includes subagent sessions.
 - `[ ]` Decide where the harness lives, and walk LID's arrow for it (an intent node under `docs/intent/`, then specs, then tests, then code).
 
