@@ -194,7 +194,9 @@ class RoleTest(unittest.TestCase):
         return executor.RoleSession(**base)
 
     def test_a_role_without_tools_gets_no_tools_and_a_schema(self):
-        cmd = executor.role_command(self.role(), "Answer.", container_name="r1", json_schema='{"type":"object"}')
+        cmd = executor.role_command(self.role(), container_name="r1", json_schema='{"type":"object"}')
+        self.assertEqual(cmd[cmd.index("claude") + 1], "-p")
+        self.assertIn("-i", cmd[:4])
         self.assertEqual(cmd[cmd.index("--tools") + 1], "")
         self.assertEqual(cmd[cmd.index("--json-schema") + 1], '{"type":"object"}')
         self.assertEqual(cmd[cmd.index("--output-format") + 1], "json")
@@ -205,7 +207,7 @@ class RoleTest(unittest.TestCase):
 
     def test_a_role_with_tools_and_a_workspace(self):
         r = self.role(tools=("Bash", "Read"), workspace_volume="ckpt-3-copy")
-        cmd = executor.role_command(r, "Extract.", container_name="r1")
+        cmd = executor.role_command(r, container_name="r1")
         self.assertEqual(cmd[cmd.index("--tools") + 1], "Bash,Read")
         self.assertIn("ckpt-3-copy:/work", cmd)
         self.assertEqual(cmd[cmd.index("--permission-mode") + 1], "bypassPermissions")
@@ -219,10 +221,12 @@ class RoleTest(unittest.TestCase):
                               "cacheCreationEphemeral1hInputTokens": 9000, "costUSD": 0.03}}}
         calls = []
 
-        def run(cmd, capture_output=None, text=None, timeout=None, **kw):
-            calls.append(cmd)
+        def run(cmd, capture_output=None, text=None, timeout=None, input=None, **kw):
+            calls.append((cmd, input))
             return subprocess.CompletedProcess(cmd, 0, stdout=json.dumps(out), stderr="")
         rec = executor.run_role(self.role(), "Answer.", json_schema="{}", runner=run)
+        self.assertEqual(calls[0][1], "Answer.")  # the prompt goes in on stdin, never on the command line
+        self.assertNotIn("Answer.", calls[0][0])
         self.assertEqual(rec.structured, {"finished": True})
         self.assertEqual(rec.session_id, "r9")
         self.assertEqual(rec.usage.total().cache_write_1h, 9000)

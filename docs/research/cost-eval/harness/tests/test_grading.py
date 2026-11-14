@@ -145,6 +145,12 @@ class JudgmentTest(unittest.TestCase):
         self.assertEqual(len(text.splitlines()), 2)
         self.assertIn('"seq": 5', text)
 
+    def test_long_response_bodies_are_cut_for_the_judge(self):
+        line = {"seq": 9, "op": "http", "request": {}, "response": {"status": 200, "body": "x" * 9000}}
+        text = grading.log_for_judge([line])
+        self.assertIn("[cut: 3000 more characters]", text)
+        self.assertLess(len(text), 7000)
+
     def test_verdicts_must_cover_every_probe_and_cite_real_lines(self):
         ps = grading.parse_probes(PROBES).probes[:1]
         ok = {"verdicts": [{"probe": "P-BK01-a", "verdict": "met", "evidence": [5], "reason": "r"}]}

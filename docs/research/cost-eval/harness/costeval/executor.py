@@ -202,8 +202,9 @@ class RoleRecord:
     duration_s: float
 
 
-def role_command(r: RoleSession, prompt: str, *, container_name: str, json_schema: str | None = None) -> list[str]:
-    cmd = ["docker", "run", "--rm", "--name", container_name, "-e", TOKEN_ENV,
+def role_command(r: RoleSession, *, container_name: str, json_schema: str | None = None) -> list[str]:
+    """The role's command. The prompt goes in on standard input, so its size is never limited by the command line."""
+    cmd = ["docker", "run", "--rm", "-i", "--name", container_name, "-e", TOKEN_ENV,
            "-v", f"{_volume(r.config_volume)}:/cfg"]
     if r.workspace_volume:
         cmd += ["-v", f"{_volume(r.workspace_volume)}:/work"]
@@ -211,7 +212,7 @@ def role_command(r: RoleSession, prompt: str, *, container_name: str, json_schem
         cmd += ["--network", r.network]
     for k, v in r.env:
         cmd += ["-e", f"{k}={v}"]
-    cmd += ["-w", "/work", r.image, "claude", "-p", prompt,
+    cmd += ["-w", "/work", r.image, "claude", "-p",
             "--model", r.model, "--effort", r.effort,
             "--tools", ",".join(r.tools),
             "--settings", json.dumps({"autoMemoryEnabled": False}),
@@ -228,8 +229,8 @@ def run_role(r: RoleSession, prompt: str, *, json_schema: str | None = None, run
     name = f"costeval-role-{uuid.uuid4().hex[:12]}"
     start = time.monotonic()
     try:
-        proc = runner(role_command(r, prompt, container_name=name, json_schema=json_schema),
-                      capture_output=True, text=True, timeout=r.timeout_s)
+        proc = runner(role_command(r, container_name=name, json_schema=json_schema),
+                      input=prompt, capture_output=True, text=True, timeout=r.timeout_s)
     except subprocess.TimeoutExpired as e:
         runner(["docker", "kill", name], capture_output=True, text=True)
         raise RoleFailed(f"timed out after {r.timeout_s}s") from e

@@ -33,7 +33,8 @@ HERE = Path(__file__).resolve().parent.parent
 PROMPTS = HERE / "prompts"
 TOOLS = HERE / "grading"
 VERDICTS = ("met", "not met", "couldn't exercise")
-DEFERRED_NEEDS = ("prior-data", "prior-observations")  # not implemented yet; such probes are reported as not run
+DEFERRED_NEEDS = ("prior-data", "prior-observations")
+MAX_JUDGE_BODY = 6000  # characters of one response body the judge sees; the full log stays on disk  # not implemented yet; such probes are reported as not run
 
 
 # ---------------------------------------------------------------------------------------------- the probes
@@ -336,7 +337,12 @@ def log_for_judge(lines: list[dict]) -> str:
     for r in lines:
         if r.get("admin"):
             continue
-        out.append(json.dumps({k: r[k] for k in ("seq", "clock", "op", "request", "response") if k in r}))
+        entry = {k: r[k] for k in ("seq", "clock", "op", "request", "response") if k in r}
+        body = (entry.get("response") or {}).get("body") if isinstance(entry.get("response"), dict) else None
+        if isinstance(body, str) and len(body) > MAX_JUDGE_BODY:
+            entry["response"] = {**entry["response"],
+                                 "body": body[:MAX_JUDGE_BODY] + f" ...[cut: {len(body) - MAX_JUDGE_BODY} more characters]"}
+        out.append(json.dumps(entry))
     return "\n".join(out)
 
 
