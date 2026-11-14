@@ -4,84 +4,35 @@ Newest entries first. Each entry says what was done, what was decided, and who d
 
 Older entries move to [log-archive/](log-archive/) when this file passes about 2,000 words, and 'Earlier, in brief' at the bottom summarizes them.
 
-## 2026-11-14 (later): The simulator passes, the trajectory runner works, grading begins
+## 2026-11-14 (evening): Graders calibrated; stage 1 hits the ceiling
 
-Run by the main session on its own judgment, under the maintainer's handover.
+**Decided by the maintainer:** Claude Fable stands in for the maintainer when spot-checking grader verdicts.
 
-**The simulator, reworked from Claude Fable's review.** Every finding was worked through. The main changes:
-- **One model call per stop serves all three policies.** The model classifies the agent's message, answers its direct questions, and lists each contradiction tied to an oracle item. The harness then keeps every correction (diligent), none (rubber-stamp), or each one on a seeded draw against a placeholder curve over the words read in the change (bounded). It puts the reply together itself.
-- **What the owner sees is one rule for every arm:** the final message, the plan from plan mode, and every prose file the message names, shown as its changes since the owner last read it.
-- **Redirect timing and words belong to the harness.** A pending change of mind is withheld from the owner until it is delivered.
-- **The seed's owner material changed** (oracle version 3, change script version 2, edits E48 to E51 and C1 in the private edit log). A study note and four passages that put recognized-on-sight rules or a graded boundary into the owner's own words came out of the narrative, and change 2's redirect now lists the items it brings in. No probe or graded behaviour changed.
-- **A leak judge (Opus 5.5) and a trimming call.** The first ten-run sweep of 15 scenarios passed every structural check but one. The judge, though, found the owner restating whole rules, with their other clauses and exact boundaries, in up to 9 of 10 runs of a scenario. Prompt changes alone brought most scenarios down but not all. A separate trimming call, which sees only the agent's message and the owner's draft parts, cuts each part to what the question or the quoted wrong words need.
-- **Result:** the final sweep (15 scenarios × 10 runs) passed every check, and the judge confirmed no leaks or inventions. Spot checks show the trimming keeps what corrections need. The threshold for counted runs (at most 5% of replies, and no scenario above 2 in 10) was set before this sweep. About $9 notional on the subscription across the sweeps.
+**Grader calibration.**
+- **Judge test-retest.** Haiku 5.5 flipped 4 of 44 verdicts when it judged the same logs again (9%, against a threshold of about 5%), all between "met" and "couldn't exercise". Sonnet 5.5 agreed with itself on all 44. It also turned four doubtful "couldn't exercise" verdicts into "met" and found a "not met" Haiku had missed. **Decided by the main session:** Sonnet judges and Haiku executes.
+- **Whole-pipeline retest.** A second grading of the same checkpoint from scratch (new extraction, new execution, Sonnet judge) agreed on all 44 probes.
+- **Seeded violations.** A subagent made four copies of the bare build, each breaking one item (a limit of four, a cleared label not restoring the name, touching bookings refused, cancelled time not freed). The grader flipped each target item to "not met". The other flips were real consequences of the mutation, plus an ambiguous probe and two execution sessions killed by memory pressure.
+- **Memory pressure.** The Docker VM has 2 CPUs and 4 GB. Grading now retries a killed batch once, and gradings run one at a time.
+- **Fable's spot-check.** Fable agreed with 35 of 36 sampled verdicts (97%, against about 90%), including all 18 "met" verdicts. It also found probes asking more than their oracle items, mostly fields an item doesn't require, such as a shown deadline or a checkout reference.
+- **Probes version 2 (edits E52 to E57).** These six probes now ask only what their items say, and Fable checked the fixes.
+- **Stage 0 under the Sonnet judge,** items in force at change 2 (plumbing, not evidence): bare met 22 of 28, cheap discipline 23 (3 couldn't exercise), and LID Full 23 (1).
+- **Cost.** Grading a checkpoint costs about $1 notional with the Sonnet judge and takes 10 to 22 minutes with three workers.
 
-**Arms and the trajectory runner.**
-- The three pilot arms are data in [harness/arms/](harness/arms/). LID Full runs v1.4.6 from this repository and starts the first build with `/linked-intent-dev`.
-- `run_trajectory.py` runs a change between the agent and the owner, commits at its end, records every turn and owner call in the git-ignored `runs/` folder, and runs symptom diagnostics before symptom changes. `audit_owner.py` runs the leak judge over a real trajectory's replies.
-- 103 tests pass.
+**Stage 1: two bare trajectories on Opus 5.5, all ten changes, diligent owner.**
+- **Both completed** with no caps and no errors, at $8.98 and $9.68 notional agent cost. The change-5 symptom diagnostic passed on both, so no report was sent. The change-9 diagnostic fired on both, and each agent fixed the symptom in one round.
+- **Both meet 46 of 51 items in force at change 10 (90%).** Stage 1's threshold is about 85%, so stage 1 doesn't pass.
+- **Most latent intent is guessable.** Of 22 askable and recognized-on-sight items, the owner disclosed 5 to 7 by correcting interpretations the agent listed in its first report. The agent met 12 to 14 of the 15 to 17 it was never told, about 82%. Even if every disclosed latent item had been missed, the arm would meet 78% to 80%.
+- **The owner leak audit** over both trajectories flagged 1 reply in 15. It's borderline (a correction completing a rule the agent had only partly stated), and it's counted. Real-run leaks so far are about 1 in 40 judged replies.
+- **The maintainer decides what follows,** because it changes what the study can measure.
 
-**Pilot stage 0 is running** (all three arms on Sonnet 5.5, the first build plus changes 1 and 2, the diligent owner).
-- **A false start:** Claude Code 2.1.323 loads four built-in plugins in every session (two more than a day earlier, under the same version), which the start-up check counted as outside the arm. The runs were stopped after a few minutes and restarted. Built-ins now count as part of the harness and are recorded with every turn.
-- **Bare and cheap discipline finished all three changes**, at $0.85 and $1.22 notional. LID Full's first build took 8 owner stops and $2.56, against $0.52 for bare and $0.70 for cheap discipline.
-- **Plumbing checks:**
-  - cheap discipline's plan mode, the owner reading plans and the files they name, and change 2's redirect firing at the first plan (bare got it with its completion report, after code);
-  - the owner answering with no view where it had none;
-  - the leak audit found nothing in the 12 replies of the finished arms.
-
-**Grading is built and runs end to end.**
-- A control server inside each app container starts the arm's service under libfaketime, forwards requests, sets the clock, restarts, restores named setups, runs only the setup commands the reference names, and writes the execution log itself. Graders reach it only through `gt`, from a container without the source.
-- Extraction (Sonnet) writes the reference and a start spec, a setup session loads and snapshots each setup, Haiku executes probes in batches across parallel workers, and Haiku judges each batch's log.
-- **A first try on four probes** found two setup problems, both fixed: the reference's examples used a different admin token from the instance's, and probes ran on empty setups. On the second try two probes were met. One came back "couldn't exercise" because the executor did one case's steps out of order, and the prompt now forbids that. In the other, a concurrent hold was refused for the wrong reason. libfaketime was checked under 16 concurrent threads and held, so the wrong reason is the arm's own behaviour. The judge's verdict there is kept as a calibration case.
-- Probes needing prior-data are reported as not run until that's built.
-
-## 2026-11-14: The simulated owner, drafted and reviewed
-
-**Decided by the maintainer:** once the simulator is drafted, the main session runs the rest of the pilot on its own judgment, bringing the maintainer only decisions that are really theirs.
-
-**Done.**
-- **The owner's prompt template** ([harness/prompts/simulator.md](harness/prompts/simulator.md)) and **`costeval/simulator.py`**. The code parses the oracle and change script, releases the narrative and items by change, and builds the prompt under one of three policies. The owner returns structured output: whether the change is finished, its reply, whether it delivered or dropped a redirect, and an entry for each question it answered. The tests use a made-up oracle. On the real seed, the release gives the right sets at every change.
-- **`costeval/executor.py` runs harness roles** (the simulator, extraction, graders) in the container, with only the tools they name. 48 tests pass.
-- **Live tests:** six scenarios on Sonnet 5.5, about $0.03 a call, over three rounds of fixes. The first round found a rubber-stamp owner rejecting plans, a diligent owner withholding a correction because it overlapped a pending clarification, a redirect delivered too early, and an owner volunteering rules. Later rounds mostly behaved as designed.
-
-**Claude Fable reviewed the simulator in the maintainer's place,** and found it not ready for counted runs: 4 blockers, 11 major, and 8 minor problems. The review quotes hidden items, so it is kept privately in `seeds/benchtime/hidden/fable-simulator-review.md`. Its main points:
-- what the owner is shown is undefined, such as documents the agent asks the owner to read, or plan files;
-- the end-of-change review rewarded long reports, and wasn't specified for the bare arm;
-- bounded attention, done as a word cut-off, cuts off the question and isn't the design's probability model;
-- volunteering still happens on plan review;
-- a change of mind's settled view was released before the redirect delivered it;
-- the owner has no word-for-word memory of the current change;
-- redirect text should be inserted word for word by the harness, and leaks need logging and an independent judge.
-
-**Decided by the main session,** under the maintainer's delegation:
-- The end of every change is a review stop, so the bare arm runs under all three policies too. [design.md](design.md) ("The user simulator") now says so.
-- Bounded attention drops each correction with a probability that falls as the words shown grow, as the design defines it. The curve is a placeholder until the maintainer-played trajectories calibrate it.
-- An open question on a recognized-on-sight topic gets "Show me what you have in mind and I'll tell you if it's wrong."
-- The harness inserts redirect text word for word; the owner only decides when.
-- Every other fix the review proposed is adopted.
-
-**Next:** fix the simulator, then run each live scenario at least ten times and set a leak-rate threshold before counted runs.
-
-## 2026-11-13 (late night): The harness begins
-
-**Decided by the maintainer:** grading replays the previous checkpoint's calls without a model, as proposed in the night entry, now archived.
-
-**Decided by the main session:** the harness has three parts (trajectories, grading, and reports) that hand records to each other, under the principles in [design.md](design.md) ("The harness").
-
-**Done.** The first two harness modules, written test-first, are in [harness/](harness/README.md). All 30 tests pass.
-- **`costeval/usage.py`** reads a session's tokens by model and token class from its result record. It takes each turn's share as the difference between consecutive results, and falls back to summing the transcripts on disk when a run left no result. On the plumbing test's real sessions, the two sources agree to the token, and the twelve turns of the LID walk sum exactly to its final total.
-- **`costeval/executor.py`** runs one `claude -p` turn in the executor container, with the arm's two volumes and the token passed by name. It checks the session's start-up record against the arm's plugins, the pinned model and Claude Code version, and memory being off. A live turn worked, and so did a resume from a new container, because the transcript lives in the arm's configuration volume.
-
-**Plan mode works headless,** which closes a plumbing item. A turn in plan mode writes only a plan file, in the configuration volume rather than the repository, and ends by presenting the plan. Resuming with "Approved." in the normal mode builds it. So the cheap-discipline arm opens each change in plan mode, the simulator reviews the plan, and the rest of the change runs normally.
-
-**Next:** the arm configurations, the user simulator, and the trajectory loop that ties them together.
+**Also built:** probe-change forks (`run_probe.py`, tried once), the touchpoint classifier (`classify_touchpoints.py`), `rejudge.py`, `sample_verdicts.py`, and the A/A and positive-control arms.
 
 ## Earlier, in brief
 
-**The arc so far.** The moved entries cover 2026-11-11 to 2026-11-13, in the order they happened. On 11-11, three separate takes on the design converged on one core design, and a check of old transcripts showed they could not answer the question, so mining them was dropped. On 11-12, the maintainer settled that graders are models. Fifteen candidate projects came back from GPT-6.1 Sol, Gemini 4 Argon, and a fresh Claude Opus 5.5 session, and BenchTime was chosen as the pilot seed and ReleaseDesk as the second. Sol and Argon drafted BenchTime's materials, the main session edited them, and the maintainer decided that each arm defines its own interface. On 11-13, a grading protocol was written into design.md, and the maintainer accepted BenchTime's materials. In the afternoon, about 25 throwaway sessions on Sonnet 5.5 showed that LID's phase stops work headless, and checked isolation, cost accounting, and the fake clock. In the evening, a bare BenchTime build, interface extraction, and grading ran in a Linux container, and the judge caught a seeded mutant on two probes. That night, the maintainer made the container the standard recipe for every executor session. Sol drafted 88 probes, and Claude Fable reviewed them in the maintainer's place, which brought them to 92 and the oracle to version 2. Grading turned out to be the study's biggest cost, so replay was proposed, and the maintainer decided that the harness stays outside LID's arrow.
+**The arc so far.** The moved entries cover 2026-11-11 to 2026-11-14, in the order they happened. On 11-11, three takes on the design converged on one core design, and old transcripts were found unable to answer the question, so mining them was dropped. On 11-12, the maintainer settled that graders are models, and BenchTime was chosen as the pilot seed and ReleaseDesk as the second from fifteen candidate projects. Its materials were drafted and edited, and the maintainer decided that each arm defines its own interface. On 11-13, a grading protocol was written into design.md and the materials were accepted. About 25 throwaway sessions showed that LID's phase stops work headless. That night, Sol drafted 88 probes, and Claude Fable reviewed them. Grading proved the study's biggest cost, so replay was proposed, and the maintainer decided that the harness stays outside LID's arrow. Late that night, the harness began, and plan mode was shown to work headless. On 11-14, Claude Fable's review found the simulated owner not ready for counted runs. The main session fixed it, a sweep of 15 scenarios passed every check, and a trimming call was added to cut each answer. A trajectory runner was built, and pilot stage 0 ran the three arms through a first build and two changes. Grading was built end to end, and a first try on four probes found two setup problems, both fixed.
 
 **Decisions.** Every decision that still stands, with its date and who made it, is in [decisions.md](decisions.md).
 
 **Archive.**
 
-- [2026-11.md](log-archive/2026-11.md): entries from 2026-11-11 to 2026-11-13 (ten entries)
+- [2026-11.md](log-archive/2026-11.md): entries from 2026-11-11 to 2026-11-14 (thirteen entries)
