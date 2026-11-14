@@ -12,7 +12,11 @@ python3.12 -m unittest discover -s tests
 |---|---|
 | `costeval/usage.py` | Reads a session's token usage by model and token class, from its result record or, for a run that left none, from its transcripts. A resumed session's totals are cumulative, so each turn's usage is the difference between consecutive results |
 | `costeval/executor.py` | Runs one `claude -p` turn in the executor container, with the arm's workspace and configuration volumes and the token passed by name, and checks the session's start-up record against the arm and the pinned versions. Also runs harness roles (the simulator, extraction, graders) in the container, with only the tools they name |
-| `costeval/simulator.py` | The simulated owner: parses the seed's oracle and change script, releases the narrative and items in stages by change, and builds the owner's prompt from `prompts/simulator.md` under one of three reviewing policies |
+| `costeval/simulator.py` | The simulated owner: parses the seed's oracle and change script, releases what the owner knows by change, works out what it is shown at each stop, makes one model call per stop, applies the reviewing policy to the corrections, times and inserts redirects, and builds the leak judge's prompt |
+| `costeval/trajectory.py` | Arms, the first prompt of each change, the arm's workspace volume, and the loop that runs one change between the agent and the owner, recording every turn and owner call and committing at the end |
+| `run_trajectory.py` | Runs one arm's trajectory through a seed's changes, or continues one that stopped. Records go to `../runs/`, which git ignores |
+| `arms/` | The arm configurations: `bare`, `cheap-discipline` (with its `AGENTS.md`), and `lid-full` |
 | `prompts/simulator.md` | The owner's prompt template. The oracle content is filled in at run time, so the template itself holds nothing hidden |
+| `prompts/leak-judge.md` | The leak judge's prompt: given everything the owner was given and the reply it sent, it lists what the reply shared without licence |
 
 Executor sessions need the maintainer's subscription token in `CLAUDE_CODE_OAUTH_TOKEN`. [../plumbing/with-token.sh](../plumbing/with-token.sh) sets it without printing it.

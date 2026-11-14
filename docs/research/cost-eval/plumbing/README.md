@@ -1,6 +1,6 @@
 # Plumbing scripts
 
-Throwaway scripts from the plumbing test (milestone M1 in [../plan.md](../plan.md)). They are research notes, not the harness: the harness walks LID's arrow from an intent node under `docs/intent/` (see "Harness code" in [../README.md](../README.md)). Findings are in [../log.md](../log.md).
+Throwaway scripts from the plumbing test (milestone M1 in [../plan.md](../plan.md)). They are research notes, not the harness, which lives in [../harness/](../harness/README.md). Findings are in [../log.md](../log.md).
 
 | File | What it is |
 |---|---|

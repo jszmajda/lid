@@ -154,14 +154,16 @@ Requirements disclosed as askable or recognised on sight are graded from the sta
 
 In some changes, the owner changes direction partway through. There are two kinds:
 
-- **Change of mind:** the owner wanted one thing and now wants another, for example "actually, a safety closure should cancel existing bookings too".
+- **Change of mind:** the owner wanted one thing and now wants another, for example "actually, refunds should go back to the original card, not to store credit".
 - **Clarification:** the intent was unclear and the agent guessed, and the owner now says what they meant. If the arm asked first, so there was nothing to clarify, the redirect is recorded as pre-empted. That counts as an outcome, not as missing data.
 
 Each redirect is delivered at one of three times:
 
 - **Early:** at the first plan or spec the arm shows the owner.
 - **Late:** after code has been written.
-- **Interrupt:** at a fixed fraction of the arm's usual spend for that change. This timing doesn't depend on the arm's stopping points, so it also works for a bare agent, which has no early stop of its own. A real user of a bare agent can interrupt it too.
+- **Interrupt:** at a fixed fraction of the arm's usual spend for that change. This timing doesn't depend on the arm's stopping points, so it also works for a bare agent, which has no early stop of its own. A real user of a bare agent can interrupt it too. The pilot's change script uses no interrupt redirects, so the harness doesn't implement them yet.
+
+An early redirect for an arm that never shows a plan arrives with its completion report, so it lands after code exists. Each redirect's record says where it was delivered.
 
 **Redirect cost is marginal.** From the same snapshot, the change runs twice: once with the redirect, and once with the final intent stated from the start. The redirect's cost is the difference. This keeps the ordinary work an arm still has to do after a redirect out of the redirect's cost.
 
@@ -178,11 +180,19 @@ Every arm expects a person at different points: LID's phase stops, BMAD's person
 - **Silence gets a neutral answer.** Asked about something the oracle doesn't cover, it says "no preference, use your judgment", and the exchange is logged.
 - **It never volunteers.** It offers nothing it wasn't asked for, except emerging items at their scheduled change. Transcripts are audited for leaks.
 
+- **It sees the same kind of thing from every arm.** At each stop the owner is shown the agent's final message, the plan if the arm used plan mode, and every prose file (Markdown or plain text) that the message names. A file the owner has read before is shown as its changes since then. The owner doesn't read code or tests. The words shown at each stop are logged, counting only text new to the owner.
+- **It knows only what it would know by then.** The narrative and the items are released by change, without the graders' check sketches. A pending change of mind is withheld, both its narrative section and the items it brings in, until it is delivered, so the owner can't hint at it early.
+- **Redirect timing and words belong to the harness.** An early redirect fires at the first plan, approval request, or completion report. A late one fires at the first stop after this change has touched a source file other than documentation or tests. The scripted words go into the reply verbatim, so every arm hears the same redirect. The model decides only whether a pending clarification has already been settled, which makes it pre-empted.
+
 It runs under three policies:
 
 - **Diligent:** reads everything the arm shows it and rejects anything that contradicts the oracle.
-- **Bounded attention:** catches a contradiction with a probability that falls as the document gets longer. The curve is calibrated from trajectories in which the maintainer plays the owner.
+- **Bounded attention:** catches a contradiction with a probability that falls as the reading grows. The placeholder curve is 1 / (1 + w / 1,500), where w is the words shown so far in this change, so an arm can't escape it by splitting a long document across stops. The curve is calibrated from trajectories in which the maintainer plays the owner.
 - **Rubber-stamp:** approves everything and answers only direct questions.
+
+**One model call serves all three policies.** At each stop the model classifies the agent's message (a completion report, an approval request, direct questions, or a stop partway), answers each direct question, and lists every contradiction it finds, each tied to an oracle item. The harness then applies the policy: the diligent owner keeps every correction, the rubber-stamp owner keeps none, and the bounded owner keeps each one on a seeded draw against the curve. Answers to direct questions are always kept. The harness puts the reply together from the kept parts, so a correction never asks the agent for another round, and the prompt is identical under every policy.
+
+**Leaks are measured, not assumed away.** The simulator is tested live on fixed scenarios before counted runs, each run at least ten times. A separate judge, on a different model, reads everything the owner was given and the reply it sent, and lists every item the reply shared without licence. Counted runs start only when the confirmed leak rate is at most 5% of replies overall, with no scenario above 2 in 10. Every flagged leak is checked by hand before it counts.
 
 The diligent policy alone would act as a perfect proofreader, which rewards whichever arm shows the most text. Results are therefore reported under all three policies, and as a function of how likely the owner is to catch a contradiction. The end of every change is a review stop too: the owner reviews the agent's report under the policy. So every arm, the bare arm included, runs under all three policies, and an arm whose report shows the owner more gets more checked, which is a real cost and benefit of that way of reporting.
 
@@ -398,7 +408,7 @@ It has three parts, run in order, each handing its records to the next:
 - **Raw records first.** Every part keeps complete transcripts, logs, and responses, and measures are computed from them afterwards, so a measure can change without a re-run.
 - **One treatment for every arm.** Where a tool's usual setup clashes with the shared harness, every arm gets the same treatment, and the difference is documented under "Fairness".
 - **Runnable by others.** Images and versions are pinned, and nothing depends on the maintainer's machine, so another system's maintainers can run their own arm.
-- **Tests where a quiet bug would bias the results:** cost accounting, replay matching, the grading log, and the simulator's release of the owner narrative.
+- **Tests where a quiet bug would bias the results:** cost accounting, replay matching, the grading log, and the simulator's release of the owner's knowledge, its view of each stop, and its redirect timing and policies.
 
 ## Known limits
 

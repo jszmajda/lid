@@ -1,0 +1,2 @@
+# Trajectory records hold the seed oracle in the owner prompts, so they stay private until the runs finish.
+runs/
