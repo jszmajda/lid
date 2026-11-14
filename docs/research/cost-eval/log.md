@@ -4,6 +4,35 @@ Newest entries first. Each entry says what was done, what was decided, and who d
 
 Older entries move to [log-archive/](log-archive/) when this file passes about 2,000 words, and 'Earlier, in brief' at the bottom summarizes them.
 
+## 2026-11-14 (night): The silent-owner ceiling is still above the threshold
+
+**Decided by the maintainer:** re-run stage 1 under the rubber-stamp owner, go on to stage 2 on this seed if that lands at or below about 85%, and have Claude Fable draft ideas for hardening later runs.
+
+**Fable's hardening ideas** are kept privately in `seeds/benchtime/hidden/hardening-ideas.md`, because they name hidden items.
+- **Diagnosis:** about half the latent items are met by the simplest or most careful build, the brief's wording settles two, and the real misses are conventions that could go either way, in corners the agent never surfaced.
+- **Options:**
+  - report latent fidelity under the rubber-stamp owner, split by told and untold;
+  - measure each item's guessability with a cold panel of several model families, as a stratum fixed before runs;
+  - add either-way items from a blind drafter, with values drawn by lot or run as mirrored variants;
+  - make Sonnet the main executor;
+  - add later changes that must agree with the arm's own earlier unstated choices;
+  - clean the measure;
+  - use relayed briefs;
+  - build several of these into ReleaseDesk.
+- **Recommendation:** keep BenchTime's oracle frozen, since any item added after seeing results is post hoc, and put the hardening into ReleaseDesk.
+- **Two corrections to the evening entry:** there are 20 latent items, not 22, because the count included the two symptom items. And P-BT20-a was grading a point the oracle leaves open (whether planned maintenance releases an existing hold). Probes version 3 (edit E58, checked by Fable) fixes it. Re-judged under version 3, the diligent-owner runs meet 47 and 46 of 51.
+
+**The rubber-stamp ceiling.** Two bare trajectories on Opus 5.5 ran all ten changes, with the rubber-stamp owner, at $8.04 and $10.27 notional.
+- **Both meet 45 of 51 items in force (88%),** still above the threshold.
+- **Latent items:** 16 of 20 met in each (80%). The owner shared only what direct questions asked for: 1 rule in one run and 4 in the other.
+- **The misses:** the same four askable items in both runs. Two stated items in each were "couldn't exercise", still to check as possible probe or execution slips.
+
+**Two grading bugs found and fixed on the way.**
+- **Lost credentials.** A build that issues per-person access keys, shown once, made the setup session lose them, so the change-5 diagnostic was inconclusive. Setups now record credentials and create their own administrator. Re-run with the fix, the diagnostic passed, so the trajectory stands.
+- **An over-long command line.** A long execution log exceeded the command-line argument limit, so harness roles now take their prompts on standard input.
+
+**The maintainer decides what follows,** because the threshold rule doesn't say what happens above it.
+
 ## 2026-11-14 (evening): Graders calibrated; stage 1 hits the ceiling
 
 **Decided by the maintainer:** Claude Fable stands in for the maintainer when spot-checking grader verdicts.
