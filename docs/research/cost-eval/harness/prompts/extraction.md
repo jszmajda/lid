@@ -21,7 +21,7 @@ The reference says how to call things, never what they are for or what rules app
 - `ready_path`: a path that answers a GET request once the service is up (for example `/docs`).
 - `setup_commands`: the exact commands, if any, that load setup data from the command line, as they would be typed in `workdir`, without their arguments. Leave it empty if setup data goes in through HTTP.
 
-If the service needs a secret, such as an admin token, set it in `env` and use that same value in every example in the reference, so graders can copy the calls as they are.
+If the service needs a secret, such as an admin token or a first administrator's key, graders must be able to get it without reading the source or the data folder. Prefer a way to set it at start-up (an environment variable or a start-up option): set it in `env` or `command`, and use that same value in every example in the reference, so graders can copy the calls as they are. If the service can only generate it, name the exact command that creates or prints it in `setup_commands`, and show it in the reference. Check, by starting the service from the spec on an empty data folder, that a grader following the reference can load setup data.
 
 Write `{DATA}` wherever the data location goes, in `command`, `env`, or `data_path`, so the harness can point each run at its own empty location. For example: `"env": {"APP_DATA_DIR": "{DATA}"}, "data_path": "{DATA}"`.
 

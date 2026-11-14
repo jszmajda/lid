@@ -4,6 +4,24 @@ Newest entries first. Each entry says what was done, what was decided, and who d
 
 Older entries move to [log-archive/](log-archive/) when this file passes about 2,000 words, and 'Earlier, in brief' at the bottom summarizes them.
 
+## 2026-11-15 (small hours): Sonnet is BenchTime's executor; ReleaseDesk's guessability panel
+
+**The Sonnet ceiling passes.** Two bare trajectories on Sonnet 5.5, under the rubber-stamp owner, met 80% and 76% of items in force; trajectory 2 is counted without BT-42, for the harness fault below. They met 16 and 13 of 20 latent items. **Decided by the main session**, under the maintainer's rule: Sonnet is BenchTime's main executor, and Opus results on BenchTime are reported as limited by the ceiling. **Stage 2 is running** with the diligent owner, through `harness/run_stage2.sh`.
+
+**Two more harness faults, fixed.**
+- **An unreachable admin token.** A build kept its generated admin token in its data folder, so a symptom diagnostic was inconclusive, and the trajectory skipped a symptom report it should have received. Extraction must now make secrets reachable without reading the source or data. The runner re-runs an inconclusive diagnostic once before deciding, and the faulted item is left out of that trajectory's count.
+- **An unfilled placeholder.** The data-folder placeholder wasn't filled in inside the start spec's setup commands.
+
+**ReleaseDesk's brief and panel.**
+- **The brief.** GPT-6.1 Sol drafted the owner's up-front material, deliberately silent on 15 open questions. Gemini 4 Carbon wrote the owner-voice brief from it. Claude Fable checked it and found seven hints, which edits R1 to R3 in the private edit log remove. Fable also drafted 23 panel candidates.
+- **The panel.** Six models, two from Anthropic plus GPT-6.1 Sol, Gemini 4 Carbon, DeepSeek V4 Pro, and Mistral Large 4, each wrote open designs from the brief, then answered a forced-choice question per candidate. OpenRouter cost $2.22.
+- **The results** (`harness/guess_panel.py`; private results in `seeds/releasedesk/hidden/panel-results.md`):
+  - 11 candidates are low-guess (almost no model gets them right unprompted or when asked), 3 are medium, and 7 are high.
+  - The two "either way" candidates turned out to have a unanimous model default, so their non-default values are low-guess.
+  - The authoring models' own guess-risk ratings were often wrong, which is why the panel measures it.
+
+**The maintainer decides** the mix of guessability bands, whether to draw values by lot, and how the three new changes fit the script.
+
 ## 2026-11-14 (late night): Surprising intent for ReleaseDesk, from two model families
 
 **Decided by the maintainer:** BenchTime stays as it is; stage 2 runs on it with Sonnet if a silent-owner ceiling check on Sonnet lands at or below about 85%. ReleaseDesk is designed with surprising intent that has to hold over time, drawn from several model families.

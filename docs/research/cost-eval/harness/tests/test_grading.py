@@ -115,6 +115,8 @@ class SpecTest(unittest.TestCase):
         self.assertEqual(grading.check_spec(self.SPEC), [])
         w = grading.worker_spec(self.SPEC, 2)
         self.assertEqual((w["command"], w["env"]["APP_DIR"], w["data_path"]), ("uv run app --data /work/data-2", "/work/data-2/x", "/work/data-2"))
+        w = grading.worker_spec({**self.SPEC, "setup_commands": ["cat {DATA}/token"]}, 1)
+        self.assertEqual(w["setup_commands"], ["cat /work/data-1/token"])
 
     def test_bad_specs_are_caught(self):
         self.assertTrue(grading.check_spec({**self.SPEC, "data_path": "/tmp/db", "command": "x", "env": {}}))

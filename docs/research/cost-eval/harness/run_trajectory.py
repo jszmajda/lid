@@ -32,7 +32,7 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def diagnose(trajectory: str, n: int, change: simulator.Change, seed: str) -> str:
+def diagnose(trajectory: str, n: int, change: simulator.Change, seed: str, name: str | None = None) -> str:
     """Run a symptom change's diagnostic, the probes of the items it introduces, against the incoming checkpoint.
     Returns "fired" (a probe not met), "passed", or "inconclusive" (it couldn't be run or judged)."""
     from costeval import grading
@@ -40,7 +40,7 @@ def diagnose(trajectory: str, n: int, change: simulator.Change, seed: str) -> st
     ids = [p.id for p in probes if p.item in change.introduces]
     if not ids:
         return "inconclusive"
-    name = f"diagnostic-{n:02d}"
+    name = name or f"diagnostic-{n:02d}"
     rc = subprocess.run([sys.executable, str(HERE / "grade_checkpoint.py"), "--id", trajectory, "--change", str(n - 1),
                          "--probes", ",".join(ids), "--out-name", name, "--workers", "1"]).returncode
     path = HERE.parent / "runs" / trajectory / "grading" / name / "verdicts.json"
@@ -139,6 +139,9 @@ def main(argv=None) -> int:
         change = simulator.first_build(brief) if n == 0 else script[n]
         if change.request is None and change.symptom is not None:
             fired = diagnose(args.id, n, change, args.seed)
+            if fired == "inconclusive":
+                # Grading can fail for its own reasons (a lost credential, say); try once more before deciding.
+                fired = diagnose(args.id, n, change, args.seed, name=f"diagnostic-{n:02d}-retry")
             if fired != "fired":
                 # Passed, or couldn't be judged: no symptom report and no change. An inconclusive diagnostic is
                 # recorded as such and checked by hand before the trajectory counts.

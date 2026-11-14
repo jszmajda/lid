@@ -273,7 +273,13 @@ class Checkpoint:
 def worker_spec(spec: dict, worker: int) -> dict:
     """The extraction's start spec with {DATA} pointed at this worker's own data location."""
     data = f"/work/data-{worker}"
-    sub = lambda v: v.replace("{DATA}", data) if isinstance(v, str) else v
+
+    def sub(v):
+        if isinstance(v, str):
+            return v.replace("{DATA}", data)
+        if isinstance(v, list):
+            return [sub(x) for x in v]
+        return v
     out = {k: sub(v) for k, v in spec.items() if k != "env"}
     out["env"] = {k: sub(v) for k, v in (spec.get("env") or {}).items()}
     out["data_path"] = sub(spec.get("data_path", "{DATA}"))
