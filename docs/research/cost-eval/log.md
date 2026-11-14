@@ -4,6 +4,21 @@ Newest entries first. Each entry says what was done, what was decided, and who d
 
 Older entries move to [log-archive/](log-archive/) when this file passes about 2,000 words, and 'Earlier, in brief' at the bottom summarizes them.
 
+## 2026-11-14 (late night): Surprising intent for ReleaseDesk, from two model families
+
+**Decided by the maintainer:** BenchTime stays as it is; stage 2 runs on it with Sonnet if a silent-owner ceiling check on Sonnet lands at or below about 85%. ReleaseDesk is designed with surprising intent that has to hold over time, drawn from several model families.
+
+**Done.**
+- **The Sonnet ceiling check is running:** two bare trajectories on Sonnet 5.5 under the rubber-stamp owner, all ten changes.
+- **The brief.** Gemini 4 Carbon and Claude Fable each answered the same brief, [seeds/releasedesk/prompts/01-surprising-intent.md](seeds/releasedesk/prompts/01-surprising-intent.md), independently. It asks for owner rules that are realistic, surprising to a strong model, set either way by real organizations, re-tested by later changes, and checkable from outside, without rigging the project toward arms that ask.
+- **The answers:** Carbon proposed 19 rules and Fable 17. They are kept privately in `seeds/releasedesk/hidden/`, with a merged shortlist.
+  - The two converged on eight clusters, among them: an uploader can't approve their own upload; lifting a takedown doesn't republish; the last approved version stays public while a replacement waits; public-facing metadata needs reapproval; and the timing of manifests and bundles.
+  - They picked opposite answers to one question (whether a new sensitive-collection rule applies to already-public records), which makes it a natural candidate for mirrored variants.
+  - Carbon also listed rules that look surprising but that the brief's wording would give away, and rules that would rig the study.
+- **Cost:** OpenRouter $0.37, of which the first Carbon call ($0.24) spent all its tokens reasoning and returned no answer.
+
+**Proposed next:** measure each candidate's guessability with a cold panel of several model families, before choosing six to eight rules.
+
 ## 2026-11-14 (night): The silent-owner ceiling is still above the threshold
 
 **Decided by the maintainer:** re-run stage 1 under the rubber-stamp owner, go on to stage 2 on this seed if that lands at or below about 85%, and have Claude Fable draft ideas for hardening later runs.
