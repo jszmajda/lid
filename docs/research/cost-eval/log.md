@@ -4,6 +4,33 @@ Newest entries first. Each entry says what was done, what was decided, and who d
 
 Older entries move to [log-archive/](log-archive/) when this file passes about 2,000 words, and 'Earlier, in brief' at the bottom summarizes them.
 
+## 2026-11-14: The simulated owner, drafted and reviewed
+
+**Decided by the maintainer:** once the simulator is drafted, the main session runs the rest of the pilot on its own judgment, bringing the maintainer only decisions that are really theirs.
+
+**Done.**
+- **The owner's prompt template** ([harness/prompts/simulator.md](harness/prompts/simulator.md)) and **`costeval/simulator.py`**. The code parses the oracle and change script, releases the narrative and items by change, and builds the prompt under one of three policies. The owner returns structured output: whether the change is finished, its reply, whether it delivered or dropped a redirect, and an entry for each question it answered. The tests use a made-up oracle. On the real seed, the release gives the right sets at every change.
+- **`costeval/executor.py` runs harness roles** (the simulator, extraction, graders) in the container, with only the tools they name. 48 tests pass.
+- **Live tests:** six scenarios on Sonnet 5.5, about $0.03 a call, over three rounds of fixes. The first round found a rubber-stamp owner rejecting plans, a diligent owner withholding a correction because it overlapped a pending clarification, a redirect delivered too early, and an owner volunteering rules. Later rounds mostly behaved as designed.
+
+**Claude Fable reviewed the simulator in the maintainer's place,** and found it not ready for counted runs: 4 blockers, 11 major, and 8 minor problems. The review quotes hidden items, so it is kept privately in `seeds/benchtime/hidden/fable-simulator-review.md`. Its main points:
+- what the owner is shown is undefined, such as documents the agent asks the owner to read, or plan files;
+- the end-of-change review rewarded long reports, and wasn't specified for the bare arm;
+- bounded attention, done as a word cut-off, cuts off the question and isn't the design's probability model;
+- volunteering still happens on plan review;
+- a change of mind's settled view was released before the redirect delivered it;
+- the owner has no word-for-word memory of the current change;
+- redirect text should be inserted word for word by the harness, and leaks need logging and an independent judge.
+
+**Decided by the main session,** under the maintainer's delegation:
+- The end of every change is a review stop, so the bare arm runs under all three policies too. [design.md](design.md) ("The user simulator") now says so.
+- Bounded attention drops each correction with a probability that falls as the words shown grow, as the design defines it. The curve is a placeholder until the maintainer-played trajectories calibrate it.
+- An open question on a recognized-on-sight topic gets "Show me what you have in mind and I'll tell you if it's wrong."
+- The harness inserts redirect text word for word; the owner only decides when.
+- Every other fix the review proposed is adopted.
+
+**Next:** fix the simulator, then run each live scenario at least ten times and set a leak-rate threshold before counted runs.
+
 ## 2026-11-13 (late night): The harness begins
 
 **Decided by the maintainer:** grading replays the previous checkpoint's calls without a model, as proposed in the night entry, now archived.

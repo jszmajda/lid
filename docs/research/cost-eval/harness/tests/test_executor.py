@@ -175,3 +175,54 @@ class RunTurnTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class RoleTest(unittest.TestCase):
+    """Harness roles (the simulator, extraction, graders) run in the container too, without the arm's workspace."""
+
+    def role(self, **kw):
+        base = dict(image="lid-cost-eval-executor:2.1.323", config_volume="roles-cfg", model="claude-sonnet-5-5",
+                    claude_code_version="2.1.323")
+        base.update(kw)
+        return executor.RoleSession(**base)
+
+    def test_a_role_without_tools_gets_no_tools_and_a_schema(self):
+        cmd = executor.role_command(self.role(), "Answer.", container_name="r1", json_schema='{"type":"object"}')
+        self.assertEqual(cmd[cmd.index("--tools") + 1], "")
+        self.assertEqual(cmd[cmd.index("--json-schema") + 1], '{"type":"object"}')
+        self.assertEqual(cmd[cmd.index("--output-format") + 1], "json")
+        self.assertIn("roles-cfg:/cfg", cmd)
+        self.assertFalse(any(m.endswith(":/work") for m in cmd))
+        self.assertNotIn("--permission-mode", cmd)
+        self.assertIs(json.loads(cmd[cmd.index("--settings") + 1])["autoMemoryEnabled"], False)
+
+    def test_a_role_with_tools_and_a_workspace(self):
+        r = self.role(tools=("Bash", "Read"), workspace_volume="ckpt-3-copy")
+        cmd = executor.role_command(r, "Extract.", container_name="r1")
+        self.assertEqual(cmd[cmd.index("--tools") + 1], "Bash,Read")
+        self.assertIn("ckpt-3-copy:/work", cmd)
+        self.assertEqual(cmd[cmd.index("--permission-mode") + 1], "bypassPermissions")
+        self.assertNotIn("--json-schema", cmd)
+
+    def test_run_role_returns_the_structured_output_and_usage(self):
+        out = {"type": "result", "subtype": "success", "is_error": False, "session_id": "r9", "total_cost_usd": 0.03,
+               "result": "", "structured_output": {"finished": True},
+               "modelUsage": {"claude-sonnet-5-5": {"inputTokens": 3, "outputTokens": 40, "cacheReadInputTokens": 0,
+                              "cacheCreationInputTokens": 9000, "cacheCreationEphemeral5mInputTokens": 0,
+                              "cacheCreationEphemeral1hInputTokens": 9000, "costUSD": 0.03}}}
+        calls = []
+
+        def run(cmd, capture_output=None, text=None, timeout=None, **kw):
+            calls.append(cmd)
+            return subprocess.CompletedProcess(cmd, 0, stdout=json.dumps(out), stderr="")
+        rec = executor.run_role(self.role(), "Answer.", json_schema="{}", runner=run)
+        self.assertEqual(rec.structured, {"finished": True})
+        self.assertEqual(rec.session_id, "r9")
+        self.assertEqual(rec.usage.total().cache_write_1h, 9000)
+        self.assertEqual(rec.raw, out)
+
+    def test_run_role_reports_a_failure_instead_of_guessing(self):
+        def run(cmd, **kw):
+            return subprocess.CompletedProcess(cmd, 1, stdout="not json", stderr="boom")
+        with self.assertRaises(executor.RoleFailed):
+            executor.run_role(self.role(), "Answer.", json_schema="{}", runner=run)

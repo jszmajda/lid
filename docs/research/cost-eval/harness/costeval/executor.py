@@ -157,3 +157,73 @@ def run_turn(s: ContainerSession, prompt: str, stream_path: Path, *, resume: str
         duration_s=duration, session_id=summary.session_id or (init or {}).get("session_id"), init=init,
         init_problem=problem, summary=summary, final_text=final,
     )
+
+
+class RoleFailed(RuntimeError):
+    """A harness role's session ended without a usable result."""
+
+
+@dataclass(frozen=True)
+class RoleSession:
+    """A harness role (the simulator, interface extraction, a grader) run with `claude -p` in the container.
+
+    Roles aren't arms: they get no arm workspace unless given one, only the tools they name,
+    and their sessions live in the roles' own configuration volume.
+    """
+
+    image: str
+    config_volume: str
+    model: str
+    claude_code_version: str
+    effort: str = "medium"
+    tools: tuple[str, ...] = ()
+    workspace_volume: str | None = None
+    timeout_s: int = 900
+
+
+@dataclass(frozen=True)
+class RoleRecord:
+    session_id: str | None
+    structured: dict | None
+    text: str | None
+    usage: usage.Usage
+    raw: dict
+    duration_s: float
+
+
+def role_command(r: RoleSession, prompt: str, *, container_name: str, json_schema: str | None = None) -> list[str]:
+    cmd = ["docker", "run", "--rm", "--name", container_name, "-e", TOKEN_ENV,
+           "-v", f"{_volume(r.config_volume)}:/cfg"]
+    if r.workspace_volume:
+        cmd += ["-v", f"{_volume(r.workspace_volume)}:/work"]
+    cmd += ["-w", "/work", r.image, "claude", "-p", prompt,
+            "--model", r.model, "--effort", r.effort,
+            "--tools", ",".join(r.tools),
+            "--settings", json.dumps({"autoMemoryEnabled": False}),
+            "--output-format", "json"]
+    if r.tools:
+        cmd += ["--permission-mode", "bypassPermissions"]
+    if json_schema is not None:
+        cmd += ["--json-schema", json_schema]
+    return cmd
+
+
+def run_role(r: RoleSession, prompt: str, *, json_schema: str | None = None, runner=subprocess.run) -> RoleRecord:
+    """Run one role turn and return its structured output (when a schema is given) and usage."""
+    name = f"costeval-role-{uuid.uuid4().hex[:12]}"
+    start = time.monotonic()
+    try:
+        proc = runner(role_command(r, prompt, container_name=name, json_schema=json_schema),
+                      capture_output=True, text=True, timeout=r.timeout_s)
+    except subprocess.TimeoutExpired as e:
+        runner(["docker", "kill", name], capture_output=True, text=True)
+        raise RoleFailed(f"timed out after {r.timeout_s}s") from e
+    try:
+        raw = json.loads(proc.stdout)
+    except json.JSONDecodeError as e:
+        raise RoleFailed(f"exit {proc.returncode}, no JSON result: {proc.stderr[-500:]}") from e
+    if raw.get("is_error") or (json_schema is not None and raw.get("structured_output") is None):
+        raise RoleFailed(f"role session failed: {str(raw.get('result'))[:500]}")
+    return RoleRecord(session_id=raw.get("session_id"), structured=raw.get("structured_output"),
+                      text=raw.get("result"), usage=usage.from_result(raw), raw=raw,
+                      duration_s=time.monotonic() - start)

@@ -29,7 +29,7 @@ Status marks: `[x]` done, `[~]` in progress, `[ ]` not started.
 
 **Simulator and graders:**
 
-- `[ ]` Write the user simulator's prompt for the three policies, with its answer record, its rules for broad questions and for silence, and a leak audit.
+- `[ ]` Write the user simulator's prompt for the three policies, with its answer record, its rules for broad questions and for silence, and a leak audit. Drafted and live-tested on 2026-11-14; Claude Fable's review found 4 blockers, 11 major and 8 minor problems, kept privately in `seeds/benchtime/hidden/fable-simulator-review.md`. Fixes pending, then at least ten runs per scenario and a leak-rate threshold.
 - `[ ]` Write the touchpoint rubric for the six kinds of request, and the classifier prompt.
 - `[ ]` Calibrate execution and judgment on Haiku 5.5 through `claude -p`, using seeded violations and labelled pairs in both directions, and fall back to Sonnet 5.5 if Haiku misses the threshold. Measure test-retest flips at both steps.
 - `[ ]` Write the interface-extraction prompt and its fixed template, and check it on a few builds: does the reference let a grader exercise every operation, without describing intended behaviour? A draft is in [plumbing/](plumbing/README.md) and worked on one build. It needs to run under the fake clock, so it doesn't wait out real time.

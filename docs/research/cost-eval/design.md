@@ -184,7 +184,7 @@ It runs under three policies:
 - **Bounded attention:** catches a contradiction with a probability that falls as the document gets longer. The curve is calibrated from trajectories in which the maintainer plays the owner.
 - **Rubber-stamp:** approves everything and answers only direct questions.
 
-The diligent policy alone would act as a perfect proofreader, which rewards whichever arm shows the most text. Results are therefore reported under all three policies, and as a function of how likely the owner is to catch a contradiction. The bare arm never stops for review, so it runs under one policy only.
+The diligent policy alone would act as a perfect proofreader, which rewards whichever arm shows the most text. Results are therefore reported under all three policies, and as a function of how likely the owner is to catch a contradiction. The end of every change is a review stop too: the owner reviews the agent's report under the policy. So every arm, the bare arm included, runs under all three policies, and an arm whose report shows the owner more gets more checked, which is a real cost and benefit of that way of reporting.
 
 To check that the simulator behaves like a person, the maintainer plays the owner on a few trajectories, and those results are compared with the simulator's.
 

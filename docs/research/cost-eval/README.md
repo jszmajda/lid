@@ -24,18 +24,27 @@ Read this section first when you pick the work up in a new session. Update it at
 
 - **The design** in [design.md](design.md) is a second full draft. It merges the kickoff takes, a fresh review of the plan, and the maintainer's decisions recorded in [log.md](log.md).
 - **The pilot seed** is BenchTime, a reservation service for shared lab instruments. Each arm designs its own interface from a brief in the owner's words. A step before grading extracts the interface, and graders follow the grading protocol in [design.md](design.md): probes, separate execution and judgment, and checks on the graders.
-- **The seed's materials** are accepted by the maintainer, and their hashes are recorded as version 1. The public [brief](seeds/benchtime/brief.md) is in the repository. The oracle, change script, and edit log are in `seeds/benchtime/hidden/`, which git ignores, so they exist only in this workspace on the maintainer's machine. See [seeds/benchtime/README.md](seeds/benchtime/README.md).
+- **The seed's materials** are accepted, and their hashes are recorded in the seed's README (the brief and change script at version 1, the oracle at version 2, the probes at version 1). The public [brief](seeds/benchtime/brief.md) is in the repository. The oracle, change script, and edit log are in `seeds/benchtime/hidden/`, which git ignores, so they exist only in this workspace on the maintainer's machine. See [seeds/benchtime/README.md](seeds/benchtime/README.md).
 - **Claude roles** (executors, the simulator, and graders) run on the maintainer's subscription to keep costs down.
 - **The plumbing test is done** (see [log.md](log.md), 2026-11-13 afternoon and evening). LID's phase stops work headless, and cost accounting is understood. A bare build of BenchTime ran in a container, its interface was extracted, and a Haiku grader ran four probes through the reference and judged them, catching both violations seeded into a mutant.
 - **Executor sessions run in a Linux container,** the standard recipe the maintainer accepted, using the maintainer's subscription token.
 - **BenchTime's probes** (92, for all 53 graded items) are drafted by Sol, edited, reviewed by Claude Fable in the maintainer's place, and recorded as version 1. The oracle is at version 2.
-- **Grading is the study's biggest cost:** about $50 to $130 per trajectory at Haiku's list price if every probe runs at every checkpoint. Replaying the previous checkpoint's calls without a model is proposed (see the log's 2026-11-13 night entry).
+- **Grading is the study's biggest cost:** about $50 to $130 per trajectory at Haiku's list price if every probe runs at every checkpoint. The harness replays the previous checkpoint's calls without a model instead (see "The harness" in [design.md](design.md)).
+- **The harness** ([harness/](harness/README.md)) has usage accounting, the container session runner, harness roles, and the simulated owner, with 48 tests. Claude Fable's review of the simulator found 4 blockers, 11 major, and 8 minor problems, kept privately in `seeds/benchtime/hidden/fable-simulator-review.md` with the main session's decisions on its judgment calls. They are not fixed yet.
+- **The maintainer has handed the pilot to the main session** (2026-11-14): run it on your own judgment, and bring the maintainer only decisions that are really theirs. Pushing to the draft pull request is allowed; marking it ready, merging, and releasing are not.
 - **No counted runs yet.**
 
-**Next actions** (milestone M1 in [plan.md](plan.md)):
+**Next actions** (milestones M1 and M2 in [plan.md](plan.md)):
 
-1. Build the harness (see "The harness" in [design.md](design.md)), starting with the trajectory runner, then grading with replay, then reports. The plumbing test's lessons for the harness are in the log's 2026-11-13 evening entry: probes in batches, snapshots of the data location, a `gt` that can't open the source, a commit at the end of each change, and extraction under the fake clock. The night entry adds replaying probes between checkpoints, and the harness abilities the probes need: concurrent requests, a restart on existing data, and data carried from an earlier checkpoint.
-2. In parallel: the user simulator's prompt, the touchpoint rubric, and the seeded-violation calibration set. The simulator has to recognise a finished change, and the design has to say whether an agent's list of its own interpretations counts as asking.
+1. **Fix the simulator** by working through every finding in the private review, under the decisions at its end. Then run each scenario in `seeds/benchtime/hidden/simulator-cases.py` at least ten times, add the missing scenarios the review lists, run an independent leak judge over every exchange, and set a leak-rate threshold before counted runs.
+2. **Write the arm configurations.**
+   - Bare: the brief only.
+   - Cheap discipline: plan mode for the first turn of each change, and a short AGENTS.md about tests and NOTES.md.
+   - LID Full: LID from a copy of this repository at the release tag, kept in the arm's configuration volume and loaded with `--plugin-dir`.
+   - Every arm's first prompt for a change includes the same neutral sentence saying the owner can answer questions.
+3. **Build the trajectory loop.** It covers change prompts, simulator turns with a cap on rounds, redirects, symptom diagnostics (which need grading), a commit at the end of each change, records, and pacing between changes only.
+4. **Build grading.** It covers extraction under the fake clock, named setups with snapshots, and a `gt` that can't open the source and can race requests, restart, and carry data from an earlier checkpoint. Then replay and the judge.
+5. **Run pilot stage 0,** the plumbing run: all three arms on Sonnet 5.5, a build plus two changes. Then stages 1 to 3 as [plan.md](plan.md) describes, logging and pushing as you go.
 
 ## Files
 
