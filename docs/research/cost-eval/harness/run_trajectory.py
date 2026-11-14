@@ -32,6 +32,28 @@ def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def diagnose(trajectory: str, n: int, change: simulator.Change, seed: str) -> str:
+    """Run a symptom change's diagnostic, the probes of the items it introduces, against the incoming checkpoint.
+    Returns "fired" (a probe not met), "passed", or "inconclusive" (it couldn't be run or judged)."""
+    from costeval import grading
+    probes = grading.parse_probes((HERE.parent / "seeds" / seed / "hidden" / "probes.md").read_text(encoding="utf-8")).probes
+    ids = [p.id for p in probes if p.item in change.introduces]
+    if not ids:
+        return "inconclusive"
+    name = f"diagnostic-{n:02d}"
+    rc = subprocess.run([sys.executable, str(HERE / "grade_checkpoint.py"), "--id", trajectory, "--change", str(n - 1),
+                         "--probes", ",".join(ids), "--out-name", name, "--workers", "1"]).returncode
+    path = HERE.parent / "runs" / trajectory / "grading" / name / "verdicts.json"
+    if rc != 0 or not path.exists():
+        return "inconclusive"
+    verdicts = [v.get("verdict") for v in json.loads(path.read_text()).get("probes", {}).values()]
+    if "not met" in verdicts:
+        return "fired"
+    if len(verdicts) < len(ids) or "couldn't exercise" in verdicts:
+        return "inconclusive"
+    return "passed"
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--arm", required=True)
@@ -116,8 +138,16 @@ def main(argv=None) -> int:
             continue
         change = simulator.first_build(brief) if n == 0 else script[n]
         if change.request is None and change.symptom is not None:
-            print(f"change {n} is a symptom report: its diagnostic needs grading, which this runner doesn't do yet")
-            return 2
+            fired = diagnose(args.id, n, change, args.seed)
+            if fired != "fired":
+                # Passed, or couldn't be judged: no symptom report and no change. An inconclusive diagnostic is
+                # recorded as such and checked by hand before the trajectory counts.
+                meta["changes"][str(n)] = {"title": change.title, "symptom": f"not fired: diagnostic {fired}",
+                                           "finished": True, "error": None, "commit": workspace.head()}
+                meta_path.write_text(json.dumps(meta, indent=1))
+                (out / f"owner-state-{n:02d}.json").write_text(json.dumps(trajectory.owner_state(owner), indent=1))
+                print(f"change {n}: diagnostic {fired}, so no symptom report and no change", flush=True)
+                continue
         start = time.monotonic()
         before = len(owner_costs)
         res = trajectory.run_change(arm=arm, change=change, owner=owner, turn=turn, workspace=workspace,
@@ -129,6 +159,7 @@ def main(argv=None) -> int:
                                    "minutes": round((time.monotonic() - start) / 60, 1)}
         meta_path.write_text(json.dumps(meta, indent=1))
         state_path.write_text(json.dumps(trajectory.owner_state(owner), indent=1))
+        (out / f"owner-state-{n:02d}.json").write_text(state_path.read_text())  # for forks from this checkpoint
         print(f"change {n}: rounds {res.rounds}, finished {res.finished}, capped {res.capped}, agent ${agent_cost:.2f}, "
               f"error {res.error}", flush=True)
         if res.error:

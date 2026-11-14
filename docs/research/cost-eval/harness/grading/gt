@@ -1,0 +1,77 @@
+#!/usr/bin/env python3
+"""gt: the grader's only way to reach the service. Every call goes through the control server, which logs it.
+
+Usage:
+  gt clock <UTC time, e.g. 2026-01-05T08:00:00Z>        set the service's clock, frozen at that instant
+  gt http <METHOD> <PATH> [BODY] ['Header: value' ...]   make a request; BODY is JSON text, or '' for none
+  gt concurrent '<JSON list of {"method","path","body","headers"}>'   send the requests at the same moment
+  gt restart                                             restart the service on its existing data, keeping the clock
+  gt reset                                               restart the service on empty data, keeping the clock
+  gt restore <setup>                                     restore a named setup's data and starting clock
+  gt run '<command>'                                     run a setup command that the reference names
+  gt mark '<text>'                                       write a marker line in the log
+  gt snapshot <setup>                                    save the current data as a named setup (setup sessions only)
+"""
+import json
+import os
+import sys
+import urllib.request
+
+URL = os.environ.get("GT_CONTROL", "http://app:9000")
+
+
+def call(op, payload):
+    req = urllib.request.Request(f"{URL}/{op}", data=json.dumps(payload).encode(), method="POST",
+                                 headers={"content-type": "application/json"})
+    try:
+        with urllib.request.urlopen(req, timeout=300) as r:
+            return json.loads(r.read())
+    except urllib.error.HTTPError as e:
+        return json.loads(e.read() or b"{}")
+
+
+def show(out):
+    if "status" in out and "body" in out:
+        print(f"status {out['status']}")
+        print(out["body"])
+    else:
+        print(json.dumps({k: v for k, v in out.items() if k != "log_line"}, indent=1))
+
+
+def main(a):
+    if not a:
+        print("Usage:\n" + __doc__.split("Usage:", 1)[1].strip("\n"))
+        return 2
+    cmd, rest = a[0], a[1:]
+    if cmd == "clock" and len(rest) == 1:
+        show(call("clock", {"utc": rest[0]}))
+    elif cmd == "http" and len(rest) >= 2:
+        body = rest[2] if len(rest) > 2 else ""
+        headers = dict(h.split(":", 1) for h in rest[3:] if ":" in h)
+        headers = {k.strip(): v.strip() for k, v in headers.items()}
+        try:
+            body = json.loads(body) if body.strip() else None
+        except json.JSONDecodeError:
+            pass  # sent as given
+        show(call("http", {"method": rest[0], "path": rest[1], "body": body, "headers": headers}))
+    elif cmd == "concurrent" and len(rest) == 1:
+        out = call("concurrent", {"requests": json.loads(rest[0])})
+        for i, r in enumerate(out.get("results") or []):
+            print(f"--- request {i + 1}")
+            show(r)
+    elif cmd in ("restart", "reset") and not rest:
+        show(call(cmd, {}))
+    elif cmd in ("restore", "snapshot") and len(rest) == 1:
+        show(call(cmd, {"name": rest[0]}))
+    elif cmd == "run" and len(rest) == 1:
+        show(call("run", {"command": rest[0]}))
+    elif cmd == "mark" and len(rest) == 1:
+        show(call("mark", {"text": rest[0]}))
+    else:
+        print("Usage:\n" + __doc__.split("Usage:", 1)[1].strip("\n"))
+        return 2
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))

@@ -16,6 +16,14 @@ python3.12 -m unittest discover -s tests
 | `costeval/trajectory.py` | Arms, the first prompt of each change, the arm's workspace volume, and the loop that runs one change between the agent and the owner, recording every turn and owner call and committing at the end |
 | `run_trajectory.py` | Runs one arm's trajectory through a seed's changes, or continues one that stopped. Records go to `../runs/`, which git ignores |
 | `arms/` | The arm configurations: `bare`, `cheap-discipline` (with its `AGENTS.md`), and `lid-full` |
+| `costeval/grading.py` | Grading one checkpoint: parsing the probes, exporting the commit, extraction, app containers, setups, probe batches, judgment, and item verdicts |
+| `grade_checkpoint.py` | Grades one checkpoint of a trajectory with parallel workers; also runs a symptom change's diagnostic |
+| `audit_owner.py` | Runs the leak judge over a real trajectory's owner replies |
+| `grading/control.py` | The control server inside each app container: starts the arm's service under libfaketime, forwards requests, sets the clock, restarts, restores setups, runs only named setup commands, and writes the execution log |
+| `grading/gt` | The graders' only way to reach the service, through the control server |
+| `prompts/owner-trim.md` | Cuts the owner's draft answers and corrections to what the question or the quoted wrong words need |
+| `prompts/extraction.md`, `prompts/extraction-template.md` | The interface-extraction session and its fixed reference template |
+| `prompts/grade-setup.md`, `prompts/grade-execute.md`, `prompts/grade-judge.md` | The graders' three sessions: loading setups, running probes, judging logs |
 | `prompts/simulator.md` | The owner's prompt template. The oracle content is filled in at run time, so the template itself holds nothing hidden |
 | `prompts/leak-judge.md` | The leak judge's prompt: given everything the owner was given and the reply it sent, it lists what the reply shared without licence |
 

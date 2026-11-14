@@ -2,7 +2,7 @@
 
 BenchTime is a reservation service for shared lab instruments, with cleaning buffers, qualifications that must cover the whole booking, inspection before an instrument is available again, and maintenance closures. It is the pilot seed. GPT-6.1 Sol proposed it ([seed-proposals/gpt-6.1-sol.md](../../seed-proposals/gpt-6.1-sol.md)), and the reasons it was chosen are in [seed-proposals/README.md](../../seed-proposals/README.md).
 
-**Status:** reviewed and accepted by the maintainer on 2026-11-13, including the three edits marked for review. Each arm designs its own interface, so the brief is in the owner's words and fixes only the stack, one start command, one data location, and reading time from the system clock. The probes (92, for all 53 graded items) were drafted by Sol and edited. At the maintainer's request, Claude Fable reviewed them in the maintainer's place; the fixes were checked by Fable again. The probes are recorded as version 1 and the oracle as version 2.
+**Status:** reviewed and accepted by the maintainer on 2026-11-13, including the three edits marked for review. Each arm designs its own interface, so the brief is in the owner's words and fixes only the stack, one start command, one data location, and reading time from the system clock. The probes (92, for all 53 graded items) were drafted by Sol and edited. At the maintainer's request, Claude Fable reviewed them in the maintainer's place; the fixes were checked by Fable again. The probes are recorded as version 1, the oracle as version 3, and the change script as version 2.
 
 - **Public:**
   - [brief.md](brief.md), the brief every arm receives at the start, about 550 words;
@@ -12,7 +12,7 @@ BenchTime is a reservation service for shared lab instruments, with cleaning buf
   - the change script: 10 changes and a probe;
   - the probes: 92 scenarios with expected observations, in 8 named setups, and Sol's unedited draft;
   - the unedited drafts;
-  - the edit log (47 edits; three marked for review, all accepted);
+  - the edit log (51 edits to the oracle and probes, and one to the change script; three marked for review, all accepted);
   - the first versions with a fixed interface, kept in `fixed-interface-v1/` as a fallback.
 
 Drafting has cost about $1.00 on OpenRouter so far.
@@ -40,5 +40,9 @@ SHA-256 hashes of the materials as accepted. If any of them change before the co
 | 1 | 2026-11-13 | `hidden/change-script.md` | `94c7d2ef93257cba706b161dc2cf60c4f9ff77d8c95bf3c3ff7a1fca87f37b3e` |
 | 2 | 2026-11-13 | `hidden/oracle.md` | `9dd8060599c9795b34e5c0acac4aa3d0fcbe10be051ef67956c875baf69d71af` |
 | 1 | 2026-11-13 | `hidden/probes.md` | `64afcee1e8c1e3f2a00a33174817282ec3063763178724bf49a697bf411587d9` |
+| 3 | 2026-11-14 | `hidden/oracle.md` | `7d1d39884a4e38c206e0bc089bb4103a586d7471d60340fbdc6d1d1d5c5d1cd8` |
+| 2 | 2026-11-14 | `hidden/change-script.md` | `43030f3119c3a34fe505a5309248f3fb0d493e9fa3ad6bdcb460eb730301cb8e` |
 
 Oracle version 2 moves one clause from an item stated in a change to the askable item it depended on (edit E30), as edit E14 did before. Version 1 of the oracle is replaced. The brief and the change script are unchanged.
+
+Oracle version 3 and change script version 2 (edits E48 to E51 and C1) change only what the simulated owner holds, after Claude Fable's review of the simulator and its live tests. They remove a study note and four passages that put recognised-on-sight rules or a graded boundary into the owner's own words, state in one item's text a case its sketch already graded, and list the items change 2's redirect introduces. No probe and no graded behaviour changes. The brief and the probes are unchanged.

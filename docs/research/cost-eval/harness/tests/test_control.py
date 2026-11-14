@@ -1,0 +1,129 @@
+"""Tests for grading/control.py and grading/gt against a tiny stand-in service, run locally."""
+
+import json
+import os
+import socket
+import subprocess
+import sys
+import tempfile
+import time
+import unittest
+import urllib.request
+from pathlib import Path
+
+GRADING = Path(__file__).resolve().parent.parent / "grading"
+
+SERVICE = r'''
+import json, os, sys
+from http.server import BaseHTTPRequestHandler, HTTPServer
+DATA = os.path.join(os.environ["DATA_DIR"], "items.json")
+def load():
+    return json.load(open(DATA)) if os.path.exists(DATA) else []
+class H(BaseHTTPRequestHandler):
+    def log_message(self, *a): pass
+    def send(self, code, obj):
+        b = json.dumps(obj).encode(); self.send_response(code); self.send_header("content-length", str(len(b))); self.end_headers(); self.wfile.write(b)
+    def do_GET(self):
+        self.send(200, load())
+    def do_POST(self):
+        n = int(self.headers.get("content-length") or 0); item = json.loads(self.rfile.read(n))
+        items = load()
+        if item in items: return self.send(409, {"error": "duplicate"})
+        items.append(item); json.dump(items, open(DATA, "w")); self.send(201, item)
+HTTPServer(("127.0.0.1", int(sys.argv[1])), H).serve_forever()
+'''
+
+
+def free_port():
+    s = socket.socket(); s.bind(("127.0.0.1", 0)); p = s.getsockname()[1]; s.close(); return p
+
+
+class ControlTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.tmp = Path(tempfile.mkdtemp())
+        (cls.tmp / "app").mkdir()
+        (cls.tmp / "app" / "service.py").write_text(SERVICE)
+        (cls.tmp / "app" / "load.py").write_text("print('loaded')")
+        cls.svc_port, cls.port = free_port(), free_port()
+        spec = {"workdir": str(cls.tmp / "app"), "command": f"{sys.executable} service.py {cls.svc_port}",
+                "env": {"DATA_DIR": str(cls.tmp / "data")}, "port": cls.svc_port, "data_path": str(cls.tmp / "data"),
+                "ready_path": "/", "setup_commands": [f"{sys.executable} load.py"]}
+        (cls.tmp / "spec.json").write_text(json.dumps(spec))
+        env = dict(os.environ, CLOCK_FILE=str(cls.tmp / "clock" / "faketime"), FAKETIME_LIB="/nonexistent",
+                   CONTROL_ADMIN_TOKEN="secret")
+        cls.log = cls.tmp / "log" / "exec.jsonl"
+        cls.proc = subprocess.Popen([sys.executable, str(GRADING / "control.py"), "--spec", str(cls.tmp / "spec.json"),
+                                     "--port", str(cls.port), "--log", str(cls.log), "--snapshots", str(cls.tmp / "snap"),
+                                     "--app-log", str(cls.tmp / "app.log")], env=env)
+        for _ in range(100):
+            try:
+                urllib.request.urlopen(f"http://127.0.0.1:{cls.port}/", timeout=1)
+            except urllib.error.HTTPError:
+                break
+            except Exception:
+                time.sleep(0.1)
+        cls.genv = dict(os.environ, GT_CONTROL=f"http://127.0.0.1:{cls.port}")
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.proc.terminate()
+        cls.proc.wait(5)
+        subprocess.run(["pkill", "-f", f"service.py {cls.svc_port}"])
+
+    def gt(self, *args):
+        return subprocess.run([sys.executable, str(GRADING / "gt"), *args], capture_output=True, text=True, env=self.genv).stdout
+
+    def admin(self, op, payload):
+        req = urllib.request.Request(f"http://127.0.0.1:{self.port}/{op}", data=json.dumps(payload).encode(), method="POST",
+                                     headers={"x-admin-token": "secret"})
+        return json.loads(urllib.request.urlopen(req).read())
+
+    def lines(self):
+        return [json.loads(l) for l in self.log.read_text().splitlines()]
+
+    def test_requests_restarts_setups_and_the_log(self):
+        self.gt("reset")
+        self.assertIn("status 201", self.gt("http", "POST", "/items", '{"name": "a"}'))
+        self.assertIn("status 409", self.gt("http", "POST", "/items", '{"name": "a"}'))
+        self.gt("restart")
+        self.assertIn('"name": "a"', self.gt("http", "GET", "/items"))
+        # snapshots only when the harness allows them, or by the harness itself
+        self.assertIn("not available", self.gt("snapshot", "S0"))
+        self.admin("admin", {"allow_snapshot": True, "batch": "setup"})
+        self.gt("clock", "2026-01-05T09:30:00Z")
+        self.assertIn('"ok": true', self.gt("snapshot", "S0"))
+        self.admin("admin", {"allow_snapshot": False, "batch": "b1"})
+        self.gt("reset")
+        self.gt("clock", "2026-02-01T00:00:00Z")
+        self.assertIn("[]", self.gt("http", "GET", "/items"))
+        self.gt("restore", "S0")
+        self.assertIn('"name": "a"', self.gt("http", "GET", "/items"))
+        self.assertEqual((self.tmp / "clock" / "faketime").read_text().strip(), "2026-01-05 09:30:00")
+        log = self.lines()
+        self.assertTrue(any(e.get("op") == "http" and e["response"].get("status") == 409 for e in log))
+        self.assertEqual(log[-1]["batch"], "b1")
+        self.assertEqual(log[-1]["clock"], "2026-01-05 09:30:00")
+        self.assertEqual([e["seq"] for e in log], list(range(len(log))))
+
+    def test_only_named_setup_commands_run(self):
+        self.assertIn("loaded", self.gt("run", f"{sys.executable} load.py"))
+        self.assertIn("not a setup command", self.gt("run", "cat service.py"))
+
+    def test_concurrent_requests_both_get_answers(self):
+        self.gt("reset")
+        reqs = [{"method": "POST", "path": "/items", "body": {"name": "z"}}] * 2
+        out = self.gt("concurrent", json.dumps(reqs))
+        self.assertEqual(out.count("--- request"), 2)
+        self.assertIn("status 201", out)
+
+    def test_admin_needs_the_token_and_bad_input_is_refused(self):
+        req = urllib.request.Request(f"http://127.0.0.1:{self.port}/admin", data=b'{"batch":"x"}', method="POST")
+        with self.assertRaises(urllib.error.HTTPError):
+            urllib.request.urlopen(req)
+        self.assertIn("UTC time", self.gt("clock", "tomorrow"))
+        self.assertIn("Usage", self.gt())
+
+
+if __name__ == "__main__":
+    unittest.main()

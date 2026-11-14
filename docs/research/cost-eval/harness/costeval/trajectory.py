@@ -237,7 +237,7 @@ def _turn_summary(t: executor.TurnRecord, previous: usage.Usage | None, mode: st
         "duration_s": round(t.duration_s, 1), "session_id": t.session_id, "init_problem": t.init_problem,
         "is_error": t.summary.is_error, "final_words": simulator.words(t.final_text or ""),
         "usage": None if delta is None else usage_dict(delta),
-        "skills": skills_used(t.stream_path),
+        "skills": skills_used(t.stream_path), "builtin_plugins": executor.builtin_plugins(t.init),
     }
     return rec, (u if u is not None else previous)
 

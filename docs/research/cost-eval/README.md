@@ -1,6 +1,6 @@
 # Research notebook: what LID costs, compared with other ways of working
 
-**Status: designing the pilot. No counted runs yet.** Last updated 2026-11-13.
+**Status: running the pilot. No counted runs yet.** Last updated 2026-11-14.
 
 ## The question
 
@@ -26,25 +26,22 @@ Read this section first when you pick the work up in a new session. Update it at
 - **The pilot seed** is BenchTime, a reservation service for shared lab instruments. Each arm designs its own interface from a brief in the owner's words. A step before grading extracts the interface, and graders follow the grading protocol in [design.md](design.md): probes, separate execution and judgment, and checks on the graders.
 - **The seed's materials** are accepted, and their hashes are recorded in the seed's README (the brief and change script at version 1, the oracle at version 2, the probes at version 1). The public [brief](seeds/benchtime/brief.md) is in the repository. The oracle, change script, and edit log are in `seeds/benchtime/hidden/`, which git ignores, so they exist only in this workspace on the maintainer's machine. See [seeds/benchtime/README.md](seeds/benchtime/README.md).
 - **Claude roles** (executors, the simulator, and graders) run on the maintainer's subscription to keep costs down.
-- **The plumbing test is done** (see [log.md](log.md), 2026-11-13 afternoon and evening). LID's phase stops work headless, and cost accounting is understood. A bare build of BenchTime ran in a container, its interface was extracted, and a Haiku grader ran four probes through the reference and judged them, catching both violations seeded into a mutant.
-- **Executor sessions run in a Linux container,** the standard recipe the maintainer accepted, using the maintainer's subscription token.
-- **BenchTime's probes** (92, for all 53 graded items) are drafted by Sol, edited, reviewed by Claude Fable in the maintainer's place, and recorded as version 1. The oracle is at version 2.
-- **Grading is the study's biggest cost:** about $50 to $130 per trajectory at Haiku's list price if every probe runs at every checkpoint. The harness replays the previous checkpoint's calls without a model instead (see "The harness" in [design.md](design.md)).
-- **The harness** ([harness/](harness/README.md)) has usage accounting, the container session runner, harness roles, and the simulated owner, with 48 tests. Claude Fable's review of the simulator found 4 blockers, 11 major, and 8 minor problems, kept privately in `seeds/benchtime/hidden/fable-simulator-review.md` with the main session's decisions on its judgment calls. They are not fixed yet.
+- **The plumbing test is done** (see [log.md](log.md) and [log-archive/](log-archive/)). LID's phase stops work headless, cost accounting is understood, and executor sessions run in a Linux container with the maintainer's subscription token.
+- **BenchTime's probes** (92, for all 53 graded items) are drafted by Sol, edited, and reviewed by Claude Fable in the maintainer's place, at version 1. The oracle is at version 3 and the change script at version 2, after edits that changed only what the simulated owner holds.
+- **The simulated owner passed its leak threshold** (2026-11-14): 15 live scenarios × 10 runs, with no confirmed leaks by an Opus judge, after the rework that Claude Fable's review called for. One model call per stop serves all three policies, the harness times and inserts redirects, and a trimming call cuts replies to what was asked. "The user simulator" in [design.md](design.md) describes it.
+- **The harness** ([harness/](harness/README.md)) runs whole trajectories (`run_trajectory.py`), grades checkpoints (`grade_checkpoint.py`), and audits real owner replies for leaks (`audit_owner.py`), with 103 tests. Runs are recorded in the git-ignored `runs/` folder, which stays private because the owner's prompts hold the hidden oracle.
+- **Grading runs end to end and costs about $0.70 per checkpoint** at Haiku's list price, on the subscription: Sonnet extraction, a setup session, Haiku probe execution across four workers, and a Haiku judge. Replay isn't needed at pilot scale. The three probes that need prior-data aren't implemented yet and are reported as not run. Grader calibration hasn't started; doubtful verdicts go in `seeds/benchtime/hidden/calibration/cases.md`.
+- **Pilot stage 0 passed** (all three arms on Sonnet 5.5, a build plus two changes): every arm completed, isolation held, stops and questions worked, and every turn's usage was recorded. Plumbing only, not evidence.
+- **Pilot stage 1 is running:** two bare trajectories on Opus 5.5 through all ten changes, `runs/s1-bare-opus-1` and `-2`.
 - **The maintainer has handed the pilot to the main session** (2026-11-14): run it on your own judgment, and bring the maintainer only decisions that are really theirs. Pushing to the draft pull request is allowed; marking it ready, merging, and releasing are not.
 - **No counted runs yet.**
 
 **Next actions** (milestones M1 and M2 in [plan.md](plan.md)):
 
-1. **Fix the simulator** by working through every finding in the private review, under the decisions at its end. Then run each scenario in `seeds/benchtime/hidden/simulator-cases.py` at least ten times, add the missing scenarios the review lists, run an independent leak judge over every exchange, and set a leak-rate threshold before counted runs.
-2. **Write the arm configurations.**
-   - Bare: the brief only.
-   - Cheap discipline: plan mode for the first turn of each change, and a short AGENTS.md about tests and NOTES.md.
-   - LID Full: LID from a copy of this repository at the release tag, kept in the arm's configuration volume and loaded with `--plugin-dir`.
-   - Every arm's first prompt for a change includes the same neutral sentence saying the owner can answer questions.
-3. **Build the trajectory loop.** It covers change prompts, simulator turns with a cap on rounds, redirects, symptom diagnostics (which need grading), a commit at the end of each change, records, and pacing between changes only.
-4. **Build grading.** It covers extraction under the fake clock, named setups with snapshots, and a `gt` that can't open the source and can race requests, restart, and carry data from an earlier checkpoint. Then replay and the judge.
-5. **Run pilot stage 0,** the plumbing run: all three arms on Sonnet 5.5, a build plus two changes. Then stages 1 to 3 as [plan.md](plan.md) describes, logging and pushing as you go.
+1. **Finish stage 1.** When the two trajectories end, grade their final checkpoints. The threshold is that the bare arm meets no more than about 85% of the requirements in force; if it meets more, harden the seed. Check by hand any symptom diagnostic recorded as inconclusive.
+2. **Calibrate the graders** before stage 2: seeded violations on a few builds, labelled pairs, test-retest at both steps, and a sample of verdicts checked in the maintainer's place (by Claude Fable, as for the probes). Try Sonnet as the judge if Haiku stays as cautious as it was in stage 0, where several "couldn't exercise" verdicts look unwarranted.
+3. **Build what stage 2 needs:** probe-change forks from the snapshots after changes 0, 3, 6, and 9 (the runner now saves the owner's state after every change), prior-data probes, the A/A check, the positive control, and the touchpoint classifier.
+4. **Run stages 2 and 3** as [plan.md](plan.md) describes, logging and pushing as you go.
 
 ## Files
 

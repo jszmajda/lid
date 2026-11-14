@@ -23,7 +23,7 @@ def session(**kw):
         config_volume="bt-bare-s1-cfg",
         model="claude-sonnet-5-5",
         claude_code_version="2.1.323",
-        expected_plugins={"cc-plugin-agents-md", "cc-plugin-telemetry"},
+        expected_plugins=set(),
         timeout_s=60,
     )
     base.update(kw)
@@ -34,7 +34,9 @@ def init_record(plugins, skills=(), model="claude-sonnet-5-5", version="2.1.323"
     return {
         "type": "system", "subtype": "init", "session_id": session_id, "model": model,
         "claude_code_version": version, "memory_paths": memory,
-        "plugins": [{"name": p, "path": "builtin", "source": p + "@builtin"} for p in plugins],
+        # names starting cc-plugin- stand for Claude Code's built-ins; the rest are arm plugins loaded from a folder
+        "plugins": [{"name": p, "path": "builtin", "source": p + "@builtin"} if p.startswith("cc-plugin-")
+                    else {"name": p, "path": f"/cfg/lid/plugins/{p}", "source": p + "@inline"} for p in plugins],
         "skills": list(skills),
     }
 
@@ -96,13 +98,18 @@ class CheckInitTest(unittest.TestCase):
     def test_accepts_exactly_the_expected_plugins(self):
         executor.check_init(session(), init_record(["cc-plugin-agents-md", "cc-plugin-telemetry"], ["debug", "simplify"]))
 
+    def test_built_in_plugins_and_their_skills_come_with_the_harness_and_are_recorded(self):
+        rec = init_record(["cc-plugin-agents-md", "cc-plugin-privacy", "linked-intent-dev"], ["cc-plugin-privacy:check"])
+        executor.check_init(session(expected_plugins={"linked-intent-dev"}), rec)
+        self.assertEqual(executor.builtin_plugins(rec), ["cc-plugin-agents-md", "cc-plugin-privacy"])
+
     def test_an_extra_plugin_makes_the_session_invalid(self):
         rec = init_record(["cc-plugin-agents-md", "cc-plugin-telemetry", "linked-intent-dev"])
         with self.assertRaisesRegex(InitProblem, "linked-intent-dev"):
             executor.check_init(session(), rec)
 
     def test_a_missing_plugin_makes_the_session_invalid(self):
-        s = session(expected_plugins={"cc-plugin-agents-md", "cc-plugin-telemetry", "linked-intent-dev"})
+        s = session(expected_plugins={"linked-intent-dev"})
         with self.assertRaisesRegex(InitProblem, "linked-intent-dev"):
             executor.check_init(s, init_record(["cc-plugin-agents-md", "cc-plugin-telemetry"]))
 

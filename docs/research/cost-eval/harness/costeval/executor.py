@@ -26,6 +26,9 @@ from . import usage
 TOKEN_ENV = "CLAUDE_CODE_OAUTH_TOKEN"
 # Plan mode is how the cheap-discipline arm opens a change; every other turn bypasses permissions.
 PERMISSION_MODES = ("bypassPermissions", "plan")
+# Claude Code's built-in plugins (path "builtin" in the start-up record) come with the harness, the same for every arm
+# running at the same time. The set can change server-side under a pinned version, so it is recorded with every
+# turn (builtin_plugins) rather than pinned, and reports check that compared arms ran with the same set.
 
 
 class InitProblem(ValueError):
@@ -98,13 +101,15 @@ def claude_command(s: ContainerSession, prompt: str, *, container_name: str, res
 def check_init(s: ContainerSession, init: dict) -> None:
     """Raise InitProblem unless the session loaded exactly its arm's plugins under the pinned versions."""
     problems = []
-    loaded = {p.get("name") for p in init.get("plugins") or []}
+    plugins = init.get("plugins") or []
+    builtin = {p.get("name") for p in plugins if p.get("path") == "builtin"}
+    loaded = {p.get("name") for p in plugins if p.get("path") != "builtin"}
     expected = set(s.expected_plugins)
     if loaded - expected:
         problems.append(f"unexpected plugins: {sorted(loaded - expected)}")
     if expected - loaded:
         problems.append(f"missing plugins: {sorted(expected - loaded)}")
-    stray = sorted(k for k in init.get("skills") or [] if ":" in k and k.split(":", 1)[0] not in expected)
+    stray = sorted(k for k in init.get("skills") or [] if ":" in k and k.split(":", 1)[0] not in expected | builtin)
     if stray:
         problems.append(f"skills from plugins outside the arm: {stray}")
     if init.get("model") != s.model:
@@ -115,6 +120,10 @@ def check_init(s: ContainerSession, init: dict) -> None:
         problems.append(f"memory is on: {init.get('memory_paths')}")
     if problems:
         raise InitProblem("; ".join(problems))
+
+
+def builtin_plugins(init: dict | None) -> list[str]:
+    return sorted(p.get("name") for p in (init or {}).get("plugins") or [] if p.get("path") == "builtin")
 
 
 def _first_init(path: Path) -> dict | None:
@@ -179,6 +188,8 @@ class RoleSession:
     tools: tuple[str, ...] = ()
     workspace_volume: str | None = None
     timeout_s: int = 900
+    network: str | None = None  # a Docker network to join, e.g. to reach an app container while grading
+    env: tuple[tuple[str, str], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -196,6 +207,10 @@ def role_command(r: RoleSession, prompt: str, *, container_name: str, json_schem
            "-v", f"{_volume(r.config_volume)}:/cfg"]
     if r.workspace_volume:
         cmd += ["-v", f"{_volume(r.workspace_volume)}:/work"]
+    if r.network:
+        cmd += ["--network", r.network]
+    for k, v in r.env:
+        cmd += ["-e", f"{k}={v}"]
     cmd += ["-w", "/work", r.image, "claude", "-p", prompt,
             "--model", r.model, "--effort", r.effort,
             "--tools", ",".join(r.tools),

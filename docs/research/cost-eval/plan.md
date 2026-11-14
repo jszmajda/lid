@@ -29,22 +29,22 @@ Status marks: `[x]` done, `[~]` in progress, `[ ]` not started.
 
 **Simulator and graders:**
 
-- `[ ]` Write the user simulator's prompt for the three policies, with its answer record, its rules for broad questions and for silence, and a leak audit. Drafted and live-tested on 2026-11-14; Claude Fable's review found 4 blockers, 11 major and 8 minor problems, kept privately in `seeds/benchtime/hidden/fable-simulator-review.md`. Fixes pending, then at least ten runs per scenario and a leak-rate threshold.
+- `[x]` Write the user simulator's prompt for the three policies, with its answer record, its rules for broad questions and for silence, and a leak audit. Drafted on 2026-11-14 and reworked from Claude Fable's review (kept privately in `seeds/benchtime/hidden/fable-simulator-review.md`). It passed the leak threshold: 15 scenarios × 10 runs, no confirmed leaks.
 - `[ ]` Write the touchpoint rubric for the six kinds of request, and the classifier prompt.
 - `[ ]` Calibrate execution and judgment on Haiku 5.5 through `claude -p`, using seeded violations and labelled pairs in both directions, and fall back to Sonnet 5.5 if Haiku misses the threshold. Measure test-retest flips at both steps.
-- `[ ]` Write the interface-extraction prompt and its fixed template, and check it on a few builds: does the reference let a grader exercise every operation, without describing intended behaviour? A draft is in [plumbing/](plumbing/README.md) and worked on one build. It needs to run under the fake clock, so it doesn't wait out real time.
+- `[~]` Write the interface-extraction prompt and its fixed template, and check it on a few builds: does the reference let a grader exercise every operation, without describing intended behaviour? In [harness/prompts/extraction.md](harness/prompts/extraction.md); it writes a start spec too, and is told not to wait for time to pass instead of running under the fake clock. It worked on the three stage 0 builds; references haven't been spot-checked against the code yet.
 - `[x]` Work out how the level 1 grader reaches the running software without seeing its source: through `gt`, a harness tool that works from inside the software's container and writes the execution log. Its command operation still has to be kept away from the source.
 
 **Arms and harness:**
 
-- `[ ]` Write the configurations for the bare agent, cheap discipline, and LID Full.
+- `[x]` Write the configurations for the bare agent, cheap discipline, and LID Full ([harness/arms/](harness/arms/)).
 - `[x]` Write the isolation recipe: each executor session runs in a Linux container from [plumbing/executor.Dockerfile](plumbing/executor.Dockerfile), with the arm's configuration in its own volume, the maintainer's subscription token, and a check of each session's start-up record. Accepted by the maintainer on 2026-11-13.
 - `[x]` Check the headless plumbing under `claude -p` (see [log.md](log.md), 2026-11-13): LID's phase stops; questions answered by stopping and resuming; controlling time from outside with `libfaketime`; resetting by starting from an empty data location; and whether an extraction reference lets a Haiku grader run probes against an interface it hasn't seen.
 - `[x]` Check plan-mode approval headless, for the cheap-discipline arm. It works: a turn in plan mode ends by presenting the plan, and resuming in the normal mode builds it.
-- `[ ]` Write the rule that tells "done" from "waiting", and check it against labelled transcripts.
+- `[~]` Write the rule that tells "done" from "waiting", and check it against labelled transcripts. The simulator classifies every stop (completion report, approval request, questions, or a stop partway), and a completion report it has nothing to say about ends the change. Not yet checked against labelled transcripts.
 - `[x]` Check that the recorded token usage includes subagent sessions.
 - `[x]` Decide where the harness lives: beside the notebook in `harness/`, outside LID's arrow during the spike. Decided by the maintainer on 2026-11-13. It moves into the arrow if its results come to back a claim LID ships; M8 is the natural point to decide.
-- `[ ]` Build the trajectory runner, then grading with replay, then reports, with tests where a quiet bug would bias the results.
+- `[~]` Build the trajectory runner, then grading with replay, then reports, with tests where a quiet bug would bias the results. The runner and grading work (103 tests); grading costs about $0.70 per checkpoint, so replay waits. Still to build: prior-data probes, probe-change forks, and reports.
 
 ## M2: Run the pilot, in stages `[ ]`
 
@@ -52,7 +52,7 @@ The pilot tests the instrument, so its runs don't count as evidence. Each stage 
 
 | Stage | What runs | Rough size | Go on only if |
 |---|---|---|---|
-| 0. Plumbing | All three arms on Sonnet 5.5: a build plus two changes | About 9 sessions | Every arm completes, isolation holds, stops and questions work, and usage records are complete |
+| 0. Plumbing (passed 2026-11-14) | All three arms on Sonnet 5.5: a build plus two changes | About 9 sessions | Every arm completes, isolation holds, stops and questions work, and usage records are complete |
 | 1. Ceiling | Bare arm only, on Opus 5.5: the full script, 2 trajectories | About 20 sessions | The bare arm meets no more than about 85% of requirements in force. If it meets more, harden the seed before going on |
 | 2. Variance | All three arms on Sonnet 5.5, 3 trajectories each, one policy, with identical-probe forks; plus the A/A check and the positive control | About 120 sessions | Graders agree with the maintainer's spot checks on at least about 90% of verdicts; test-retest flips stay under about 5%; the positive control shows worse fidelity; the A/A check shows no difference |
 | 3. Second tier and policy | LID Full and cheap discipline on Opus 5.5, and under a second user policy | About 50 sessions | Variance is low enough to size the counted runs |
