@@ -52,3 +52,5 @@ When a decision is replaced, remove its line and add the new one, so this list o
 - 2026-11-14 (later), main session: every arm's first prompt for a change ends "I'm available to answer questions while you work." LID Full runs v1.4.6 from a copy of this repository and starts the first build with `/linked-intent-dev`; later changes are plain requests. A change stops after 15 owner replies.
 - 2026-11-14 (later), main session: Claude Code's built-in plugins come with the harness for every arm; each turn records them, and only plugins outside the arm's list make a session invalid.
 - 2026-11-14 (later), main session: trajectory records stay in the git-ignored `runs/` folder until the runs that use the seed finish, because the owner's prompts hold the hidden oracle.
+- 2026-11-14 (later), maintainer: Claude Fable stands in for the maintainer when spot-checking grader verdicts.
+- 2026-11-14 (later), main session: Sonnet 5.5 judges probe logs, because Haiku 5.5 flipped 9% of verdicts when it judged the same logs again; Haiku still executes probes.

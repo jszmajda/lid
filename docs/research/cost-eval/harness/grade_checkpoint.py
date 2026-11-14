@@ -36,14 +36,15 @@ def main(argv=None) -> int:
     ap.add_argument("--batch-size", type=int, default=4)
     ap.add_argument("--probes", default="", help="comma-separated probe IDs to run, whatever their range (default: every applicable probe)")
     ap.add_argument("--out-name", default=None, help="folder under grading/ (default: change-NN)")
+    ap.add_argument("--commit", default=None, help="grade this commit of the trajectory's workspace instead of the change's")
     ap.add_argument("--execute-model", default="claude-haiku-5-5")
-    ap.add_argument("--judge-model", default="claude-haiku-5-5")
+    ap.add_argument("--judge-model", default="claude-sonnet-5-5")
     ap.add_argument("--keep", action="store_true", help="leave the app containers running afterwards")
     args = ap.parse_args(argv)
 
     run_dir = HERE.parent / "runs" / args.id
     meta = json.loads((run_dir / "trajectory.json").read_text())
-    commit = meta["changes"][str(args.change)]["commit"]
+    commit = args.commit or meta["changes"][str(args.change)]["commit"]
     out = run_dir / "grading" / (args.out_name or f"change-{args.change:02d}")
     out.mkdir(parents=True, exist_ok=True)
     probeset = grading.parse_probes((HERE.parent / "seeds" / args.seed / "hidden" / "probes.md").read_text(encoding="utf-8"))
@@ -53,7 +54,8 @@ def main(argv=None) -> int:
     runnable = [p for p in applicable if not p.deferred]
     g = grading.Graders(image=IMAGE, roles_volume="ce-roles-cfg", claude_code=CLAUDE_CODE,
                         execute_model=args.execute_model, judge_model=args.judge_model)
-    ck = grading.Checkpoint(trajectory=args.id, change=args.change, commit=commit, image=IMAGE)
+    ck = grading.Checkpoint(trajectory=args.id + (f"-{args.out_name}" if args.out_name else ""), change=args.change,
+                            commit=commit, image=IMAGE)
     started = time.monotonic()
     summary = {"trajectory": args.id, "change": args.change, "commit": commit, "workers": args.workers,
                "models": {"extraction": g.extraction_model, "setup": g.setup_model, "execute": g.execute_model,
@@ -101,6 +103,11 @@ def main(argv=None) -> int:
                     return
                 bdir = out / "batches" / bid
                 lines = grading.execute_batch(ck, g, k, bid, batch, bdir)
+                if "error" in json.loads((bdir / "execution.json").read_text()):
+                    # A killed or failed session leaves a partial log: run the batch again under a new name.
+                    bid = bid + "r"
+                    bdir = out / "batches" / bid
+                    lines = grading.execute_batch(ck, g, k, bid, batch, bdir)
                 v = grading.judge_batch(g, batch, lines, bdir)
                 verdicts.update(v)
                 print(f"{bid} on worker {k}: " + ", ".join(f"{p.id} {v.get(p.id, {}).get('verdict', '?')}" for p in batch), flush=True)

@@ -368,7 +368,7 @@ class Graders:
     extraction_model: str = "claude-sonnet-5-5"
     setup_model: str = "claude-haiku-5-5"
     execute_model: str = "claude-haiku-5-5"
-    judge_model: str = "claude-haiku-5-5"
+    judge_model: str = "claude-sonnet-5-5"
     effort: str = "medium"
 
     def role(self, model: str, **kw) -> executor.RoleSession:

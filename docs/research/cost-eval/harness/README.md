@@ -15,10 +15,14 @@ python3.12 -m unittest discover -s tests
 | `costeval/simulator.py` | The simulated owner: parses the seed's oracle and change script, releases what the owner knows by change, works out what it is shown at each stop, makes one model call per stop, applies the reviewing policy to the corrections, times and inserts redirects, and builds the leak judge's prompt |
 | `costeval/trajectory.py` | Arms, the first prompt of each change, the arm's workspace volume, and the loop that runs one change between the agent and the owner, recording every turn and owner call and committing at the end |
 | `run_trajectory.py` | Runs one arm's trajectory through a seed's changes, or continues one that stopped. Records go to `../runs/`, which git ignores |
-| `arms/` | The arm configurations: `bare`, `cheap-discipline` (with its `AGENTS.md`), and `lid-full` |
+| `arms/` | The arm configurations: `bare`, `cheap-discipline` (with its `AGENTS.md`), and `lid-full`, plus `bare-aa` (the A/A check) and `positive-control` (a deliberately careless arm) |
 | `costeval/grading.py` | Grading one checkpoint: parsing the probes, exporting the commit, extraction, app containers, setups, probe batches, judgment, and item verdicts |
 | `grade_checkpoint.py` | Grades one checkpoint of a trajectory with parallel workers; also runs a symptom change's diagnostic |
 | `audit_owner.py` | Runs the leak judge over a real trajectory's owner replies |
+| `run_probe.py` | Runs the seed's probe request on a disposable fork of a trajectory's checkpoint |
+| `rejudge.py` | Judges a graded checkpoint's logs again, with the same or another model, for test-retest and judge comparisons |
+| `sample_verdicts.py` | Builds spot-check packets of sampled verdicts for whoever checks the graders in the maintainer's place |
+| `classify_touchpoints.py`, `prompts/touchpoints.md` | Sorts each request the agent made of the owner into the kinds in "Human cost", from what the owner saw, never from its reply |
 | `grading/control.py` | The control server inside each app container: starts the arm's service under libfaketime, forwards requests, sets the clock, restarts, restores setups, runs only named setup commands, and writes the execution log |
 | `grading/gt` | The graders' only way to reach the service, through the control server |
 | `prompts/owner-trim.md` | Cuts the owner's draft answers and corrections to what the question or the quoted wrong words need |
