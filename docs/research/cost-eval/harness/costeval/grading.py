@@ -421,6 +421,8 @@ def prepare_setups(ck: Checkpoint, g: Graders, probeset: ProbeSet, names: list[s
     problems = setup_problems(lines, names, have)
     if not ids.strip():
         problems.append("no identifier list")
+    elif "## Credentials" not in ids:
+        problems.append("the identifier list has no Credentials section")
     result = {"problems": problems, "usage": _usage(rec), "reply": rec.text}
     (out / "setup.json").write_text(json.dumps(result, indent=1), encoding="utf-8")
     return result
