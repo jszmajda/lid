@@ -49,6 +49,7 @@ Read this section first when you pick the work up in a new session. Update it at
 | [sources.md](sources.md) | Papers, benchmarks, and articles, each labelled by how closely we read it |
 | [log.md](log.md) | A dated journal: what was done, what was decided, and who decided it. Older entries are in [log-archive/](log-archive/) |
 | [decisions.md](decisions.md) | Every decision that still stands, with its date and who made it |
+| [harness/](harness/README.md) | The harness code, with its tests |
 | [plumbing/](plumbing/README.md) | Throwaway scripts from the plumbing test: the executor image, the clock check, the grading tool, and a draft extraction template |
 | [upkeep/](upkeep/) | Procedures for keeping the notebook, such as compacting the log |
 | [seed-proposals/](seed-proposals/README.md) | Candidate projects for the pilot seed from three model families, with a comparison table |
