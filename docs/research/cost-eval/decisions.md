@@ -35,8 +35,8 @@ When a decision is replaced, remove its line and add the new one, so this list o
 - 2026-11-13 (later), main session: The "Earlier, in brief" summary stays under about 300 words.
 - 2026-11-13, main session: the grading container runs in UTC. The brief makes the lab's time zone setup data, so a service that relies on the server's time zone is the arm's choice and is graded like any other.
 - 2026-11-13 (evening), main session: grading execution runs in batches of a few probes per session, and judgment reads each batch's log in one session.
-- 2026-11-13 (evening), maintainer: every executor session runs in a Linux container from the pinned executor image, with each arm's configuration in its own volume and the maintainer's subscription token.
-- 2026-11-13 (evening), maintainer: no force-pushes to the pull request branch, because they could disturb a collaborator's checkout. Mistakes in pushed commits get a forward fix.
+- 2026-11-13 (night), maintainer: every executor session runs in a Linux container from the pinned executor image, with each arm's configuration in its own volume and the maintainer's subscription token.
+- 2026-11-13 (night), maintainer: no force-pushes to the pull request branch, because they could disturb a collaborator's checkout. Mistakes in pushed commits get a forward fix.
 - 2026-11-13 (night), maintainer: a Claude Fable review stands in for the maintainer's detailed review of probes; the main session applies its fixes and Fable checks them again.
 - 2026-11-13 (night), maintainer: grading replays the previous checkpoint's calls without a model; a model executes a probe only when it is new or its replay fails, and the judge sees only probes whose responses changed.
 - 2026-11-13 (night), maintainer: the harness stays outside LID's arrow during the spike, beside the notebook in harness/; it becomes a segment if its results come to back a claim LID ships.
