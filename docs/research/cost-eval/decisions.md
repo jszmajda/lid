@@ -55,3 +55,4 @@ When a decision is replaced, remove its line and add the new one, so this list o
 - 2026-11-14 (later), main session: trajectory records stay in the git-ignored `runs/` folder until the runs that use the seed finish, because the owner's prompts hold the hidden oracle.
 - 2026-11-14 (evening), maintainer: Claude Fable stands in for the maintainer when spot-checking grader verdicts.
 - 2026-11-14 (evening), main session: Sonnet 5.5 judges probe logs, because Haiku 5.5 flipped 9% of verdicts when it judged the same logs again; Haiku still executes probes.
+- 2026-11-14 (evening), maintainer: after stage 1 met 90%, re-run it under the rubber-stamp owner to measure the ceiling without disclosure through review, and go on to stage 2 on this seed if that lands at or below about 85%. Claude Fable drafts ideas for hardening later runs.

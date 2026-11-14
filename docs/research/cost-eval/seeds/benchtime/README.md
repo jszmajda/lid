@@ -2,7 +2,7 @@
 
 BenchTime is a reservation service for shared lab instruments, with cleaning buffers, qualifications that must cover the whole booking, inspection before an instrument is available again, and maintenance closures. It is the pilot seed. GPT-6.1 Sol proposed it ([seed-proposals/gpt-6.1-sol.md](../../seed-proposals/gpt-6.1-sol.md)), and the reasons it was chosen are in [seed-proposals/README.md](../../seed-proposals/README.md).
 
-**Status:** reviewed and accepted by the maintainer on 2026-11-13, including the three edits marked for review. Each arm designs its own interface, so the brief is in the owner's words and fixes only the stack, one start command, one data location, and reading time from the system clock. The probes (92, for all 53 graded items) were drafted by Sol and edited. At the maintainer's request, Claude Fable reviewed them in the maintainer's place; the fixes were checked by Fable again. The probes are recorded as version 2, the oracle as version 3, and the change script as version 2.
+**Status:** reviewed and accepted by the maintainer on 2026-11-13, including the three edits marked for review. Each arm designs its own interface, so the brief is in the owner's words and fixes only the stack, one start command, one data location, and reading time from the system clock. The probes (92, for all 53 graded items) were drafted by Sol and edited. At the maintainer's request, Claude Fable reviewed them in the maintainer's place; the fixes were checked by Fable again. The probes are recorded as version 3, the oracle as version 3, and the change script as version 2.
 
 - **Public:**
   - [brief.md](brief.md), the brief every arm receives at the start, about 550 words;
@@ -43,9 +43,10 @@ SHA-256 hashes of the materials as accepted. If any of them change before the co
 | 3 | 2026-11-14 | `hidden/oracle.md` | `7d1d39884a4e38c206e0bc089bb4103a586d7471d60340fbdc6d1d1d5c5d1cd8` |
 | 2 | 2026-11-14 | `hidden/change-script.md` | `43030f3119c3a34fe505a5309248f3fb0d493e9fa3ad6bdcb460eb730301cb8e` |
 | 2 | 2026-11-14 | `hidden/probes.md` | `c31a9cf28da8e637e9019ce7dc753924fb456881dff1489f761ea0c9aeb0c531` |
+| 3 | 2026-11-14 | `hidden/probes.md` | `f9ebf5f930abdfb54bb9979590f34ff27b1033c5c35e4e545fe427d18561443a` |
 
 Oracle version 2 moves one clause from an item stated in a change to the askable item it depended on (edit E30), as edit E14 did before. Version 1 of the oracle is replaced. The brief and the change script are unchanged.
 
 Oracle version 3 and change script version 2 (edits E48 to E51 and C1) change only what the simulated owner holds, after Claude Fable's review of the simulator and its live tests. They remove a study note and four passages that put recognised-on-sight rules or a graded boundary into the owner's own words, state in one item's text a case its sketch already graded, and list the items change 2's redirect introduces. No probe and no graded behaviour changes. The brief and the probes are unchanged.
 
-Probes version 2 (edits E52 to E57) follows Claude Fable's spot-check of grader verdicts and its check of the fixes. Six probes that asked for more than their oracle items (mostly fields an item doesn't require, such as a shown deadline or a checkout reference) now ask only what the item says, with behavioural checks where needed. One probe's two physical blocks now run as independent cases.
+Probes version 2 (edits E52 to E57) follows Claude Fable's spot-check of grader verdicts and its check of the fixes. Six probes that asked for more than their oracle items (mostly fields an item doesn't require, such as a shown deadline or a checkout reference) now ask only what the item says, with behavioural checks where needed. One probe's two physical blocks now run as independent cases. Version 3 (edit E58) stops one probe from grading a point the oracle leaves open: whether planned maintenance releases an existing hold.

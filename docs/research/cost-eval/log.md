@@ -21,7 +21,7 @@ Older entries move to [log-archive/](log-archive/) when this file passes about 2
 **Stage 1: two bare trajectories on Opus 5.5, all ten changes, diligent owner.**
 - **Both completed** with no caps and no errors, at $8.98 and $9.68 notional agent cost. The change-5 symptom diagnostic passed on both, so no report was sent. The change-9 diagnostic fired on both, and each agent fixed the symptom in one round.
 - **Both meet 46 of 51 items in force at change 10 (90%).** Stage 1's threshold is about 85%, so stage 1 doesn't pass.
-- **Most latent intent is guessable.** Of 22 askable and recognized-on-sight items, the owner disclosed 5 to 7 by correcting interpretations the agent listed in its first report. The agent met 12 to 14 of the 15 to 17 it was never told, about 82%. Even if every disclosed latent item had been missed, the arm would meet 78% to 80%.
+- **Most latent intent is guessable.** Of 20 askable and recognized-on-sight items, the owner disclosed 5 to 7 by correcting interpretations the agent listed in its first report. The agent met 10 to 12 of the 13 to 15 it was never told, 77% to 80%. Even if every disclosed latent item had been missed, the arm would meet 78% to 80%. (Corrected from 22 items and 82%: the first count included the two symptom items.)
 - **The owner leak audit** over both trajectories flagged 1 reply in 15. It's borderline (a correction completing a rule the agent had only partly stated), and it's counted. Real-run leaks so far are about 1 in 40 judged replies.
 - **The maintainer decides what follows,** because it changes what the study can measure.
 
