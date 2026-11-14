@@ -1,0 +1,4 @@
+# Hidden seed materials (oracles, change scripts, raw drafts, edit logs) stay
+# out of the public repository until the runs that use them are finished.
+# Their hashes are recorded in each seed's README.
+*/hidden/
