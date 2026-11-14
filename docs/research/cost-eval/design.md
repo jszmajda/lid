@@ -379,6 +379,27 @@ The maintainer pays for this research, so the design keeps real spending small w
 - **Pre-registration.** Hypotheses, the primary comparison, the analysis plan, the equivalence margin, and the exclusion rules freeze before the first counted run.
 - **Unfavourable results get published.** We commit to publishing results that don't favour LID.
 
+## The harness
+
+The harness is the code that runs the eval. It serves this study, so it sits outside LID's arrow, beside the notebook in `harness/`. If its results come to back a claim LID ships, such as Goal 3's "proportional cost" or a line on the site, or the eval becomes a measurement repeated as LID changes, the harness moves into the arrow as its own segment, as the alternate-model runner is. Milestone M8 is the natural point to decide.
+
+It has three parts, run in order, each handing its records to the next:
+
+- **Trajectories.** Takes one arm through one seed's changes with one executor. Each change gets a fresh session in the executor container. The user simulator answers whenever a turn ends waiting for the person, redirects and symptom reports arrive as the change script says, and the harness commits whatever the arm leaves uncommitted at the end of each change. The part records every session's transcript, the simulator's exchanges and answer record, and the cost of every turn.
+- **Grading.** For each checkpoint, it builds an image of the arm's last commit and extracts the interface reference. It prepares each named setup once and snapshots its data location, runs the probes through `gt`, and has the judge read the logs.
+- **Reports.** Turns the records into the measures in "The shape of a claim": tokens and dollars per change, touchpoints by kind, fidelity at each checkpoint, and the statistics.
+
+**Replay keeps grading affordable.** Each trajectory runs about 600 probes across its 11 checkpoints, and most of them repeat a probe that passed against an unchanged interface. So at each checkpoint after the first, the harness first replays the previous checkpoint's calls for each probe, without a model, substituting the identifiers and tokens the service returns this time.
+- A model executes a probe only when the probe is new at this checkpoint, or when its replay fails because the interface changed.
+- The judge sees only probes whose responses changed; the others keep their verdicts.
+- A sample of carried-over verdicts is judged again, so replay can't hide a regression.
+
+**Principles the three parts share:**
+- **Raw records first.** Every part keeps complete transcripts, logs, and responses, and measures are computed from them afterwards, so a measure can change without a re-run.
+- **One treatment for every arm.** Where a tool's usual setup clashes with the shared harness, every arm gets the same treatment, and the difference is documented under "Fairness".
+- **Runnable by others.** Images and versions are pinned, and nothing depends on the maintainer's machine, so another system's maintainers can run their own arm.
+- **Tests where a quiet bug would bias the results:** cost accounting, replay matching, the grading log, and the simulator's release of the owner narrative.
+
 ## Known limits
 
 - **The conditions where LID should help most are the hardest to test.** Those are large systems, long-lived ones, several people, and months of forgetting. Fresh sessions stand in for forgetting, and emerging intent stands in for an owner who learns over time, but neither stands in for a team changing over time, and twenty changes in a day is not two years of maintenance. Published claims will state which conditions they cover.

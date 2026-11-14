@@ -43,7 +43,8 @@ Status marks: `[x]` done, `[~]` in progress, `[ ]` not started.
 - `[ ]` Check plan-mode approval headless, for the cheap-discipline arm.
 - `[ ]` Write the rule that tells "done" from "waiting", and check it against labelled transcripts.
 - `[x]` Check that the recorded token usage includes subagent sessions.
-- `[ ]` Decide where the harness lives, and walk LID's arrow for it (an intent node under `docs/intent/`, then specs, then tests, then code).
+- `[x]` Decide where the harness lives: beside the notebook in `harness/`, outside LID's arrow during the spike. Decided by the maintainer on 2026-11-13. It moves into the arrow if its results come to back a claim LID ships; M8 is the natural point to decide.
+- `[ ]` Build the trajectory runner, then grading with replay, then reports, with tests where a quiet bug would bias the results.
 
 ## M2: Run the pilot, in stages `[ ]`
 

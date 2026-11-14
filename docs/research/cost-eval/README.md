@@ -34,7 +34,7 @@ Read this section first when you pick the work up in a new session. Update it at
 
 **Next actions** (milestone M1 in [plan.md](plan.md)):
 
-1. Walk LID's arrow for the harness: an intent node under `docs/intent/`, then specs, then tests, then code (see "Harness code" below). The plumbing test's lessons for the harness are in the log's 2026-11-13 evening entry: probes in batches, snapshots of the data location, a `gt` that can't open the source, a commit at the end of each change, and extraction under the fake clock. The night entry adds replaying probes between checkpoints, and the harness abilities the probes need: concurrent requests, a restart on existing data, and data carried from an earlier checkpoint.
+1. Build the harness (see "The harness" in [design.md](design.md)), starting with the trajectory runner, then grading with replay, then reports. The plumbing test's lessons for the harness are in the log's 2026-11-13 evening entry: probes in batches, snapshots of the data location, a `gt` that can't open the source, a commit at the end of each change, and extraction under the fake clock. The night entry adds replaying probes between checkpoints, and the harness abilities the probes need: concurrent requests, a restart on existing data, and data carried from an earlier checkpoint.
 2. In parallel: the user simulator's prompt, the touchpoint rubric, and the seeded-violation calibration set. The simulator has to recognise a finished change, and the design has to say whether an agent's list of its own interpretations counts as asking.
 
 ## Files
@@ -78,4 +78,4 @@ Read this section first when you pick the work up in a new session. Update it at
 
 ## Harness code
 
-The notebook is research and sits outside LID's arrow. The harness that runs the eval is code, so it walks the arrow like the repository's other maintainer tooling: an intent node under `docs/intent/`, then specs, then tests, then code. The alternate-model runner (`docs/intent/alt-model-evals/`) and the cascade recorder (`docs/intent/cascade-recording/`) are the closest examples, and the runner's sandbox and opencode setup can probably be reused.
+The harness serves this study, so it sits outside LID's arrow like the rest of the notebook. Its code lives in [harness/](harness/), beside the [plumbing/](plumbing/README.md) scripts it grew from, and its design is in [design.md](design.md) under "The harness". The parts where a quiet bug would bias results have tests. If the harness's results come to back a claim LID ships, or the eval becomes a repeated measurement, it moves into the arrow as its own segment, as the alternate-model runner (`docs/intent/alt-model-evals/`) is. That runner's opencode setup and credential handling are the patterns to reuse for the opencode executors.
