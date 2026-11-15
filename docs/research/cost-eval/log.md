@@ -4,6 +4,16 @@ Newest entries first. Each entry says what was done, what was decided, and who d
 
 Older entries move to [log-archive/](log-archive/) when this file passes about 2,000 words, and 'Earlier, in brief' at the bottom summarizes them.
 
+## 2026-11-15 (later): ReleaseDesk's oracle and change script, drafted and reviewed
+
+**The drafting chain.**
+- **The draft.** GPT-6.1 Sol drafted the oracle (62 items) and the change script from the fixed brief, with the eight drawn rules as the only latent items. The prompt is private, because it names them. It also carried every proposal's change list through an extraction slip, but Sol used ReleaseDesk's.
+- **Claude Fable's review** found 3 blockers (a redirect stating a latent rule in full, a change presupposing a command-line tool the brief never asks for, and manifests that a frozen grading clock can't fairly test), 8 majors, and 14 minors.
+- **The fixes** were made under the editing rules (edits R4 to R16 in the private edit log). **Decided by the main session:** the bundle-naming rule is graded as named by public identifier, and the owner objects to any other naming, so the trigger matches the grading. Two latent items join the relies-on lists of later changes they really depend on.
+- **Fable's check of the fixes** found no remaining blockers or majors. The eight latent items still match the draw. Five edits change what an item or change measures, and they go to the maintainer with Fable's notes.
+
+**Stage 2:** the replacement cheap-discipline trajectories are running under the fixed harness, and grading follows.
+
 ## 2026-11-15: ReleaseDesk's eight latent rules, drawn by lot
 
 **Decided by the maintainer:**
