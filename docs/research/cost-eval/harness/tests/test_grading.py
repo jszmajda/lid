@@ -114,9 +114,9 @@ class SpecTest(unittest.TestCase):
     def test_a_good_spec_passes_and_each_worker_gets_its_own_data(self):
         self.assertEqual(grading.check_spec(self.SPEC), [])
         w = grading.worker_spec(self.SPEC, 2)
-        self.assertEqual((w["command"], w["env"]["APP_DIR"], w["data_path"]), ("uv run app --data /work/data-2", "/work/data-2/x", "/work/data-2"))
+        self.assertEqual((w["command"], w["env"]["APP_DIR"], w["data_path"]), ("uv run app --data /cfg/data", "/cfg/data/x", "/cfg/data"))
         w = grading.worker_spec({**self.SPEC, "setup_commands": ["cat {DATA}/token"]}, 1)
-        self.assertEqual(w["setup_commands"], ["cat /work/data-1/token"])
+        self.assertEqual(w["setup_commands"], ["cat /cfg/data/token"])
 
     def test_bad_specs_are_caught(self):
         self.assertTrue(grading.check_spec({**self.SPEC, "data_path": "/tmp/db", "command": "x", "env": {}}))

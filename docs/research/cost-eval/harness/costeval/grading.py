@@ -234,9 +234,11 @@ class Checkpoint:
         for k in range(workers):
             name = f"{self.tag}-app{k}"
             _run(self.runner, ["docker", "rm", "-f", name], check=False)
+            _run(self.runner, ["docker", "volume", "rm", f"{self.tag}-data{k}"], check=False)
             _run(self.runner, ["docker", "run", "-d", "--name", name, "--network", self.network, "--network-alias", f"app{k}",
                                "--tmpfs", "/clock:mode=1777", "-e", "TZ=UTC", "-e", f"CONTROL_ADMIN_TOKEN={self.admin_token}",
-                               "-v", f"{executor._volume(self.volume)}:/work", self.image, "python3",
+                               "-v", f"{executor._volume(self.volume)}:/work", "-v", f"{self.tag}-data{k}:/cfg",
+                               self.image, "python3",
                                "/work/grading/control.py", "--spec", f"/work/out/start-{k}.json", "--port", "9000",
                                "--log", f"/work/log/exec-{k}.jsonl", "--snapshots", "/work/snap",
                                "--app-log", f"/work/log/app-{k}.log"])
@@ -270,12 +272,17 @@ class Checkpoint:
     def stop(self, workers: int) -> None:
         for k in range(workers):
             _run(self.runner, ["docker", "rm", "-f", f"{self.tag}-app{k}"], check=False)
+            _run(self.runner, ["docker", "volume", "rm", f"{self.tag}-data{k}"], check=False)
         _run(self.runner, ["docker", "network", "rm", self.network], check=False)
 
 
+WORKER_DATA = "/cfg/data"  # every worker's data sits at the same path, in its own volume, so restored snapshots
+                           # that hold absolute paths stay valid on any worker
+
+
 def worker_spec(spec: dict, worker: int) -> dict:
-    """The extraction's start spec with {DATA} pointed at this worker's own data location."""
-    data = f"/work/data-{worker}"
+    """The extraction's start spec with {DATA} pointed at the worker's data location, the same path on every worker."""
+    data = WORKER_DATA
 
     def sub(v):
         if isinstance(v, str):
