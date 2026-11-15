@@ -32,19 +32,27 @@ Read this section first when you pick the work up in a new session. Update it at
 - **The harness** ([harness/](harness/README.md)) runs trajectories, probe forks, grading, re-judging, owner audits, touchpoint classification, and spot-check sampling, with 104 tests. Runs are recorded in the git-ignored `runs/` folder, which stays private because the owner's prompts hold the hidden oracle.
 - **The graders are calibrated** (2026-11-14). Sonnet 5.5 judges and Haiku 5.5 executes. The judge agreed with itself on all 44 probes, and a whole-pipeline regrade agreed on all 44. Four seeded violations were each caught, and Claude Fable, standing in for the maintainer, agreed with 35 of 36 sampled verdicts. Grading costs about $1 per checkpoint notional. The three prior-data probes aren't implemented and are reported as not run. Calibration notes are in `seeds/benchtime/hidden/calibration/`.
 - **Pilot stage 0 passed:** all three arms on Sonnet 5.5, a build plus two changes. Plumbing only.
-- **Pilot stage 1 didn't pass its threshold, under either owner.** Two bare trajectories on Opus 5.5 met 46 to 47 of 51 items in force with the diligent owner (under probes version 3) and 45 of 51 (88%) with the rubber-stamp owner, against a threshold of about 85%. The agent met 16 of 20 latent items without being told. Claude Fable's ideas for hardening are in `seeds/benchtime/hidden/hardening-ideas.md`. **Waiting on the maintainer's decision** (see the 2026-11-14 night entry in [log.md](log.md)).
-- **The Docker VM is small** (2 CPUs, 4 GB). It limits how many trajectories and gradings can run at once. Resizing it means restarting colima, which also stops the maintainer's other containers, so that is the maintainer's call.
+- **Pilot stage 1 settled the executor.** A bare arm on Opus 5.5 met 88% to 92% of BenchTime's items even with a silent owner, which is above the ceiling threshold. On Sonnet 5.5 it met 76% to 80%. Under the maintainer's rule, Sonnet is BenchTime's main executor, and Opus results there are reported as limited by the ceiling.
+- **Pilot stage 2 is running on BenchTime** (`harness/run_stage2.sh`, then `run_stage2b.sh`). Three arms on Sonnet run three trajectories each with the diligent owner, plus the A/A copy of the bare arm and the positive control, then probe forks, then grading of checkpoints 2, 6, and 10. Cheap discipline's trajectories 1 to 3 are left out, because they ran before scheduling tools were denied, and trajectories 4 to 6 replace them. One LID probe fork (`s2-lid-full-3` at change 3) was interrupted and needs re-running: remove its run folder and volumes first.
+- **ReleaseDesk, the second seed, is designed for intent a strong model doesn't guess** ([seeds/releasedesk/README.md](seeds/releasedesk/README.md)).
+  - Its brief, oracle, and change script were accepted by the maintainer on 2026-11-15.
+  - Eight latent rules were drawn by lot from bands measured by a six-model guessability panel.
+  - GPT-6.1 Sol is drafting the probes. Claude Fable reviews them next, then the fixes are checked, then they're hashed.
+- **The Docker VM is small** (2 CPUs, 4 GB), which limits how much runs at once. Resizing it means restarting colima, which also stops the maintainer's other containers, so that is the maintainer's call.
 - **The maintainer has handed the pilot to the main session** (2026-11-14): run it on your own judgment, and bring the maintainer only decisions that are really theirs. Pushing to the draft pull request is allowed; marking it ready, merging, and releasing are not.
 - **No counted runs yet.**
 
 **Next actions** (milestones M1 and M2 in [plan.md](plan.md)):
 
-1. **Act on the maintainer's decision about stage 1.** The options put to the maintainer:
-   - **Measure the ceiling with a silent owner.** Re-run stage 1 under the rubber-stamp owner, which discloses nothing through review.
-   - **Harden the seed with less guessable latent items.** A non-Claude model would draft them and Fable would review them.
-   - **Make Sonnet the main executor.** Keep Opus as a check that the ranking of the arms holds.
-2. **Then run stage 2:** all three arms on Sonnet 5.5, three trajectories each, one policy, with probe forks at changes 0, 3, 6, and 9, plus the A/A check (`bare-aa`) and the positive control (`positive-control`). Grade at least checkpoints 2, 6, and 10, then sample verdicts for another Fable spot-check.
-3. **Still to build:** the prior-data probes, grading for the probe request, and reports.
+1. **Finish stage 2 and check it against its thresholds:**
+   - grader agreement with a Fable spot-check of at least about 90%;
+   - test-retest flips under about 5%;
+   - the positive control shows worse fidelity;
+   - the A/A pair shows no difference.
+   Classify touchpoints and audit owner replies for the stage 2 trajectories.
+2. **Finish ReleaseDesk's probes:** Fable reviews Sol's draft, the main session fixes, Fable checks, and the probes are hashed. Then run ReleaseDesk's own ceiling check on Sonnet and Opus, and its pilot stages.
+3. **Write the first report**: cost, attention, and fidelity per arm from stage 2, by change type and by guessability band where the seed allows.
+4. **Still to build:** prior-data probes, grading for the probe request, and the report generator.
 
 ## Files
 
