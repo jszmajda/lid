@@ -136,6 +136,11 @@ def main(argv=None) -> int:
         if str(n) in meta["changes"] and meta["changes"][str(n)].get("finished") is not None and not meta["changes"][str(n)].get("error"):
             print(f"change {n}: already run, skipping")
             continue
+        prev_state = out / f"owner-state-{n - 1:02d}.json"
+        if n > 0 and prev_state.exists():
+            # Start each change from the owner as it stood after the previous one, so a failed attempt at this
+            # change leaves nothing behind in the owner's record.
+            trajectory.restore_owner_state(owner, json.loads(prev_state.read_text()))
         change = simulator.first_build(brief) if n == 0 else script[n]
         if change.request is None and change.symptom is not None:
             fired = diagnose(args.id, n, change, args.seed)

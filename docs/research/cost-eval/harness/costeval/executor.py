@@ -26,6 +26,11 @@ from . import usage
 TOKEN_ENV = "CLAUDE_CODE_OAUTH_TOKEN"
 # Plan mode is how the cheap-discipline arm opens a change; every other turn bypasses permissions.
 PERMISSION_MODES = ("bypassPermissions", "plan")
+# Tools for interactive or long-running use, denied in every executor session alike: a scheduled wakeup or a monitor
+# keeps a headless turn alive until it times out, and worktrees or cross-session messages escape the workspace.
+HEADLESS_DENIED_TOOLS = ("ScheduleWakeup", "CronCreate", "CronDelete", "CronList", "Monitor", "PushNotification",
+                         "RemoteTrigger", "Workflow", "DesignSync", "EnterWorktree", "ExitWorktree", "SendMessage",
+                         "ListAgents")
 # Claude Code's built-in plugins (path "builtin" in the start-up record) come with the harness, the same for every arm
 # running at the same time. The set can change server-side under a pinned version, so it is recorded with every
 # turn (builtin_plugins) rather than pinned, and reports check that compared arms ran with the same set.
@@ -90,6 +95,7 @@ def claude_command(s: ContainerSession, prompt: str, *, container_name: str, res
         "--permission-mode", permission_mode,
         "--settings", settings_json(s),
         "--output-format", "stream-json", "--verbose",
+        "--disallowedTools", ",".join(HEADLESS_DENIED_TOOLS),
     ]
     for d in s.plugin_dirs:
         cmd += ["--plugin-dir", d]

@@ -49,6 +49,9 @@ class CommandTest(unittest.TestCase):
         self.assertIn("bt-bare-s1-cfg:/cfg", cmd)
         i = cmd.index("lid-cost-eval-executor:2.1.323")
         self.assertEqual(cmd[i + 1:i + 4], ["claude", "-p", "Build it."])
+        denied = cmd[cmd.index("--disallowedTools") + 1].split(",")
+        self.assertIn("ScheduleWakeup", denied)
+        self.assertNotIn("Bash", denied)
         for pair in (["--model", "claude-sonnet-5-5"], ["--effort", "medium"],
                      ["--permission-mode", "bypassPermissions"], ["--output-format", "stream-json"]):
             j = cmd.index(pair[0])
