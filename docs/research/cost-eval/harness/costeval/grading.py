@@ -56,7 +56,7 @@ class Probe:
 
     @property
     def deferred(self) -> bool:
-        return any(n in DEFERRED_NEEDS for n in self.needs)
+        return any(d in n for n in self.needs for d in DEFERRED_NEEDS)
 
 
 @dataclass(frozen=True)
@@ -127,14 +127,17 @@ def batches(probes: list[Probe], size: int = 4) -> list[list[Probe]]:
     return out
 
 
-def render_for_execution(batch: list[Probe]) -> str:
-    """The probes as the executor sees them: scenarios only, never expected observations."""
-    return "\n\n".join(f"## {p.id}\n\n- **Setup:** {p.setup}\n- **Needs:** {', '.join(p.needs) or 'none'}\n"
+def render_for_execution(batch: list[Probe], conventions: str = "") -> str:
+    """The probes as the executor sees them: the probe set's conventions, then scenarios only, never expected
+    observations."""
+    head = f"## Conventions for every probe\n\n{conventions.strip()}\n\n" if conventions.strip() else ""
+    return head + "\n\n".join(f"## {p.id}\n\n- **Setup:** {p.setup}\n- **Needs:** {', '.join(p.needs) or 'none'}\n"
                        f"- **Scenario:**\n{p.scenario}" for p in batch)
 
 
-def render_for_judgment(batch: list[Probe]) -> str:
-    return "\n\n".join(f"## {p.id}\n\n- **Setup:** {p.setup}\n- **Scenario:**\n{p.scenario}\n"
+def render_for_judgment(batch: list[Probe], conventions: str = "") -> str:
+    head = f"## Conventions for every probe\n\n{conventions.strip()}\n\n" if conventions.strip() else ""
+    return head + "\n\n".join(f"## {p.id}\n\n- **Setup:** {p.setup}\n- **Scenario:**\n{p.scenario}\n"
                        f"- **Expected observation:** {p.expected}" for p in batch)
 
 
@@ -304,6 +307,16 @@ def setup_problems(lines: list[dict], names: list[str], snapshots: set[str]) -> 
     return problems
 
 
+def broken_setups(problems: list[str], names: list[str]) -> set[str]:
+    """The setups a problem names: "no snapshot for S1", or a CANNOT mark naming the setup ("CANNOT S1: ...")."""
+    broken = set()
+    for p in problems:
+        for n in names:
+            if p == f"no snapshot for {n}" or p.startswith(f"CANNOT {n}:") or p.startswith(f"CANNOT {n} "):
+                broken.add(n)
+    return broken
+
+
 def check_spec(spec: dict) -> list[str]:
     problems = []
     for key in ("workdir", "command", "port", "data_path"):
@@ -393,11 +406,13 @@ def _usage(rec: executor.RoleRecord) -> dict:
             "models": {m: asdict(c) for m, c in rec.usage.models.items()}}
 
 
-def extract(ck: Checkpoint, g: Graders, out: Path) -> dict:
+def extract(ck: Checkpoint, g: Graders, out: Path, seed_notes: str = "") -> dict:
     role = g.role(g.extraction_model, tools=("Bash", "Read", "Write", "Edit", "Glob", "Grep"),
                   workspace_volume=ck.volume, timeout_s=2400)
     prompt = _template("extraction.md", TEMPLATE=(PROMPTS / "extraction-template.md").read_text(encoding="utf-8"),
                        DATA="{DATA}")
+    if seed_notes.strip():
+        prompt += "\n\n## Notes for this project\n\n" + seed_notes.strip() + "\n"
     rec = executor.run_role(role, prompt)
     reference, spec_text = ck.get(ck.volume, "out/reference.md"), ck.get(ck.volume, "out/start.json")
     out.mkdir(parents=True, exist_ok=True)
@@ -440,8 +455,9 @@ def prepare_setups(ck: Checkpoint, g: Graders, probeset: ProbeSet, names: list[s
     return result
 
 
-def execute_batch(ck: Checkpoint, g: Graders, worker: int, bid: str, batch: list[Probe], out: Path) -> list[dict]:
-    ck.put(ck.tools_volume, f"/work/probes-{bid}.md", render_for_execution(batch))
+def execute_batch(ck: Checkpoint, g: Graders, worker: int, bid: str, batch: list[Probe], out: Path,
+                  conventions: str = "") -> list[dict]:
+    ck.put(ck.tools_volume, f"/work/probes-{bid}.md", render_for_execution(batch, conventions))
     ck.admin(worker, {"batch": bid})
     role = g.role(g.execute_model, tools=("Bash", "Read"), workspace_volume=ck.tools_volume, network=ck.network,
                   env=(("GT_CONTROL", f"http://app{worker}:9000"), ("PATH", TOOL_PATH)), timeout_s=2400)
@@ -454,15 +470,16 @@ def execute_batch(ck: Checkpoint, g: Graders, worker: int, bid: str, batch: list
     ck.admin(worker, {"batch": None})
     lines = ck.log_lines(worker, bid)
     out.mkdir(parents=True, exist_ok=True)
-    (out / "probes.md").write_text(render_for_execution(batch), encoding="utf-8")
+    (out / "probes.md").write_text(render_for_execution(batch, conventions), encoding="utf-8")
     (out / "log.jsonl").write_text("\n".join(json.dumps(r) for r in lines), encoding="utf-8")
     (out / "execution.json").write_text(json.dumps(session, indent=1), encoding="utf-8")
     return lines
 
 
-def judge_batch(g: Graders, batch: list[Probe], lines: list[dict], out: Path, attempts: int = 3) -> dict[str, dict]:
+def judge_batch(g: Graders, batch: list[Probe], lines: list[dict], out: Path, attempts: int = 3,
+                conventions: str = "") -> dict[str, dict]:
     role = g.role(g.judge_model, timeout_s=1200)
-    prompt = _template("grade-judge.md", PROBES=render_for_judgment(batch), LOG=log_for_judge(lines))
+    prompt = _template("grade-judge.md", PROBES=render_for_judgment(batch, conventions), LOG=log_for_judge(lines))
     tries = []
     for _ in range(attempts):
         rec = executor.run_role(role, prompt, json_schema=json.dumps(JUDGE_SCHEMA, separators=(",", ":")))

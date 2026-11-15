@@ -64,7 +64,8 @@ def main(argv=None) -> int:
 
     print(f"exporting {commit[:10]} and extracting the interface", flush=True)
     ck.export(meta["volumes"]["workspace"])
-    ex = grading.extract(ck, g, out)
+    notes_path = HERE.parent / "seeds" / args.seed / "grading-notes.md"
+    ex = grading.extract(ck, g, out, notes_path.read_text(encoding="utf-8") if notes_path.exists() else "")
     if ex["problems"]:
         print("extraction problems:", ex["problems"])
         summary["error"] = f"extraction: {ex['problems']}"
@@ -83,11 +84,17 @@ def main(argv=None) -> int:
         reference = grading.grader_reference((out / "reference.md").read_text(), ex["spec"])
         (out / "grader-reference.md").write_text(reference)
         st = grading.prepare_setups(ck, g, probeset, names, reference, out)
+        broken = grading.broken_setups(st["problems"], names)
         if st["problems"]:
             print("setup problems:", st["problems"])
+        if "no identifier list" in st["problems"] or "the identifier list has no Credentials section" in st["problems"] \
+                or broken >= set(names):
             summary["error"] = f"setup: {st['problems']}"
             (out / "verdicts.json").write_text(json.dumps(summary, indent=1))
             return 1
+        # Probes on a setup that couldn't be loaded are not run; the rest go ahead.
+        summary["not_run"] += [p.id for p in runnable if p.setup in broken]
+        runnable = [p for p in runnable if p.setup not in broken]
         ck.put(ck.tools_volume, "/work/ids.md", (out / "ids.md").read_text())
 
         work: queue.Queue = queue.Queue()
@@ -102,13 +109,13 @@ def main(argv=None) -> int:
                 except queue.Empty:
                     return
                 bdir = out / "batches" / bid
-                lines = grading.execute_batch(ck, g, k, bid, batch, bdir)
+                lines = grading.execute_batch(ck, g, k, bid, batch, bdir, probeset.setup_notes)
                 if "error" in json.loads((bdir / "execution.json").read_text()):
                     # A killed or failed session leaves a partial log: run the batch again under a new name.
                     bid = bid + "r"
                     bdir = out / "batches" / bid
-                    lines = grading.execute_batch(ck, g, k, bid, batch, bdir)
-                v = grading.judge_batch(g, batch, lines, bdir)
+                    lines = grading.execute_batch(ck, g, k, bid, batch, bdir, probeset.setup_notes)
+                v = grading.judge_batch(g, batch, lines, bdir, conventions=probeset.setup_notes)
                 verdicts.update(v)
                 print(f"{bid} on worker {k}: " + ", ".join(f"{p.id} {v.get(p.id, {}).get('verdict', '?')}" for p in batch), flush=True)
 

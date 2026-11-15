@@ -131,6 +131,21 @@ class SetupTest(unittest.TestCase):
         self.assertNotIn("DIR", ref)
         self.assertEqual(grading.grader_reference("# Ref", {"env": {}}), "# Ref")
 
+    def test_a_broken_setup_is_named_so_only_its_probes_skip(self):
+        problems = ["no snapshot for S1", "CANNOT S2: no researchers yet", "CANNOT S0 qualifications missing"]
+        self.assertEqual(grading.broken_setups(problems, ["S0", "S1", "S2", "S3"]), {"S0", "S1", "S2"})
+        self.assertEqual(grading.broken_setups(["no identifier list"], ["S0"]), set())
+
+    def test_needs_written_as_sentences_still_defer(self):
+        text = PROBES.replace("- **Needs:** prior-data, restart", "- **Needs:** prior-data: records made at change 0, restart")
+        self.assertTrue(grading.parse_probes(text).probes[2].deferred)
+
+    def test_conventions_reach_the_executor_and_the_judge(self):
+        ps = grading.parse_probes(PROBES)
+        self.assertIn("Each probe is independent", grading.render_for_execution(ps.probes[:1], ps.setup_notes))
+        self.assertIn("Each probe is independent", grading.render_for_judgment(ps.probes[:1], ps.setup_notes))
+        self.assertNotIn("Conventions", grading.render_for_execution(ps.probes[:1]))
+
     def test_setup_problems_are_missing_snapshots_and_cannot_marks(self):
         lines = [{"op": "mark", "request": {"text": "CANNOT S0: no token"}}, {"op": "http", "request": {}}]
         self.assertEqual(grading.setup_problems(lines, ["S0", "S1"], {"S0"}), ["no snapshot for S1", "CANNOT S0: no token"])

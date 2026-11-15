@@ -3,7 +3,8 @@
 
 Usage:
   gt clock <UTC time, e.g. 2026-01-05T08:00:00Z>        set the service's clock, frozen at that instant
-  gt http <METHOD> <PATH> [BODY] ['Header: value' ...]   make a request; BODY is JSON text, or '' for none
+  gt http <METHOD> <PATH> [BODY] ['Header: value' ...]   make a request; BODY is JSON text, plain text, or '' for none.
+                       For a file upload, BODY is {"__multipart__": {"fields": {...}, "files": {"file": {"name": "a.txt", "content": "...", "type": "text/plain"}}}}
   gt concurrent '<JSON list of {"method","path","body","headers"}>'   send the requests at the same moment
   gt restart                                             restart the service on its existing data, keeping the clock
   gt reset                                               restart the service on empty data, keeping the clock
@@ -33,7 +34,13 @@ def call(op, payload):
 def show(out):
     if "status" in out and "body" in out:
         print(f"status {out['status']}")
+        for k, v in (out.get("headers") or {}).items():
+            print(f"{k}: {v}")
         print(out["body"])
+        for m in out.get("zip") or []:
+            print(f"--- file in archive: {m['name']} ({m['size']} bytes)")
+            if m.get("text") is not None:
+                print(m["text"])
     else:
         print(json.dumps({k: v for k, v in out.items() if k != "log_line"}, indent=1))
 

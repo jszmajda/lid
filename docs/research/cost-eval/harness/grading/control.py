@@ -147,28 +147,84 @@ class Service:
         return {"ok": True, "exit": p.returncode, "output": (p.stdout + p.stderr)[-MAX_BODY:]}
 
 
+def _multipart(spec: dict) -> tuple[bytes, str]:
+    """Build a multipart/form-data body from {"fields": {name: value}, "files": {name: {"name", "content", "type"}}}."""
+    boundary = "----gtboundary7c3f"
+    parts = []
+    for name, value in (spec.get("fields") or {}).items():
+        parts.append(f'--{boundary}\r\nContent-Disposition: form-data; name="{name}"\r\n\r\n{value}\r\n'.encode())
+    for name, f in (spec.get("files") or {}).items():
+        head = (f'--{boundary}\r\nContent-Disposition: form-data; name="{name}"; filename="{f.get("name", "file.txt")}"\r\n'
+                f'Content-Type: {f.get("type", "text/plain")}\r\n\r\n').encode()
+        parts.append(head + str(f.get("content", "")).encode() + b"\r\n")
+    parts.append(f"--{boundary}--\r\n".encode())
+    return b"".join(parts), f"multipart/form-data; boundary={boundary}"
+
+
+def describe_body(raw: bytes, content_type: str) -> dict:
+    """A response body as the log keeps it: text when it is text; for anything else its size and type, and for a
+    ZIP archive each member's name, size, and text."""
+    out: dict = {}
+    if raw[:4] == b"PK\x03\x04" or "zip" in content_type:
+        import io
+        import zipfile
+        try:
+            with zipfile.ZipFile(io.BytesIO(raw)) as z:
+                members = []
+                for info in z.infolist():
+                    data = z.read(info) if info.file_size <= 20000 else b""
+                    try:
+                        text = data.decode("utf-8") if data else None
+                    except UnicodeDecodeError:
+                        text = None
+                    members.append({"name": info.filename, "size": info.file_size, "text": text})
+            out["body"] = f"(ZIP archive, {len(raw)} bytes, {len(members)} files)"
+            out["zip"] = members
+            return out
+        except zipfile.BadZipFile:
+            pass
+    try:
+        out["body"] = raw.decode("utf-8")
+    except UnicodeDecodeError:
+        out["body"] = f"(binary body, {len(raw)} bytes, content type {content_type or 'not given'})"
+    return out
+
+
 def forward(port: int, req: dict) -> dict:
     method = (req.get("method") or "GET").upper()
     path = req.get("path") or "/"
     if not path.startswith("/"):
         path = "/" + path
     headers = dict(req.get("headers") or {})
+    has_type = any(k.lower() == "content-type" for k in headers)
     body = req.get("body")
     data = None
-    if body not in (None, ""):
-        if isinstance(body, (dict, list)):
-            data = json.dumps(body).encode()
-        else:
-            data = str(body).encode()
-        headers.setdefault("content-type", "application/json")
+    if isinstance(body, dict) and "__multipart__" in body:
+        data, ctype = _multipart(body["__multipart__"])
+        headers = {k: v for k, v in headers.items() if k.lower() != "content-type"}
+        headers["Content-Type"] = ctype
+    elif body not in (None, ""):
+        data = json.dumps(body).encode() if isinstance(body, (dict, list)) else str(body).encode()
+        if not has_type:
+            headers["Content-Type"] = "application/json" if isinstance(body, (dict, list)) else "text/plain; charset=utf-8"
     r = urllib.request.Request(f"http://127.0.0.1:{port}{path}", data=data, method=method, headers=headers)
+    keep = ("content-type", "content-disposition", "location")
     try:
         with urllib.request.urlopen(r, timeout=60) as resp:
-            return {"status": resp.status, "body": resp.read(MAX_BODY).decode("utf-8", "replace")}
+            raw, rh = resp.read(MAX_BODY), resp.headers
+            code = resp.status
     except urllib.error.HTTPError as e:
-        return {"status": e.code, "body": e.read(MAX_BODY).decode("utf-8", "replace")}
+        raw, rh, code = e.read(MAX_BODY), e.headers, e.code
     except Exception as e:
         return {"status": None, "error": f"{type(e).__name__}: {e}"}
+    out = {"status": code, **describe_body(raw, rh.get("content-type", "") if rh else "")}
+    # Headers that can matter to a probe: where a download is named or redirected, and the type of anything not JSON.
+    shown = {k: rh.get(k) for k in keep if rh and rh.get(k)}
+    if str(out.get("body", "")).lstrip().startswith(("{", "[")):
+        shown.pop("content-type", None)
+    if shown:
+        out["headers"] = shown
+    return out
 
 
 def make_handler(service: Service, log_path: str, admin_token: str, state: dict):

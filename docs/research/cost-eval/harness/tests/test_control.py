@@ -24,9 +24,21 @@ class H(BaseHTTPRequestHandler):
     def send(self, code, obj):
         b = json.dumps(obj).encode(); self.send_response(code); self.send_header("content-length", str(len(b))); self.end_headers(); self.wfile.write(b)
     def do_GET(self):
+        if self.path == "/bundle":
+            import io, zipfile
+            buf = io.BytesIO()
+            with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+                z.writestr("RD-0007.txt", "hello archive")
+            raw = buf.getvalue()
+            self.send_response(200); self.send_header("content-type", "application/zip")
+            self.send_header("content-disposition", 'attachment; filename="bundle-1.zip"')
+            self.send_header("content-length", str(len(raw))); self.end_headers(); self.wfile.write(raw); return
         self.send(200, load())
     def do_POST(self):
-        n = int(self.headers.get("content-length") or 0); item = json.loads(self.rfile.read(n))
+        n = int(self.headers.get("content-length") or 0); raw = self.rfile.read(n)
+        if self.path == "/echo":
+            return self.send(200, {"content_type": self.headers.get("content-type"), "body": raw.decode()})
+        item = json.loads(raw)
         items = load()
         if item in items: return self.send(409, {"error": "duplicate"})
         items.append(item); json.dump(items, open(DATA, "w")); self.send(201, item)
@@ -105,6 +117,22 @@ class ControlTest(unittest.TestCase):
         self.assertEqual(log[-1]["batch"], "b1")
         self.assertEqual(log[-1]["clock"], "2026-01-05 09:30:00")
         self.assertEqual([e["seq"] for e in log], list(range(len(log))))
+
+    def test_zip_responses_list_their_files_and_text(self):
+        out = self.gt("http", "GET", "/bundle")
+        self.assertIn("ZIP archive", out)
+        self.assertIn("--- file in archive: RD-0007.txt", out)
+        self.assertIn("hello archive", out)
+        self.assertIn('filename="bundle-1.zip"', out)
+
+    def test_uploads_and_content_types(self):
+        out = self.gt("http", "POST", "/echo", "plain words", "Content-Type: text/plain")
+        self.assertIn('"content_type": "text/plain"', out)
+        out = self.gt("http", "POST", "/echo", json.dumps({"__multipart__": {"fields": {"title": "A letter"},
+                      "files": {"file": {"name": "upload-7.txt", "content": "dear sir", "type": "text/plain"}}}}))
+        self.assertIn("multipart/form-data", out)
+        self.assertIn('filename=\\"upload-7.txt\\"', out)
+        self.assertIn("dear sir", out)
 
     def test_only_named_setup_commands_run(self):
         self.assertIn("loaded", self.gt("run", f"{sys.executable} load.py"))
