@@ -2,7 +2,7 @@
 
 BenchTime is a reservation service for shared lab instruments, with cleaning buffers, qualifications that must cover the whole booking, inspection before an instrument is available again, and maintenance closures. It is the pilot seed. GPT-6.1 Sol proposed it ([seed-proposals/gpt-6.1-sol.md](../../seed-proposals/gpt-6.1-sol.md)), and the reasons it was chosen are in [seed-proposals/README.md](../../seed-proposals/README.md).
 
-**Status:** reviewed and accepted by the maintainer on 2026-11-13, including the three edits marked for review. Each arm designs its own interface, so the brief is in the owner's words and fixes only the stack, one start command, one data location, and reading time from the system clock. The probes (92, for all 53 graded items) were drafted by Sol and edited. At the maintainer's request, Claude Fable reviewed them in the maintainer's place; the fixes were checked by Fable again. The probes are recorded as version 3, the oracle as version 3, and the change script as version 2.
+**Status:** reviewed and accepted by the maintainer on 2026-11-13, including the three edits marked for review. Each arm designs its own interface, so the brief is in the owner's words and fixes only the stack, one start command, one data location, and reading time from the system clock. The probes (92, for all 53 graded items) were drafted by Sol and edited. At the maintainer's request, Claude Fable reviewed them in the maintainer's place; the fixes were checked by Fable again. The probes are recorded as version 4, the oracle as version 3, and the change script as version 2.
 
 - **Public:**
   - [brief.md](brief.md), the brief every arm receives at the start, about 550 words;
@@ -44,6 +44,7 @@ SHA-256 hashes of the materials as accepted. If any of them change before the co
 | 2 | 2026-11-14 | `hidden/change-script.md` | `43030f3119c3a34fe505a5309248f3fb0d493e9fa3ad6bdcb460eb730301cb8e` |
 | 2 | 2026-11-14 | `hidden/probes.md` | `c31a9cf28da8e637e9019ce7dc753924fb456881dff1489f761ea0c9aeb0c531` |
 | 3 | 2026-11-14 | `hidden/probes.md` | `f9ebf5f930abdfb54bb9979590f34ff27b1033c5c35e4e545fe427d18561443a` |
+| 4 | 2026-11-15 | `hidden/probes.md` | `3300c4fcc7a8f38225389fab23ee7346ca35fa0f0bda8862d869de854a17a343` |
 
 Oracle version 2 moves one clause from an item stated in a change to the askable item it depended on (edit E30), as edit E14 did before. Version 1 of the oracle is replaced. The brief and the change script are unchanged.
 

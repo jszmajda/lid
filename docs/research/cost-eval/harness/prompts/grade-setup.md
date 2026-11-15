@@ -19,4 +19,4 @@ End `/work/ids.md` with a section headed `## Credentials`. If the service needs 
 
 If loading or operating the service needs an administrator that the setup doesn't describe, create one extra administrative account named "Grading admin" and record its credential. Never give a fixture person a role or permission the setup doesn't describe.
 
-If you can't load part of a setup through the reference, mark it with `gt mark 'CANNOT <setup>: <what, and what you tried>'`, load the rest, and still take the snapshot. Reply with a short list of what you loaded for each setup and anything you couldn't.
+If you can't load part of a setup through the reference at all, mark it with `gt mark 'CANNOT <setup>: <what, and what you tried>'`, load the rest, and still take the snapshot. If the service loads something but not exactly as described (for example, it creates a duplicate), don't mark it CANNOT: mark it with `gt mark 'DEVIATION <setup>: <what happened>'`, note it in `/work/ids.md`, and carry on. The service's own quirks are part of what gets graded. Reply with a short list of what you loaded for each setup and anything you couldn't.
