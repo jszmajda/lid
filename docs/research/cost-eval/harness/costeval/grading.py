@@ -333,6 +333,9 @@ def check_spec(spec: dict) -> list[str]:
         problems.append("start spec never uses {DATA} for the data location")
     if not str(spec.get("workdir", "")).startswith("/work/app"):
         problems.append("workdir must be inside /work/app")
+    text = json.dumps({k: spec.get(k) for k in ("command", "env", "setup_commands")})
+    if "/tmp/" in text or '"/tmp"' in text:
+        problems.append("the start spec points under /tmp, which the app containers can't see")
     return problems
 
 

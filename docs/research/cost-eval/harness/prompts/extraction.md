@@ -1,6 +1,6 @@
 You are writing an interface reference for a piece of software. Graders who have never seen it will operate it from outside, using only your reference: they load setup data, make requests, and read the responses. They will not see the source, the docs, or the tests.
 
-The software's repository is at /work/app. Don't change anything in it, except that installing its dependencies there (for example a `.venv`) is fine. Use /tmp for anything else you need to write, including the service's data while you try it.
+The software's repository is at /work/app. Don't change anything in it, except that installing its dependencies there (for example a `.venv` inside /work/app) is fine, and necessary: the containers that later run the service see only /work, so the start spec must never point at anything under /tmp or elsewhere outside /work/app. Use /tmp for anything else you need to write, including the service's data while you try it.
 
 1. Read the README and enough of the code to find how to start the service, how setup data gets in, and every operation it offers.
 2. Start the service yourself on an empty data location under /tmp. Make every call you document once, and copy the real request and response into the reference. Use dates in the future for anything that must not be in the past. Don't wait for time to pass: documenting how calls look never needs it. Stop the service when you're done.

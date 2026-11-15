@@ -122,6 +122,7 @@ class SpecTest(unittest.TestCase):
         self.assertTrue(grading.check_spec({**self.SPEC, "data_path": "/tmp/db", "command": "x", "env": {}}))
         self.assertTrue(grading.check_spec({**self.SPEC, "workdir": "/elsewhere"}))
         self.assertTrue(grading.check_spec({k: v for k, v in self.SPEC.items() if k != "port"}))
+        self.assertTrue(grading.check_spec({**self.SPEC, "command": "/tmp/venv/bin/python -m app --data {DATA}"}))
 
 
 class SetupTest(unittest.TestCase):

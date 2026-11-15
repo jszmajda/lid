@@ -65,7 +65,12 @@ def main(argv=None) -> int:
     print(f"exporting {commit[:10]} and extracting the interface", flush=True)
     ck.export(meta["volumes"]["workspace"])
     notes_path = HERE.parent / "seeds" / args.seed / "grading-notes.md"
-    ex = grading.extract(ck, g, out, notes_path.read_text(encoding="utf-8") if notes_path.exists() else "")
+    notes = notes_path.read_text(encoding="utf-8") if notes_path.exists() else ""
+    ex = grading.extract(ck, g, out, notes)
+    if ex["problems"]:
+        print("extraction problems, trying once more:", ex["problems"])
+        ex = grading.extract(ck, g, out, notes + "\n\nAn earlier attempt's start spec had these problems, which this one must avoid: "
+                             + "; ".join(ex["problems"]))
     if ex["problems"]:
         print("extraction problems:", ex["problems"])
         summary["error"] = f"extraction: {ex['problems']}"
