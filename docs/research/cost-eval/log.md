@@ -4,6 +4,20 @@ Newest entries first. Each entry says what was done, what was decided, and who d
 
 Older entries move to [log-archive/](log-archive/) when this file passes about 2,000 words, and 'Earlier, in brief' at the bottom summarizes them.
 
+## 2026-11-15: ReleaseDesk's eight latent rules, drawn by lot
+
+**Decided by the maintainer:**
+- ReleaseDesk takes 8 latent-intent rules in fixed shares by guessability band (4 low, 2 medium, 2 high), with results reported by band.
+- The two rules with a unanimous model default get their values by lot.
+- The trivial local changes stay.
+
+**Decided by the main session:** the rules within each band are drawn by lot too, so neither the maintainer nor the main session picks them. The seed is the hash of the commit that recorded the procedure, `3f3da229`, and the draw is a seeded Python shuffle anyone can repeat. The result and the script are in `seeds/releasedesk/hidden/`.
+- **The coins:** one of the two default-value rules came up on its guessable value, and the other on its surprising one.
+- **The draw:** four low-guess rules (two at the first build, one each at changes 4 and 10), two medium (first build, change 2), and two high (first build).
+- **The script stays as proposed.** The rule that motivated replacing change 9 wasn't drawn, so the proposal's change 9 stays. It also tests one of the drawn rules.
+
+**Next:** GPT-6.1 Sol drafts the oracle and change script from the fixed brief, with these eight as the only latent items. Every other item will be stated in the brief or a change request, so the bands stay as measured. Then Claude Fable reviews, and the probes follow.
+
 ## 2026-11-15 (small hours): Sonnet is BenchTime's executor; ReleaseDesk's guessability panel
 
 **The Sonnet ceiling passes.** Two bare trajectories on Sonnet 5.5, under the rubber-stamp owner, met 80% and 76% of items in force; trajectory 2 is counted without BT-42, for the harness fault below. They met 16 and 13 of 20 latent items. **Decided by the main session**, under the maintainer's rule: Sonnet is BenchTime's main executor, and Opus results on BenchTime are reported as limited by the ceiling. **Stage 2 is running** with the diligent owner, through `harness/run_stage2.sh`.
