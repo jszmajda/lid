@@ -396,6 +396,9 @@ def check_verdicts(result: dict, batch: list[Probe], lines: list[dict]) -> list[
             problems.append(f"{p.id}: a verdict without evidence")
         elif any(e not in seqs for e in v["evidence"]):
             problems.append(f"{p.id}: evidence cites lines not in the log")
+        elif len(v.get("reason", "").split()) < 5:
+            # a stub such as "Placeholder" means the judge never reasoned about this probe
+            problems.append(f"{p.id}: a reason too short to explain the verdict")
         elif v["verdict"] == "couldn't exercise" and v.get("cause") not in ("execution", "service"):
             problems.append(f"{p.id}: \"couldn't exercise\" without saying whether the executor or the service was the cause")
     return problems

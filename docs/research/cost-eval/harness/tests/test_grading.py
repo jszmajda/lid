@@ -171,13 +171,14 @@ class JudgmentTest(unittest.TestCase):
 
     def test_verdicts_must_cover_every_probe_and_cite_real_lines(self):
         ps = grading.parse_probes(PROBES).probes[:1]
-        ok = {"verdicts": [{"probe": "P-BK01-a", "verdict": "met", "evidence": [5], "reason": "r"}]}
+        ok = {"verdicts": [{"probe": "P-BK01-a", "verdict": "met", "evidence": [5], "reason": "The order shows its customer."}]}
         self.assertEqual(grading.check_verdicts(ok, ps, self.LINES), [])
         for bad in ({"verdicts": []},
                     {"verdicts": [{"probe": "P-BK01-a", "verdict": "met", "evidence": [], "reason": "r"}]},
+                    {"verdicts": [{"probe": "P-BK01-a", "verdict": "not met", "evidence": [5], "reason": "Placeholder"}]},
                     {"verdicts": [{"probe": "P-BK01-a", "verdict": "not met", "evidence": [99], "reason": "r"}]}):
             self.assertTrue(grading.check_verdicts(bad, ps, self.LINES))
-        cx = {"verdicts": [{"probe": "P-BK01-a", "verdict": "couldn't exercise", "evidence": [], "reason": "r", "cause": "execution"}]}
+        cx = {"verdicts": [{"probe": "P-BK01-a", "verdict": "couldn't exercise", "evidence": [], "reason": "The executor never placed the order.", "cause": "execution"}]}
         self.assertEqual(grading.check_verdicts(cx, ps, self.LINES), [])
         # "couldn't exercise" must say whether a rerun could settle it
         cx["verdicts"][0]["cause"] = "none"

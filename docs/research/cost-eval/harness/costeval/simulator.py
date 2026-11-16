@@ -679,6 +679,12 @@ class Owner:
                 return out
         raise OwnerFailed(f"no valid reply after {self.max_attempts} attempts: {problems}")
 
+    def _requested_now(self) -> set[str]:
+        """Items that come in with this change's own request: stated in it, or emerging with it."""
+        n = self.change.number if self.change is not None else None
+        return {i.id for i in self.oracle.items if i.in_force == n and n not in (None, 0)
+                and i.kind.lower().startswith(("stated in change", "emerging"))}
+
     def _trim(self, message: str, out: dict, calls: list[dict]) -> None:
         """Cut each answer that shares a rule, and each correction, down to what the question or the quoted words
         need, with a separate call that sees only the agent's message and the draft parts."""
@@ -691,15 +697,23 @@ class Owner:
         prompt = trim_prompt(message, [(kind, about, d["answer" if kind == "answer" else "text"]) for kind, d, about in parts])
         raw = self.trim(prompt)
         edited = {p.get("index"): p.get("text", "") for p in (raw or {}).get("parts", [])}
-        changes = []
+        changes, dropped = [], []
         for n, (kind, d, _about) in enumerate(parts, start=1):
             key = "answer" if kind == "answer" else "text"
             new = (edited.get(n) or "").strip()
             old = d[key]
-            if new and not ITEM_ID.search(new) and words(new) <= words(old):
+            if kind == "correction" and new == "DROP":
+                # The quoted words were right as far as they went: an addition, not a correction. The trim can't see
+                # this change's request, so the owner's own exception stands: something the request asked for and the
+                # agent left out is still pointed out.
+                if d.get("item") not in self._requested_now():
+                    dropped.append(d)
+                    changes.append({"part": n, "before": old, "after": None})
+            elif new and new != "DROP" and not ITEM_ID.search(new) and words(new) <= words(old):
                 d[key] = new
                 if new != old:
                     changes.append({"part": n, "before": old, "after": new})
+        out["corrections"] = [c for c in out["corrections"] if not any(c is x for x in dropped)]
         calls.append({"prompt": prompt, "output": raw, "problems": [], "trim": changes})
 
     def respond(self, message: str, documents: Sequence[Document] = (), *, code_written: bool) -> OwnerReply:

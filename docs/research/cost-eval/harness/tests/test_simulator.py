@@ -551,6 +551,29 @@ class TrimTest(unittest.TestCase):
         self.assertEqual(r.calls[-1]["trim"], [{"part": 1, "before": "We close at 18:00, and late orders go to tomorrow.",
                                                 "after": "We close at 18:00."}])
 
+    def test_a_correction_trimmed_to_drop_is_removed_but_an_answer_never_is(self):
+        c = script()
+        o = out("approval", [ans("Closing time?", "We close at 18:00.", ["BK-02"])],
+                [cor("BK-03", "Also keep old orders.", wrong="keep this week's orders")])
+        w = sm.Owner(oracle=oracle(), brief=BRIEF, policy="diligent", seed="s", ask=FakeAsk(o),
+                     trim=lambda p: {"parts": [{"index": 1, "text": "DROP"}, {"index": 2, "text": "DROP"}]})
+        w.start_change(c[1])
+        r = w.respond("Plan: keep this week's orders. Closing time?", code_written=False)
+        self.assertEqual(r.answers[0]["answer"], "We close at 18:00.")
+        self.assertEqual(r.kept + r.dropped, [])
+        self.assertNotIn("old orders", r.reply)
+        self.assertEqual(r.calls[-1]["trim"], [{"part": 2, "before": "Also keep old orders.", "after": None}])
+
+    def test_a_drop_is_ignored_for_what_this_changes_request_asked_for(self):
+        c = script()
+        # BK-10 is stated in change 3: an omission from that request is still pointed out
+        o = out("approval", [], [cor("BK-10", "A moved order also keeps its number.", wrong="move the order")])
+        w = sm.Owner(oracle=oracle(), brief=BRIEF, policy="diligent", seed="s", ask=FakeAsk(o),
+                     trim=lambda p: {"parts": [{"index": 1, "text": "DROP"}]})
+        w.start_change(c[3])
+        r = w.respond("Plan: move the order to the new day. OK?", code_written=False)
+        self.assertEqual([k["item"] for k in r.kept], ["BK-10"])
+
     def test_nothing_to_trim_makes_no_call(self):
         w = sm.Owner(oracle=oracle(), brief=BRIEF, policy="diligent", seed="s", ask=FakeAsk(out("approval")),
                      trim=lambda p: self.fail("trim called"))

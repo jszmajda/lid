@@ -4,6 +4,36 @@ Newest entries first. Each entry says what was done, what was decided, and who d
 
 Older entries move to [log-archive/](log-archive/) when this file passes about 2,000 words, and 'Earlier, in brief' at the bottom summarizes them.
 
+## 2026-11-15 (night): Stage 2 passes its thresholds; the owner stops leaking through corrections
+
+**Stage 2's thresholds, all met** (pilot numbers):
+- **Grader agreement:** Claude Fable, standing in for the maintainer, agreed with 38 of 40 sampled verdicts (95%). Both disagreements were the judge being too strict.
+- **Test-retest:** three change-10 checkpoints judged twice more flipped 0 of 264 verdicts.
+- **Positive control** is worse (80% against bare's 92%), and **the A/A check** shows no difference (92% and 92%; $2.32 and $2.35).
+
+**From the spot-check:**
+- **BenchTime probes version 5:** ten probes reworded so executors run every step and don't read a word as a feature name, and Fable checked the edits. Stage 2 stays graded under version 4.
+- **Judge rules:** an inspection the executor skipped counts like one the build doesn't offer, but only when other log entries show the same thing. Every verdict now says whether a "couldn't exercise" came from the executor or the build. Grading runs an executor-caused one once more.
+- **A restart race:** when a start command left a shell as the parent, the old server could answer the readiness check and then vanish, so the first request after a restore was refused. The control server now waits for the port to free.
+- **A stub verdict** (reason "Placeholder") had passed the checks. Verdicts now need a real reason, and the one affected batch was judged again (it was a "met").
+
+**The owner leaked through corrections.** The leak audit of stage 2 flagged 15 of 171 owner replies. Fable ruled five of them real leaks that plausibly changed a verdict, and two more borderline:
+- **The pattern:** the agent's words were right as far as they went, and the owner "corrected" them by adding what they left out ("must also …"). A list of checks was read as a contradiction of a rule it didn't mention.
+- **Who gained:** cheap discipline most, one leaked item per trajectory, because it shows a written plan before coding. LID had the lowest rate of real leaks per reply.
+- **Effect on the numbers:** counting every leaked verdict as not met leaves the order unchanged at every checkpoint. At change 10: LID 95.4%, bare 90.8%, cheap discipline 87.6% (96.1%, 91.5%, 88.9% as graded). Stage 2's results carry this as a caveat.
+- **The fix:** the owner's instructions now say what a correction must quote: words wrong in themselves, not words that are right but incomplete. A confirmation is "Yes." without a recital, and an open question on a rule recognised on sight still gets "Show me what you have in mind". The trim deletes added cases and can drop a correction that only adds something; the harness ignores that drop for anything this change's own request asked for.
+- **How it was checked:** each candidate was replayed on the real stops (each recorded prompt with only the instruction lines swapped) and on the 15 scripted scenarios. On the problem stops, judge leaks fell from 21 of 36 runs under the old prompts. Moving the silence rule itself into rule 2 broke a scripted case, so the guidance went into the corrections instruction instead. Final acceptance of the adopted version: judge leaks on those stops 3 of 36, no earned correction lost (20 of 20 control runs, against 19 of 20 before), and the 15 scripted scenarios passed every check in 150 runs, with one judge flag.
+
+**Built:** a report generator (`report.py`) for a stage's runs, which reproduces stage 2's numbers, and an owner replay tool (`replay_owner.py`).
+
+**ReleaseDesk's ceiling** (bare arm, rubber-stamp owner, change 10, two trajectories per model):
+- **All items:** Sonnet 90%, Opus 91%, above the 85% ceiling.
+- **Stated items** (48, given to every arm by the brief and the requests): 98% and 97%.
+- **Latent items:** Sonnet 7 of 16, Opus 9 of 16. Pooled by guessability band: low 6 of 16, medium 4 of 8, high 6 of 8, the order the panel predicted. Two low-band rules were never met.
+- **Agent cost** for the build plus ten changes: Sonnet $2.22, Opus $9.93.
+- **Proposed, for the maintainer:** read ReleaseDesk's ceiling on latent items, where both models leave room, and make latent-item fidelity by band its main measure.
+- Three probes stayed "couldn't exercise" after their rerun (P-RD05-a, P-RD24-a, P-RD36-a), two of them in two trajectories each, which points at the probes or the harness rather than the executor. To look at before stage 2.
+
 ## 2026-11-15 (evening): Stage 2 graded; ReleaseDesk ready; its ceiling check starts
 
 **Decided by the maintainer:** ReleaseDesk's brief, oracle, and change script are accepted, including the five edits that change what an item or change measures.

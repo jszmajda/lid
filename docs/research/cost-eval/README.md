@@ -33,12 +33,15 @@ Read this section first when you pick the work up in a new session. Update it at
 - **The graders are calibrated** (2026-11-14). Sonnet 5.5 judges and Haiku 5.5 executes. The judge agreed with itself on all 44 probes, and a whole-pipeline regrade agreed on all 44. Four seeded violations were each caught, and Claude Fable, standing in for the maintainer, agreed with 35 of 36 sampled verdicts. Grading costs about $1 per checkpoint notional. The three prior-data probes aren't implemented and are reported as not run. Calibration notes are in `seeds/benchtime/hidden/calibration/`.
 - **Pilot stage 0 passed:** all three arms on Sonnet 5.5, a build plus two changes. Plumbing only.
 - **Pilot stage 1 settled the executor.** A bare arm on Opus 5.5 met 88% to 92% of BenchTime's items even with a silent owner, which is above the ceiling threshold. On Sonnet 5.5 it met 76% to 80%. Under the maintainer's rule, Sonnet is BenchTime's main executor, and Opus results there are reported as limited by the ceiling.
-- **Pilot stage 2 on BenchTime is graded** (Sonnet 5.5, diligent owner, three trajectories per arm). Pilot numbers only:
+- **Pilot stage 2 on BenchTime passes all four thresholds** (Sonnet 5.5, diligent owner, three trajectories per arm). Pilot numbers only:
   - items met at change 10: bare 92%, bare A/A 92%, cheap discipline 89%, LID Full 96%, positive control 80%;
-  - agent cost for the build plus ten changes: $2.32, $2.35, $4.48, $11.54, and $0.97.
+  - agent cost for the build plus ten changes: $2.32, $2.35, $4.48, $11.54, and $0.97;
+  - grader agreement 38 of 40 (Claude Fable's spot-check), test-retest 0 flips in 264, positive control worse, A/A no difference.
 
-  The A/A and positive-control checks pass. Grader agreement waits on Claude Fable's spot-check of 40 verdicts (`seeds/benchtime/hidden/calibration/spot-check-2/`). The verdicts to use are each checkpoint's `rejudge-v4.json`: probes version 4, plus the rule that an inspection a build doesn't offer doesn't block a verdict. Cheap-discipline trajectories 1 to 3 are left out, because they ran before scheduling tools were denied.
-- **ReleaseDesk, the second seed, is ready** ([seeds/releasedesk/README.md](seeds/releasedesk/README.md)). Its brief, oracle, change script, and 71 probes are accepted and hashed. Its eight latent rules were drawn by lot from bands measured by a six-model guessability panel. **Its ceiling check is running:** four bare trajectories under the rubber-stamp owner, two on Sonnet and two on Opus (`runs/rd1-bare-*`), then grading of their change-10 checkpoints.
+  The verdicts to use are each checkpoint's `rejudge-v4.json`. Cheap-discipline trajectories 1 to 3 are left out. The results carry a leak caveat: the owner leaked through corrections in a few replies, mostly to cheap discipline, and counting those verdicts as not met changes no ordering. `harness/report.py` regenerates the tables (`runs/stage2/report.md`).
+- **The simulated owner was fixed after stage 2** so that a correction quotes words wrong in themselves and never adds what a list left out. It was checked by replaying the real stops and the scripted scenarios (`harness/replay_owner.py`). Every later run uses the fixed owner.
+- **BenchTime's probes are at version 5**, and the judge now says whether each "couldn't exercise" came from the executor or the build; grading reruns executor-caused ones once.
+- **ReleaseDesk, the second seed, is ready, and its ceiling check is done** ([seeds/releasedesk/README.md](seeds/releasedesk/README.md)). The bare arm under a silent owner meets 90 to 91% of all items, which is over the 85% ceiling, but only 44 to 56% of the latent items, in the order of their guessability bands. **Waiting on the maintainer:** whether to read ReleaseDesk's ceiling on latent items and go ahead (the main session's proposal, in [decisions.md](decisions.md)).
 - **The Docker VM is small** (2 CPUs, 4 GB), which limits how much runs at once. Resizing it means restarting colima, which also stops the maintainer's other containers, so that is the maintainer's call.
 - **Start long jobs as tracked background tasks, or with a watch.** A job started detached sends no notice when it finishes.
 - **The maintainer has handed the pilot to the main session** (2026-11-14): run it on your own judgment, and bring the maintainer only decisions that are really theirs. Pushing to the draft pull request is allowed; marking it ready, merging, and releasing are not. Claude Fable stands in for the maintainer's detailed reviews (probes, oracles, verdict spot-checks).
@@ -46,10 +49,9 @@ Read this section first when you pick the work up in a new session. Update it at
 
 **Next actions** (milestones M1 and M2 in [plan.md](plan.md)):
 
-1. **Read Fable's stage 2 spot-check,** and check the agreement threshold (at least about 90%). Then classify touchpoints (`classify_touchpoints.py`) and audit owner replies (`audit_owner.py`) for stage 2, and write stage 2 up against its thresholds.
-2. **When ReleaseDesk's ceiling runs are graded,** compare items met by guessability band, latent rules by band against stated items. Then run ReleaseDesk's stage 2: three arms on Sonnet, then on Opus if its ceiling allows.
-3. **Write the first report:** cost, attention, and fidelity per arm, by change type, and by guessability band on ReleaseDesk.
-4. **Still to build:** prior-data probes, grading for the probe request, a scripted check for operating requirements, and the report generator.
+1. **When the maintainer rules on ReleaseDesk's ceiling,** look first at P-RD05-a, P-RD24-a, and P-RD36-a, which stayed "couldn't exercise" after their rerun. Then run ReleaseDesk's stage 2: three arms on Sonnet, three trajectories each, under the fixed owner, then Opus if the maintainer agrees.
+2. **Write the first report** with `report.py`: cost, attention, and fidelity per arm, by change type, and by guessability band on ReleaseDesk.
+3. **Still to build:** prior-data probes, grading for the probe request, and a scripted check for operating requirements.
 
 ## Files
 
