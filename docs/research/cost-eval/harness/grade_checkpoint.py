@@ -5,7 +5,8 @@
 Reads the trajectory's record in ../runs/<id>/ for the change's commit, and writes everything under
 ../runs/<id>/grading/change-NN/: the interface reference and start spec, the setup log and identifiers, and for each
 batch the probes as the executor saw them, the execution log, and the judgment. Verdicts per probe and per item go
-to verdicts.json. Probes that need prior-data or prior-observations are listed as not run.
+to verdicts.json. Probes that need prior-data or prior-observations are listed as not run. A probe the judge
+couldn't decide because of an execution fault runs once more, and its first verdict is kept under "reruns".
 """
 
 from __future__ import annotations
@@ -40,6 +41,7 @@ def main(argv=None) -> int:
     ap.add_argument("--execute-model", default="claude-haiku-5-5")
     ap.add_argument("--judge-model", default="claude-sonnet-5-5")
     ap.add_argument("--keep", action="store_true", help="leave the app containers running afterwards")
+    ap.add_argument("--no-rerun", action="store_true", help="don't run probes again after an execution fault")
     args = ap.parse_args(argv)
 
     run_dir = HERE.parent / "runs" / args.id
@@ -126,6 +128,19 @@ def main(argv=None) -> int:
 
         with cf.ThreadPoolExecutor(max_workers=workers) as pool:
             list(pool.map(worker, range(workers)))
+
+        # Probes left undecided by an execution fault get one more run, each in a batch of its own, so a verdict
+        # reflects the build rather than the executor. The first verdict is kept beside the new one.
+        again = grading.execution_faults(verdicts)
+        if again and not args.no_rerun:
+            print(f"running again after execution faults: {again}", flush=True)
+            first = {pid: verdicts[pid] for pid in again}
+            by_id = {p.id: p for p in runnable}
+            for n, pid in enumerate(again):
+                work.put((f"x{n:02d}", [by_id[pid]]))
+            with cf.ThreadPoolExecutor(max_workers=workers) as pool:
+                list(pool.map(worker, range(workers)))
+            summary["reruns"] = {pid: {"first": first[pid], "second": verdicts.get(pid)} for pid in again}
     finally:
         if not args.keep:
             ck.stop(workers)

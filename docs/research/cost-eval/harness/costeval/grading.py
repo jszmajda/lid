@@ -377,6 +377,13 @@ def log_for_judge(lines: list[dict]) -> str:
     return "\n".join(out)
 
 
+def execution_faults(verdicts: dict[str, dict]) -> list[str]:
+    """Probes the judge couldn't decide because the executor (or the harness) left out or got wrong a step the service
+    could have performed. A rerun can settle these; a "couldn't exercise" caused by the service can't be."""
+    return sorted(pid for pid, v in verdicts.items()
+                  if v.get("verdict") == "couldn't exercise" and v.get("cause") == "execution")
+
+
 def check_verdicts(result: dict, batch: list[Probe], lines: list[dict]) -> list[str]:
     seqs = {r["seq"] for r in lines}
     problems = []

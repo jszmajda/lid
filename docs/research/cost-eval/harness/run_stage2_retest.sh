@@ -4,7 +4,10 @@
 PY=${PY:-python3.12}
 for id in s2-bare-1 s2-cheap-discipline-4 s2-lid-full-1; do
   for name in retest-a retest-b; do
-    echo "$PY rejudge.py --id $id --change 10 --model claude-sonnet-5-5 --name $name --probes archive/probes-v4.md > ../runs/stage2/$name-$id.log 2>&1"
+    [ -f ../runs/$id/grading/change-10/rejudge-$name.json ] && continue
+    $PY rejudge.py --id $id --change 10 --model claude-sonnet-5-5 --name $name --probes archive/probes-v4.md \
+      > ../runs/stage2/$name-$id.log 2>&1 &
   done
-done | xargs -P 2 -I CMD sh -c CMD
+  wait
+done
 echo "retest done"

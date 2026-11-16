@@ -183,6 +183,13 @@ class JudgmentTest(unittest.TestCase):
         cx["verdicts"][0]["cause"] = "none"
         self.assertTrue(grading.check_verdicts(cx, ps, self.LINES))
 
+    def test_only_execution_faults_are_run_again(self):
+        v = {"P-1": {"verdict": "couldn't exercise", "cause": "execution"},
+             "P-2": {"verdict": "couldn't exercise", "cause": "service"},
+             "P-3": {"verdict": "not met", "cause": "none"},
+             "P-4": {"verdict": "couldn't exercise"}}  # judged before causes were recorded
+        self.assertEqual(grading.execution_faults(v), ["P-1"])
+
     def test_prompts_fill_in_one_pass(self):
         p = grading._template("grade-judge.md", PROBES="P {LOG}", LOG='{"x": "{PROBES}"}')
         self.assertIn('P {LOG}', p)
