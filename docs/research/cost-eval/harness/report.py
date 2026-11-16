@@ -68,7 +68,8 @@ def trajectory_summary(run: Path) -> dict:
                          "words_shown": sum(o.get("words_shown") or 0 for o in owners),
                          "finished": c.get("finished"), "error": c.get("error"),
                          # a symptom-only change whose diagnostic passed is never delivered: the build never had the bug
-                         "skipped": str(c.get("symptom") or "").startswith("not fired")}
+                         "skipped": str(c.get("symptom") or "").startswith("not fired"),
+                         "symptom": c.get("symptom")}
     out = {"id": t["id"], "arm": t["arm"], "model": t.get("model"), "policy": t.get("policy"), "changes": per_change}
     tp = run / "touchpoints.json"
     if tp.exists():
@@ -98,7 +99,10 @@ def usd(x):
     return "–" if x is None else f"${x:.2f}"
 
 
-def build(runs: Path, seed_dir: Path, prefix: str, arms: dict[str, list[str]], verdicts: str) -> dict:
+def build(runs: Path, seed_dir: Path, prefix: str, arms: dict[str, list[str]], verdicts: str,
+          exclude: tuple[str, ...] = ()) -> dict:
+    """exclude: "trajectory:change:item" entries, items left out of one checkpoint for a recorded harness fault."""
+    left_out = {(t, int(c), i) for t, c, i in (e.split(":") for e in exclude)}
     oracle = simulator.parse_oracle((seed_dir / "hidden" / "oracle.md").read_text(encoding="utf-8"))
     kinds = {i.id: kind_of(i) for i in oracle.items}
     bands_file = seed_dir / "hidden" / "bands.json"
@@ -110,7 +114,7 @@ def build(runs: Path, seed_dir: Path, prefix: str, arms: dict[str, list[str]], v
         types[int(n)] = m.group(1).strip().split(". ")[0].rstrip(".") if m else ""
     probes = [p for p in grading.parse_probes((seed_dir / "hidden" / "probes.md").read_text(encoding="utf-8")).probes]
 
-    report = {"prefix": prefix, "verdicts": verdicts, "arms": {}, "changes": {n: {"title": c.title, "type": types.get(n, "")}
+    report = {"prefix": prefix, "verdicts": verdicts, "excluded": sorted(exclude), "arms": {}, "changes": {n: {"title": c.title, "type": types.get(n, "")}
                                                                             for n, c in script.items()}}
     for arm, ks in arms.items():
         trajs = []
@@ -125,6 +129,7 @@ def build(runs: Path, seed_dir: Path, prefix: str, arms: dict[str, list[str]], v
                 if v is None:
                     continue
                 n = int(gdir.name.split("-")[1])
+                v = {i: x for i, x in v.items() if (f"{arm}-{k}", n, i) not in left_out}
                 f = {"all": share_met(v), "not met": sum(x == "not met" for x in v.values()),
                      "couldn't exercise": sum(x == "couldn't exercise" for x in v.values()),
                      "by kind": {kd: share_met(v, lambda i, kd=kd: kinds.get(i) == kd) for kd in KINDS},
@@ -148,6 +153,8 @@ def render(r: dict) -> str:
     arms = {a: ts for a, ts in r["arms"].items() if ts}
     lines = [f"# Report: {r['prefix']}", "", f"Verdicts: `{r['verdicts']}.json` in each graded checkpoint. Means over trajectories; "
              "per-trajectory values in brackets. Pilot numbers unless a stage says otherwise.", ""]
+    if r.get("excluded"):
+        lines += ["Left out for recorded harness faults (trajectory:change:item): " + ", ".join(f"`{e}`" for e in r["excluded"]), ""]
 
     # fidelity
     graded = sorted({n for ts in arms.values() for t in ts for n in t["fidelity"]})
@@ -227,13 +234,15 @@ def render(r: dict) -> str:
             here = [t["changes"][n] for t in ts if n in t["changes"]]
             ran = [c for c in here if not c["skipped"]]
             if here and not ran:
-                cells.append("skipped")
+                why = {"inconclusive" if "inconclusive" in str(c["symptom"]) else "passed" for c in here}
+                cells.append("skipped" + ("" if why == {"passed"} else f" ({sum('inconclusive' in str(c['symptom']) for c in here)} inconclusive)"))
             else:
                 note = f" ({len(ran)} of {len(here)} ran)" if len(ran) < len(here) else ""
                 cells.append(usd(mean([c["agent_usd"] for c in ran])) + note)
         lines.append(f"| {n} {title} | {typ} | " + " | ".join(cells) + " |")
-    lines += ["", "\"skipped\": a symptom-only bug report that is delivered only if a diagnostic finds the symptom in the build; "
-              "it found none, so the change never ran. Means are over the trajectories where a change ran."]
+    lines += ["", "\"skipped\": a symptom-only bug report is delivered only if a diagnostic finds the symptom in the build. "
+              "\"Passed\" means it found none; \"inconclusive\" means it couldn't tell, and the report wasn't delivered either. "
+              "Means are over the trajectories where a change ran."]
 
     forks = sorted({n for ts in arms.values() for t in ts for n in t["probe_forks"]})
     if forks:
@@ -255,9 +264,10 @@ def main(argv=None) -> int:
     ap.add_argument("--arms", nargs="+", required=True, help="arm:1,2,3 (the arm's name in run ids, and trajectory numbers)")
     ap.add_argument("--verdicts", default="verdicts")
     ap.add_argument("--out", required=True)
+    ap.add_argument("--exclude", nargs="*", default=[], help="trajectory:change:item entries left out for a recorded harness fault")
     args = ap.parse_args(argv)
     arms = {a.split(":")[0]: a.split(":")[1].split(",") for a in args.arms}
-    r = build(HERE.parent / "runs", HERE.parent / "seeds" / args.seed, args.prefix, arms, args.verdicts)
+    r = build(HERE.parent / "runs", HERE.parent / "seeds" / args.seed, args.prefix, arms, args.verdicts, tuple(args.exclude))
     out = Path(args.out)
     out.write_text(render(r), encoding="utf-8")
     out.with_suffix(".json").write_text(json.dumps(r, indent=1, default=str), encoding="utf-8")

@@ -24,7 +24,15 @@ Older entries move to [log-archive/](log-archive/) when this file passes about 2
 - **The fix:** the owner's instructions now say what a correction must quote: words wrong in themselves, not words that are right but incomplete. A confirmation is "Yes." without a recital, and an open question on a rule recognised on sight still gets "Show me what you have in mind". The trim deletes added cases and can drop a correction that only adds something; the harness ignores that drop for anything this change's own request asked for.
 - **How it was checked:** each candidate was replayed on the real stops (each recorded prompt with only the instruction lines swapped) and on the 15 scripted scenarios. On the problem stops, judge leaks fell from 21 of 36 runs under the old prompts. Moving the silence rule itself into rule 2 broke a scripted case, so the guidance went into the corrections instruction instead. Final acceptance of the adopted version: judge leaks on those stops 3 of 36, no earned correction lost (20 of 20 control runs, against 19 of 20 before), and the 15 scripted scenarios passed every check in 150 runs, with one judge flag.
 
-**Built:** a report generator (`report.py`) for a stage's runs, which reproduces stage 2's numbers, and an owner replay tool (`replay_owner.py`).
+**Two symptom reports that never reached the agent.**
+- **Change 5's diagnostic** was inconclusive in six trajectories, because P-BT41-a then required a visible return record (fixed in version 4). The report wasn't delivered. Later grading meets BT-41 in all 15 trajectories, so no build had the bug, and nothing was lost.
+- **Bare trajectory 2's change 9 diagnostic** couldn't load its setup, so the trajectory never received that bug report and fails BT-42 at change 10. That verdict is left out, as in stage 1.
+
+**Built:**
+- **A report generator** (`report.py`) for a stage's runs, which reproduces stage 2's numbers, records any verdict left out, and says why a change was skipped.
+- **An owner replay tool** (`replay_owner.py`).
+- **`gt file`,** for import fixtures, after ReleaseDesk's import probe couldn't be run.
+- **Setups are prepared with every setup they're built on,** which a partial grading had missed.
 
 **ReleaseDesk's ceiling** (bare arm, rubber-stamp owner, change 10, two trajectories per model):
 - **All items:** Sonnet 90%, Opus 91%, above the 85% ceiling.

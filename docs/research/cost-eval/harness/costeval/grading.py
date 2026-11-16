@@ -454,6 +454,19 @@ def extract(ck: Checkpoint, g: Graders, out: Path, seed_notes: str = "") -> dict
     return result
 
 
+def setups_needed(probeset: ProbeSet, wanted: set[str]) -> list[str]:
+    """The setups the wanted ones need, with every setup their descriptions refer to ("Identical to S0, plus…"),
+    so a setup session never gets a description whose base it can't see. In order: S0, S1, …"""
+    need, todo = set(), list(wanted)
+    while todo:
+        name = todo.pop()
+        if name in need or name not in probeset.setups:
+            continue
+        need.add(name)
+        todo += re.findall(r"\bS\d+\b", probeset.setups[name])
+    return sorted(need, key=lambda n: int(n[1:]))
+
+
 def prepare_setups(ck: Checkpoint, g: Graders, probeset: ProbeSet, names: list[str], reference: str, out: Path) -> dict:
     ck.put(ck.tools_volume, "/work/reference.md", reference)
     setups = "\n\n".join(probeset.setups[n] for n in names) + "\n\n" + probeset.setup_notes

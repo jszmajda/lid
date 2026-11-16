@@ -62,6 +62,10 @@ class ReportTest(unittest.TestCase):
         self.assertEqual(f["by kind"]["stated"], (1, 1))
         self.assertEqual(f["not met"], 1)
 
+    def test_an_excluded_item_leaves_one_checkpoint_only(self):
+        f = report.build(self.runs, self.seed, "s9", {"bare": ["1"]}, "verdicts", ("bare-1:1:BK-01",))["arms"]["bare"][0]["fidelity"][1]
+        self.assertEqual(f["all"], (1, 1))
+
     def test_costs_attention_and_skipped_changes(self):
         r = self.build("verdicts")
         t = r["arms"]["bare"][0]

@@ -185,6 +185,12 @@ class JudgmentTest(unittest.TestCase):
         cx["verdicts"][0]["cause"] = "none"
         self.assertTrue(grading.check_verdicts(cx, ps, self.LINES))
 
+    def test_a_setup_brings_the_setups_it_is_built_on(self):
+        ps = grading.ProbeSet(preamble="", setup_notes="", probes=[], setups={
+            "S0": "A lab.", "S1": "Identical to S0, plus Rhea.", "S2": "Identical to S0, plus Cedar; Noel is in S1 only.", "S3": "Other."})
+        self.assertEqual(grading.setups_needed(ps, {"S2"}), ["S0", "S1", "S2"])
+        self.assertEqual(grading.setups_needed(ps, {"S3", "S0"}), ["S0", "S3"])
+
     def test_only_execution_faults_are_run_again(self):
         v = {"P-1": {"verdict": "couldn't exercise", "cause": "execution"},
              "P-2": {"verdict": "couldn't exercise", "cause": "service"},

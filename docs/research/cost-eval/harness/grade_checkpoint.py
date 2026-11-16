@@ -86,7 +86,7 @@ def main(argv=None) -> int:
         for k in range(workers):
             if not ck.wait_ready(k):
                 raise RuntimeError(f"app worker {k} didn't start; see log/app-{k}.log in {ck.volume}")
-        names = sorted({p.setup for p in runnable}, key=lambda s: int(s[1:]))
+        names = grading.setups_needed(probeset, {p.setup for p in runnable})
         print(f"preparing setups {names}", flush=True)
         reference = grading.grader_reference((out / "reference.md").read_text(), ex["spec"])
         (out / "grader-reference.md").write_text(reference)
