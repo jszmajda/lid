@@ -22,6 +22,7 @@ import json
 import os
 import shutil
 import signal
+import socket
 import subprocess
 import threading
 import time
@@ -80,16 +81,34 @@ class Service:
             time.sleep(0.3)
         return {"ok": False, "error": "service not ready in time"}
 
+    def _port_in_use(self) -> bool:
+        with socket.socket() as s:
+            s.settimeout(1)
+            return s.connect_ex(("127.0.0.1", int(self.spec["port"]))) == 0
+
     def stop(self) -> None:
-        if self.proc and self.proc.poll() is None:
-            try:
-                os.killpg(self.proc.pid, signal.SIGTERM)
-                self.proc.wait(timeout=10)
-            except Exception:
+        # The process we started may be a shell whose child is the server. The shell dies at once while the server
+        # shuts down at its own pace, still listening, so a readiness check right after would reach the old server.
+        # Wait until the port is free, and kill the whole group if it doesn't free in time.
+        if self.proc:
+            pgid = self.proc.pid
+            if self.proc.poll() is None:
                 try:
-                    os.killpg(self.proc.pid, signal.SIGKILL)
+                    os.killpg(pgid, signal.SIGTERM)
+                    self.proc.wait(timeout=10)
                 except Exception:
                     pass
+            deadline = time.time() + 10
+            while self._port_in_use() and time.time() < deadline:
+                time.sleep(0.2)
+            if self._port_in_use():
+                try:
+                    os.killpg(pgid, signal.SIGKILL)
+                except Exception:
+                    pass
+                deadline = time.time() + 5
+                while self._port_in_use() and time.time() < deadline:
+                    time.sleep(0.2)
         self.proc = None
 
     # -- data
@@ -207,16 +226,24 @@ def forward(port: int, req: dict) -> dict:
         data = json.dumps(body).encode() if isinstance(body, (dict, list)) else str(body).encode()
         if not has_type:
             headers["Content-Type"] = "application/json" if isinstance(body, (dict, list)) else "text/plain; charset=utf-8"
-    r = urllib.request.Request(f"http://127.0.0.1:{port}{path}", data=data, method=method, headers=headers)
     keep = ("content-type", "content-disposition", "location")
-    try:
-        with urllib.request.urlopen(r, timeout=60) as resp:
-            raw, rh = resp.read(MAX_BODY), resp.headers
-            code = resp.status
-    except urllib.error.HTTPError as e:
-        raw, rh, code = e.read(MAX_BODY), e.headers, e.code
-    except Exception as e:
-        return {"status": None, "error": f"{type(e).__name__}: {e}"}
+    # A refused connection means the service never saw the request, so trying again a moment later is safe.
+    for attempt in range(4):
+        r = urllib.request.Request(f"http://127.0.0.1:{port}{path}", data=data, method=method, headers=headers)
+        try:
+            with urllib.request.urlopen(r, timeout=60) as resp:
+                raw, rh = resp.read(MAX_BODY), resp.headers
+                code = resp.status
+            break
+        except urllib.error.HTTPError as e:
+            raw, rh, code = e.read(MAX_BODY), e.headers, e.code
+            break
+        except Exception as e:
+            refused = isinstance(getattr(e, "reason", e), ConnectionRefusedError)
+            if refused and attempt < 3:
+                time.sleep(1)
+                continue
+            return {"status": None, "error": f"{type(e).__name__}: {e}"}
     out = {"status": code, **describe_body(raw, rh.get("content-type", "") if rh else "")}
     # Headers that can matter to a probe: where a download is named or redirected, and the type of anything not JSON.
     shown = {k: rh.get(k) for k in keep if rh and rh.get(k)}

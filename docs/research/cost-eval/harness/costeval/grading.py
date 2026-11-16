@@ -354,9 +354,11 @@ def _template(name: str, **fills: str) -> str:
 JUDGE_SCHEMA = {
     "type": "object", "additionalProperties": False, "required": ["verdicts"],
     "properties": {"verdicts": {"type": "array", "items": {
-        "type": "object", "additionalProperties": False, "required": ["probe", "verdict", "evidence", "reason"],
+        "type": "object", "additionalProperties": False, "required": ["probe", "verdict", "evidence", "reason", "cause"],
         "properties": {"probe": {"type": "string"}, "verdict": {"type": "string", "enum": list(VERDICTS)},
-                       "evidence": {"type": "array", "items": {"type": "integer"}}, "reason": {"type": "string"}}}}},
+                       "evidence": {"type": "array", "items": {"type": "integer"}}, "reason": {"type": "string"},
+                       # why a probe couldn't be exercised: a rerun can settle "execution", not "service"
+                       "cause": {"type": "string", "enum": ["execution", "service", "none"]}}}}},
 }
 
 
@@ -387,6 +389,8 @@ def check_verdicts(result: dict, batch: list[Probe], lines: list[dict]) -> list[
             problems.append(f"{p.id}: a verdict without evidence")
         elif any(e not in seqs for e in v["evidence"]):
             problems.append(f"{p.id}: evidence cites lines not in the log")
+        elif v["verdict"] == "couldn't exercise" and v.get("cause") not in ("execution", "service"):
+            problems.append(f"{p.id}: \"couldn't exercise\" without saying whether the executor or the service was the cause")
     return problems
 
 

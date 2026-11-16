@@ -153,5 +153,62 @@ class ControlTest(unittest.TestCase):
         self.assertIn("Usage", self.gt())
 
 
+SLOW_STOP = r'''
+import json, signal, sys, threading, time
+from http.server import BaseHTTPRequestHandler, HTTPServer
+class H(BaseHTTPRequestHandler):
+    def log_message(self, *a): pass
+    def do_GET(self):
+        b = b"{}"; self.send_response(200)
+        self.send_header("content-length", str(len(b))); self.end_headers(); self.wfile.write(b)
+srv = HTTPServer(("127.0.0.1", int(sys.argv[1])), H)
+def slow_exit(*a):
+    def go():
+        time.sleep(1.5); srv.shutdown(); srv.server_close(); sys.exit(0)
+    threading.Thread(target=go).start()
+signal.signal(signal.SIGTERM, slow_exit)
+srv.serve_forever()
+'''
+
+
+class SlowStopTest(unittest.TestCase):
+    """A service started through a shell keeps listening for a while after it's told to stop. A restore must not report
+    ready until the new process answers, and the first request after it must reach the service."""
+
+    def test_the_first_request_after_a_restore_reaches_the_new_service(self):
+        tmp = Path(tempfile.mkdtemp())
+        (tmp / "app").mkdir()
+        (tmp / "app" / "slow.py").write_text(SLOW_STOP)
+        svc_port, port = free_port(), free_port()
+        # the trailing "; true" keeps the shell alive as the parent, as many start commands do
+        spec = {"workdir": str(tmp / "app"), "command": f"{sys.executable} slow.py {svc_port}; true",
+                "env": {}, "port": svc_port, "data_path": str(tmp / "data"), "ready_path": "/"}
+        (tmp / "spec.json").write_text(json.dumps(spec))
+        env = dict(os.environ, CLOCK_FILE=str(tmp / "clock" / "faketime"), FAKETIME_LIB="/nonexistent",
+                   CONTROL_ADMIN_TOKEN="secret")
+        proc = subprocess.Popen([sys.executable, str(GRADING / "control.py"), "--spec", str(tmp / "spec.json"),
+                                 "--port", str(port), "--log", str(tmp / "log" / "exec.jsonl"), "--snapshots",
+                                 str(tmp / "snap"), "--app-log", str(tmp / "app.log")], env=env)
+        try:
+            genv = dict(os.environ, GT_CONTROL=f"http://127.0.0.1:{port}")
+            gt = lambda *a: subprocess.run([sys.executable, str(GRADING / "gt"), *a], capture_output=True, text=True,
+                                           env=genv).stdout
+            for _ in range(100):
+                if "status 200" in gt("http", "GET", "/"):
+                    break
+                time.sleep(0.1)
+            req = urllib.request.Request(f"http://127.0.0.1:{port}/admin", data=json.dumps(
+                {"allow_snapshot": True, "batch": "setup"}).encode(), method="POST", headers={"x-admin-token": "secret"})
+            urllib.request.urlopen(req).read()
+            self.assertIn('"ok": true', gt("snapshot", "S0"))
+            self.assertIn('"ok": true', gt("restore", "S0"))
+            time.sleep(2)  # past the old server's slow exit, so only the new one can answer
+            self.assertIn("status 200", gt("http", "GET", "/"))
+        finally:
+            proc.terminate()
+            proc.wait(5)
+            subprocess.run(["pkill", "-f", f"slow.py {svc_port}"])
+
+
 if __name__ == "__main__":
     unittest.main()

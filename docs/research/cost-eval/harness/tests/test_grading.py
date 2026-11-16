@@ -177,8 +177,11 @@ class JudgmentTest(unittest.TestCase):
                     {"verdicts": [{"probe": "P-BK01-a", "verdict": "met", "evidence": [], "reason": "r"}]},
                     {"verdicts": [{"probe": "P-BK01-a", "verdict": "not met", "evidence": [99], "reason": "r"}]}):
             self.assertTrue(grading.check_verdicts(bad, ps, self.LINES))
-        cx = {"verdicts": [{"probe": "P-BK01-a", "verdict": "couldn't exercise", "evidence": [], "reason": "r"}]}
+        cx = {"verdicts": [{"probe": "P-BK01-a", "verdict": "couldn't exercise", "evidence": [], "reason": "r", "cause": "execution"}]}
         self.assertEqual(grading.check_verdicts(cx, ps, self.LINES), [])
+        # "couldn't exercise" must say whether a rerun could settle it
+        cx["verdicts"][0]["cause"] = "none"
+        self.assertTrue(grading.check_verdicts(cx, ps, self.LINES))
 
     def test_prompts_fill_in_one_pass(self):
         p = grading._template("grade-judge.md", PROBES="P {LOG}", LOG='{"x": "{PROBES}"}')
