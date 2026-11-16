@@ -49,7 +49,7 @@ Read this section first when you pick the work up in a new session. Update it at
 
 **Next actions** (milestones M1 and M2 in [plan.md](plan.md)):
 
-1. **When the maintainer rules on ReleaseDesk's ceiling,** look first at P-RD05-a, P-RD24-a, and P-RD36-a, which stayed "couldn't exercise" after their rerun. Then run ReleaseDesk's stage 2: three arms on Sonnet, three trajectories each, under the fixed owner, then Opus if the maintainer agrees.
+1. **When the maintainer rules on ReleaseDesk's ceiling,** run ReleaseDesk's stage 2: three arms on Sonnet, three trajectories each, under the fixed owner, then Opus if the maintainer agrees.
 2. **Write the first report** with `report.py`: cost, attention, and fidelity per arm, by change type, and by guessability band on ReleaseDesk.
 3. **Still to build:** prior-data probes, grading for the probe request, and a scripted check for operating requirements.
 

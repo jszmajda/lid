@@ -40,7 +40,12 @@ Older entries move to [log-archive/](log-archive/) when this file passes about 2
 - **Latent items:** Sonnet 7 of 16, Opus 9 of 16. Pooled by guessability band: low 6 of 16, medium 4 of 8, high 6 of 8, the order the panel predicted. Two low-band rules were never met.
 - **Agent cost** for the build plus ten changes: Sonnet $2.22, Opus $9.93.
 - **Proposed, for the maintainer:** read ReleaseDesk's ceiling on latent items, where both models leave room, and make latent-item fidelity by band its main measure.
-- Three probes stayed "couldn't exercise" after their rerun (P-RD05-a, P-RD24-a, P-RD36-a), two of them in two trajectories each, which points at the probes or the harness rather than the executor. To look at before stage 2.
+- Three probes stayed "couldn't exercise" after their rerun (P-RD05-a, P-RD24-a, P-RD36-a). Each had a cause outside the build:
+  - a step the probe never asked for (P-RD05-a);
+  - an import file the executor couldn't write (P-RD24-a);
+  - a long response the judge saw only part of (P-RD36-a).
+
+  All three are fixed (ReleaseDesk probes version 2, `gt file`, and a longer response view), and graded again on the same checkpoints all three are met.
 
 ## 2026-11-15 (evening): Stage 2 graded; ReleaseDesk ready; its ceiling check starts
 
