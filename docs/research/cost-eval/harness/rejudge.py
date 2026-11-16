@@ -29,9 +29,12 @@ def main(argv=None) -> int:
     ap.add_argument("--model", required=True)
     ap.add_argument("--name", required=True)
     ap.add_argument("--seed", default="benchtime")
+    ap.add_argument("--probes", help="probe file to judge against, if not the seed's current one (use the version the logs "
+                                     "were executed under, e.g. hidden/archive/probes-v4.md)")
     args = ap.parse_args(argv)
     gdir = HERE.parent / "runs" / args.id / "grading" / f"change-{args.change:02d}"
-    probeset = grading.parse_probes((HERE.parent / "seeds" / args.seed / "hidden" / "probes.md").read_text())
+    pfile = HERE.parent / "seeds" / args.seed / "hidden" / (args.probes or "probes.md")
+    probeset = grading.parse_probes(pfile.read_text())
     probes = {p.id: p for p in probeset.probes}
     original = json.loads((gdir / "verdicts.json").read_text())["probes"]
     g = grading.Graders(image=IMAGE, roles_volume="ce-roles-cfg", claude_code="2.1.323", judge_model=args.model)

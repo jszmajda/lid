@@ -20,7 +20,8 @@ python3.12 -m unittest discover -s tests
 | `grade_checkpoint.py` | Grades one checkpoint of a trajectory with parallel workers; also runs a symptom change's diagnostic |
 | `audit_owner.py` | Runs the leak judge over a real trajectory's owner replies |
 | `run_probe.py` | Runs the seed's probe request on a disposable fork of a trajectory's checkpoint |
-| `rejudge.py` | Judges a graded checkpoint's logs again, with the same or another model, for test-retest and judge comparisons |
+| `rejudge.py` | Judges a graded checkpoint's logs again, with the same or another model, for test-retest and judge comparisons; `--probes` judges against the probe version the logs were executed under |
+| `report.py` | Summarizes a stage's trajectories per arm: items met (by disclosure kind, and by guessability band where the seed has one), agent and owner cost, owner replies, words shown, touchpoint kinds, leak flags, cost by change, and the probe-request forks |
 | `sample_verdicts.py` | Builds spot-check packets of sampled verdicts for whoever checks the graders in the maintainer's place |
 | `classify_touchpoints.py`, `prompts/touchpoints.md` | Sorts each request the agent made of the owner into the kinds in "Human cost", from what the owner saw, never from its reply |
 | `grading/control.py` | The control server inside each app container: starts the arm's service under libfaketime, forwards requests, sets the clock, restarts, restores setups, runs only named setup commands, and writes the execution log |

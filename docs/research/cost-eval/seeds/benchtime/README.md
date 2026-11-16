@@ -45,7 +45,7 @@ SHA-256 hashes of the materials as accepted. If any of them change before the co
 | 2 | 2026-11-14 | `hidden/probes.md` | `c31a9cf28da8e637e9019ce7dc753924fb456881dff1489f761ea0c9aeb0c531` |
 | 3 | 2026-11-14 | `hidden/probes.md` | `f9ebf5f930abdfb54bb9979590f34ff27b1033c5c35e4e545fe427d18561443a` |
 | 4 | 2026-11-15 | `hidden/probes.md` | `3300c4fcc7a8f38225389fab23ee7346ca35fa0f0bda8862d869de854a17a343` |
-| 5 | 2026-11-15 | `hidden/probes.md` | `1c36af4f37096673a591a9f2fc6a41f63121787a778dedde03ed8077fa84bb7f` |
+| 5 | 2026-11-15 | `hidden/probes.md` | `86c9ad759746fc8d4c09d8c969f1fdf84e2e4f694e67b41bfe4d750374bf71a2` |
 
 Oracle version 2 moves one clause from an item stated in a change to the askable item it depended on (edit E30), as edit E14 did before. Version 1 of the oracle is replaced. The brief and the change script are unchanged.
 
