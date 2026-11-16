@@ -5,7 +5,7 @@ The conversion and orientation surface for Linked-Intent Development. Deep docs 
 **Intent anchors (read these before editing content):**
 
 - `../docs/llds/marketing-site.md` — LLD, including structure, tone, and decisions
-- `../docs/specs/marketing-site-specs.md` — EARS specs (MKT-SITE-001 through 037)
+- `../docs/specs/marketing-site-specs.md` — EARS specs (ONB-SITE-001 through 037)
 - `../docs/high-level-design.md` — HLD (§ Target Users, § Goals 3 and 5)
 
 ## Preview locally
@@ -48,10 +48,10 @@ site/
 
 When editing content, remember the cascade rules from the LLD:
 
-- The home-page Quickstart commands (`src/_data/site.json`) must match the repository README's Quickstart (`MKT-SITE-008`, `MKT-SITE-009`).
-- When the HLD changes, review site content for claim drift (`MKT-SITE-033`).
-- When a plugin LLD that describes user-facing behavior changes, review the Start page path descriptions and Quickstart commands (`MKT-SITE-034`).
-- When skill behavior changes materially, re-record the asciinema demo before the next deploy (`MKT-SITE-035`).
+- The home-page Quickstart commands (`src/_data/site.json`) must match the repository README's Quickstart (`ONB-SITE-008`, `ONB-SITE-009`).
+- When the HLD changes, review site content for claim drift (`ONB-SITE-033`).
+- When a plugin LLD that describes user-facing behavior changes, review the Start page path descriptions and Quickstart commands (`ONB-SITE-034`).
+- When skill behavior changes materially, re-record the asciinema demo before the next deploy (`ONB-SITE-035`).
 
 The site is a named segment in `docs/arrows/index.yaml` once the overlay is bootstrapped — it is auditable under `/arrow-maintenance`.
 
@@ -61,4 +61,4 @@ Visual polish (typography, hero visual, component styling) is delegated to the `
 
 ## Asciinema
 
-The demo placeholder in `src/index.njk` expects a cascade scenario (see `MKT-SITE-003`). Record via `asciinema rec`, upload to asciinema.org, and replace the placeholder block with the official embed snippet.
+The demo placeholder in `src/index.njk` expects a cascade scenario (see `ONB-SITE-003`). Record via `asciinema rec`, upload to asciinema.org, and replace the placeholder block with the official embed snippet.

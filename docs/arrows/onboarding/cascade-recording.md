@@ -4,18 +4,21 @@ The tool that makes the home page's terminal recording. It copies a small free-t
 
 ## Status
 
-**MAPPED**, a new leaf segment sampled 2026-11-11 and not yet audited. The tool, the trial project, and their tests are built, and all 47 `CASCADE-REC` specs are implemented; the first complete takes ran 2026-11-11. The home page embeds take 20261111-052857 (2:51), committed at `site/recordings/cascade.cast` with its log (`MKT-SITE-003`, `MKT-SITE-134`).
+**MAPPED**, a new leaf segment sampled 2026-11-11 and not yet audited. The tool, the trial project, and their tests are built, and all 47 `ONB-REC` specs are implemented; the first complete takes ran 2026-11-11. The home page embeds take 20261111-052857 (2:51), committed at `site/recordings/cascade.cast` with its log (`ONB-SITE-003`, `ONB-SITE-134`). Re-parented under the `onboarding` sub-HLD on 2026-11-15: its IDs moved from `CASCADE-REC-*` to `ONB-REC-*`, with every citation rewritten in the same change.
 
 ## References
+
+### Parent
+- `docs/intent/onboarding/onboarding-design.md` (sub-HLD `onboarding`: shared reader, voice, claims rule, the free-trial example, and content the site presents)
 
 ### HLD
 - `docs/high-level-design.md` § Key Design Decisions / *The arrow for LID itself* (content artifacts)
 
 ### LLD
-- `docs/intent/cascade-recording/cascade-recording-design.md`
+- `docs/intent/onboarding/cascade-recording/cascade-recording-design.md`
 
 ### EARS
-- `docs/intent/cascade-recording/cascade-recording-specs.md` (prefix `CASCADE-REC-*`)
+- `docs/intent/onboarding/cascade-recording/cascade-recording-specs.md` (prefix `ONB-REC-*`)
 
 ### Tests
 - `tools/cascade-recording/test_record.py`: the trial project against the home page's quoted lines, the recorded shell's startup files in a real zsh with a stand-in `claude`, a take driven against a fake terminal on a fake clock, the retiming, and the take folder. Run: `python3 tools/cascade-recording/test_record.py`. The trial project's own tests run when its dependencies are installed (`npm ci` in `tools/cascade-recording/trial-app/`).

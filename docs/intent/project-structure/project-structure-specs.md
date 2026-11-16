@@ -92,7 +92,7 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 
 ## Repo-root file pointers
 
-- `[x]` **PROJ-STRUCT-031**: A `README.md` file SHALL exist at the repository root. Its content is owned by `docs/intent/marketing-site/marketing-site-design.md`; this segment references its existence but does not claim its content.
+- `[x]` **PROJ-STRUCT-031**: A `README.md` file SHALL exist at the repository root. Its content is owned by `docs/intent/onboarding/marketing-site/marketing-site-design.md`; this segment references its existence but does not claim its content.
 - `[x]` **PROJ-STRUCT-055**: An `EXTENSIONS.md` file SHALL exist at the repository root. Its content is owned by `docs/intent/extensions/extensions-design.md`; this segment references its existence but does not claim its content.
 - `[x]` **PROJ-STRUCT-032**: `CONTRIBUTING.md` SHALL link to `docs/high-level-design.md` and `AGENTS.md` for depth rather than restating their material, so the contributor surface does not duplicate the README or the methodology doc.
 

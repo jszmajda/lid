@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{% if title %}{{ title }} — {% endif %}{{ site.title }}</title>
     <meta name="description" content="{{ description or site.description }}" />
-    <!-- Typefaces from Bunny Fonts, a no-tracking service. @spec MKT-SITE-030, MKT-SITE-130 -->
+    <!-- Typefaces from Bunny Fonts, a no-tracking service. @spec ONB-SITE-030, ONB-SITE-130 -->
     <link rel="preconnect" href="https://fonts.bunny.net" crossorigin />
     <link rel="stylesheet" href="https://fonts.bunny.net/css?family=geologica:wght@400;500;600;700;800&family=spline-sans-mono:wght@400;500;600&display=swap" />
     <link rel="stylesheet" href="{{ '/assets/css/main.css' | url }}?v={{ buildId }}" />
-    <!-- @spec MKT-SITE-126 -->
+    <!-- @spec ONB-SITE-126 -->
     <link rel="icon" href="{{ '/assets/favicon.svg' | url }}" type="image/svg+xml" />
     <meta name="theme-color" content="#14100D" media="(prefers-color-scheme: dark)" />
     <meta name="theme-color" content="#F6F6F4" media="(prefers-color-scheme: light)" />
@@ -23,7 +23,7 @@
     <main id="main">
       {{ content | safe }}
     </main>
-    <!-- @spec MKT-SITE-131, MKT-SITE-069 -->
+    <!-- @spec ONB-SITE-131, ONB-SITE-069 -->
     <footer class="site-footer">
       <div class="wrap footer-inner">
         <div class="footer-brand">{% include "icon.svg" %}<span>Linked-Intent Development · MIT · © {{ "" | year }} Jess Szmajda</span></div>

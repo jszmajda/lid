@@ -4,10 +4,10 @@
  * The look follows the Nodes logo. Content sits in rounded nodes on a quiet, slightly warm
  * ground, and the logo's pointer joins things that lead to one another. Outside the rings
  * drawing, orange fills only the logo, the icon, and the primary button.
- * See docs/intent/marketing-site/marketing-site-design.md, "Visual identity".
+ * See docs/intent/onboarding/marketing-site/marketing-site-design.md, "Visual identity".
  *
- * Dark is the default when the system states no preference (MKT-SITE-025); light applies when
- * it asks for light (MKT-SITE-024).
+ * Dark is the default when the system states no preference (ONB-SITE-025); light applies when
+ * it asks for light (ONB-SITE-024).
  */
 
 /* 1. Tokens ─────────────────────────────────────────────────────────────── */
@@ -145,7 +145,7 @@ img, svg { max-width: 100%; }
 .lede { color: var(--ink-2); max-width: 58ch; }
 .ctas { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
 .hero-rings { min-width: 0; }
-/* @spec MKT-SITE-133: on one column, the drawing is a small mark beside the h1. */
+/* @spec ONB-SITE-133: on one column, the drawing is a small mark beside the h1. */
 @media (max-width: 979px) {
   .hero { grid-template-columns: minmax(0, 1fr) auto; gap: 18px 16px; }
   .hero-text { display: contents; }
@@ -372,8 +372,8 @@ img, svg { max-width: 100%; }
 .epilogue p { color: var(--ink); }
 
 /* 18. Tour page ────────────────────────────────────────────────────────── */
-/* A sidebar of links on wide screens (MKT-SITE-080), a collapsible list above the content on
-   narrow ones (MKT-SITE-081), and a short rule between steps and between topics (MKT-SITE-082). */
+/* A sidebar of links on wide screens (ONB-SITE-080), a collapsible list above the content on
+   narrow ones (ONB-SITE-081), and a short rule between steps and between topics (ONB-SITE-082). */
 .tour-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 32px; }
 .tour-toc { border: 1px solid var(--line); border-radius: 16px; padding: 12px 16px; background: var(--surface); }
 .tour-toc > summary { cursor: pointer; font: 600 14px var(--sans); color: var(--ink-2); }

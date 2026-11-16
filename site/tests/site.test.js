@@ -44,14 +44,14 @@ const rule = (selector) => {
 };
 
 describe("structure and navigation", () => {
-  // @spec MKT-SITE-019
+  // @spec ONB-SITE-019
   it("has exactly the five top-level pages", () => {
     const labels = [...nav(html.Home).match(/<ul class="nav-links">[\s\S]*?<\/ul>/)[0].matchAll(/<a [^>]*>([^<]+)<\/a>/g)].map((m) => m[1].trim());
     assert.deepEqual(labels, ["Start", "Examples", "Anti-patterns", "Tour", "GitHub"]);
     assert.equal(existsSync(join(out, "logo-ideas")), false);
   });
 
-  // @spec MKT-SITE-020
+  // @spec ONB-SITE-020
   it("links every page to the others and to the repository", () => {
     for (const page of Object.values(html)) {
       const n = nav(page);
@@ -60,7 +60,7 @@ describe("structure and navigation", () => {
     }
   });
 
-  // @spec MKT-SITE-125
+  // @spec ONB-SITE-125
   it("shows the slab-I wordmark on its orange ground in every navigation", () => {
     for (const page of Object.values(html)) {
       const mark = nav(page).match(/<a class="home"[\s\S]*?<\/a>/)[0];
@@ -70,7 +70,7 @@ describe("structure and navigation", () => {
     }
   });
 
-  // @spec MKT-SITE-126
+  // @spec ONB-SITE-126
   it("uses the flush-cut L as the favicon", () => {
     const icon = readFileSync(join(out, "assets/favicon.svg"), "utf8");
     assert.match(icon, /fill="#FF6B3D"/);
@@ -79,13 +79,13 @@ describe("structure and navigation", () => {
     for (const page of Object.values(html)) assert.match(page, /<link rel="icon" href="\/assets\/favicon\.svg"/);
   });
 
-  // @spec MKT-SITE-127
+  // @spec ONB-SITE-127
   it("keeps the navigation on screen with an Install button on every page", () => {
     assert.match(rule(".nav-bar"), /position:\s*sticky/);
     for (const page of Object.values(html)) assert.match(nav(page), /<a class="btn btn-go nav-install" href="\/#quickstart">Install<\/a>/);
   });
 
-  // @spec MKT-SITE-128
+  // @spec ONB-SITE-128
   it("collapses the links into a Menu button on narrow screens, without JavaScript", () => {
     for (const page of Object.values(html)) {
       const menu = nav(page).match(/<details class="nav-menu">[\s\S]*?<\/details>/);
@@ -96,7 +96,7 @@ describe("structure and navigation", () => {
     assert.match(css, /@media \(max-width: 899px\) \{[^@]*\.nav-links \{ display: none; \}[^@]*\.nav-menu \{ display: block; \}/);
   });
 
-  // @spec MKT-SITE-129
+  // @spec ONB-SITE-129
   it("draws the primary action as an orange pill and the secondary as an outlined pill", () => {
     const go = rule(".btn-go");
     assert.match(go, /background:\s*#FF6B3D/);
@@ -108,14 +108,14 @@ describe("structure and navigation", () => {
     assert.match(ctas, /class="btn btn-ghost" href="https:\/\/github\.com\/jszmajda\/lid"/);
   });
 
-  // @spec MKT-SITE-130
+  // @spec ONB-SITE-130
   it("loads Geologica and Spline Sans Mono from Bunny Fonts", () => {
     for (const page of Object.values(html)) assert.match(page, /fonts\.bunny\.net\/css\?family=geologica[^"]*spline-sans-mono/);
     assert.match(css, /--sans:\s*"Geologica"/);
     assert.match(css, /--mono:\s*"Spline Sans Mono"/);
   });
 
-  // @spec MKT-SITE-131
+  // @spec ONB-SITE-131
   it("signs every footer with the icon, the author, the license, and the segment's docs", () => {
     for (const page of Object.values(html)) {
       const f = footer(page);
@@ -129,13 +129,13 @@ describe("structure and navigation", () => {
 });
 
 describe("home page", () => {
-  // @spec MKT-SITE-007, MKT-SITE-064
+  // @spec ONB-SITE-007, ONB-SITE-064
   it("orders its sections around one request", () => {
     const ids = [...html.Home.matchAll(/<section[^>]*\bid="([a-z]+)"/g)].map((m) => m[1]);
     assert.deepEqual(ids, ["hero", "gap", "narrowing", "change", "check", "time", "teams", "quickstart", "experimental", "ecosystem", "paths"]);
   });
 
-  // @spec MKT-SITE-002, MKT-SITE-060
+  // @spec ONB-SITE-002, ONB-SITE-060
   it("answers the question in two short paragraphs", () => {
     const hero = section("hero");
     assert.doesNotMatch(hero.match(/<div class="hero-text">[\s\S]*?<div class="ctas">/)[0], /<ul|<ol/, "no list of fragments under the h1");
@@ -149,7 +149,7 @@ describe("home page", () => {
     for (const p of paras) assert.doesNotMatch(p, /\b(HLD|LLD|EARS|DAG|arrow)\b|[A-Z]+-\d{3}/);
   });
 
-  // @spec MKT-SITE-111
+  // @spec ONB-SITE-111
   it("shows the finished rings in the hero, without labels", () => {
     const svg = section("hero").match(/<svg[^>]*class="rings-svg"[\s\S]*?<\/svg>/);
     assert.ok(svg, "the hero has a static rings drawing");
@@ -157,7 +157,7 @@ describe("home page", () => {
     assert.match(svg[0], /class="code"/);
   });
 
-  // @spec MKT-SITE-133
+  // @spec ONB-SITE-133
   it("sets the hero drawing small beside the h1 on narrow screens", () => {
     const narrow = css.match(/@media \(max-width: 979px\) \{\s*\.hero \{[\s\S]*?\n\}/);
     assert.ok(narrow, "a narrow-screen hero layout");
@@ -169,25 +169,25 @@ describe("home page", () => {
     assert.ok(vw && Number(vw[1]) <= 33, "the drawing takes at most a third of the screen");
   });
 
-  // @spec MKT-SITE-099, MKT-SITE-103
+  // @spec ONB-SITE-099, ONB-SITE-103
   it("shows the gap: one request and the decisions it leaves open", () => {
     const gap = text(section("gap"));
     assert.match(section("gap"), /<div class="bubble">[\s\S]*Give new users a 30-day free trial\./);
     for (const decision of ["When the trial starts", "What happens when it ends", "Second trials", "When exactly day 30 ends"]) assert.ok(gap.includes(decision), decision);
   });
 
-  // @spec MKT-SITE-100
+  // @spec ONB-SITE-100
   it("names the Tokyo signup", () => {
     assert.match(text(section("gap")), /11 p\.m\. on the 1st, in Tokyo/);
   });
 
-  // @spec MKT-SITE-067
+  // @spec ONB-SITE-067
   it("says why green tests miss a misreading", () => {
     assert.match(text(section("gap")), /green tests/i);
     assert.match(text(section("gap")), /same guess/);
   });
 
-  // @spec MKT-SITE-101, MKT-SITE-102
+  // @spec ONB-SITE-101, ONB-SITE-102
   it("narrows the request through six cards, each level a file in the project", () => {
     const c = cards(section("narrowing"));
     assert.equal(c.length, 6);
@@ -200,14 +200,14 @@ describe("home page", () => {
     assert.deepEqual(files(section("narrowing")), ["docs/high-level-design.md", "docs/high-level-design.md", "docs/intent/trial/trial-design.md", "docs/intent/trial/trial-specs.md", "tests/trial.test.ts"]);
   });
 
-  // @spec MKT-SITE-104
+  // @spec ONB-SITE-104
   it("writes the tenet as a preference between two good options", () => {
     const tenet = text(cards(section("narrowing"))[2]);
     assert.ok(tenet.includes("Customer delight over perfect cost management. When a choice could go either way, we lean toward the customer."));
     assert.match(tenet, /could reasonably (choose|pick) the other side/);
   });
 
-  // @spec MKT-SITE-105
+  // @spec ONB-SITE-105
   it("writes every requirement in an EARS pattern", () => {
     const lines = [section("narrowing"), section("change")]
       .flatMap((s) => [...s.matchAll(/<b>(TRIAL-\d{3})<\/b>: ([^\n]*)/g)].map((m) => text(m[2])));
@@ -216,14 +216,14 @@ describe("home page", () => {
     for (const line of lines) assert.match(line, ears);
   });
 
-  // @spec MKT-SITE-106
+  // @spec ONB-SITE-106
   it("opens the change explainer by owning the volume", () => {
     const head = text(section("change").match(/<header class="sec-head">[\s\S]*?<\/header>/)[0]);
     assert.match(head, /a lot to write down/);
     assert.match(head, /pays off when you change your mind/);
   });
 
-  // @spec MKT-SITE-107, MKT-SITE-103
+  // @spec ONB-SITE-107, ONB-SITE-103
   it("follows one change through four cards", () => {
     const c = cards(section("change"));
     assert.equal(c.length, 4);
@@ -233,7 +233,7 @@ describe("home page", () => {
     assert.match(text(c[3]), /TRIAL-003/);
   });
 
-  // @spec MKT-SITE-108
+  // @spec ONB-SITE-108
   it("shows the drafts as numbered options, with the reasons below", () => {
     const card = cards(section("change"))[2];
     const options = [...card.match(/<ol class="drafts">([\s\S]*?)<\/ol>/)[1].matchAll(/<li class="draft[^"]*"[^>]*>([\s\S]*?)<\/li>/g)].map((m) => text(m[1]));
@@ -246,14 +246,14 @@ describe("home page", () => {
     assert.match(why, /approve/);
   });
 
-  // @spec MKT-SITE-109
+  // @spec ONB-SITE-109
   it("changes only TRIAL-003", () => {
     const last = text(cards(section("change"))[3]);
     assert.match(last, /TRIAL-003: When the user's local time first reaches midnight after 720 hours from signup, the system shall end the trial\./);
     assert.match(last, /TRIAL-001 and TRIAL-002 still hold/);
   });
 
-  // @spec MKT-SITE-110, MKT-SITE-003
+  // @spec ONB-SITE-110, ONB-SITE-003
   it("plays the recording after the change explainer's cards", () => {
     const change = section("change");
     const steps = change.lastIndexOf("<!-- /step -->");
@@ -265,7 +265,7 @@ describe("home page", () => {
     assert.match(after, /each pause for review plays at full speed/);
   });
 
-  // @spec MKT-SITE-003, MKT-SITE-134
+  // @spec ONB-SITE-003, ONB-SITE-134
   it("embeds the committed recording of the change explainer's change", () => {
     const recordings = join(siteDir, "recordings");
     const log = JSON.parse(readFileSync(join(recordings, "cascade.take.json"), "utf8"));
@@ -279,13 +279,13 @@ describe("home page", () => {
     assert.equal(log.outcome.complete, true);
   });
 
-  // @spec MKT-SITE-112
+  // @spec ONB-SITE-112
   it("keeps each explainer's drawing in view", () => {
     assert.match(rule(".scrolly-fig"), /position:\s*sticky/);
     assert.match(css, /@media \(min-width: 900px\) \{\s*\.scrolly \{[^}]*grid-template-columns/);
   });
 
-  // @spec MKT-SITE-116, MKT-SITE-117
+  // @spec ONB-SITE-116, ONB-SITE-117
   it("reads in full and shows finished drawings without JavaScript", () => {
     for (const id of ["narrowing", "change"]) {
       const s = section(id);
@@ -299,7 +299,7 @@ describe("home page", () => {
     assert.match(section("change").match(/<svg[^>]*class="rings-svg"[\s\S]*?<\/svg>/)[0], /draft|TRIAL-003/);
   });
 
-  // @spec MKT-SITE-045, MKT-SITE-056
+  // @spec ONB-SITE-045, ONB-SITE-056
   it("shows one search finding the requirement, the test, and the code", () => {
     const check = section("check");
     const grep = text(check.match(/<pre class="grep">[\s\S]*?<\/pre>/)[0]);
@@ -308,7 +308,7 @@ describe("home page", () => {
     assert.match(text(check), /reviewer/);
   });
 
-  // @spec MKT-SITE-055
+  // @spec ONB-SITE-055
   it("keeps the verification claim bounded", () => {
     const claim = text(section("check"));
     assert.match(claim, /mechanical/);
@@ -317,7 +317,7 @@ describe("home page", () => {
     assert.doesNotMatch(claim, /just a walk/);
   });
 
-  // @spec MKT-SITE-038, MKT-SITE-042, MKT-SITE-043, MKT-SITE-061
+  // @spec ONB-SITE-038, ONB-SITE-042, ONB-SITE-043, ONB-SITE-061
   it("scales one feature's links up to the whole codebase", () => {
     const check = section("check");
     const dag = check.match(/<svg class="dag"[\s\S]*?<\/svg>/);
@@ -330,7 +330,7 @@ describe("home page", () => {
     assert.match(text(check), /what LID calls an arrow/);
   });
 
-  // @spec MKT-SITE-046, MKT-SITE-057, MKT-SITE-062, MKT-SITE-063, MKT-SITE-070
+  // @spec ONB-SITE-046, ONB-SITE-057, ONB-SITE-062, ONB-SITE-063, ONB-SITE-070
   it("says where your time goes, and the price", () => {
     const time = text(section("time"));
     assert.match(section("time"), /<h2[^>]*>Your time goes into the design\.<\/h2>/);
@@ -342,7 +342,7 @@ describe("home page", () => {
     assert.match(time, /tokens/);
   });
 
-  // @spec MKT-SITE-069
+  // @spec ONB-SITE-069
   it("keeps the one first-person sentence beside the price", () => {
     const time = section("time");
     assert.ok(time.includes('href="https://github.com/jszmajda/portfolio-tracker"'));
@@ -352,7 +352,7 @@ describe("home page", () => {
     for (const name of ["Examples", "Anti-patterns"]) assert.equal(firstPerson(html[name]), 0, name);
   });
 
-  // @spec MKT-SITE-022
+  // @spec ONB-SITE-022
   it("asks for nothing beyond install and use", () => {
     for (const page of Object.values(html)) {
       const main = page.match(/<main[\s\S]*<\/main>/)[0];
@@ -361,7 +361,7 @@ describe("home page", () => {
     }
   });
 
-  // @spec MKT-SITE-050
+  // @spec ONB-SITE-050
   it("surfaces the experimental plugin as opt-in, outside the core install", () => {
     const experimental = section("experimental");
     assert.match(experimental, /lid-experimental/);
@@ -370,7 +370,7 @@ describe("home page", () => {
     assert.doesNotMatch(section("quickstart"), /lid-experimental/);
   });
 
-  // @spec MKT-SITE-068
+  // @spec ONB-SITE-068
   it("states a claim in each persuasive heading", () => {
     const h2 = (id) => text(section(id).match(/<h2[^>]*>([\s\S]*?)<\/h2>/)[1]);
     assert.equal(h2("gap"), "A short request leaves the decisions to your agent.");
@@ -381,7 +381,7 @@ describe("home page", () => {
     assert.equal(h2("teams"), "Alignment is a pull request.");
   });
 
-  // @spec MKT-SITE-006, MKT-SITE-008, MKT-SITE-040, MKT-SITE-004
+  // @spec ONB-SITE-006, ONB-SITE-008, ONB-SITE-040, ONB-SITE-004
   it("keeps the Quickstart in step with the README", () => {
     const readme = readFileSync(join(siteDir, "..", "README.md"), "utf8");
     const commands = [...section("quickstart").matchAll(/<code>(\/[^<]+)<\/code>/g)].map((m) => m[1]);

@@ -85,7 +85,7 @@ The segment is a leaf; nothing downstream depends on it.
 ## References
 
 - `docs/high-level-design.md` — Goal 2 (minimum-system); Architecture § 3 (Distribution / third-party ecosystem); *Minimum-system discipline — the why*; Non-Goal *Not a factory*.
-- `docs/intent/marketing-site/marketing-site-design.md` — consumes the ecosystem as a trust signal (the social-proof framing).
+- `docs/intent/onboarding/marketing-site/marketing-site-design.md` — consumes the ecosystem as a trust signal (the social-proof framing).
 - `EXTENSIONS.md` — owned artifact.
 - `docs/intent/extensions/extensions-specs.md` — EARS specs for this component.
 - `EtaCassiopeia/lid-tooling` — canonical real-world example extension.

@@ -4,7 +4,7 @@ import markdownIt from "markdown-it";
 // Light syntax coloring for the Tour page's fenced code: diff lines in red and
 // green, and comments, strings, keywords, and numbers in TypeScript. Returning
 // an empty string hands any other language back to markdown-it's own escaping.
-// @spec MKT-SITE-075
+// @spec ONB-SITE-075
 function escapeHtml(text) {
   return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }

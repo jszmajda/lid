@@ -1,5 +1,5 @@
 schema_version: 2
-last_updated: 2026-11-11
+last_updated: 2026-11-15
 
 taxonomy:
   core:
@@ -8,14 +8,13 @@ taxonomy:
   experimental:
     - lid-experimental
   onboarding:
-    - marketing-site
+    - onboarding
+  repository:
     - project-structure
     - extensions
-    - tour
   tooling:
     - alt-model-evals
     - packaging-checks
-    - cascade-recording
 
 arrows:
   linked-intent-dev:
@@ -138,6 +137,18 @@ arrows:
     next: "Dogfood on real declared-depth changes (this repo, Threadkeeper); fork taxonomy accretes from real logs. Promotion bar in the LLD."
     drift: "13 of 13 EXP-DEPTH specs [x] (pure-prose experiment skill; dogfooding verification). No gaps."
 
+  onboarding:
+    status: MAPPED
+    children: [marketing-site, tour, cascade-recording]   # sub-HLD; no arrow doc — detail points to its design doc
+    sampled: 2026-11-15
+    audited: null
+    audited_sha: null
+    blocks: []
+    blockedBy: [linked-intent-dev, arrow-maintenance, lid-experimental, extensions]
+    detail: ../intent/onboarding/onboarding-design.md
+    next: null
+    drift: "New sub-HLD (2026-11-15): marketing-site, tour, and cascade-recording re-parented under it; their IDs moved from MKT-SITE, TOUR, and CASCADE-REC to ONB-SITE, ONB-TOUR, and ONB-REC. Holds the shared reader, voice, claims rule, the 30-day free-trial example, and the rule for content the site presents."
+
   marketing-site:
     status: AUDITED
     sampled: 2026-04-25
@@ -145,9 +156,10 @@ arrows:
     audited_sha: 65a143750760
     blocks: []
     blockedBy: [linked-intent-dev, arrow-maintenance, extensions, tour]
-    detail: marketing-site.md
-    next: "Close the 12 active MKT-SITE gaps (notably MKT-SITE-009 README/Quickstart cascade and the build-time checks -026/-027/-028/-029); reconcile the audited-SHA mismatch between marketing-site.md and this entry."
-    drift: "101 of 113 MKT-SITE specs [x]; 12 [ ] (build-time checks + process specs). The 2026-11 site refresh replaced the Logo Ideas page (MKT-SITE-083–098, removed) and the five-panel trace (MKT-SITE-039/041/047/048/049, removed) with the free-trial Home: the gap, two scrolling explainers over the rings drawing, check it yourself, and where your time goes (MKT-SITE-099–124, with the hero drawing set small beside the h1 on narrow screens in MKT-SITE-133), plus the Nodes visual identity and sticky navigation (MKT-SITE-125–132); MKT-SITE-007, -038, -045, -046, -055–057, -062–064, -067–069 re-homed to the new sections."
+    parent: onboarding
+    detail: onboarding/marketing-site.md
+    next: "Close the 12 active ONB-SITE gaps (notably ONB-SITE-009 README/Quickstart cascade and the build-time checks -026/-027/-028/-029); reconcile the audited-SHA mismatch between marketing-site.md and this entry."
+    drift: "101 of 113 ONB-SITE specs [x]; 12 [ ] (build-time checks + process specs). The 2026-11 site refresh replaced the Logo Ideas page (MKT-SITE-083–098, removed before the re-parent) and the five-panel trace (MKT-SITE-039/041/047/048/049, removed before the re-parent) with the free-trial Home: the gap, two scrolling explainers over the rings drawing, check it yourself, and where your time goes (ONB-SITE-099–124, with the hero drawing set small beside the h1 on narrow screens in ONB-SITE-133), plus the Nodes visual identity and sticky navigation (ONB-SITE-125–132); ONB-SITE-007, -038, -045, -046, -055–057, -062–064, -067–069 re-homed to the new sections."
 
   project-structure:
     status: AUDITED
@@ -178,9 +190,10 @@ arrows:
     audited_sha: null
     blocks: [marketing-site]
     blockedBy: [linked-intent-dev, arrow-maintenance, lid-experimental]
-    detail: tour.md
+    parent: onboarding
+    detail: onboarding/tour.md
     next: "Multi-model eval runs recorded in tested_with."
-    drift: "Landed with issue #84 in 1.4.3: 129 of 129 TOUR specs [x]. Smoke-run evals on claude-sonnet-5-5 at medium pass except core 6 (answer longer than asked) and map-codebase 2 (pre-1.2 fixture never redirects)."
+    drift: "Landed with issue #84 in 1.4.3: 129 of 129 ONB-TOUR specs [x]. Smoke-run evals on claude-sonnet-5-5 at medium pass except core 6 (answer longer than asked) and map-codebase 2 (pre-1.2 fixture never redirects)."
 
   alt-model-evals:
     status: MAPPED
@@ -211,9 +224,10 @@ arrows:
     audited_sha: null
     blocks: []
     blockedBy: [linked-intent-dev, marketing-site]
-    detail: cascade-recording.md
-    next: "When the LID skills change materially, make new takes, pick one, upload it, and replace site/recordings/cascade.cast, its log, and the home page embed (MKT-SITE-035)."
-    drift: "New leaf segment. 47 of 47 CASCADE-REC specs [x]; first published take 20261111-052857 (asciinema.org/a/lXapOyQCdrPq4ENe, 2:51)."
+    parent: onboarding
+    detail: onboarding/cascade-recording.md
+    next: "When the LID skills change materially, make new takes, pick one, upload it, and replace site/recordings/cascade.cast, its log, and the home page embed (ONB-SITE-035)."
+    drift: "New leaf segment. 47 of 47 ONB-REC specs [x]; first published take 20261111-052857 (asciinema.org/a/lXapOyQCdrPq4ENe, 2:51)."
 
 unmapped:
   docs:

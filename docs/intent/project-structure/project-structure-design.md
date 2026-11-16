@@ -235,7 +235,7 @@ The `packaging-checks` segment enforces this component's rules, so this segment'
 ## References
 
 - `docs/high-level-design.md` — Goal 2 (minimum-system); Goal 4 (dogfooding); Non-Goal *Not a linter or validator*; § Architecture / Methodology; § Architecture / Distribution; § Key Design Decisions / *The arrow for LID itself*; § Key Design Decisions / *Minimum-system discipline — the why*; § Key Design Decisions / *Cursor as a first-class plugin host*.
-- `docs/intent/marketing-site/marketing-site-design.md` — sibling component in the onboarding taxonomy bucket; owns `README.md`; defines the content-artifact verification pattern this LLD reuses.
+- `docs/intent/onboarding/marketing-site/marketing-site-design.md` — sibling component in the onboarding taxonomy bucket; owns `README.md`; defines the content-artifact verification pattern this LLD reuses.
 - `docs/intent/linked-intent-dev/linked-intent-dev-design.md` — defines the workflow `AGENTS.md` instantiates per-repo.
 - `docs/intent/project-structure/project-structure-specs.md` — EARS specs for this component.
 - `docs/intent/packaging-checks/packaging-checks-design.md` — the segment whose checks enforce this component's skill, command, version, CHANGELOG, and manifest rules, and whose workflow-doc assembly the release step runs.

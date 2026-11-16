@@ -322,9 +322,9 @@
       "prompt": "/update-lid",
       "files": [],
       "assertions": [
-        { "text": "The agent's first message opens with a card: a Markdown blockquote whose bold heading asks whether the person is new to LID", "spec_ids": ["TOUR-010", "TOUR-012", "TOUR-015", "LID-UPDATE-058"] },
-        { "text": "The card offers the word 'tour' for a walk-through inside the agent and gives the link linked-intent.dev/tour", "spec_ids": ["TOUR-012"] },
-        { "text": "Below the card, the same message carries on with the setup (the proposal, the mode question, or both). The agent does not stop after the card to wait for an answer about the tour", "spec_ids": ["TOUR-011", "LID-UPDATE-058"] }
+        { "text": "The agent's first message opens with a card: a Markdown blockquote whose bold heading asks whether the person is new to LID", "spec_ids": ["ONB-TOUR-010", "ONB-TOUR-012", "ONB-TOUR-015", "LID-UPDATE-058"] },
+        { "text": "The card offers the word 'tour' for a walk-through inside the agent and gives the link linked-intent.dev/tour", "spec_ids": ["ONB-TOUR-012"] },
+        { "text": "Below the card, the same message carries on with the setup (the proposal, the mode question, or both). The agent does not stop after the card to wait for an answer about the tour", "spec_ids": ["ONB-TOUR-011", "LID-UPDATE-058"] }
       ],
       "notes": "The newcomer tour's offer on the update-lid bootstrap route."
     },
@@ -351,12 +351,12 @@
         { "path": "CLAUDE.md", "content": "# Shelf\n\nA small app that tracks a reader's reading list.\n\n## Commands\n\n- `npm test` runs the tests.\n" }
       ],
       "assertions": [
-        { "text": "The agent's first message opens with a card: a Markdown blockquote whose bold heading asks whether the person is new to LID", "spec_ids": ["TOUR-010", "TOUR-012", "TOUR-015", "LID-UPDATE-058"] }
+        { "text": "The agent's first message opens with a card: a Markdown blockquote whose bold heading asks whether the person is new to LID", "spec_ids": ["ONB-TOUR-010", "ONB-TOUR-012", "ONB-TOUR-015", "LID-UPDATE-058"] }
       ],
       "follow_up": {
         "prompt": "yes",
         "assertions": [
-          { "text": "If the first message also asked a yes-or-no question (such as whether to apply the proposed setup), the reply asks in one short question whether 'yes' meant the tour or that question, instead of choosing one. If the first message asked no yes-or-no question, the reply starts the tour", "spec_ids": ["TOUR-112", "TOUR-016"] }
+          { "text": "If the first message also asked a yes-or-no question (such as whether to apply the proposed setup), the reply asks in one short question whether 'yes' meant the tour or that question, instead of choosing one. If the first message asked no yes-or-no question, the reply starts the tour", "spec_ids": ["ONB-TOUR-112", "ONB-TOUR-016"] }
         ]
       },
       "notes": "Appending LID directives to an existing instruction file is a setup route. update-lid proposes before it writes, so its first message usually ends with a yes-or-no question as well as the tour card."

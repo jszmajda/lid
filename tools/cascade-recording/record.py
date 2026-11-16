@@ -11,7 +11,7 @@ screen for each stop for review, and types a reply. Afterward it writes a
 second copy of the recording with the agent's working stretches shortened.
 The tool never uploads a recording.
 
-See docs/intent/cascade-recording/cascade-recording-design.md.
+See docs/intent/onboarding/cascade-recording/cascade-recording-design.md.
 """
 
 from __future__ import annotations
@@ -37,10 +37,10 @@ TRIAL_APP = HERE / "trial-app"
 SHELL_DIR = HERE / "shell"
 PLUGIN = REPO_ROOT / "plugins" / "linked-intent-dev"
 
-# @spec CASCADE-REC-003
+# @spec ONB-REC-003
 REQUEST = "End trials at midnight in each user's own time zone."
 
-# @spec CASCADE-REC-014, CASCADE-REC-023
+# @spec ONB-REC-014, ONB-REC-023
 # Each command follows a comment saying what it shows.
 OPENING = [("This app has LID set up. Its trial design says when a free trial ends:",
             'grep -A2 "## When the trial ends" docs/intent/trial/trial-design.md'),
@@ -56,7 +56,7 @@ CLOSING = [("The change reached every level: the design, the requirements, the t
 # before the command runs instead of after its output.
 LONG_OUTPUT = {"npm test"}
 
-# @spec CASCADE-REC-044
+# @spec ONB-REC-044
 # The asides typed into Claude Code's input box, by what the stop shows.
 ASIDES = {
     "recommendation": "(The HLD and its tenet still hold. Claude asks which midnight you mean, and recommends the one that never shortens a trial.)",
@@ -70,7 +70,7 @@ ASIDES = {
     "questions": "(Claude has follow-up questions and recommends an answer to each.)",
 }
 
-# @spec CASCADE-REC-019, CASCADE-REC-020, CASCADE-REC-021, CASCADE-REC-041
+# @spec ONB-REC-019, ONB-REC-020, ONB-REC-021, ONB-REC-041
 REPLIES = {
     "recommendation": "Go with your recommendation.",
     "recommendations": "Approved. Go with your recommendations.",
@@ -146,7 +146,7 @@ class TakeFailed(Exception):
 
 # ── Before recording ──────────────────────────────────────────────────────
 
-# @spec CASCADE-REC-008
+# @spec ONB-REC-008
 def missing_programs(which=shutil.which):
     return [name for name in PROGRAMS if not which(name)]
 
@@ -157,7 +157,7 @@ def mark_take_folder(folder):
     mark.write_text("Made by tools/cascade-recording/record.py\n")
 
 
-# @spec CASCADE-REC-009
+# @spec ONB-REC-009
 def prepare_take_folder(src, dest, install):
     """Copy the trial project to `dest`, install it, and commit the starting state."""
     src, dest = Path(src), Path(dest)
@@ -182,7 +182,7 @@ def memory_folder(take_dir, home):
     return Path(home) / ".claude" / "projects" / re.sub(r"[^A-Za-z0-9]", "-", str(Path(take_dir).resolve())) / "memory"
 
 
-# @spec CASCADE-REC-010
+# @spec ONB-REC-010
 def seed_memory(take_dir, home):
     """Leave only the tour's record in Claude Code's memory for the take folder."""
     folders = {memory_folder(take_dir, home),
@@ -199,7 +199,7 @@ def seed_memory(take_dir, home):
 
 # ── The recorded terminal ─────────────────────────────────────────────────
 
-# @spec CASCADE-REC-012, CASCADE-REC-013
+# @spec ONB-REC-012, ONB-REC-013
 def take_env(base, model, effort):
     """The recorded shell's whole environment."""
     env = {key: base[key] for key in ENV_KEYS if key in base}
@@ -209,7 +209,7 @@ def take_env(base, model, effort):
     return env
 
 
-# @spec CASCADE-REC-011
+# @spec ONB-REC-011
 def tmux_argv(take_dir, raw_cast, env):
     assignments = " ".join(shlex.quote("%s=%s" % item) for item in env.items())
     inner = "cd %s && exec env -i %s asciinema rec --quiet --overwrite --command 'zsh -i' %s" % (
@@ -286,7 +286,7 @@ def claude_ready(screen):
     return "❯" in screen and HINT not in screen
 
 
-# @spec CASCADE-REC-042
+# @spec ONB-REC-042
 def output_lines(screen, command):
     """How many non-blank lines `command` printed, from the screen after it ran."""
     lines = screen.splitlines()
@@ -301,7 +301,7 @@ def input_empty(screen):
     return not inputs or inputs[-1] == "❯"
 
 
-# @spec CASCADE-REC-015
+# @spec ONB-REC-015
 def keystroke_delay(char, base, rng):
     """How long a person waits after typing `char`."""
     delay = base * rng.uniform(0.5, 2.0)
@@ -327,7 +327,7 @@ def join_ids(ids):
     return ", ".join(ids[:-1]) + ", and " + ids[-1]
 
 
-# @spec CASCADE-REC-044
+# @spec ONB-REC-044
 def aside(reply, facts):
     """The one sentence typed before a reply, from what the tool can check."""
     changed, given = facts["changed"], facts["given"]
@@ -365,7 +365,7 @@ def aside(reply, facts):
     return ASIDES["review"]
 
 
-# @spec CASCADE-REC-019, CASCADE-REC-020, CASCADE-REC-021, CASCADE-REC-041
+# @spec ONB-REC-019, ONB-REC-020, ONB-REC-021, ONB-REC-041
 def choose_reply(changed, given, screen=""):
     if "specs" in changed and "handoff" not in given:
         return "handoff"
@@ -403,7 +403,7 @@ def parse_menu(screen):
     return cursor, options
 
 
-# @spec CASCADE-REC-040
+# @spec ONB-REC-040
 def choose_option(options):
     for number, text in options:
         if "(Recommended)" in text:
@@ -431,7 +431,7 @@ class Take:
     def now(self):
         return self.clock() - self.t0
 
-    # @spec CASCADE-REC-014, CASCADE-REC-023, CASCADE-REC-045
+    # @spec ONB-REC-014, ONB-REC-023, ONB-REC-045
     def run(self):
         self.watch(at_prompt, 0.5)
         for comment, command in OPENING:
@@ -459,7 +459,7 @@ class Take:
         self.shell(line)
         self.hold(line)
 
-    # @spec CASCADE-REC-042
+    # @spec ONB-REC-042
     def narrated(self, comment, command):
         """A comment and its command. A short output holds after it, so the
         viewer reads the comment and the output together; a long one holds
@@ -473,13 +473,13 @@ class Take:
         screen = self.shell(command)
         self.hold(line, min(self.opts.output_cap, self.opts.per_output_line * output_lines(screen, command)))
 
-    # @spec CASCADE-REC-042
+    # @spec ONB-REC-042
     def hold(self, text, extra=0.0):
         start = self.now()
         self.sleep(self.opts.hold_base + len(text) / self.opts.read_rate + extra)
         self.log["pauses"].append([round(start, 3), round(self.now(), 3)])
 
-    # @spec CASCADE-REC-043
+    # @spec ONB-REC-043
     def say(self, text):
         """Type an aside into Claude Code's input box, hold it, and clear it unsent."""
         self.type_text(text)
@@ -490,7 +490,7 @@ class Take:
             if input_empty(self.term.screen()):
                 break
 
-    # @spec CASCADE-REC-024, CASCADE-REC-025, CASCADE-REC-026
+    # @spec ONB-REC-024, ONB-REC-025, ONB-REC-026
     def check(self, screen):
         if TRUST.search(screen):
             raise TakeFailed("Claude Code asked whether to trust the folder; run `claude` once in %s, "
@@ -513,8 +513,8 @@ class Take:
                 return screen
             self.sleep(self.opts.poll)
 
-    # @spec CASCADE-REC-015
-    # @spec CASCADE-REC-028
+    # @spec ONB-REC-015
+    # @spec ONB-REC-028
     def type_text(self, text):
         start = self.now()
         for char in text:
@@ -530,7 +530,7 @@ class Take:
         self.type_line(command)
         return self.watch(at_prompt, 0.5)
 
-    # @spec CASCADE-REC-017, CASCADE-REC-028
+    # @spec ONB-REC-017, ONB-REC-028
     def await_stop(self):
         """Wait for the agent to work and then stop; log the working stretch."""
         began = self.clock()
@@ -557,18 +557,18 @@ class Take:
             self.log["stretches"].append([round(start - self.t0, 3), round(end - self.t0, 3)])
         return screen
 
-    # @spec CASCADE-REC-018, CASCADE-REC-030
+    # @spec ONB-REC-018, ONB-REC-030
     def reading_pause(self):
         self.wait(self.opts.reading_pause)
 
-    # @spec CASCADE-REC-045
+    # @spec ONB-REC-045
     def wait(self, seconds):
         """Hold the screen still, logged as a reading pause so retiming keeps it."""
         start = self.now()
         self.sleep(seconds)
         self.log["pauses"].append([round(start, 3), round(self.now(), 3)])
 
-    # @spec CASCADE-REC-016, CASCADE-REC-022, CASCADE-REC-026
+    # @spec ONB-REC-016, ONB-REC-022, ONB-REC-026
     def converse(self):
         stops = 0
         while True:
@@ -593,7 +593,7 @@ class Take:
             self.last = reply
 
 
-    # @spec CASCADE-REC-040
+    # @spec ONB-REC-040
     def choose(self, screen):
         """Answer a menu of options with the arrow keys and Enter."""
         cursor, options = parse_menu(screen)
@@ -627,12 +627,12 @@ def total(events):
     return sum(event[0] for event in events)
 
 
-# @spec CASCADE-REC-029, CASCADE-REC-030, CASCADE-REC-031, CASCADE-REC-032, CASCADE-REC-033
+# @spec ONB-REC-029, ONB-REC-030, ONB-REC-031, ONB-REC-032, ONB-REC-033
 def retime(header, events, log, opts):
     """Change only the delays between events: shorten working stretches, keep
     reading pauses, and cap every other gap."""
     stretches = [(a, b, min(1.0, opts.stretch_limit / (b - a)) if b > a else 1.0) for a, b in log["stretches"]]
-    # @spec CASCADE-REC-046
+    # @spec ONB-REC-046
     stretches += [(a, b, 1.0 / opts.typing_speed) for a, b in log.get("typing", [])]
     pauses = [(a, b) for a, b in log["pauses"]]
     bounds = sorted({x for a, b, _ in stretches for x in (a, b)} | {x for p in pauses for x in p})
@@ -664,7 +664,7 @@ def retime(header, events, log, opts):
     return new_header, out
 
 
-# @spec CASCADE-REC-047
+# @spec ONB-REC-047
 def poster(raw_events, retimed_events, log):
     """The first whole second after the request was sent, in the retimed recording, as npt:M:SS."""
     if log.get("request_typed") is None:
@@ -680,7 +680,7 @@ def poster(raw_events, retimed_events, log):
     return "npt:%d:%02d" % (whole // 60, whole % 60)
 
 
-# @spec CASCADE-REC-034
+# @spec ONB-REC-034
 def length_report(seconds):
     whole = int(round(seconds))
     report = "Retimed length %d:%02d (%d seconds)." % (whole // 60, whole % 60, whole)
@@ -703,14 +703,14 @@ def lid_version():
     return json.loads((PLUGIN / ".claude-plugin" / "plugin.json").read_text())["version"]
 
 
-# @spec CASCADE-REC-037
+# @spec ONB-REC-037
 def take_log(opts, claude_version):
     return {"started": datetime.datetime.now().isoformat(timespec="seconds"),
             "claude_code_version": claude_version, "model": opts.model, "effort": opts.effort,
             "lid_version": lid_version(), "request": REQUEST, "take_dir": opts.take_dir}
 
 
-# @spec CASCADE-REC-027, CASCADE-REC-036
+# @spec ONB-REC-027, ONB-REC-036
 def finish(folder, log, opts, diff):
     """Write the take's diff, retimed recording, and log; return the exit status."""
     folder = Path(folder)
@@ -734,7 +734,7 @@ def finish(folder, log, opts, diff):
     return 1
 
 
-# @spec CASCADE-REC-035
+# @spec ONB-REC-035
 def retime_take(folder, opts):
     folder = Path(folder)
     log = json.loads((folder / "take.json").read_text())
@@ -770,7 +770,7 @@ def stop_recording(term):
     term.tmux("kill-server")
 
 
-# @spec CASCADE-REC-039
+# @spec ONB-REC-039
 def record_take(opts):
     missing = missing_programs()
     if missing:

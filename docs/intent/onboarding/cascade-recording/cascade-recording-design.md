@@ -1,13 +1,13 @@
 ---
-parent: high-level-design
-prefix: CASCADE-REC
+parent: onboarding
+prefix: ONB-REC
 ---
 
 # Cascade Recording
 
 ## Context and Design Philosophy
 
-The home page follows one 30-day free trial from a request to code, and then follows a change of mind about it, "End trials at midnight in each user's own time zone.", through every level (marketing-site § Page: Home). Right after those cards, the page plays a terminal recording of Claude Code making that same change with LID installed (MKT-SITE-003, MKT-SITE-110). The recording is the cards' claim happening in a real session, so it has to show the same project, the same files, and the same change.
+The home page follows one 30-day free trial from a request to code (the example the `onboarding` sub-HLD defines for all its children, `docs/intent/onboarding/onboarding-design.md` § *The Shared Example*), and then follows a change of mind about it, "End trials at midnight in each user's own time zone.", through every level (marketing-site § Page: Home). Right after those cards, the page plays a terminal recording of Claude Code making that same change with LID installed (ONB-SITE-003, ONB-SITE-110). The recording is the cards' claim happening in a real session, so it has to show the same project, the same files, and the same change.
 
 A recording made by hand carries whatever the maintainer's terminal carries: shell startup messages, a themed prompt, typing mistakes, and the agent's full working time, which runs several minutes for a change through four levels. It also leaves the project changed, so the next take starts somewhere else. This tool makes every take the same way. It copies the same starting project, opens a clean terminal of a fixed size, types the same request, gives the same reply at each review stop, and afterward shortens the stretches where the agent is working, so the finished recording runs two to three minutes. Along the way it narrates in the terminal, one sentence at each step, because a viewer meeting LID for the first time can't tell what a command shows or read what Claude Code wrote in the seconds a recording gives them.
 
@@ -121,7 +121,7 @@ The tool uses Python's standard library and calls tmux, asciinema, git, npm, and
 ## Cascade
 
 - **The home page's example changes** (marketing-site): when a card's quoted file text or the change request changes, the trial project and the request a take types change in the same change, and the test that compares them keeps the two in step.
-- **The LID skills change materially** (MKT-SITE-035): the maintainer makes new takes, picks one, uploads it, and updates the committed recording and the home page's embed.
+- **The LID skills change materially** (ONB-SITE-035): the maintainer makes new takes, picks one, uploads it, and updates the committed recording and the home page's embed.
 - **Claude Code's screen changes**: the hint the tool watches for is the tool's one dependency on how Claude Code draws its screen. When it changes, the tool's stop detection follows, and a take that never sees the hint fails at its time limit rather than recording a broken session.
 
 ## Decisions & Alternatives
@@ -159,6 +159,6 @@ The tool uses Python's standard library and calls tmux, asciinema, git, npm, and
 ## References
 
 - `docs/high-level-design.md` § Key Design Decisions / *The arrow for LID itself* (content artifacts).
-- `docs/intent/marketing-site/marketing-site-design.md` § Page: Home (the explainers and the recording), § Asciinema, and § Change management.
-- `docs/intent/tour/tour-design.md`: the newcomer tour and its record in the agent's memory.
+- `docs/intent/onboarding/marketing-site/marketing-site-design.md` § Page: Home (the explainers and the recording), § Asciinema, and § Change management.
+- `docs/intent/onboarding/tour/tour-design.md`: the newcomer tour and its record in the agent's memory.
 - `plugins/linked-intent-dev/skills/update-lid/references/agents-md-template.md`: the LID directives the trial project's instruction file carries.

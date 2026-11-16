@@ -26,7 +26,7 @@ const moduleSource = readFileSync(join(dirname(fileURLToPath(import.meta.url)), 
 const steps = (card) => card.map(([, state]) => state);
 
 describe("pacing", () => {
-  // @spec MKT-SITE-113
+  // @spec ONB-SITE-113
   it("follows the last card whose top has passed the line", () => {
     assert.equal(activeCard([900, 1200, 1500], 500), -1, "no card has reached the line");
     assert.equal(activeCard([300, 700, 1100], 500), 0);
@@ -35,7 +35,7 @@ describe("pacing", () => {
     assert.deepEqual(BEFORE.change, finalState(NARROWING[NARROWING.length - 1]), "the change explainer starts where narrowing ends");
   });
 
-  // @spec MKT-SITE-114
+  // @spec ONB-SITE-114
   it("plays a card's steps once and cancels what's left when the card changes", () => {
     const pending = new Map();
     let next = 0;
@@ -53,7 +53,7 @@ describe("pacing", () => {
     assert.deepEqual(applied, [CHANGE[2][0][1]]);
   });
 
-  // @spec MKT-SITE-115
+  // @spec ONB-SITE-115
   it("goes straight to each card's final state under reduced motion", () => {
     for (const card of [...NARROWING, ...CHANGE]) {
       const p = plan(card, true);
@@ -64,7 +64,7 @@ describe("pacing", () => {
     assert.deepEqual(plan(CHANGE[3], false), CHANGE[3]);
   });
 
-  // @spec MKT-SITE-118
+  // @spec ONB-SITE-118
   it("listens only to scrolling and stores nothing", () => {
     const events = [...moduleSource.matchAll(/addEventListener\(\s*["'](\w+)["']/g)].map((m) => m[1]);
     assert.ok(events.length > 0);
@@ -74,7 +74,7 @@ describe("pacing", () => {
 });
 
 describe("what each card shows", () => {
-  // @spec MKT-SITE-119
+  // @spec ONB-SITE-119
   it("rounds every ring by a fifth of its shorter side", () => {
     for (const card of [...NARROWING, ...CHANGE]) {
       for (const state of steps(card)) {
@@ -85,7 +85,7 @@ describe("what each card shows", () => {
     }
   });
 
-  // @spec MKT-SITE-120
+  // @spec ONB-SITE-120
   it("names each level only once its card has", () => {
     const shown = NARROWING.map((card) => labelsFor(finalState(card)));
     assert.deepEqual(shown[0], []);
@@ -97,7 +97,7 @@ describe("what each card shows", () => {
     assert.deepEqual([...new Set(drafts)], ["draft 1", "draft 2"]);
   });
 
-  // @spec MKT-SITE-121
+  // @spec ONB-SITE-121
   it("stops ruling programs out while a level is in question", () => {
     const loose = finalState(CHANGE[0]);
     assert.deepEqual(loose.recheck, ["lld", "e1", "e2", "e3"]);
@@ -110,7 +110,7 @@ describe("what each card shows", () => {
     assert.ok(reopened.length > 10, "programs inside the re-checked rings brighten again");
   });
 
-  // @spec MKT-SITE-122
+  // @spec ONB-SITE-122
   it("checks each level that holds and crosses out draft 1", () => {
     const end = finalState(CHANGE[3]);
     assert.deepEqual([...end.checked].sort(), ["e1", "e2", "e3", "hld", "lld", "tenet"]);
@@ -120,7 +120,7 @@ describe("what each card shows", () => {
     assert.ok(finalState(CHANGE[2]).checked.includes("lld"), "the approved design is checked");
   });
 
-  // @spec MKT-SITE-123
+  // @spec ONB-SITE-123
   it("follows the @spec link before TRIAL-003 moves, then fails, then passes", () => {
     const seq = steps(CHANGE[3]);
     const lit = seq.findIndex((s) => s.thread === 2);
@@ -131,7 +131,7 @@ describe("what each card shows", () => {
     assert.equal(seq[lit].target ?? 0, 0);
   });
 
-  // @spec MKT-SITE-124
+  // @spec ONB-SITE-124
   it("leaves one program once the test holds", () => {
     const dots = makeDots();
     const before = classify(finalState(NARROWING[4]), dots);
@@ -142,7 +142,7 @@ describe("what each card shows", () => {
 });
 
 describe("the static drawing", () => {
-  // @spec MKT-SITE-111, MKT-SITE-117
+  // @spec ONB-SITE-111, ONB-SITE-117
   it("renders a described SVG, with or without labels", () => {
     const state = finalState(NARROWING[5]);
     const unlabeled = renderStatic(state, { labels: false, uid: "t1", title: "Rings", desc: "A field of programs." });
