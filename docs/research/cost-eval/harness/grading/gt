@@ -10,6 +10,8 @@ Usage:
   gt reset                                               restart the service on empty data, keeping the clock
   gt restore <setup>                                     restore a named setup's data and starting clock
   gt run '<command>'                                     run a setup command that the reference names
+  gt file <name> '<content>'                             write a file the service can read (an import manifest, say);
+                                                         prints its path, which you then give to the command or request
   gt mark '<text>'                                       write a marker line in the log
   gt snapshot <setup>                                    save the current data as a named setup (setup sessions only)
 """
@@ -72,6 +74,8 @@ def main(a):
         show(call(cmd, {"name": rest[0]}))
     elif cmd == "run" and len(rest) == 1:
         show(call("run", {"command": rest[0]}))
+    elif cmd == "file" and len(rest) == 2:
+        show(call("file", {"name": rest[0], "content": rest[1]}))
     elif cmd == "mark" and len(rest) == 1:
         show(call("mark", {"text": rest[0]}))
     else:

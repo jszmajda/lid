@@ -33,6 +33,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 FAKETIME_LIB = os.environ.get("FAKETIME_LIB", "/usr/lib/aarch64-linux-gnu/faketime/libfaketime.so.1")
 CLOCK_FILE = os.environ.get("CLOCK_FILE", "/clock/faketime")
+# Files a grader writes for the service to read, such as an import manifest. Beside the data, so restores keep them.
+FIXTURES_DIR = os.environ.get("FIXTURES_DIR", "/cfg/fixtures")
 MAX_BODY = 200_000
 
 
@@ -326,6 +328,17 @@ def make_handler(service: Service, log_path: str, admin_token: str, state: dict)
                         out = service.snapshot(str(req.get("name", "")))
                 elif op == "run":
                     out = service.run(str(req.get("command", "")))
+                elif op == "file":
+                    name = os.path.basename(str(req.get("name", "")))
+                    if not name or name.startswith("."):
+                        out = {"ok": False, "error": "give a plain file name, such as records.json"}
+                    else:
+                        os.makedirs(FIXTURES_DIR, exist_ok=True)
+                        path = os.path.join(FIXTURES_DIR, name)
+                        data = str(req.get("content", "")).encode()
+                        with open(path, "wb") as f:
+                            f.write(data)
+                        out = {"ok": True, "path": path, "bytes": len(data)}
                 elif op == "mark":
                     out = {"ok": True}
                 else:

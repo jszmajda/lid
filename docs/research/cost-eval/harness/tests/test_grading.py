@@ -164,10 +164,11 @@ class JudgmentTest(unittest.TestCase):
         self.assertIn('"seq": 5', text)
 
     def test_long_response_bodies_are_cut_for_the_judge(self):
-        line = {"seq": 9, "op": "http", "request": {}, "response": {"status": 200, "body": "x" * 9000}}
+        n = grading.MAX_JUDGE_BODY
+        line = {"seq": 9, "op": "http", "request": {}, "response": {"status": 200, "body": "x" * (n + 3000)}}
         text = grading.log_for_judge([line])
         self.assertIn("[cut: 3000 more characters]", text)
-        self.assertLess(len(text), 7000)
+        self.assertLess(len(text), n + 1000)
 
     def test_verdicts_must_cover_every_probe_and_cite_real_lines(self):
         ps = grading.parse_probes(PROBES).probes[:1]

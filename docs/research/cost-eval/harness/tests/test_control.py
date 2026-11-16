@@ -63,7 +63,7 @@ class ControlTest(unittest.TestCase):
                 "ready_path": "/", "setup_commands": [f"{sys.executable} load.py"]}
         (cls.tmp / "spec.json").write_text(json.dumps(spec))
         env = dict(os.environ, CLOCK_FILE=str(cls.tmp / "clock" / "faketime"), FAKETIME_LIB="/nonexistent",
-                   CONTROL_ADMIN_TOKEN="secret")
+                   CONTROL_ADMIN_TOKEN="secret", FIXTURES_DIR=str(cls.tmp / "fixtures"))
         cls.log = cls.tmp / "log" / "exec.jsonl"
         cls.proc = subprocess.Popen([sys.executable, str(GRADING / "control.py"), "--spec", str(cls.tmp / "spec.json"),
                                      "--port", str(cls.port), "--log", str(cls.log), "--snapshots", str(cls.tmp / "snap"),
@@ -133,6 +133,12 @@ class ControlTest(unittest.TestCase):
         self.assertIn("multipart/form-data", out)
         self.assertIn('filename=\\"upload-7.txt\\"', out)
         self.assertIn("dear sir", out)
+
+    def test_a_grader_can_write_a_file_for_the_service_but_only_in_the_fixtures_folder(self):
+        out = json.loads(self.gt("file", "../../escape.json", '[{"title": "Marigold"}]'))
+        self.assertEqual(out["path"], str(self.tmp / "fixtures" / "escape.json"))
+        self.assertEqual((self.tmp / "fixtures" / "escape.json").read_text(), '[{"title": "Marigold"}]')
+        self.assertIn("plain file name", self.gt("file", ".hidden", "x"))
 
     def test_only_named_setup_commands_run(self):
         self.assertIn("loaded", self.gt("run", f"{sys.executable} load.py"))

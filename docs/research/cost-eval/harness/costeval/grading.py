@@ -34,7 +34,7 @@ PROMPTS = HERE / "prompts"
 TOOLS = HERE / "grading"
 VERDICTS = ("met", "not met", "couldn't exercise")
 DEFERRED_NEEDS = ("prior-data", "prior-observations")
-MAX_JUDGE_BODY = 6000  # characters of one response body the judge sees; the full log stays on disk  # not implemented yet; such probes are reported as not run
+MAX_JUDGE_BODY = 20000  # characters of one response body the judge sees; the full log stays on disk  # not implemented yet; such probes are reported as not run
 
 
 # ---------------------------------------------------------------------------------------------- the probes
