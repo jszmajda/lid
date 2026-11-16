@@ -8,6 +8,6 @@ for d in ../runs/s2-*/grading/change-*; do
   [ -f $d/rejudge-v4.json ] && continue
   echo "$PY rejudge.py --id $t --change $c --model claude-sonnet-5-5 --name v4 > ../runs/stage2/rejudge-$t-$c.log 2>&1"
 done | xargs -P 2 -I CMD sh -c CMD
-$PY grade_checkpoint.py --id s2-cheap-discipline-5 --change 2 --workers 2 > ../runs/stage2/grade-s2-cheap-discipline-5-2.log 2>&1
-$PY grade_checkpoint.py --id s2-positive-control-2 --change 10 --workers 2 > ../runs/stage2/grade-s2-positive-control-2-10.log 2>&1
+
+
 echo "rejudge done"

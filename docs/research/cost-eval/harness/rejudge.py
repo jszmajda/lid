@@ -31,16 +31,18 @@ def main(argv=None) -> int:
     ap.add_argument("--seed", default="benchtime")
     args = ap.parse_args(argv)
     gdir = HERE.parent / "runs" / args.id / "grading" / f"change-{args.change:02d}"
-    probes = {p.id: p for p in grading.parse_probes((HERE.parent / "seeds" / args.seed / "hidden" / "probes.md").read_text()).probes}
+    probeset = grading.parse_probes((HERE.parent / "seeds" / args.seed / "hidden" / "probes.md").read_text())
+    probes = {p.id: p for p in probeset.probes}
     original = json.loads((gdir / "verdicts.json").read_text())["probes"]
     g = grading.Graders(image=IMAGE, roles_volume="ce-roles-cfg", claude_code="2.1.323", judge_model=args.model)
 
     def one(bdir: Path):
-        batch = [probes[h[3:].strip()] for h in (bdir / "probes.md").read_text().splitlines() if h.startswith("## ")]
+        batch = [probes[h[3:].strip()] for h in (bdir / "probes.md").read_text().splitlines()
+                 if h.startswith("## ") and h[3:].strip() in probes]  # skip the conventions heading
         lines = [json.loads(l) for l in (bdir / "log.jsonl").read_text().splitlines() if l.strip()]
         out = bdir / f"rejudge-{args.name}"
         out.mkdir(exist_ok=True)
-        return grading.judge_batch(g, batch, lines, out)
+        return grading.judge_batch(g, batch, lines, out, conventions=probeset.setup_notes)
 
     new: dict[str, dict] = {}
     with cf.ThreadPoolExecutor(max_workers=4) as pool:

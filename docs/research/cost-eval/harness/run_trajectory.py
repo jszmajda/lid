@@ -42,7 +42,7 @@ def diagnose(trajectory: str, n: int, change: simulator.Change, seed: str, name:
         return "inconclusive"
     name = name or f"diagnostic-{n:02d}"
     rc = subprocess.run([sys.executable, str(HERE / "grade_checkpoint.py"), "--id", trajectory, "--change", str(n - 1),
-                         "--probes", ",".join(ids), "--out-name", name, "--workers", "1"]).returncode
+                         "--seed", seed, "--probes", ",".join(ids), "--out-name", name, "--workers", "1"]).returncode
     path = HERE.parent / "runs" / trajectory / "grading" / name / "verdicts.json"
     if rc != 0 or not path.exists():
         return "inconclusive"
