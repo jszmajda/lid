@@ -4,7 +4,7 @@ The conversion and orientation surface — the five-page Eleventy site at `site/
 
 ## Status
 
-**AUDITED** — last audited 2026-06-07 (git SHA `527cf08c9150`); refreshed 2026-06-09 during the attestation and copy-effectiveness cascades, and 2026-06-11 for the portfolio-tracker exemplar cascade (`ONB-SITE-016` reframed to three lenses; `ONB-SITE-065`/`-066` added and implemented — Examples third card, Start Evaluating mention), and 2026-11-09 for the site refresh (Nodes logo, Linked list look, Home rebuilt around the free-trial example and the rings drawing; Logo Ideas page and the five-panel trace removed), and 2026-11-11 for the cascade recording (the recording now shows the change explainer's own change in the `cascade-recording` segment's trial project; `ONB-SITE-003` rewritten for the new scenario, `ONB-SITE-110` re-headed, `ONB-SITE-134` added for the committed cast, which records the asciinema.org address it was uploaded to). 101 of 113 specs implemented; 12 active gaps, concentrated in build-time checks (link strictness, mermaid, a11y contrast), README/Quickstart cascade behaviors, and process specs (`ONB-SITE-033`–`036`). Added this cycle: the attestation story beat (`ONB-SITE-055`–`059`), and the copy-effectiveness pass (`ONB-SITE-060`–`064` — pain-first hero lede, show-then-name vocabulary rule, not-a-waterfall statement, cost-honesty passage, and the Home Teams section between demo and Quickstart; `ONB-SITE-007` ordering amended accordingly). Re-parented under the `onboarding` sub-HLD on 2026-11-15: its IDs moved from `MKT-SITE-*` to `ONB-SITE-*`, with every citation rewritten in the same change.
+**AUDITED** — last audited 2026-06-07 (git SHA `527cf08c9150`); refreshed 2026-06-09 during the attestation and copy-effectiveness cascades, and 2026-06-11 for the portfolio-tracker exemplar cascade (`ONB-SITE-016` reframed to three lenses; `ONB-SITE-065`/`-066` added and implemented — Examples third card, Start Evaluating mention), and 2026-11-09 for the site refresh (Nodes logo, Linked list look, Home rebuilt around the free-trial example and the rings drawing; Logo Ideas page and the five-panel trace removed), and 2026-11-11 for the cascade recording (the recording now shows the change explainer's own change in the `cascade-recording` segment's trial project; `ONB-SITE-003` rewritten for the new scenario, `ONB-SITE-110` re-headed, `ONB-SITE-134` added for the committed cast, which records the asciinema.org address it was uploaded to). 101 of 113 specs implemented; 12 active gaps, concentrated in build-time checks (link strictness, mermaid, a11y contrast), README/Quickstart cascade behaviors, and process specs (`ONB-SITE-033`–`036`). Added this cycle: the attestation story beat (`ONB-SITE-055`–`059`), and the copy-effectiveness pass (`ONB-SITE-060`–`064` — pain-first hero lede, show-then-name vocabulary rule, not-a-waterfall statement, cost-honesty passage, and the Home Teams section between demo and Quickstart; `ONB-SITE-007` ordering amended accordingly). Re-parented under the `onboarding` sub-HLD on 2026-11-15: its IDs moved from `MKT-SITE-*` to `ONB-SITE-*`, with every citation rewritten in the same change. On 2026-11-16 the Examples pages moved to the new `examples-showcase` segment: `ONB-SITE-013`–`016` and `065` were removed, `ONB-SITE-021` now allows showcased projects merged by pull request and nothing else from outside, and `ONB-SITE-069`'s receipt links the Examples page. 97 of 108 specs implemented; 11 active gaps.
 
 ## References
 
@@ -18,7 +18,7 @@ The conversion and orientation surface — the five-page Eleventy site at `site/
 - `docs/intent/onboarding/marketing-site/marketing-site-design.md`
 
 ### EARS
-- `docs/intent/onboarding/marketing-site/marketing-site-specs.md` (113 specs, prefix `ONB-SITE-*`)
+- `docs/intent/onboarding/marketing-site/marketing-site-specs.md` (108 specs, prefix `ONB-SITE-*`)
 
 ### Tests / Build checks
 - Build-time structural checks (link-check, mermaid render, markdown lint) — declared in the LLD § *Content Maintenance and Review*; CI workflow scope per `ONB-SITE-*` build specs.
@@ -39,7 +39,7 @@ The conversion and orientation surface — the five-page Eleventy site at `site/
 **Key Components:**
 1. **Home** — hero (question, framing, the still rings drawing) → the gap (the free-trial request) → narrowing explainer → change explainer and cascade recording → check it yourself (grep + DAG) → where your time goes and the price → Teams → Quickstart → experimental → ecosystem → four path links. The rings drawing comes from `site/src/assets/js/rings.js`, rendered static at build time (`site/src/_data/rings.js`) and animated in the browser.
 2. **Start** — audience-path orientation (evaluating / greenfield / brownfield / scoped), each ~150 words.
-3. **Examples** — three cards: `examples/urlshort/` (clean, minimal), portfolio-tracker (complete, end-to-end), and Threadkeeper (messy, real).
+3. **Examples** — owned by the `examples-showcase` segment; this segment provides its navigation, look, build, and copy register.
 4. **Anti-patterns** — honest list of when LID is the wrong choice.
 5. **Tour** — the newcomer tour's steps and topics, rendered from the `tour` segment's files.
 

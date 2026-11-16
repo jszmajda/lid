@@ -5,64 +5,70 @@ eleventyNavigation:
   key: Examples
   order: 3
 permalink: /examples/
-description: Three example LID projects — one small and clean, one complete and end-to-end, one real and messy — plus the repository itself as the canonical mature example.
+description: Projects built with Linked-Intent Development, each with its intent tree drawn out and the story of how it was built.
 ---
 
-<!-- @spec ONB-SITE-013, ONB-SITE-014, ONB-SITE-015, ONB-SITE-016, ONB-SITE-065, ONB-SITE-068 -->
+<!-- @spec ONB-SHOWCASE-001, ONB-SHOWCASE-002, ONB-SITE-068 -->
+{% macro picture(e) %}
+  {%- if e.pictures.length %}<img src="/examples/{{ e.slug }}/{{ e.pictures[0].file }}" alt="{{ e.pictures[0].alt }}" loading="lazy">
+  {%- else %}{{ e.drawing.svg | safe }}{% endif -%}
+{% endmacro %}
+{% macro body(e) %}
+  <p class="kicker"><span>{{ e.project }}</span> · {{ e.date | showcaseDate }}{% if e.size %} <span class="size">{{ e.size }}</span>{% endif %}</p>
+  <h2><a href="/examples/{{ e.slug }}/">{{ e.story.title if e.story else e.project }}</a></h2>
+  <p class="by">{{ e.credit }}</p>
+  <p class="teaser">{{ e.tagline }}</p>
+  {% if e.stats.length %}<ul class="facts">{% for s in e.stats.slice(0, 3) %}<li>{{ s[0] }}: {{ s[1] }}</li>{% endfor %}</ul>{% endif %}
+  <p class="where"><a href="/examples/{{ e.slug }}/">Read more <span class="ptr" aria-hidden="true"></span></a> <span class="muted">· {{ "Open source" if e.open_source else "Code private" }}</span></p>
+{% endmacro %}
 <div class="page wrap">
 
-    <header class="page-head">
-        <h1>Three projects. Two you can grep today.</h1>
-        <p class="lede">
-          One example is small, clean, intent-only — try to regenerate the code from the docs alone. One is a complete, working project — the whole chain from design through tests to code, public and clonable. And one is real, long-running, and messier than any pedagogical example could honestly be. Three lenses; they answer different questions.
-        </p>
-    </header>
+  <header class="page-head">
+    <h1>People are building very different things with LID.</h1>
+    <p class="lede">
+      A desktop written in days. A game its owner never read the code of. A tax tracker whose arithmetic is proven. A journal app well into its second year. Each project has a page here with its intent tree drawn out, and a link to the story of how it was built.
+    </p>
+  </header>
 
-    <div class="example-grid">
+  <!-- @spec ONB-SHOWCASE-003, ONB-SHOWCASE-004, ONB-SHOWCASE-005, ONB-SHOWCASE-006, ONB-SHOWCASE-007, ONB-SHOWCASE-008, ONB-SHOWCASE-013, ONB-SHOWCASE-014 -->
+  {% if examples.featured %}{% set f = examples.featured %}
+  <article class="node feature">
+    <a class="feature-thumb{% if not f.pictures.length %} is-tree{% endif %}" href="/examples/{{ f.slug }}/" tabindex="-1" aria-hidden="true">{{ picture(f) }}</a>
+    <div class="feature-body">{{ body(f) }}</div>
+  </article>
+  {% endif %}
 
-      <article class="node example-card">
-        <span class="tag">Clean · minimal · 5-minute read</span>
-        <h2>URL shortener</h2>
-        <p>
-          A deliberately small fictional project. HLD, a handful of LLDs, EARS specs — no implementation. The challenge: hand the docs to a fresh agent and ask it to build the system. Run it twice and you may get two languages — when docs are the source of truth, code is output.
-        </p>
-        <div class="foot">
-          <a class="readmore" href="{{ site.repoUrl }}/tree/main/examples/urlshort">Browse <code>examples/urlshort/</code></a>
-          <p class="muted">Ships in the repo alongside the plugins.</p>
+  <div class="story-grid">
+    {% for e in examples.rest %}
+    <article class="node story">
+      <a class="story-thumb{% if not e.pictures.length %} is-tree{% endif %}" href="/examples/{{ e.slug }}/" tabindex="-1" aria-hidden="true">{{ picture(e) }}</a>
+      <div class="story-body">{{ body(e) }}</div>
+    </article>
+    {% endfor %}
+  </div>
+
+  <!-- @spec ONB-SHOWCASE-009, ONB-SHOWCASE-010, ONB-SHOWCASE-011 -->
+  <section class="sec-sm" id="whole-tree" aria-labelledby="whole-tree-heading">
+    <h2 class="h2-sm" id="whole-tree-heading">Read a whole tree</h2>
+    <div class="ref-grid">
+      {% for r in examples.references %}
+      <a class="node ref" href="{{ r.href }}">
+        <div class="ref-thumb">{{ r.drawing.svg | safe }}</div>
+        <div>
+          <h3>{{ r.title }} <span class="ptr" aria-hidden="true"></span></h3>
+          <p class="ref-sentence">{{ r.sentence }}</p>
+          <p class="facts-line">{{ r.total | commas }} specs · {{ r.docs | commas }} design docs · {{ r.size }}</p>
         </div>
-      </article>
-
-      <article class="node example-card">
-        <span class="tag">Complete · real · end-to-end</span>
-        <h2>Portfolio-tracker</h2>
-        <p>
-          A real, public project built with LID end-to-end: an HLD, eleven LLDs, 350 EARS specs, and the tests and code that cite them. A CI gate makes the linkage mechanical — the build fails unless every spec is cited by at least one test and every citation resolves to a defined spec. The linkage the home page describes, enforced in public.
-        </p>
-        <div class="foot">
-          <a class="readmore" href="https://github.com/jszmajda/portfolio-tracker">Browse portfolio-tracker</a>
-          <p class="muted">Start with the README's guided tour — five files, read in order, from one design doc down to the CI gate that binds it.</p>
-        </div>
-      </article>
-
-      <article class="node example-card">
-        <span class="tag">Messy · real · instructive</span>
-        <h2>Threadkeeper</h2>
-        <p>
-          A working project that has used LID for months. The LLDs are striated — multiple generations, uneven coherence, the honest shape any living system acquires. A stress test for cascade discipline, and evidence of how LID ages under real conditions.
-        </p>
-        <div class="foot">
-          <a class="readmore" href="https://threadkeeper.app/">Visit threadkeeper.app</a>
-          <p class="muted">The live product is at threadkeeper.app. Internal design docs aren't public, but the shape of the project shows LID at work over time.</p>
-        </div>
-      </article>
-
+      </a>
+      {% endfor %}
     </div>
+  </section>
 
-    <aside class="node epilogue" aria-labelledby="meta-heading">
-      <h2 id="meta-heading">And LID itself.</h2>
-      <p>
-        This whole repository is <a href="{{ site.repoUrl }}">LID applied to LID</a>. The <a href="{{ site.repoUrl }}/blob/main/docs/high-level-design.md">HLD</a>, the <a href="{{ site.repoUrl }}/tree/main/docs/intent">LLDs</a>, the <a href="{{ site.repoUrl }}/blob/main/docs/intent/marketing-site/marketing-site-specs.md">EARS specs</a> — all live in <code>docs/</code>, traceable to the plugin code under <code>plugins/</code>. If LID could not describe itself, LID would be broken. It describes itself.
-      </p>
-    </aside>
+  <!-- @spec ONB-SHOWCASE-012 -->
+  <aside class="node epilogue" aria-labelledby="add-heading">
+    <h2 id="add-heading">Built something with LID? Add it here.</h2>
+    <p>Open a pull request that adds one folder: a short entry, a screenshot or two, and your intent tree's shape, which one script writes for you. Bring your story to host here, or link to it where it already lives. Private projects are welcome: we show only what you choose, and your tree can go without its names.</p>
+    <p><a class="btn btn-ghost" href="{{ site.repoUrl }}/blob/main/CONTRIBUTING.md#share-a-project-you-built">How to add your project</a></p>
+  </aside>
 
 </div>

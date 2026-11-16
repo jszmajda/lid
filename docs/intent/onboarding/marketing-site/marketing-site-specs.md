@@ -85,7 +85,7 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 - `[x]` **ONB-SITE-063**: The section on where the reader's time goes SHALL name the discipline's costs concretely — per-change review of design, specs, and tests before code; reading that shifts toward design diffs; additional agent tokens spent maintaining linkage — framed as a trade the reader can evaluate, and SHALL NOT present LID as cost-free.
 - `[x]` **ONB-SITE-067**: The gap section SHALL state why the reader's existing checks miss intent drift: green tests cannot catch a misreading on their own, because an agent writes its tests from the same guess as its code.
 - `[x]` **ONB-SITE-068**: Persuasive headings — the h2s of the gap, the narrowing explainer, the change explainer, the check-it-yourself section, the section on where the reader's time goes, and Teams, plus the Examples and Anti-patterns page h1s — SHALL each state a claim that traces to a mechanism or artifact shown on the page; the Home h1 is the sanctioned exception, an interrogative naming the intent-gap doubt (ONB-SITE-001). Navigational headings (Quickstart, entry paths, experimental, ecosystem, the Start page) MAY merely orient. Metaphor SHALL NOT lead a persuasive heading.
-- `[x]` **ONB-SITE-069**: Site copy SHALL contain exactly one authorial first-person sentence, placed with the price passage on the home page, carrying verifiable receipts — a link to the portfolio-tracker exemplar (~63k lines of Rust, ~350 specs, a CI gate that fails the build on uncited specs) and the breadth clause that LID runs on projects beyond the author's own — and the author's name SHALL appear in the site footer. First-person authorial voice SHALL NOT appear anywhere else on the site.
+- `[x]` **ONB-SITE-069**: Site copy SHALL contain exactly one authorial first-person sentence, placed with the price passage on the home page, carrying verifiable receipts — a link to the Examples page, where the author's own projects show their intent trees, and the breadth clause that LID runs on projects beyond the author's own — and the author's name SHALL appear in the site footer. First-person authorial voice SHALL NOT appear anywhere else in the site's own copy; hosted stories, which are their authors' words, are not site copy.
 - `[x]` **ONB-SITE-070**: Site copy SHALL name the discipline's cost "the price" wherever the cost is referenced, on every page.
 - `[x]` **ONB-SITE-071**: Site copy SHALL contain at most two "X, not Y" antithesis constructions across all pages.
 
@@ -101,14 +101,6 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 - `[x]` **ONB-SITE-066**: The Start page's Evaluating section SHALL mention portfolio-tracker as a clonable example of the full arrow (design through `@spec`-cited tests and the CI coverage gate), with a link to the repository.
 - `[x]` **ONB-SITE-052**: The Start page SHALL surface `/lid-coach` — the core `linked-intent-dev` plugin's principle-review skill — within the audience-path narratives (at minimum the Evaluating path), framed as a tool for reviewing an already-running LID project against the methodology's principles, with a link to the skill's source in the repository. The site SHALL NOT add `/lid-coach` to the Home Quickstart command list or give it its own audience-path section, since it is neither an install step nor an audience path.
 
-## Examples Page
-
-- `[x]` **ONB-SITE-013**: When a user loads the Examples page, the site SHALL link to the `examples/urlshort/` intent-only example in the repository.
-- `[x]` **ONB-SITE-014**: Where the threadkeeper project is publicly linkable with maintainer permission, the Examples page SHALL link to it as a long-running real-world case study.
-- `[ ]` **ONB-SITE-015**: If threadkeeper is not publicly linkable, the Examples page SHALL describe its nature (long-running, striated, real) without linking, rather than omit the case-study signal entirely.
-- `[x]` **ONB-SITE-016**: The Examples page SHALL frame the three examples as complementary lenses — urlshort as "clean, minimal, 5-minute read"; portfolio-tracker as "complete, real, end-to-end"; threadkeeper as "messy, real, instructive."
-- `[x]` **ONB-SITE-065**: When a user loads the Examples page, the site SHALL link to the portfolio-tracker repository (`github.com/jszmajda/portfolio-tracker`) as a complete public project built with LID end-to-end — design tree, EARS specs, `@spec`-cited tests, and code — naming its CI coverage gate (the build fails unless every spec is cited by at least one test and every citation resolves to a defined spec) as the public enforcement of the linkage the site describes.
-
 ## Anti-patterns Page
 
 - `[x]` **ONB-SITE-017**: When a user loads the Anti-patterns page, the site SHALL present at least three scenarios in which LID is the wrong choice.
@@ -118,7 +110,7 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 
 - `[x]` **ONB-SITE-019**: The site SHALL contain exactly five top-level pages: Home, Start, Examples, Anti-patterns, Tour.
 - `[x]` **ONB-SITE-020**: When a user visits any top-level page, the site SHALL provide navigation to the other four top-level pages and to the GitHub repository.
-- `[x]` **ONB-SITE-021**: The site SHALL NOT contain community features — forums, comments, user-submitted content, newsletter signups.
+- `[x]` **ONB-SITE-021**: The site SHALL NOT contain forums, comment threads, discussion features, or newsletter signups, and SHALL NOT accept content from outside the repository other than showcased projects merged by pull request.
 - `[x]` **ONB-SITE-022**: The site SHALL NOT contain calls-to-action beyond "install and use."
 - `[ ]` **ONB-SITE-023**: The site SHALL NOT duplicate content from the README beyond the orientation material needed for an evaluator to decide whether to click through to it.
 - `[x]` **ONB-SITE-058**: Anywhere on the onboarding surface (site pages and the repository README), attestation copy SHALL present linkage as the mechanism that makes verification cheap; it SHALL NOT claim that agent-written code is trustworthy by virtue of LID, and SHALL NOT present traceability as a compliance guarantee.

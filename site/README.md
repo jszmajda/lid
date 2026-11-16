@@ -4,8 +4,9 @@ The conversion and orientation surface for Linked-Intent Development. Deep docs 
 
 **Intent anchors (read these before editing content):**
 
-- `../docs/llds/marketing-site.md` — LLD, including structure, tone, and decisions
-- `../docs/specs/marketing-site-specs.md` — EARS specs (ONB-SITE-001 through 037)
+- `../docs/intent/onboarding/onboarding-design.md` — the `onboarding` sub-HLD the site belongs to
+- `../docs/intent/onboarding/marketing-site/marketing-site-design.md` and `marketing-site-specs.md` — the site (`ONB-SITE-*`)
+- `../docs/intent/onboarding/examples-showcase/examples-showcase-design.md` and `examples-showcase-specs.md` — the Examples pages and the entries in `src/examples/` (`ONB-SHOWCASE-*`)
 - `../docs/high-level-design.md` — HLD (§ Target Users, § Goals 3 and 5)
 
 ## Preview locally

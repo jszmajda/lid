@@ -14,6 +14,7 @@ This document is a **sub-HLD**: an HLD-shaped node in LID's design tree that own
 - **`marketing-site`** (`docs/intent/onboarding/marketing-site/marketing-site-design.md`, segment `ONB-SITE`): the website and the repository README.
 - **`tour`** (`docs/intent/onboarding/tour/tour-design.md`, segment `ONB-TOUR`): the short introduction LID offers inside the agent, and its topics.
 - **`cascade-recording`** (`docs/intent/onboarding/cascade-recording/cascade-recording-design.md`, segment `ONB-REC`): the repository tool that records the home page's cascade demo.
+- **`examples-showcase`** (`docs/intent/onboarding/examples-showcase/examples-showcase-design.md`, segment `ONB-SHOWCASE`): the site's showcase of projects built with LID, the entry format they arrive in, and the drawing of their intent trees.
 
 The node roots the `ONB` prefix, so `grep ONB` gathers the whole subtree. Terms like *arrow*, *segment*, *cascade*, and *sub-HLD* are defined in the HLD's Glossary.
 
@@ -49,7 +50,7 @@ The tour walks this example through its opening steps; the home page traces it t
 
 ## Content the Site Presents
 
-The site is onboarding's web surface, and it presents content that other segments own. The `tour` segment's steps and topics are the first case: the site's build reads them from the tour's own files and renders them as a page. The rule for every such case is the same: **the owning segment owns the words and their claims; the site owns the route, the navigation, the layout, and the look.** The site never edits or paraphrases content it presents, and its own copy register does not apply to that content. Material for practitioners, when it arrives, follows the same rule from wherever it lives.
+The site is onboarding's web surface, and it presents content that other segments own. The `tour` segment's steps and topics are the first case: the site's build reads them from the tour's own files and renders them as a page. A showcased project's story is another: its author owns its words, and the site presents it. The rule for every such case is the same: **the owning segment owns the words and their claims; the site owns the route, the navigation, the layout, and the look.** The site never edits or paraphrases content it presents, and its own copy register does not apply to that content. Material for practitioners, when it arrives, follows the same rule from wherever it lives.
 
 ## Component Map
 
@@ -58,6 +59,7 @@ The site is onboarding's web surface, and it presents content that other segment
 | `marketing-site` | `ONB-SITE` | The site's pages, navigation, look, and build, and the repository README. Owns `docs/intent/onboarding/marketing-site/marketing-site-specs.md`. |
 | `tour` | `ONB-TOUR` | The introduction offered inside the agent: the offer, the five steps, the topics, and the notes. Owns `docs/intent/onboarding/tour/tour-specs.md`. |
 | `cascade-recording` | `ONB-REC` | The tool that records the home page's cascade demo in a trial project that matches the page. Owns `docs/intent/onboarding/cascade-recording/cascade-recording-specs.md`. |
+| `examples-showcase` | `ONB-SHOWCASE` | The showcase's index, project pages, and hosted stories; the entry format and tree file; the tree drawing and the counter that measures a tree; the pull-request route projects arrive by. Owns `docs/intent/onboarding/examples-showcase/examples-showcase-specs.md`. |
 
 ## Cascade
 

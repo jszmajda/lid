@@ -57,6 +57,9 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 - `[x]` **PROJ-STRUCT-018**: `CONTRIBUTING.md` SHALL describe a PR-description shape oriented to what reviewers find useful in practice: the motivation and impact, what changed, how the change was tested, and a lightweight statement of the arrow segments and EARS IDs touched (or that the change is trivial). It SHALL present the minimum-surface gate answers, cross-segment pause points, and dogfooding scenarios as items to include when the change involves them, rather than as a fixed checklist required of every PR. `.github/PULL_REQUEST_TEMPLATE.md` embodies this shape (`PROJ-STRUCT-053`).
 - `[x]` **PROJ-STRUCT-070**: `CONTRIBUTING.md` SHALL give the command that runs the packaging checks and SHALL state that every pull request records, in its *Packaging checks* line, the result line of a run on its final commit, and merges only when every part of that run is *pass* or *skipped*; on a contributor's pull request the run that gates the merge is the maintainer's, after the version is raised (the run itself is specified in `PKG-CHECK`).
 
+- `[x]` **PROJ-STRUCT-087**: `CONTRIBUTING.md` SHALL carry a section titled "Share a project you built" that points to the example pull-request template (`.github/PULL_REQUEST_TEMPLATE/example.md`), names the `?template=example.md` URL parameter that selects it, and links to the `examples-showcase` design doc for the entry format.
+- `[x]` **PROJ-STRUCT-088**: The "Share a project you built" section of `CONTRIBUTING.md` SHALL state that a pull request adding one showcase entry is content within the `examples-showcase` segment's existing design, walks no arrow, and needs no *Packaging checks* line from the contributor, because the maintainer records it.
+
 ## AGENTS.md and CLAUDE.md
 
 - `[x]` **PROJ-STRUCT-019**: An `AGENTS.md` file SHALL exist at the repository root and SHALL be the canonical source of per-repo agent instructions.
@@ -168,6 +171,8 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 - `[x]` **PROJ-STRUCT-051**: `.github/ISSUE_TEMPLATE/` SHALL provide an intent-proposal issue form whose sections are Context/Problem, Proposed change, Acceptance criteria, Scope & non-goals, Intent touchpoints (LID), and Related — where Intent touchpoints maps the change to the design docs, specs, and prefix it lands in and flags novel intent — and a separate, lighter bug/drift report form. Neither form SHALL auto-apply labels.
 - `[x]` **PROJ-STRUCT-052**: `.github/ISSUE_TEMPLATE/config.yml` SHALL route open-ended questions to GitHub Discussions via a contact link rather than to issues.
 - `[x]` **PROJ-STRUCT-053**: A `.github/PULL_REQUEST_TEMPLATE.md` file SHALL exist presenting, in order, the change's motivation and impact, what changed, how it was tested, a *Packaging checks* line for the result line of the run the merge rests on, a lightweight statement of the arrow segments and EARS IDs touched (or that the change is trivial), and optional reviewer notes. It SHALL NOT require the full minimum-surface / dogfooding / pause-point checklist on every PR (see `PROJ-STRUCT-018`).
+
+- `[x]` **PROJ-STRUCT-089**: The default pull-request template SHALL remain `.github/PULL_REQUEST_TEMPLATE.md`, alongside the example template in `.github/PULL_REQUEST_TEMPLATE/`.
 
 ## Superseded
 

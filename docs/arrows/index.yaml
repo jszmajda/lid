@@ -1,5 +1,5 @@
 schema_version: 2
-last_updated: 2026-11-15
+last_updated: 2026-11-16
 
 taxonomy:
   core:
@@ -139,7 +139,7 @@ arrows:
 
   onboarding:
     status: MAPPED
-    children: [marketing-site, tour, cascade-recording]   # sub-HLD; no arrow doc — detail points to its design doc
+    children: [marketing-site, tour, cascade-recording, examples-showcase]   # sub-HLD; no arrow doc — detail points to its design doc
     sampled: 2026-11-15
     audited: null
     audited_sha: null
@@ -159,7 +159,19 @@ arrows:
     parent: onboarding
     detail: onboarding/marketing-site.md
     next: "Close the 12 active ONB-SITE gaps (notably ONB-SITE-009 README/Quickstart cascade and the build-time checks -026/-027/-028/-029); reconcile the audited-SHA mismatch between marketing-site.md and this entry."
-    drift: "101 of 113 ONB-SITE specs [x]; 12 [ ] (build-time checks + process specs). The 2026-11 site refresh replaced the Logo Ideas page (MKT-SITE-083–098, removed before the re-parent) and the five-panel trace (MKT-SITE-039/041/047/048/049, removed before the re-parent) with the free-trial Home: the gap, two scrolling explainers over the rings drawing, check it yourself, and where your time goes (ONB-SITE-099–124, with the hero drawing set small beside the h1 on narrow screens in ONB-SITE-133), plus the Nodes visual identity and sticky navigation (ONB-SITE-125–132); ONB-SITE-007, -038, -045, -046, -055–057, -062–064, -067–069 re-homed to the new sections."
+    drift: "97 of 108 ONB-SITE specs [x]; 11 [ ] (build-time checks + process specs). 2026-11-16: the Examples pages moved to the examples-showcase segment (ONB-SITE-013-016 and -065 removed; -021 now allows only showcased projects merged by pull request; -069 receipt links the Examples page). 101 of 113 ONB-SITE specs [x]; 12 [ ] (build-time checks + process specs). The 2026-11 site refresh replaced the Logo Ideas page (MKT-SITE-083–098, removed before the re-parent) and the five-panel trace (MKT-SITE-039/041/047/048/049, removed before the re-parent) with the free-trial Home: the gap, two scrolling explainers over the rings drawing, check it yourself, and where your time goes (ONB-SITE-099–124, with the hero drawing set small beside the h1 on narrow screens in ONB-SITE-133), plus the Nodes visual identity and sticky navigation (ONB-SITE-125–132); ONB-SITE-007, -038, -045, -046, -055–057, -062–064, -067–069 re-homed to the new sections."
+
+  examples-showcase:
+    status: MAPPED
+    parent: onboarding
+    sampled: 2026-11-16
+    audited: null
+    audited_sha: null
+    blocks: [marketing-site]
+    blockedBy: [project-structure]
+    detail: onboarding/examples-showcase.md
+    next: "Redeploy the site when docs/intent/ changes, so LID's reference tree drawing never lags."
+    drift: "New leaf segment. 93 of 93 ONB-SHOWCASE specs [x]. First entries: compost, Clowder, portfolio-tracker, Threadkeeper. Replaces the three-card Examples page (ONB-SITE-013-016, -065, removed)."
 
   project-structure:
     status: AUDITED

@@ -345,7 +345,11 @@ describe("home page", () => {
   // @spec ONB-SITE-069
   it("keeps the one first-person sentence beside the price", () => {
     const time = section("time");
-    assert.ok(time.includes('href="https://github.com/jszmajda/portfolio-tracker"'));
+    const receipt = time.match(/<p>[^<]*\bI\b[\s\S]*?<\/p>/)[0];
+    assert.ok(receipt.includes('href="/examples/"'), "the receipt links to the Examples page");
+    assert.match(text(receipt), /intent trees/);
+    assert.match(text(receipt), /aren't mine/);
+    assert.doesNotMatch(text(receipt), /largest|63k/);
     const firstPerson = (page) => text(page.match(/<main[\s\S]*<\/main>/)[0]).split(/(?<=[.!?])\s+/).filter((s) => /\bI\b/.test(s)).length;
     assert.equal(firstPerson(html.Home), 1);
     // The Start page's path headings ("I'm evaluating.") are the reader's voice, which the design doc allows.
