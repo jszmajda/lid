@@ -5,8 +5,11 @@
 The fork gets a new workspace holding a clean checkout of the trajectory's commit after change `at` (files git
 ignores, such as a virtualenv, aren't carried over, the same for every arm and age), a fresh configuration volume,
 and the owner as it stood after that change. The probe runs as one change, with the arm's usual first prompt, under
-the trajectory's model, effort, and policy. Records go to ../runs/<id>-probe<at>-<fork>/; the original trajectory
-is untouched.
+the trajectory's model, effort, policy, and owner model. Records go to ../runs/<id>-probe<at>-<fork>/; the original
+trajectory is untouched.
+
+The owner's draws are keyed on --replicate, by default the trajectory's replicate with the fork number appended, so
+fork n of every arm in a replicate shares draws and repeated forks of one trajectory don't.
 """
 
 from __future__ import annotations
@@ -15,6 +18,7 @@ import argparse
 import json
 import subprocess
 import sys
+from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -31,6 +35,8 @@ def main(argv=None) -> int:
     ap.add_argument("--at", type=int, required=True, help="fork from the checkpoint after this change")
     ap.add_argument("--fork", type=int, required=True, help="the fork's number, for repeated runs from one checkpoint")
     ap.add_argument("--lid-repo", type=Path, default=None)
+    ap.add_argument("--replicate", default=None, help="the seed the owner's draws are keyed on (default: the "
+                                                      "trajectory's replicate, then -probe-fork-<n>)")
     args = ap.parse_args(argv)
     base_dir = HERE.parent / "runs" / args.id
     base = json.loads((base_dir / "trajectory.json").read_text())
@@ -60,6 +66,12 @@ def main(argv=None) -> int:
         trajectory.install_lid(IMAGE, cfg_vol, repo, arm.lid_release)
 
     oracle = simulator.parse_oracle((seed_dir / "hidden" / "oracle.md").read_text(encoding="utf-8"))
+    items_path = seed_dir / "hidden" / "owner-items.json"
+    owner_items = simulator.load_owner_items(items_path, oracle)
+    replicate = args.replicate or f"{base.get('replicate', args.id)}-probe-fork-{args.fork}"
+    if "owner_model_config" not in base:
+        print(f"{args.id} recorded no owner model (it predates one); the probe uses the central values")
+    owner_model = simulator.OwnerModel.from_config(base.get("owner_model_config"))
     brief = (seed_dir / "brief.md").read_text(encoding="utf-8")
     change = simulator.parse_probe(script_path.read_text(encoding="utf-8"), args.at)
     role = executor.RoleSession(image=IMAGE, config_volume=ROLES_VOLUME, model=base["owner_model"],
@@ -73,16 +85,18 @@ def main(argv=None) -> int:
             return r.structured
         return run
 
-    owner = simulator.Owner(oracle=oracle, brief=brief, policy=base["policy"], seed=fid,
-                            ask=call(simulator.schema_json()), trim=call(simulator.trim_schema_json()))
+    owner = simulator.Owner(oracle=oracle, brief=brief, policy=base["policy"], replicate=replicate,
+                            ask=call(simulator.schema_json()), trim=call(simulator.trim_schema_json()),
+                            model=owner_model, owner_items=owner_items)
     trajectory.restore_owner_state(owner, json.loads(state_path.read_text()))
     session = executor.ContainerSession(image=IMAGE, workspace_volume=ws_vol, config_volume=cfg_vol, model=base["model"],
                                         claude_code_version=CLAUDE_CODE, expected_plugins=frozenset(arm.plugins),
                                         effort=base["effort"], plugin_dirs=arm.plugin_dirs)
     meta = {"id": fid, "fork_of": args.id, "at": args.at, "commit": commit, "arm": arm.name, "seed": base["seed"],
             "model": base["model"], "effort": base["effort"], "policy": base["policy"], "owner_model": base["owner_model"],
+            "replicate": replicate, "owner_model_config": asdict(owner_model),
             "lid_release": arm.lid_release, "started": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-            "hashes": {**base["hashes"], "change_script_now": sha256(script_path)},
+            "hashes": {**base["hashes"], "change_script_now": sha256(script_path), "owner_items_now": sha256(items_path)},
             "volumes": {"workspace": ws_vol, "config": cfg_vol}, "changes": {}}
 
     def turn(prompt, stream_path, *, resume=None, permission_mode="bypassPermissions"):

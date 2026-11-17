@@ -1,10 +1,17 @@
 """Run one arm's trajectory through a seed's changes, or continue one that stopped.
 
-    ../plumbing/with-token.sh python3.12 run_trajectory.py --arm bare --id t-bare-1 --changes 0,1,2
+    ../plumbing/with-token.sh python3.12 run_trajectory.py --arm bare --id t-bare-1 --changes 0,1,2 \\
+        --replicate r1 --owner-model-config '{"scope": "stop"}'
 
 Records go to ../runs/<id>/, which git ignores: they hold the seed's hidden oracle in the owner's prompts, so they
 stay private until the runs that use the seed are finished. The arm's workspace and configuration live in Docker
 volumes named after the trajectory (ce-<id>-ws and ce-<id>-cfg); its commits are the checkpoints.
+
+--replicate is the seed every owner draw is keyed on, shared by the trajectories being compared (each arm and policy
+in a replicate, and a redirect's paired runs); it defaults to the trajectory ID. --owner-model-config picks the
+owner's attention and recall constants: a preset ("central" or "pilot"), a JSON object of settings (with an optional
+"preset"), or a path to a JSON file holding one. Both are recorded in trajectory.json. The seed's
+hidden/owner-items.json must give every askable item a tier and recall line.
 """
 
 from __future__ import annotations
@@ -15,6 +22,7 @@ import json
 import subprocess
 import sys
 import time
+from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -30,6 +38,24 @@ ROLES_VOLUME = "ce-roles-cfg"
 
 def sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def owner_model_from_arg(value: str | None) -> simulator.OwnerModel:
+    """--owner-model-config: nothing (the design's central values), a preset name, a JSON object, or a JSON file."""
+    if not value:
+        return simulator.OwnerModel()
+    if value in simulator.OWNER_MODEL_PRESETS:
+        return simulator.OwnerModel.from_config({"preset": value})
+    text = value if value.lstrip().startswith("{") else Path(value).read_text(encoding="utf-8")
+    config = json.loads(text)
+    if not isinstance(config, dict):
+        raise ValueError("the owner model config must be a JSON object")
+    return simulator.OwnerModel.from_config(config)
+
+
+def replicate_from_args(trajectory_id: str, replicate: str | None) -> str:
+    """The replicate seed: as given, or the trajectory ID, which reproduces runs made before replicates existed."""
+    return replicate or trajectory_id
 
 
 def diagnose(trajectory: str, n: int, change: simulator.Change, seed: str, name: str | None = None) -> str:
@@ -67,14 +93,22 @@ def main(argv=None) -> int:
     ap.add_argument("--round-cap", type=int, default=trajectory.ROUND_CAP)
     ap.add_argument("--turn-timeout", type=int, default=3600)
     ap.add_argument("--lid-repo", type=Path, default=None, help="a LID checkout with release tags (default: this one)")
+    ap.add_argument("--replicate", default=None, help="the seed the owner's draws are keyed on (default: the trajectory ID)")
+    ap.add_argument("--owner-model-config", default=None,
+                    help="the owner's attention and recall constants: a preset (central, pilot), a JSON object, or a JSON file")
     args = ap.parse_args(argv)
 
     if not all(c.isalnum() or c == "-" for c in args.id):
         ap.error("--id may hold only letters, digits and dashes")
+    try:
+        owner_model = owner_model_from_arg(args.owner_model_config)
+    except (ValueError, OSError) as e:
+        ap.error(f"--owner-model-config: {e}")
+    replicate = replicate_from_args(args.id, args.replicate)
     seed_dir = HERE.parent / "seeds" / args.seed
     oracle_path, script_path, brief_path = seed_dir / "hidden" / "oracle.md", seed_dir / "hidden" / "change-script.md", seed_dir / "brief.md"
+    items_path = seed_dir / "hidden" / "owner-items.json"
     out = HERE.parent / "runs" / args.id
-    out.mkdir(parents=True, exist_ok=True)
     arm = trajectory.load_arm(args.arm)
     ws_vol, cfg_vol = f"ce-{args.id}-ws", f"ce-{args.id}-cfg"
     meta_path, state_path = out / "trajectory.json", out / "owner-state.json"
@@ -82,18 +116,22 @@ def main(argv=None) -> int:
     oracle = simulator.parse_oracle(oracle_path.read_text(encoding="utf-8"))
     script = simulator.parse_change_script(script_path.read_text(encoding="utf-8"))
     brief = brief_path.read_text(encoding="utf-8")
+    owner_items = simulator.load_owner_items(items_path, oracle)  # every askable item needs one: no default
+    out.mkdir(parents=True, exist_ok=True)
     meta = {
         "id": args.id, "arm": arm.name, "seed": args.seed, "model": args.model, "effort": args.effort,
         "claude_code": CLAUDE_CODE, "image": IMAGE, "policy": args.policy, "owner_model": args.owner_model,
+        "replicate": replicate, "owner_model_config": asdict(owner_model),
         "lid_release": arm.lid_release, "round_cap": args.round_cap, "neutral_sentence": trajectory.NEUTRAL_SENTENCE,
         "hashes": {"brief": sha256(brief_path), "oracle": sha256(oracle_path), "change_script": sha256(script_path),
-                   "simulator_template": sha256(simulator.TEMPLATE_PATH), "trim_template": sha256(simulator.TRIM_TEMPLATE_PATH)},
+                   "owner_items": sha256(items_path), "simulator_template": sha256(simulator.TEMPLATE_PATH),
+                   "trim_template": sha256(simulator.TRIM_TEMPLATE_PATH)},
         "volumes": {"workspace": ws_vol, "config": cfg_vol},
     }
     workspace = trajectory.DockerWorkspace(IMAGE, ws_vol)
     if meta_path.exists():
         old = json.loads(meta_path.read_text())
-        for k in ("arm", "seed", "model", "effort", "policy", "hashes"):
+        for k in ("arm", "seed", "model", "effort", "policy", "replicate", "owner_model_config", "hashes"):
             if old.get(k) != meta.get(k):
                 ap.error(f"trajectory {args.id} exists with a different {k}: {old.get(k)!r}")
         meta = old
@@ -125,7 +163,8 @@ def main(argv=None) -> int:
         owner_costs.append(r.usage.reported_cost_usd or 0.0)
         return r.structured
 
-    owner = simulator.Owner(oracle=oracle, brief=brief, policy=args.policy, seed=args.id, ask=ask, trim=trim)
+    owner = simulator.Owner(oracle=oracle, brief=brief, policy=args.policy, replicate=meta["replicate"], ask=ask, trim=trim,
+                            model=simulator.OwnerModel.from_config(meta["owner_model_config"]), owner_items=owner_items)
     if state_path.exists():
         trajectory.restore_owner_state(owner, json.loads(state_path.read_text()))
 

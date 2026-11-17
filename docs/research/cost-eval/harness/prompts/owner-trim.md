@@ -10,7 +10,7 @@ Below is the agent's message, then the owner's draft reply in numbered parts. Ea
 
 For each part:
 
-- An **answer** keeps only what answers its question. A broad question, such as "any edge cases about X?", is answered only by what is about X itself: delete anything about what happens afterwards, on failure, or in other situations, unless it is about X.
+- An **answer** keeps only what answers its question.
 - A **correction** keeps only what replaces the agent's words that it quotes, or supplies the missing thing it names. Delete the rest of the rule: its other clauses, its exact boundaries, its exceptions, and anything about neighbouring situations.
 - A clause that starts with "including", "also", "even", "still", "unless", "whatever", "or if", or "not only", and a consequence that starts with "so" ("so one already under way still counts"), usually add a case the agent didn't raise. Delete them unless the question or the quoted words mention that case.
 - A list of the things a rule covers, such as "(opening hours, delivery area, payment, …)", keeps only the entries the question names or the quoted words got wrong.

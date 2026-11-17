@@ -17,7 +17,7 @@ Sort each request into one kind:
 - **acknowledgement:** no decision is requested. The owner only has to say go ahead: "Here's the plan. Proceed?", "Done, all tests pass."
 - **lookup:** the owner states something it knows. The answer is a rule marked Stated or Askable, or something its own words say plainly.
 - **judgment:** the owner chooses between options the agent sets out, and the right option is a rule marked Recognized on sight, or isn't covered by any rule or the owner's own words.
-- **origination:** the owner has to work out intent nobody has stated. The answer is a rule marked Recognized on sight that the agent didn't offer as an option, or nothing the owner knows covers it and the agent offered no options.
+- **origination:** the owner has to work out intent nobody has stated. The answer is a rule marked Recognized on sight that the agent didn't offer as an option, or nothing the owner knows covers it and the agent offered no options. A broad question, one that asks for anything the agent hasn't named ("anything else I should know?", "any other edge cases?", "anything about cancellations?"), is origination whatever the owner's rules say about its topic.
 - **completion report:** the agent reports the change done. Count it once per report, whatever else it contains, and count any real questions in it separately.
 
 An approval request counts as acknowledgement, even if what it shows contradicts the owner's rules: whether the owner notices is the owner's policy, not the request's kind.

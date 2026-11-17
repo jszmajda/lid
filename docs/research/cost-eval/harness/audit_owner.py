@@ -42,7 +42,8 @@ def main(argv=None) -> int:
         prompt = [c for c in rec["calls"] if "trim" not in c][-1]["prompt"]
         n = int(path.parent.name.split("-")[1])
         scripted = script[n].redirect.text if rec.get("redirect_event") == "delivered" and n in script and script[n].redirect else None
-        jobs.append((path, rec, simulator.judge_prompt(prompt, rec["reply"], scripted)))
+        # The judge is told which recall lines the harness drew, and for which items, so it licenses them.
+        jobs.append((path, rec, simulator.judge_prompt(prompt, rec["reply"], scripted, recalled=rec.get("recalled") or [])))
 
     def go(job):
         path, rec, prompt = job

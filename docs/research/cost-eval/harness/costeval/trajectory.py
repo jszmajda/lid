@@ -281,8 +281,8 @@ def run_change(*, arm: Arm, change: simulator.Change, owner: simulator.Owner, tu
                 raise TrajectoryStopped(f"owner failed after turn {k}: {e}") from e
             orec = {"turn": k, "message_kind": rep.message_kind, "reply": rep.reply, "finished": rep.finished,
                     "answers": rep.answers, "kept": rep.kept, "dropped": rep.dropped, "redirect_event": rep.redirect_event,
-                    "words_shown": rep.words_shown, "words_this_change": rep.words_this_change,
-                    "catch_probability": rep.catch_probability, "shared": rep.shared, "documents": [d.name for d in docs],
+                    "words_shown": rep.words_shown, "words_this_change": rep.words_this_change, "passages": rep.passages,
+                    "shared": rep.shared, "recalled": rep.recalled, "draws": rep.draws, "documents": [d.name for d in docs],
                     "code_written": any(is_code_path(p) for p in changed)}
             res.owner.append(orec)
             (out_dir / f"owner-{k:02d}.json").write_text(json.dumps({**orec, "calls": rep.calls}, indent=1), encoding="utf-8")
@@ -306,12 +306,19 @@ def run_change(*, arm: Arm, change: simulator.Change, owner: simulator.Owner, tu
 
 
 def owner_state(owner: simulator.Owner) -> dict:
-    """What the owner carries between changes, saved so a trajectory can resume after a change."""
+    """What the owner carries between changes, saved so a trajectory can resume after a change. The draws need no
+    state of their own: each uniform is a function of the replicate, the item, the kind of event, and the scope, and
+    the disclosed set says which items are never drawn for again. The replicate and owner model are saved for the
+    record; the run's settings, not the state, decide them on restore."""
     return {"record": [asdict(s) for s in owner.record], "requests": owner.requests, "seen": owner.seen,
-            "policy": owner.policy, "seed": owner.seed}
+            "disclosed": sorted(owner.disclosed), "policy": owner.policy, "replicate": owner.replicate,
+            "owner_model": asdict(owner.model)}
 
 
 def restore_owner_state(owner: simulator.Owner, state: dict) -> None:
     owner.record = [simulator.Said(s["change"], s["said"], s["question"], tuple(s["items"])) for s in state["record"]]
     owner.requests = [tuple(r) for r in state["requests"]]
     owner.seen = dict(state["seen"])
+    # A state saved before disclosure was tracked: everything the record shows the owner sharing is disclosed.
+    owner.disclosed = (set(state["disclosed"]) if "disclosed" in state
+                       else {i for s in owner.record for i in s.items})

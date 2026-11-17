@@ -315,7 +315,7 @@ class DrawTest(unittest.TestCase):
         self.assertIn("BK-02", w.disclosed)
         r = w.respond("Orders are accepted until closing.", code_written=False)
         self.assertEqual(r.draws, [])
-        self.assertIn("[BK-02] (Askable; you have told the agent this)", ask.prompts[1])
+        self.assertIn("[BK-02] (Askable; mentioned to the agent)", ask.prompts[1])
 
     def test_a_recalled_item_is_never_drawn_for_again(self):
         c1, c4 = self.c[1], self.c[4]
@@ -544,6 +544,14 @@ class OwnerItemsTest(unittest.TestCase):
         self.assertEqual(items["BK-09"], sm.OwnerItem("low", "Keep notes exactly as they were typed."))
         self.assertEqual(set(items), {"BK-02", "BK-07", "BK-09"})
 
+    def test_the_items_may_sit_under_an_items_key_beside_the_ratings_record(self):
+        wrapped = {"_note": "Tiers from four raters.", "rating_prompt_sha256": "ab12", "share_high": 0.33, "items": OWNER_ITEMS}
+        self.assertEqual(sm.parse_owner_items(wrapped, oracle()), sm.parse_owner_items(OWNER_ITEMS, oracle()))
+        with self.assertRaisesRegex(ValueError, "BK-07"):
+            sm.parse_owner_items({**wrapped, "items": {k: v for k, v in OWNER_ITEMS.items() if k != "BK-07"}}, oracle())
+        with self.assertRaisesRegex(ValueError, "items"):
+            sm.parse_owner_items({**wrapped, "items": ["BK-02"]}, oracle())
+
     def test_a_missing_askable_item_is_an_error_unless_a_default_is_given(self):
         data = {k: v for k, v in OWNER_ITEMS.items() if k != "BK-07"}
         with self.assertRaisesRegex(ValueError, "BK-07"):
@@ -588,7 +596,7 @@ class PromptTest(unittest.TestCase):
 
     def test_askable_items_already_told_are_marked(self):
         text = sm.render_items(sm.released_items(oracle(), 1), {"BK-09"}, disclosed={"BK-09", "BK-01"})
-        self.assertIn("[BK-09] (Askable; you have told the agent this)", text)
+        self.assertIn("[BK-09] (Askable; mentioned to the agent)", text)
         self.assertIn("[BK-02] (Askable) ", text)
         self.assertIn("[BK-01] (Stated) ", text)
 

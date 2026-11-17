@@ -259,7 +259,7 @@ def render_items(items: list[Item], in_play: set[str] | str, disclosed: Iterable
     for i in items:
         label = i.share
         if label == "Askable" and i.id in told:
-            label += "; you have told the agent this"
+            label += "; mentioned to the agent"
         elif label == "Askable" and (in_play == ALL or i.id in in_play):
             label += "; in play for this change"
         line = f"- [{i.id}] ({label}) {owner_text(i.behavior)}"
@@ -305,7 +305,12 @@ def complete_owner_items(oracle: Oracle, items: Mapping[str, OwnerItem],
 
 def parse_owner_items(data: Mapping, oracle: Oracle, *, default: OwnerItem | None = None) -> dict[str, OwnerItem]:
     """owner-items.json: {"<item>": {"tier": "low" | "medium" | "high", "recall": "<one sentence>"}, ...}, one entry
-    for every askable item."""
+    for every askable item. The entries may instead sit under an "items" key, beside a record of how the tiers were
+    rated; that record is not read here."""
+    if "items" in data:
+        data = data["items"]
+        if not isinstance(data, Mapping):
+            raise ValueError("owner items: \"items\" must map each askable item to its tier and recall line")
     known = oracle.ids()
     out: dict[str, OwnerItem] = {}
     for iid, entry in data.items():
@@ -1028,21 +1033,68 @@ def catch_probability(policy: str, words_read: int, half: int = HALF_ATTENTION_W
     return 1.0 / (1.0 + words_read / half)
 
 
+def trim_reply(trim: Callable[[str], dict] | None, message: str, out: dict, calls: list[dict], *,
+               requested: Iterable[str] = ()) -> None:
+    """Cut each targeted answer that shares a rule, and each correction, down to what the question or the quoted
+    words need, with a separate call that sees only the agent's message and the draft parts. `requested`: items this
+    change's own request asked for, whose omission the owner may still point out. Recall lines are added after this,
+    so the trim never sees them."""
+    if trim is None:
+        return
+    parts = [("answer", a, a["question"]) for a in out["answers"]
+             if a["items"] and not a["no_view"] and a.get("breadth", "targeted") == "targeted"]
+    parts += [("correction", c, c.get("wrong", "")) for c in out["corrections"]]
+    if not parts:
+        return
+    prompt = trim_prompt(message, [(kind, about, d["answer" if kind == "answer" else "text"]) for kind, d, about in parts])
+    raw = trim(prompt)
+    edited = {p.get("index"): p.get("text", "") for p in (raw or {}).get("parts", [])}
+    changes, dropped = [], []
+    keep_anyway = set(requested)
+    for n, (kind, d, _about) in enumerate(parts, start=1):
+        key = "answer" if kind == "answer" else "text"
+        new = (edited.get(n) or "").strip()
+        old = d[key]
+        if kind == "correction" and new == "DROP":
+            # The quoted words were right as far as they went: an addition, not a correction. The trim can't see
+            # this change's request, so the owner's own exception stands: something the request asked for and the
+            # agent left out is still pointed out.
+            if d.get("item") not in keep_anyway:
+                dropped.append(d)
+                changes.append({"part": n, "before": old, "after": None})
+        elif new and new != "DROP" and not ITEM_ID.search(new) and words(new) <= words(old):
+            d[key] = new
+            if new != old:
+                changes.append({"part": n, "before": old, "after": new})
+    out["corrections"] = [c for c in out["corrections"] if not any(c is x for x in dropped)]
+    calls.append({"prompt": prompt, "output": raw, "problems": [], "trim": changes})
+
+
 class Owner:
     """One trajectory's simulated owner. `ask(prompt)` runs one stateless model call and returns its
-    structured output; tests pass a fake."""
+    structured output; tests pass a fake.
 
-    def __init__(self, *, oracle: Oracle, brief: str, policy: str, seed: str, ask: Callable[[str], dict],
+    replicate: the seed shared by the trajectories being compared (other arms, other policies, a redirect's paired
+    run), which every draw is keyed on. owner_items: each askable item's tier and recall line; an askable item
+    without one is an error unless default_owner_item is given."""
+
+    def __init__(self, *, oracle: Oracle, brief: str, policy: str, replicate: str, ask: Callable[[str], dict],
                  trim: Callable[[str], dict] | None = None, template: str | None = None, max_attempts: int = 3,
-                 half_attention_words: int = HALF_ATTENTION_WORDS):
+                 model: OwnerModel | None = None, owner_items: Mapping[str, OwnerItem] | None = None,
+                 default_owner_item: OwnerItem | None = None):
         if policy not in POLICIES:
             raise ValueError(f"policy must be one of {POLICIES}, not {policy!r}")
-        self.oracle, self.brief, self.policy, self.seed, self.ask, self.trim = oracle, brief, policy, seed, ask, trim
+        if owner_items is None and default_owner_item is None:
+            raise ValueError("the owner needs every askable item's tier and recall line (the seed's owner-items.json)")
+        self.oracle, self.brief, self.policy, self.replicate, self.ask, self.trim = oracle, brief, policy, replicate, ask, trim
+        self.model = model if model is not None else OwnerModel()
+        self.owner_items = complete_owner_items(oracle, owner_items or {}, default_owner_item)
         self.template = template if template is not None else TEMPLATE_PATH.read_text(encoding="utf-8")
-        self.max_attempts, self.half = max_attempts, half_attention_words
+        self.max_attempts = max_attempts
         self.record: list[Said] = []
         self.requests: list[tuple[int, str]] = []
         self.seen: dict[str, str] = {}
+        self.disclosed: set[str] = set()  # items an answer, a correction, or a recall line has shared
         self.change: Change | None = None
         self.turns: list[Turn] = []
         self.said_now: list[Said] = []
@@ -1053,7 +1105,7 @@ class Owner:
     def fork(self) -> "Owner":
         """A copy for a disposable fork such as a probe; the original is untouched."""
         twin = copy.copy(self)
-        for name in ("record", "requests", "seen", "turns", "said_now"):
+        for name in ("record", "requests", "seen", "disclosed", "turns", "said_now"):
             setattr(twin, name, copy.copy(getattr(self, name)))
         return twin
 
@@ -1076,16 +1128,17 @@ class Owner:
     def _prompt(self, message: str, documents: Sequence[Document], state: str | None) -> str:
         return build_prompt(oracle=self.oracle, change=self.change, brief=self.brief, message=message,
                             documents=documents, earlier_requests=self.requests, record=self.record,
-                            turns=self.turns, redirect_state=state, template=self.template)
+                            turns=self.turns, redirect_state=state, template=self.template, disclosed=self.disclosed)
 
-    def _call(self, prompt: str, state: str | None, calls: list[dict]) -> dict:
+    def _call(self, prompt: str, state: str | None, calls: list[dict], passages: int) -> dict:
         r = self.change.redirect
         withheld = r.introduces if (r and r.kind == "change of mind" and state == "pending") else ()
-        released = {i.id for i in released_items(self.oracle, self.change.number, withhold=withheld)}
+        items = released_items(self.oracle, self.change.number, withhold=withheld)
         pending_cl = bool(r and r.kind == "clarification" and state == "pending")
         for _ in range(self.max_attempts):
             raw = self.ask(prompt)
-            out, problems = check_output(raw, released, clarification_pending=pending_cl)
+            out, problems = check_output(raw, items, clarification_pending=pending_cl, passages=passages,
+                                         in_play=self.change.in_play)
             calls.append({"prompt": prompt, "output": raw, "problems": problems})
             if not problems:
                 return out
@@ -1098,35 +1151,26 @@ class Owner:
                 and i.kind.lower().startswith(("stated in change", "emerging"))}
 
     def _trim(self, message: str, out: dict, calls: list[dict]) -> None:
-        """Cut each answer that shares a rule, and each correction, down to what the question or the quoted words
-        need, with a separate call that sees only the agent's message and the draft parts."""
-        if self.trim is None:
-            return
-        parts = [("answer", a, a["question"]) for a in out["answers"] if a["items"] and not a["no_view"]]
-        parts += [("correction", c, c.get("wrong", "")) for c in out["corrections"]]
-        if not parts:
-            return
-        prompt = trim_prompt(message, [(kind, about, d["answer" if kind == "answer" else "text"]) for kind, d, about in parts])
-        raw = self.trim(prompt)
-        edited = {p.get("index"): p.get("text", "") for p in (raw or {}).get("parts", [])}
-        changes, dropped = [], []
-        for n, (kind, d, _about) in enumerate(parts, start=1):
-            key = "answer" if kind == "answer" else "text"
-            new = (edited.get(n) or "").strip()
-            old = d[key]
-            if kind == "correction" and new == "DROP":
-                # The quoted words were right as far as they went: an addition, not a correction. The trim can't see
-                # this change's request, so the owner's own exception stands: something the request asked for and the
-                # agent left out is still pointed out.
-                if d.get("item") not in self._requested_now():
-                    dropped.append(d)
-                    changes.append({"part": n, "before": old, "after": None})
-            elif new and new != "DROP" and not ITEM_ID.search(new) and words(new) <= words(old):
-                d[key] = new
-                if new != old:
-                    changes.append({"part": n, "before": old, "after": new})
-        out["corrections"] = [c for c in out["corrections"] if not any(c is x for x in dropped)]
-        calls.append({"prompt": prompt, "output": raw, "problems": [], "trim": changes})
+        trim_reply(self.trim, message, out, calls, requested=self._requested_now())
+
+    def _read(self, offset: int, before: int, shown: int) -> tuple[float, float, int]:
+        """(a, w, read_before) for a position `offset` new words into this stop: the policy's attention there, w as
+        the model counts it, and the new words shown earlier in this change (for the session drag)."""
+        w = {"stop": offset, "change": before + offset, "pilot": before + shown}[self.model.counting]
+        read_before = before + offset
+        if self.policy == "diligent":
+            return 1.0, w, read_before
+        if self.policy == "rubber-stamp":
+            return 0.0, w, read_before
+        return attention(self.model, w=w, read_before=read_before), w, read_before
+
+    def _probability(self, event: str, a: float, r: float | None = None) -> float:
+        """The chance a read-and-noticed event happens on review, under this owner's policy."""
+        if self.policy == "diligent":
+            return 1.0 if event == "contradiction" else r
+        if self.policy == "rubber-stamp":
+            return 0.0
+        return a * self.model.catch if event == "contradiction" else a * min(r, self.model.catch)
 
     def respond(self, message: str, documents: Sequence[Document] = (), *, code_written: bool) -> OwnerReply:
         """The owner's response to the agent's stop. `code_written`: this change has changed a source file
@@ -1134,24 +1178,28 @@ class Owner:
         ch = self.change
         if ch is None:
             raise RuntimeError("no change in progress")
+        stop = split_stop(message, documents)
         shown = words(message) + sum(d.words for d in documents)
+        before = self.words_this_change
         self.words_this_change += shown
-        r, pending = ch.redirect, self.redirect_state == "pending"
-        change_of_mind = pending and r.kind == "change of mind"
-        late_fires = pending and r.timing == "late" and code_written
+        redirect, pending = ch.redirect, self.redirect_state == "pending"
+        change_of_mind = pending and redirect.kind == "change of mind"
+        late_fires = pending and redirect.timing == "late" and code_written
         calls: list[dict] = []
         event = None
+        npass = len(stop.passages)
         if change_of_mind and late_fires:
-            out = self._call(self._prompt(message, documents, "firing"), "firing", calls)
+            out = self._call(self._prompt(message, documents, "firing"), "firing", calls, npass)
             event = "delivered"
         else:
-            out = self._call(self._prompt(message, documents, self.redirect_state), self.redirect_state, calls)
-            fires = pending and (late_fires or (r.timing == "early" and out["message_kind"] in FIRE_KINDS))
-            if pending and r.kind == "clarification" and out["clarification_settled"]:
+            out = self._call(self._prompt(message, documents, self.redirect_state), self.redirect_state, calls, npass)
+            fires = pending and (late_fires or (redirect.timing == "early" and out["message_kind"] in FIRE_KINDS))
+            if pending and redirect.kind == "clarification" and out["clarification_settled"]:
                 event = "settled"
             elif fires and change_of_mind:
-                # Answer again from the view the owner holds once they have changed their mind.
-                out = self._call(self._prompt(message, documents, "firing"), "firing", calls)
+                # Answer again from the view the owner holds once they have changed their mind. Touches and
+                # contradictions come from this second call too.
+                out = self._call(self._prompt(message, documents, "firing"), "firing", calls, npass)
                 event = "delivered"
             elif fires:
                 event = "delivered"
@@ -1160,18 +1208,82 @@ class Owner:
             self.redirect_point = f"{out['message_kind']}, code {'written' if code_written else 'not written'}"
 
         self._trim(message, out, calls)
-        p = catch_probability(self.policy, self.words_this_change, self.half)
-        kept, dropped = [], []
-        for i, c in enumerate(out["corrections"]):
-            draw = random.Random(f"{self.seed}|{ch.number}|{len(self.turns)}|{i}").random()
-            (kept if draw < p else dropped).append({**c, "draw": round(draw, 6)})
+        scope = scope_key(self.model.scope, ch, len(self.turns))
+        offsets = {p.number: p.offset for p in stop.passages}
+        after_first_build = ch.number > 0 or ch.probe
+        draws: list[dict] = []
+        disclosed_before = set(self.disclosed)  # the model reported touches against this view
 
-        parts = ([r.text] if event == "delivered" else []) + [a["answer"] for a in out["answers"]] + [c["text"] for c in kept]
+        # Contradictions: one uniform per item (or per quoted words) and scope; a correction is kept when the policy's
+        # probability at its passage exceeds it. Something left out of this change's request has no passage and is
+        # noticed, if at all, at the end of the stop.
+        kept, dropped = [], []
+        for c in out["corrections"]:
+            a, w, read_before = self._read(offsets.get(c["passage"], shown), before, shown)
+            p = self._probability("contradiction", a)
+            u = uniform(self.replicate, contradiction_key(c), "contradiction", scope)
+            draws.append({"event": "contradiction", "item": c["item"], "passage": c["passage"], "w": w,
+                          "read_before": read_before, "a": a, "r": None, "p": p, "u": u, "fired": p > u})
+            (kept if p > u else dropped).append({**c, "p": p, "u": u})
+        for ans in out["answers"]:
+            if ans["breadth"] == "targeted":
+                self.disclosed.update(ans["items"])
+        self.disclosed.update(c["item"] for c in kept if c["item"] != "none")
+
+        # Recall on review: each unsaid askable item the passages touch, at the first touching passage whose
+        # probability exceeds the item's uniform. n counts the unsaid items touching the same passage.
+        touches = sorted((t for t in out["touches"] if t["item"] not in disclosed_before and t["level"] != "says"),
+                         key=lambda t: t["passage"])
+        fan = collections.Counter(t["passage"] for t in touches)
+        recalled: list[dict] = []
+        for item in dict.fromkeys(t["item"] for t in touches):
+            if item in self.disclosed:
+                continue
+            u = uniform(self.replicate, item, "recall", scope)
+            for t in (t for t in touches if t["item"] == item):
+                a, w, read_before = self._read(offsets[t["passage"]], before, shown)
+                r = recall_rate(self.model, self.owner_items[item].tier, direct=t["level"] == "direct", n=fan[t["passage"]],
+                                after_first_build=after_first_build)
+                p = self._probability("recall", a, r)
+                draws.append({"event": "recall", "item": item, "passage": t["passage"], "w": w, "read_before": read_before,
+                              "a": a, "r": r, "p": p, "u": u, "fired": p > u})
+                if p > u:
+                    recalled.append({"item": item, "line": self.owner_items[item].recall, "via": "review",
+                                     "passage": t["passage"], "question": None})
+                    self.disclosed.add(item)
+                    break
+        recalled.sort(key=lambda x: x["passage"])
+
+        # Broad questions: under every policy, each in-scope item still unsaid is drawn at its adjacent rate, with
+        # n = 1 and no attention. What is recalled is the answer.
+        for ans in out["answers"]:
+            if ans["breadth"] != "broad":
+                continue
+            got = []
+            for item in ans["in_scope"]:
+                if item in self.disclosed:
+                    continue
+                r = recall_rate(self.model, self.owner_items[item].tier, direct=False,
+                                after_first_build=after_first_build and self.model.dormancy_on_broad)
+                u = uniform(self.replicate, item, self.model.broad_uniform, scope)
+                draws.append({"event": "broad", "item": item, "passage": None, "w": None, "read_before": None, "a": None,
+                              "r": r, "p": r, "u": u, "fired": r > u})
+                if r > u:
+                    got.append(item)
+                    self.disclosed.add(item)
+                    recalled.append({"item": item, "line": self.owner_items[item].recall, "via": "question",
+                                     "passage": None, "question": ans["question"]})
+            ans["answer"] = " ".join(self.owner_items[i].recall for i in got) or NOTHING_ELSE
+            ans["items"] = got
+
+        review_lines = [x["line"] for x in recalled if x["via"] == "review"]
+        parts = (([redirect.text] if event == "delivered" else []) + [a["answer"] for a in out["answers"]]
+                 + [c["text"] for c in kept] + review_lines)
         kind = out["message_kind"]
         finished = kind == "completion" and not parts
         if finished:
             reply = ""
-        elif kept or event == "delivered":
+        elif kept or review_lines or event == "delivered":
             reply = "\n\n".join(parts + ["Otherwise, go ahead."])
         elif parts:
             reply = "\n\n".join(parts + ["Go ahead."])
@@ -1180,21 +1292,29 @@ class Owner:
         else:
             reply = "That looks fine. Go ahead."
 
-        shared = [{"item": i, "reason": "asked"} for a in out["answers"] for i in a["items"]]
+        shared = []
+        for a in out["answers"]:
+            shared += ([{"item": i, "reason": "asked"} for i in a["items"]] if a["breadth"] == "targeted"
+                       else [{"item": i, "reason": "recalled", "via": "question"} for i in a["items"]])
         shared += [{"item": c["item"], "reason": "contradiction"} for c in kept if c["item"] != "none"]
+        shared += [{"item": x["item"], "reason": "recalled", "via": "review"} for x in recalled if x["via"] == "review"]
         if event == "delivered":
             shared.append({"item": None, "reason": "redirect"})
         for a in out["answers"]:
             self.said_now.append(Said(ch.number, a["answer"], a["question"], tuple(a["items"])))
         for c in kept:
             self.said_now.append(Said(ch.number, c["text"], None, () if c["item"] == "none" else (c["item"],)))
+        for x in recalled:
+            if x["via"] == "review":
+                self.said_now.append(Said(ch.number, x["line"], None, (x["item"],)))
         self.turns.append(Turn(message, tuple(d.name for d in documents), reply))
         for d in documents:
             if d.current is not None:
                 self.seen[d.name] = d.current
         return OwnerReply(reply=reply, finished=finished, message_kind=kind, answers=out["answers"], kept=kept,
                           dropped=dropped, redirect_event=event, words_shown=shown,
-                          words_this_change=self.words_this_change, catch_probability=p, shared=shared, calls=calls)
+                          words_this_change=self.words_this_change, shared=shared, recalled=recalled, draws=draws,
+                          passages=npass, calls=calls)
 
     def end_change(self) -> dict:
         """Close the change: what the owner asked for and said joins the record. Returns the change's
@@ -1237,14 +1357,23 @@ JUDGE_SCHEMA = {
 }
 
 
-def judge_prompt(owner_prompt: str, reply: str, scripted: str | None = None, template: str | None = None) -> str:
+def judge_prompt(owner_prompt: str, reply: str, scripted: str | None = None, recalled: Sequence[dict] = (),
+                 template: str | None = None) -> str:
     """The leak judge's prompt for one stop: everything the owner was given, and the reply that was sent.
-    `scripted` is the redirect text the harness inserted, which the judge doesn't judge."""
+    `scripted` is the redirect text the harness inserted, which the judge doesn't judge. `recalled` is the recall
+    lines the harness drew ({"item", "line"}), which are licensed for their items."""
     template = template if template is not None else JUDGE_TEMPLATE_PATH.read_text(encoding="utf-8")
     note = (f"The reply includes these scheduled words, which the owner was required to say. Don't judge them:\n\n{_blockquote(scripted)}"
             if scripted else "")
+    drawn = ""
+    if recalled:
+        drawn = ("These are the recall lines the harness drew and added to the reply after the owner wrote it, each for "
+                 "the rule named with it. Each is licensed for that rule, whether it answers a broad question or follows "
+                 "something the agent showed: don't count these lines as leaks. Judge the rest of the reply as usual, "
+                 "including anything else it says about the same rules:\n\n"
+                 + "\n".join(f'- [{x["item"]}] "{x["line"]}"' for x in recalled))
     return _fill(template, {"OWNER_PROMPT": owner_prompt.strip(), "REPLY": reply.strip() or "(empty: the owner accepted the change)",
-                            "SCRIPTED": note})
+                            "SCRIPTED": note, "RECALLED": drawn})
 
 
 TRIM_SCHEMA = {

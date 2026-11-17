@@ -212,15 +212,18 @@ class ChangeLoopTest(unittest.TestCase):
 
     def test_each_owner_record_carries_its_draws_and_recall(self):
         ws = FakeWorkspace()
-        turns = FakeTurns(ws, ("Done. Orders are accepted all day.", None, ["app/notes.py"]))
-        owner, _ = make_owner(out("completion", touches=[{"item": "BK-02", "passage": 1, "level": "adjacent"}]))
+        turns = FakeTurns(ws, ("Done. Orders are accepted all day.", None, ["app/notes.py"]), ("Done.", None, []))
+        owner, _ = make_owner(out("completion", touches=[{"item": "BK-02", "passage": 1, "level": "direct"}]),
+                              out("completion"))
         r = tj.run_change(arm=tj.load_arm("bare"), change=self.c[1], owner=owner, turn=turns, workspace=ws, out_dir=self.tmp)
         rec = json.loads((self.tmp / "owner-00.json").read_text())
         self.assertEqual([d["item"] for d in rec["draws"]], ["BK-02"])
-        self.assertIn("recalled", rec)
         self.assertEqual(rec["passages"], 1)
         self.assertNotIn("catch_probability", rec)
         self.assertEqual(r.owner[0]["draws"], rec["draws"])
+        fired = rec["draws"][0]["fired"]
+        self.assertEqual([x["item"] for x in rec["recalled"]], ["BK-02"] if fired else [])
+        self.assertEqual(r.rounds, 2 if fired else 1)  # a recall at a completion report keeps the change open
 
 
 class RunOptionsTest(unittest.TestCase):

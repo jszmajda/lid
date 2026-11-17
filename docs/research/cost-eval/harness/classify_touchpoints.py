@@ -3,9 +3,11 @@ the words the owner was shown, per change.
 
     ../plumbing/with-token.sh python3.12 classify_touchpoints.py --id s0-bare
 
-The classifier sees what the owner saw at each stop (taken from the owner's own prompt), never the owner's reply.
-Writes ../runs/<id>/touchpoints.json. Bug reports and end-of-change reviews come from the trajectory's structure,
-not from this classifier.
+The classifier sees what the owner saw at each stop (taken from the owner's own prompt, without the passage
+numbers), never the owner's reply. Writes ../runs/<id>/touchpoints.json. Bug reports and end-of-change reviews come
+from the trajectory's structure, not from this classifier. Items the owner recalled on review are listed per stop and
+counted per change apart from requests: they cost no request, and for yield they are a third class beside asked and
+never asked.
 """
 
 from __future__ import annotations
@@ -21,7 +23,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
-from costeval import executor  # noqa: E402
+from costeval import executor, simulator  # noqa: E402
 
 IMAGE = "lid-cost-eval-executor:2.1.323"
 KINDS = ("acknowledgement", "lookup", "judgment", "origination", "completion report")
@@ -39,7 +41,12 @@ def owner_view(prompt: str) -> str:
     tail = re.split(r"(?m)^## This change\b", prompt, maxsplit=1)
     body = "## This change" + tail[1] if len(tail) > 1 else ""
     body = re.split(r"(?m)^## What to return\b", body, maxsplit=1)[0]
-    return (head + body).strip()
+    return simulator.strip_passage_marks((head + body).strip())
+
+
+def recalled_on_review(rec: dict) -> list[str]:
+    """Items an owner record shows recalled on review, not in answer to a question."""
+    return [s["item"] for s in rec.get("shared") or [] if s.get("reason") == "recalled" and s.get("via") == "review"]
 
 
 def main(argv=None) -> int:
@@ -60,17 +67,21 @@ def main(argv=None) -> int:
         path, rec, prompt = stop
         r = executor.run_role(role, prompt, json_schema=json.dumps(SCHEMA))
         return {"stop": f"{path.parent.name}/{path.stem}", "change": int(path.parent.name.split("-")[1]),
-                "words_shown": rec["words_shown"], "requests": (r.structured or {}).get("requests", []),
+                "words_shown": rec["words_shown"], "recalled_on_review": recalled_on_review(rec),
+                "requests": (r.structured or {}).get("requests", []),
                 "cost_usd": r.usage.reported_cost_usd}
 
     with cf.ThreadPoolExecutor(max_workers=4) as pool:
         results = list(pool.map(go, stops))
     per_change: dict[int, collections.Counter] = collections.defaultdict(collections.Counter)
     words: dict[int, int] = collections.Counter()
+    recalled: dict[int, list[str]] = collections.defaultdict(list)
     for r in results:
         per_change[r["change"]].update(q["kind"] for q in r["requests"])
         words[r["change"]] += r["words_shown"]
-    summary = {n: {"requests": dict(per_change[n]), "words_shown": words[n]} for n in sorted(words)}
+        recalled[r["change"]] += r["recalled_on_review"]
+    summary = {n: {"requests": dict(per_change[n]), "words_shown": words[n], "recalled_on_review": recalled[n]}
+               for n in sorted(words)}
     (run / "touchpoints.json").write_text(json.dumps({"summary": summary, "stops": results}, indent=1))
     for n, s in summary.items():
         print(f"{args.id} change {n}: {s['requests']}, words shown {s['words_shown']}")

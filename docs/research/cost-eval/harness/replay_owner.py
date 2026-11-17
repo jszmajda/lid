@@ -9,7 +9,9 @@ Each stop is `trajectory:change-NN/owner-MM` followed by expectations: `-BT-19` 
 those words. The recorded prompt is taken from the owner record, and only the lines of the owner's instructions that
 differ between `--before` and the current `prompts/simulator.md` are swapped, so the knowledge, the change, and the
 agent's message are exactly what the owner saw. The answer then goes through the current trim prompt and the leak
-judge. Writes ../runs/stage2/replay-<name>/ and prints a summary.
+judge. A replay makes no recall draws: a broad question's text from the model is discarded, as a run discards it, and
+the model's touches and broad-question scopes are recorded for inspection. Writes ../runs/stage2/replay-<name>/ and
+prints a summary.
 """
 
 from __future__ import annotations
@@ -43,7 +45,8 @@ def swap_instructions(prompt: str, before: str, after: str) -> str:
 
 
 def agent_message(prompt: str) -> str:
-    return prompt.split("<agent_message>\n", 1)[1].split("\n</agent_message>", 1)[0]
+    """The agent's message as the agent wrote it, without the passage numbers the owner was shown."""
+    return simulator.strip_passage_marks(prompt.split("<agent_message>\n", 1)[1].split("\n</agent_message>", 1)[0])
 
 
 def parse_stop(spec: str) -> dict:
@@ -58,7 +61,7 @@ def main(argv=None) -> int:
     ap.add_argument("--before", required=True)
     ap.add_argument("--repeats", type=int, default=4)
     ap.add_argument("--name", required=True)
-    ap.add_argument("--seed", default="benchtime")
+    ap.add_argument("--seed", default="benchtime", help="unused: the recorded prompt holds the seed; accepted so older command lines parse")
     ap.add_argument("--owner-model", default="claude-sonnet-5-5")
     ap.add_argument("--judge-model", default="claude-opus-5-5")
     ap.add_argument("--after", help="owner template to swap in (default: the current prompts/simulator.md); pass the "
@@ -69,9 +72,6 @@ def main(argv=None) -> int:
     after = Path(args.after).read_text(encoding="utf-8") if args.after else (HERE / "prompts" / "simulator.md").read_text(encoding="utf-8")
     if args.trim_template:
         simulator.TRIM_TEMPLATE_PATH = Path(args.trim_template).resolve()
-    seed = HERE.parent / "seeds" / args.seed
-    oracle = simulator.parse_oracle((seed / "hidden" / "oracle.md").read_text(encoding="utf-8"))
-    brief = (seed / "brief.md").read_text(encoding="utf-8")
     owner = executor.RoleSession(image=IMAGE, config_volume="ce-roles-cfg", model=args.owner_model,
                                  claude_code_version="2.1.323", effort="medium")
     judge = executor.RoleSession(image=IMAGE, config_volume="ce-roles-cfg", model=args.judge_model,
@@ -88,11 +88,11 @@ def main(argv=None) -> int:
         message = agent_message(prompt)
         r = executor.run_role(owner, prompt, json_schema=simulator.schema_json())
         out = r.structured or {"answers": [], "corrections": []}
-        w = simulator.Owner(oracle=oracle, brief=brief, policy="diligent", seed="replay",
-                            ask=lambda p: None,
-                            trim=lambda p: executor.run_role(owner, p, json_schema=simulator.trim_schema_json()).structured)
+        broad = [a for a in out.get("answers", []) if a.get("breadth") == "broad"]
+        out = {**out, "answers": [a for a in out.get("answers", []) if a.get("breadth", "targeted") != "broad"]}
         calls: list[dict] = []
-        w._trim(message, out, calls)
+        simulator.trim_reply(lambda p: executor.run_role(owner, p, json_schema=simulator.trim_schema_json()).structured,
+                             message, out, calls)
         reply = "\n\n".join([a["answer"] for a in out["answers"]] + [c["text"] for c in out["corrections"]])
         shared = sorted({i for a in out["answers"] for i in a["items"]} | {c["item"] for c in out["corrections"] if c["item"] != "none"})
         j = executor.run_role(judge, simulator.judge_prompt(prompt, reply, None), json_schema=simulator.judge_schema_json()).structured or {}
@@ -102,6 +102,8 @@ def main(argv=None) -> int:
         problems += [f"says {t!r}" for t in st["text_not"] if t.lower() in reply.lower()]
         result = {"stop": f"{st['id']}:{st['stop']}", "k": k, "reply": reply, "shared": shared, "problems": problems,
                   "leaks": leaks, "invented": j.get("invented", []), "trim": calls[0]["trim"] if calls else [],
+                  "touches": out.get("touches", []), "broad": [{"question": a.get("question"), "in_scope": a.get("in_scope", [])}
+                                                               for a in broad],
                   "recorded_reply": rec["reply"]}
         (out_dir / f"{st['id']}--{st['stop'].replace('/', '-')}--{k}.json").write_text(json.dumps(result, indent=1))
         return result
