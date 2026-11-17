@@ -60,55 +60,12 @@ They support a composite model:
 
 **Next:** the full leak gate on the final prompt, a short live trajectory, then ReleaseDesk's stage 2.
 
-## 2026-11-15 (night): Stage 2 passes its thresholds; the owner stops leaking through corrections
-
-**Stage 2's thresholds, all met** (pilot numbers):
-- **Grader agreement:** Claude Fable, standing in for the maintainer, agreed with 38 of 40 sampled verdicts (95%). Both disagreements were the judge being too strict.
-- **Test-retest:** three change-10 checkpoints judged twice more flipped 0 of 264 verdicts.
-- **Positive control** is worse (80% against bare's 92%), and **the A/A check** shows no difference (92% and 92%; $2.32 and $2.35).
-
-**From the spot-check:**
-- **BenchTime probes version 5:** ten probes reworded so executors run every step and don't read a word as a feature name, and Fable checked the edits. Stage 2 stays graded under version 4.
-- **Judge rules:** an inspection the executor skipped counts like one the build doesn't offer, but only when other log entries show the same thing. Every verdict now says whether a "couldn't exercise" came from the executor or the build. Grading runs an executor-caused one once more.
-- **A restart race:** when a start command left a shell as the parent, the old server could answer the readiness check and then vanish, so the first request after a restore was refused. The control server now waits for the port to free.
-- **A stub verdict** (reason "Placeholder") had passed the checks. Verdicts now need a real reason, and the one affected batch was judged again (it was a "met").
-
-**The owner leaked through corrections.** The leak audit of stage 2 flagged 15 of 171 owner replies. Fable ruled five of them real leaks that plausibly changed a verdict, and two more borderline:
-- **The pattern:** the agent's words were right as far as they went, and the owner "corrected" them by adding what they left out ("must also …"). A list of checks was read as a contradiction of a rule it didn't mention.
-- **Who gained:** cheap discipline most, one leaked item per trajectory, because it shows a written plan before coding. LID had the lowest rate of real leaks per reply.
-- **Effect on the numbers:** counting every leaked verdict as not met leaves the order unchanged at every checkpoint. At change 10: LID 95.4%, bare 90.8%, cheap discipline 87.6% (96.1%, 91.5%, 88.9% as graded). Stage 2's results carry this as a caveat.
-- **The fix:** the owner's instructions now say what a correction must quote: words wrong in themselves, not words that are right but incomplete. A confirmation is "Yes." without a recital, and an open question on a rule recognised on sight still gets "Show me what you have in mind". The trim deletes added cases and can drop a correction that only adds something; the harness ignores that drop for anything this change's own request asked for.
-- **How it was checked:** each candidate was replayed on the real stops (each recorded prompt with only the instruction lines swapped) and on the 15 scripted scenarios. On the problem stops, judge leaks fell from 21 of 36 runs under the old prompts. Moving the silence rule itself into rule 2 broke a scripted case, so the guidance went into the corrections instruction instead. Final acceptance of the adopted version: judge leaks on those stops 3 of 36, no earned correction lost (20 of 20 control runs, against 19 of 20 before), and the 15 scripted scenarios passed every check in 150 runs, with one judge flag.
-
-**Two symptom reports that never reached the agent.**
-- **Change 5's diagnostic** was inconclusive in six trajectories, because P-BT41-a then required a visible return record (fixed in version 4). The report wasn't delivered. Later grading meets BT-41 in all 15 trajectories, so no build had the bug, and nothing was lost.
-- **Bare trajectory 2's change 9 diagnostic** couldn't load its setup, so the trajectory never received that bug report and fails BT-42 at change 10. That verdict is left out, as in stage 1.
-
-**Built:**
-- **A report generator** (`report.py`) for a stage's runs, which reproduces stage 2's numbers, records any verdict left out, and says why a change was skipped.
-- **An owner replay tool** (`replay_owner.py`).
-- **`gt file`,** for import fixtures, after ReleaseDesk's import probe couldn't be run.
-- **Setups are prepared with every setup they're built on,** which a partial grading had missed.
-
-**ReleaseDesk's ceiling** (bare arm, rubber-stamp owner, change 10, two trajectories per model):
-- **All items:** Sonnet 90%, Opus 91%, above the 85% ceiling.
-- **Stated items** (48, given to every arm by the brief and the requests): 98% and 97%.
-- **Latent items:** Sonnet 7 of 16, Opus 9 of 16. Pooled by guessability band: low 6 of 16, medium 4 of 8, high 6 of 8, the order the panel predicted. Two low-band rules were never met.
-- **Agent cost** for the build plus ten changes: Sonnet $2.22, Opus $9.93.
-- **Proposed, for the maintainer:** read ReleaseDesk's ceiling on latent items, where both models leave room, and make latent-item fidelity by band its main measure.
-- Three probes stayed "couldn't exercise" after their rerun (P-RD05-a, P-RD24-a, P-RD36-a). Each had a cause outside the build:
-  - a step the probe never asked for (P-RD05-a);
-  - an import file the executor couldn't write (P-RD24-a);
-  - a long response the judge saw only part of (P-RD36-a).
-
-  All three are fixed (ReleaseDesk probes version 2, `gt file`, and a longer response view), and graded again on the same checkpoints all three are met.
-
 ## Earlier, in brief
 
-**The arc so far.** On 11-11, three takes on the design converged on one core design, and mining old transcripts was dropped. On 11-12, the maintainer settled that graders are models, and BenchTime and ReleaseDesk were chosen as the pilot and second seeds. On 11-13, a grading protocol was written into design.md, about 25 throwaway sessions showed that LID's phase stops work headless, and the maintainer decided the harness stays outside LID's arrow. On 11-14, Claude Fable's review found the simulated owner not ready for counted runs, and pilot stage 0 ran the three arms through two changes. In the evening, grader calibration showed Haiku 5.5 flipping 9% of its verdicts on repeat, so Sonnet 5.5 judges and Haiku executes, and two Opus 5.5 trajectories met 90% in stage 1 under the diligent owner. Under a rubber-stamp owner, which shares only what direct questions ask for, Opus met 88%. Late that night, a Sonnet ceiling check started. On 11-15, it met 80% and 76%, so Sonnet became BenchTime's main executor. ReleaseDesk's owner brief was drafted by several models and checked by Claude Fable, and a six-model panel measured how guessable its candidate rules are. The maintainer then set the mix of eight latent rules by guessability band, and the rules within each band were drawn by lot. Later on 11-15, ReleaseDesk's oracle, change script, and probes were drafted, reviewed, and accepted. Stage 2 on BenchTime was graded. Its first numbers put LID Full at 96% of items met at about 5× bare's cost, and ReleaseDesk's ceiling check started.
+**The arc so far.** On 11-11, three takes on the design converged on one core design, and mining old transcripts was dropped. On 11-12, the maintainer settled that graders are models, and BenchTime and ReleaseDesk were chosen as the pilot and second seeds. On 11-13, a grading protocol was written into design.md, about 25 throwaway sessions showed that LID's phase stops work headless, and the maintainer decided the harness stays outside LID's arrow. On 11-14, Claude Fable's review found the simulated owner not ready for counted runs, and pilot stage 0 ran the three arms through two changes. In the evening, grader calibration showed Haiku 5.5 flipping 9% of its verdicts on repeat, so Sonnet 5.5 judges and Haiku executes, and two Opus 5.5 trajectories met 90% in stage 1 under the diligent owner. Under a rubber-stamp owner, which shares only what direct questions ask for, Opus met 88%. Late that night, a Sonnet ceiling check started. On 11-15, it met 80% and 76%, so Sonnet became BenchTime's main executor. ReleaseDesk's owner brief was drafted by several models and checked by Claude Fable, and a six-model panel measured how guessable its candidate rules are. The maintainer then set the mix of eight latent rules by guessability band, and the rules within each band were drawn by lot. Later on 11-15, ReleaseDesk's oracle, change script, and probes were drafted, reviewed, and accepted. Stage 2 on BenchTime was graded. Its first numbers put LID Full at 96% of items met at about 5× bare's cost, and ReleaseDesk's ceiling check started. That night stage 2 passed all four of its thresholds, and a leak review found the owner adding what a plan left out; the owner's corrections were tightened.
 
 **Decisions.** Every decision that still stands, with its date and who made it, is in [decisions.md](decisions.md).
 
 **Archive.**
 
-- [2026-11.md](log-archive/2026-11.md): entries from 2026-11-11 to 2026-11-15 (twenty entries)
+- [2026-11.md](log-archive/2026-11.md): entries from 2026-11-11 to 2026-11-15 (twenty-one entries)
