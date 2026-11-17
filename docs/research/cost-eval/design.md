@@ -279,6 +279,7 @@ A maintainer's play-through is a smoke test, not a calibration.
 **Known limits of the owner model:**
 - **Polish:** the owner's recall doesn't fall when a document looks complete, though people's does (Hernandez, Han & Kardes 2014). This probably favours arms that write comprehensive-looking specifications.
 - **Line diffs:** re-read files are diffed by line, so a one-word edit in an unwrapped paragraph counts the whole paragraph as new.
+- **Fragile judgments:** the owner model's rate of making a recognised-on-sight objection moved between about 30% and 100% with small changes to its prompt and output schema, including a description on an unrelated field. No single clause explained it. So the rates of the final prompt are measured in the leak gate, on planted cases, and reported with every result. They are the diligent owner's real catch rates, not the ideal of the policy table.
 
 ## Human cost
 
