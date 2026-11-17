@@ -103,6 +103,8 @@ Deliver at the first plan or approval question:
 
 > By "move" I mean keep the same order number.
 
+**Redirect settles:** BK-02.
+
 **Introduces:** BK-10.
 **Relies on:** Every item already in force.
 
@@ -249,6 +251,14 @@ class ChangeScriptTest(unittest.TestCase):
             sm.parse_change_script(CHANGES.replace("### Late redirect: clarification", "### Interrupt redirect: clarification"))
         with self.assertRaisesRegex(ValueError, "must list the items"):
             sm.parse_change_script(CHANGES.replace("**Redirect introduces:** BK-05.", ""))
+
+    def test_a_clarification_lists_the_items_it_settles(self):
+        self.assertEqual(self.c[3].redirect.settles, ("BK-02",))
+        self.assertEqual(self.c[2].redirect.settles, ())
+        with self.assertRaisesRegex(ValueError, "only a clarification settles"):
+            sm.parse_change_script(CHANGES.replace("**Redirect introduces:** BK-05.", "**Redirect introduces:** BK-05.\n**Redirect settles:** BK-02."))
+        with self.assertRaisesRegex(ValueError, "every item"):
+            sm.parse_change_script(CHANGES.replace("**Redirect settles:** BK-02.", "**Redirect settles:** every item."))
 
     def test_the_owners_request_includes_an_emerging_statement_or_a_symptom(self):
         self.assertEqual(self.c[4].owner_request, "Let me copy an order.\n\nAlso, one open order per customer from now on.")
@@ -616,8 +626,9 @@ class JudgeTest(unittest.TestCase):
         t = sm.JUDGE_TEMPLATE_PATH.read_text(encoding="utf-8")
         self.assertIn("targeted question", t)
         self.assertIn("A broad question", t)
-        self.assertIn("licenses only the recall lines", t)
+        self.assertIn("licenses only the recall lines listed above as drawn", t)
         self.assertNotIn('marked "in play for this change"', t)
+        self.assertNotIn("the reply's notes", t)
 
 
 if __name__ == "__main__":

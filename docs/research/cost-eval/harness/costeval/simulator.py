@@ -57,7 +57,6 @@ HALF_ATTENTION_WORDS = 1500
 PROSE_SUFFIXES = (".md", ".markdown", ".txt", ".rst", ".adoc")
 ALL = "all"  # every item in force is in play
 
-ITEM_ID = re.compile(r"\b[A-Z]{1,4}-\d+\b")
 STUDY_WORDS = re.compile(r"\b(the owner|scripted|redirect|simulator|the study|graded|grader)\b", re.I)
 PASSAGE_NUMBER = re.compile(r"\[P\d+\]")
 
@@ -245,16 +244,27 @@ def released_items(oracle: Oracle, change: int, *, withhold: Iterable[str] = ())
     ]
 
 
-def owner_text(behavior: str) -> str:
-    """An item's behavior as the owner holds it. Sentences that cite another item are graders' notes, and the
-    owner doesn't number changes."""
+def id_pattern(ids: Iterable[str]) -> re.Pattern:
+    """A pattern for the oracle's own item identifiers: its prefixes followed by a number, so text such as "UTC-5"
+    or "ISO-8601" isn't taken for one. With no identifiers it matches nothing."""
+    prefixes = sorted({i.rsplit("-", 1)[0] for i in ids}, key=lambda p: (-len(p), p))
+    if not prefixes:
+        return re.compile(r"(?!)")
+    return re.compile(r"\b(?:" + "|".join(re.escape(p) for p in prefixes) + r")-\d+\b")
+
+
+def owner_text(behavior: str, ids: re.Pattern) -> str:
+    """An item's behavior as the owner holds it. Sentences that cite another item (matching `ids`, the oracle's
+    identifiers) are graders' notes, and the owner doesn't number changes."""
     sentences = re.split(r"(?<=[.!?])\s+", behavior.strip())
-    kept = " ".join(s for s in sentences if not ITEM_ID.search(s))
+    kept = " ".join(s for s in sentences if not ids.search(s))
     return re.sub(r"\s+(?:from|after) change \d+(?: onward)?", "", kept)  # the owner doesn't number changes
 
 
-def render_items(items: list[Item], in_play: set[str] | str, disclosed: Iterable[str] = ()) -> str:
+def render_items(items: list[Item], in_play: set[str] | str, disclosed: Iterable[str] = (),
+                 ids: re.Pattern | None = None) -> str:
     told = set(disclosed)
+    ids = ids if ids is not None else id_pattern(i.id for i in items)
     lines = []
     for i in items:
         label = i.share
@@ -262,7 +272,7 @@ def render_items(items: list[Item], in_play: set[str] | str, disclosed: Iterable
             label += "; mentioned to the agent"
         elif label == "Askable" and (in_play == ALL or i.id in in_play):
             label += "; in play for this change"
-        line = f"- [{i.id}] ({label}) {owner_text(i.behavior)}"
+        line = f"- [{i.id}] ({label}) {owner_text(i.behavior, ids)}"
         if i.response:
             line += (" You wouldn't say this unprompted. When the agent proposes the opposite, or offers it as one choice "
                      f'in a question, object: "{i.response}" When it asks an open question about this without saying what '
@@ -326,7 +336,7 @@ def parse_owner_items(data: Mapping, oracle: Oracle, *, default: OwnerItem | Non
             raise ValueError(f"owner items: {iid}'s tier must be low, medium, or high, not {tier!r}")
         if not isinstance(line, str) or not line.strip():
             raise ValueError(f"owner items: {iid}'s recall line is empty")
-        if ITEM_ID.search(line):
+        if id_pattern(known).search(line):
             raise ValueError(f"owner items: {iid}'s recall line mentions an identifier")
         out[iid] = OwnerItem(tier, line.strip())
     return complete_owner_items(oracle, out, default)
@@ -457,10 +467,13 @@ def scope_key(scope: str, change: "Change", stop: int) -> str:
 
 
 def contradiction_key(correction: dict) -> str:
-    """What a contradiction's uniform is keyed on: its item, or for one tied to no item, its quoted words (case and
-    spacing aside)."""
+    """What a contradiction's uniform is keyed on: its item; for one tied to no item, its quoted words (case and
+    spacing aside); and for something left out that is tied to no item, a constant, since the words naming what is
+    missing change from stop to stop."""
     if correction.get("item") != "none":
         return correction["item"]
+    if correction.get("passage") == 0:
+        return "none:missing"
     return "none:" + " ".join(str(correction.get("wrong", "")).lower().split())
 
 
@@ -473,6 +486,7 @@ class Redirect:
     kind: str  # "change of mind" or "clarification"
     text: str
     introduces: tuple[str, ...] = ()  # items a change of mind brings in, withheld until it is delivered
+    settles: tuple[str, ...] = ()  # items a clarification's words share: disclosed once it is delivered or settled
 
 
 @dataclass(frozen=True)
@@ -565,7 +579,13 @@ def parse_change_script(text: str) -> dict[int, Change]:
             ids = parse_ids(intro) if intro else ()
             if ids == ALL:
                 raise ValueError(f"change {n}: a redirect can't introduce every item")
-            redirect = Redirect(timing=rm.group(1).lower(), kind=kind, text=_quote(b) or "", introduces=ids)
+            settles_field = _field(b, "Redirect settles")
+            if settles_field and kind != "clarification":
+                raise ValueError(f"change {n}: only a clarification settles items")
+            settles = parse_ids(settles_field) if settles_field else ()
+            if settles == ALL:
+                raise ValueError(f"change {n}: a clarification can't settle every item")
+            redirect = Redirect(timing=rm.group(1).lower(), kind=kind, text=_quote(b) or "", introduces=ids, settles=settles)
             if not redirect.text:
                 raise ValueError(f"change {n}: redirect has no quoted words")
         diag = parts.get("Scheduled diagnostic")
@@ -655,15 +675,33 @@ _LIST_ITEM = re.compile(r"^\s*(?:[-*+]|\d{1,9}[.)])\s")
 _TABLE_ROW = re.compile(r"^\s*\|")
 _FENCE = re.compile(r"^\s*(`{3,}|~{3,})")
 _CONTENT = re.compile(r"[^\W_]")  # a letter or a digit
+_TABLE_DIVIDER = re.compile(r"^\s*\|?\s*:?-+:?\s*(?:\|\s*:?-+:?\s*)+\|?\s*$")  # "--- | ---", "|:--|--:|"
+
+
+def _table_rows(lines: Sequence[str]) -> set[int]:
+    """Lines of tables written without leading pipes: a header row with a pipe, the divider under it, and the
+    non-blank lines with a pipe that follow."""
+    rows: set[int] = set()
+    for i, line in enumerate(lines):
+        if i == 0 or not _TABLE_DIVIDER.match(line) or "|" not in lines[i - 1] or not lines[i - 1].strip():
+            continue
+        rows.update((i - 1, i))
+        j = i + 1
+        while j < len(lines) and lines[j].strip() and "|" in lines[j]:
+            rows.add(j)
+            j += 1
+    return rows
 
 
 def _blocks(lines: Sequence[str]) -> list[list[int]]:
     """Group line indices into passages. A heading or table row is one line; a list item runs until the next item,
-    block, or blank line; a paragraph until a blank line or another block; a fenced block until its closing fence.
-    A block without a letter or digit (a rule, a table's divider) joins the passage before it."""
+    block, or blank line; a paragraph until a blank line or another block; a fenced block until its closing fence,
+    or the end of its document if it has none. A block without a letter or digit (a rule, a table's divider) joins
+    the passage before it."""
     blocks: list[list[int]] = []
     cur: list[int] | None = None
     fence: str | None = None
+    table = _table_rows(lines)
     for i, line in enumerate(lines):
         if fence is not None:
             cur.append(i)
@@ -677,7 +715,7 @@ def _blocks(lines: Sequence[str]) -> list[list[int]]:
         if f:
             fence, cur = f.group(1), [i]
             blocks.append(cur)
-        elif _HEADING.match(line) or _TABLE_ROW.match(line):
+        elif _HEADING.match(line) or _TABLE_ROW.match(line) or i in table:
             blocks.append([i])
             cur = None
         elif _LIST_ITEM.match(line) or cur is None:
@@ -880,7 +918,7 @@ def build_prompt(*, oracle: Oracle, change: Change, brief: str, message: str,
 
     return _fill(template, {
         "NARRATIVE": released_narrative(oracle, change.number, withhold_section=change.number if withholding else None),
-        "ITEMS": render_items(items, change.in_play, disclosed),
+        "ITEMS": render_items(items, change.in_play, disclosed, id_pattern(oracle.ids())),
         "REQUEST": request,
         "GUIDANCE": guidance,
         "CHANGE_OF_MIND": change_of_mind,
@@ -905,17 +943,30 @@ def _passage_number(n) -> bool:
     return isinstance(n, int) and not isinstance(n, bool)
 
 
+LEVEL_STRENGTH = {"says": 0, "adjacent": 1, "direct": 2}  # two levels for one item and passage keep the weaker
+
+
 def check_output(out: dict, items: Sequence[Item], *, clarification_pending: bool, passages: int = 0,
-                 in_play: set[str] | str = ALL) -> tuple[dict, list[str]]:
-    """Normalize the model's output and list what is wrong with it. Returns (normalized, problems).
+                 in_play: set[str] | str = ALL, requested: Iterable[str] = (),
+                 ids: re.Pattern | None = None) -> tuple[dict, list[str], list[str]]:
+    """Normalize the model's output. Returns (normalized, problems, repairs).
+
+    Problems are structural faults, which a fresh call may fix: unknown kinds or levels, passage numbers that don't
+    exist, identifiers or passage numbers in the owner's words, an empty correction, a no-view answer that shares
+    something. Repairs are slips with one right answer, made here and logged instead of retried: a touch on an item
+    that isn't an askable one the owner holds, a touch where the same item is contradicted, two levels for one item
+    in one passage (the weaker is kept), a broad question's scope naming an item that isn't askable or in play, and a
+    correction for something left out that cites an item this change's request didn't ask for.
 
     items: the items the owner holds at this call; passages: how many numbered passages the stop has; in_play: the
-    change's items in play, which bound a broad question's scope."""
-    problems = []
+    change's items in play, which bound a broad question's scope; requested: the items this change's own request asks
+    for (at the first build, the brief's); ids: the oracle's identifier pattern."""
+    problems, repairs = [], []
     out = copy.deepcopy(out)
     released = {i.id: i for i in items}
+    ids = ids if ids is not None else id_pattern(released)
     askable = {i for i, it in released.items() if it.share == "Askable"}
-    stated = {i for i, it in released.items() if it.share == "Stated"}
+    may_be_missing = set(requested) & set(released)
     if out.get("message_kind") not in KINDS:
         problems.append(f"message_kind {out.get('message_kind')!r}")
     for a in out.get("answers", []):
@@ -931,10 +982,9 @@ def check_output(out: dict, items: Sequence[Item], *, clarification_pending: boo
             for i in a.get("in_scope") or []:
                 if i in scope:
                     continue
-                if i not in askable:
-                    problems.append(f"a broad question's scope lists {i}, but {i} isn't an Askable rule in play for this change")
-                elif in_play != ALL and i not in in_play:
-                    problems.append(f"a broad question's scope lists {i}, but {i} isn't in play for this change")
+                if i not in askable or (in_play != ALL and i not in in_play):
+                    repairs.append(f"dropped {i} from a broad question's scope: it isn't an Askable rule in play for this change")
+                    continue
                 scope.append(i)
             a["in_scope"] = scope
             continue
@@ -950,54 +1000,62 @@ def check_output(out: dict, items: Sequence[Item], *, clarification_pending: boo
         for i in a.get("items", []):
             if i not in released:
                 problems.append(f"answer shares {i}, which the owner doesn't hold")
-        if ITEM_ID.search(a.get("answer", "")):
+        if ids.search(a.get("answer", "")):
             problems.append("an answer mentions a rule identifier")
         if PASSAGE_NUMBER.search(a.get("answer", "")):
             problems.append("an answer mentions a passage number")
-    contradicted = set()
+    corrections, contradicted = [], set()
     for c in out.get("corrections", []):
         item, n = c.get("item"), c.get("passage")
+        if n == 0 and _passage_number(n) and item != "none" and item not in may_be_missing:
+            # Only part of this change's own request can be pointed out as missing: an earlier stated item the agent
+            # leaves out is its own to keep, and an askable one left out is a touch at most.
+            repairs.append(f"dropped a correction for something left out that cites {item}: only what this change's "
+                           "request asked for can be pointed out as missing")
+            continue
         if item != "none" and item not in released:
             problems.append(f"correction cites {item}, which the owner doesn't hold")
         if not _passage_number(n):
             problems.append(f"a correction has no passage number: {n!r}")
         elif not 0 <= n <= passages:
             problems.append(f"a correction cites passage {n}, which doesn't exist")
-        elif n == 0 and item != "none" and item not in stated:
-            problems.append(f"a correction for something left out cites {item}, which isn't a stated rule: an Askable "
-                            "rule the agent left out is a touch, not a correction")
         else:
             contradicted.add((item, n))
-        if ITEM_ID.search(c.get("text", "")):
+        if ids.search(c.get("text", "")):
             problems.append("a correction mentions a rule identifier")
         if PASSAGE_NUMBER.search(c.get("text", "")):
             problems.append("a correction mentions a passage number")
         if not c.get("text", "").strip():
             problems.append("an empty correction")
-    touches, levels = [], {}
+        corrections.append(c)
+    out["corrections"] = corrections
+    touches: list[dict] = []
+    where: dict[tuple, dict] = {}
     for t in out.get("touches") or []:
         item, n, level = t.get("item"), t.get("passage"), t.get("level")
         if item not in released:
-            problems.append(f"a touch cites {item}, which the owner doesn't hold")
+            repairs.append(f"dropped a touch on {item}, which the owner doesn't hold")
         elif item not in askable:
-            problems.append(f"a touch cites {item}, but {item} isn't an Askable rule, so nothing can remind the owner of it")
+            repairs.append(f"dropped a touch on {item}, which isn't an Askable rule, so nothing can remind the owner of it")
         elif not _passage_number(n) or not 1 <= n <= passages:
             problems.append(f"a touch cites passage {n!r}, which doesn't exist")
         elif level not in LEVELS:
             problems.append(f"a touch has level {level!r}")
         elif (item, n) in contradicted:
-            problems.append(f"{item} is both contradicted and touched in passage {n}: a contradiction is not a touch")
-        elif (item, n) not in levels:
-            levels[(item, n)] = level
-            touches.append({"item": item, "passage": n, "level": level})
-        elif levels[(item, n)] != level:
-            problems.append(f"{item} has two levels in passage {n}")
+            repairs.append(f"dropped a touch on {item} in passage {n}, where it is contradicted: a contradiction is not a touch")
+        elif (item, n) not in where:
+            where[(item, n)] = {"item": item, "passage": n, "level": level}
+            touches.append(where[(item, n)])
+        elif where[(item, n)]["level"] != level:
+            weaker = min(level, where[(item, n)]["level"], key=LEVEL_STRENGTH.__getitem__)
+            repairs.append(f"{item} had two levels in passage {n}; kept the weaker, {weaker}")
+            where[(item, n)]["level"] = weaker
     out["touches"] = touches
     if out.get("message_kind") == "questions" and not out.get("answers"):
         problems.append("message_kind is questions but nothing is answered")
     if not clarification_pending:
         out["clarification_settled"] = False
-    return out, problems
+    return out, problems, repairs
 
 
 # ------------------------------------------------------------------------------------------------ the owner
@@ -1034,11 +1092,12 @@ def catch_probability(policy: str, words_read: int, half: int = HALF_ATTENTION_W
 
 
 def trim_reply(trim: Callable[[str], dict] | None, message: str, out: dict, calls: list[dict], *,
-               requested: Iterable[str] = ()) -> None:
+               requested: Iterable[str] = (), ids: re.Pattern | None = None) -> None:
     """Cut each targeted answer that shares a rule, and each correction, down to what the question or the quoted
     words need, with a separate call that sees only the agent's message and the draft parts. `requested`: items this
-    change's own request asked for, whose omission the owner may still point out. Recall lines are added after this,
-    so the trim never sees them."""
+    change's own request asked for, whose omission the owner may still point out, so a DROP is ignored for them (one
+    tied to no item keeps the trim as its guard). `ids`: the oracle's identifier pattern; an edit that adds an
+    identifier is refused. Recall lines are added after this, so the trim never sees them."""
     if trim is None:
         return
     parts = [("answer", a, a["question"]) for a in out["answers"]
@@ -1062,7 +1121,7 @@ def trim_reply(trim: Callable[[str], dict] | None, message: str, out: dict, call
             if d.get("item") not in keep_anyway:
                 dropped.append(d)
                 changes.append({"part": n, "before": old, "after": None})
-        elif new and new != "DROP" and not ITEM_ID.search(new) and words(new) <= words(old):
+        elif new and new != "DROP" and not (ids is not None and ids.search(new)) and words(new) <= words(old):
             d[key] = new
             if new != old:
                 changes.append({"part": n, "before": old, "after": new})
@@ -1091,6 +1150,7 @@ class Owner:
         self.owner_items = complete_owner_items(oracle, owner_items or {}, default_owner_item)
         self.template = template if template is not None else TEMPLATE_PATH.read_text(encoding="utf-8")
         self.max_attempts = max_attempts
+        self.ids = id_pattern(oracle.ids())
         self.record: list[Said] = []
         self.requests: list[tuple[int, str]] = []
         self.seen: dict[str, str] = {}
@@ -1113,6 +1173,9 @@ class Owner:
         """Begin a change; returns the owner's request for the agent's first prompt."""
         if self.change is not None:
             raise RuntimeError(f"change {self.change.number} hasn't ended")
+        unknown = [i for i in (change.redirect.settles if change.redirect else ()) if i not in self.oracle.ids()]
+        if unknown:
+            raise ValueError(f"change {change.number}: the clarification settles {', '.join(unknown)}, which the oracle doesn't have")
         self.change, self.turns, self.said_now, self.words_this_change = change, [], [], 0
         self.redirect_state = "pending" if change.redirect else None
         self.redirect_point = None
@@ -1137,21 +1200,26 @@ class Owner:
         pending_cl = bool(r and r.kind == "clarification" and state == "pending")
         for _ in range(self.max_attempts):
             raw = self.ask(prompt)
-            out, problems = check_output(raw, items, clarification_pending=pending_cl, passages=passages,
-                                         in_play=self.change.in_play)
-            calls.append({"prompt": prompt, "output": raw, "problems": problems})
+            out, problems, repairs = check_output(raw, items, clarification_pending=pending_cl, passages=passages,
+                                                  in_play=self.change.in_play, requested=self._requested_now(), ids=self.ids)
+            calls.append({"prompt": prompt, "output": raw, "problems": problems, "repairs": repairs})
             if not problems:
                 return out
         raise OwnerFailed(f"no valid reply after {self.max_attempts} attempts: {problems}")
 
     def _requested_now(self) -> set[str]:
-        """Items that come in with this change's own request: stated in it, or emerging with it."""
-        n = self.change.number if self.change is not None else None
-        return {i.id for i in self.oracle.items if i.in_force == n and n not in (None, 0)
+        """Items this change's own request asks for: those stated in it or emerging with it, and at the first build,
+        the brief's. A probe's request names no item."""
+        ch = self.change
+        if ch is None or ch.probe:
+            return set()
+        if ch.number == 0:
+            return {i.id for i in self.oracle.items if i.kind == "Stated at start"}
+        return {i.id for i in self.oracle.items if i.in_force == ch.number
                 and i.kind.lower().startswith(("stated in change", "emerging"))}
 
     def _trim(self, message: str, out: dict, calls: list[dict]) -> None:
-        trim_reply(self.trim, message, out, calls, requested=self._requested_now())
+        trim_reply(self.trim, message, out, calls, requested=self._requested_now(), ids=self.ids)
 
     def _read(self, offset: int, before: int, shown: int) -> tuple[float, float, int]:
         """(a, w, read_before) for a position `offset` new words into this stop: the policy's attention there, w as
@@ -1213,6 +1281,10 @@ class Owner:
         after_first_build = ch.number > 0 or ch.probe
         draws: list[dict] = []
         disclosed_before = set(self.disclosed)  # the model reported touches against this view
+        # A clarification delivered with this reply, or found already settled, shares the items it settles: they are
+        # disclosed before any draw, so no recall line for them can follow in this reply or later.
+        settled = list(redirect.settles) if event in ("delivered", "settled") and redirect.kind == "clarification" else []
+        self.disclosed.update(settled)
 
         # Contradictions: one uniform per item (or per quoted words) and scope; a correction is kept when the policy's
         # probability at its passage exceeds it. Something left out of this change's request has no passage and is
@@ -1225,14 +1297,18 @@ class Owner:
             draws.append({"event": "contradiction", "item": c["item"], "passage": c["passage"], "w": w,
                           "read_before": read_before, "a": a, "r": None, "p": p, "u": u, "fired": p > u})
             (kept if p > u else dropped).append({**c, "p": p, "u": u})
+        # The same correction for the same item, word for word, is said once.
+        kept = [c for k, c in enumerate(kept) if (c["item"], c["text"]) not in {(x["item"], x["text"]) for x in kept[:k]}]
         for ans in out["answers"]:
             if ans["breadth"] == "targeted":
                 self.disclosed.update(ans["items"])
         self.disclosed.update(c["item"] for c in kept if c["item"] != "none")
 
         # Recall on review: each unsaid askable item the passages touch, at the first touching passage whose
-        # probability exceeds the item's uniform. n counts the unsaid items touching the same passage.
-        touches = sorted((t for t in out["touches"] if t["item"] not in disclosed_before and t["level"] != "says"),
+        # probability exceeds the item's uniform. n counts the unsaid items touching the same passage. An item some
+        # passage of this stop already states is not drawn for at this stop, and doesn't count in n.
+        said_here = {t["item"] for t in out["touches"] if t["level"] == "says"}
+        touches = sorted((t for t in out["touches"] if t["item"] not in disclosed_before and t["item"] not in said_here),
                          key=lambda t: t["passage"])
         fan = collections.Counter(t["passage"] for t in touches)
         recalled: list[dict] = []
@@ -1300,6 +1376,7 @@ class Owner:
         shared += [{"item": x["item"], "reason": "recalled", "via": "review"} for x in recalled if x["via"] == "review"]
         if event == "delivered":
             shared.append({"item": None, "reason": "redirect"})
+        shared += [{"item": i, "reason": "redirect" if event == "delivered" else "settled"} for i in settled]
         for a in out["answers"]:
             self.said_now.append(Said(ch.number, a["answer"], a["question"], tuple(a["items"])))
         for c in kept:

@@ -1,5 +1,7 @@
 """Tests for costeval.trajectory: arms, first prompts, the change loop, and what counts as code."""
 
+import contextlib
+import io
 import json
 import sys
 from dataclasses import asdict
@@ -13,6 +15,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from costeval import executor, simulator as sm, trajectory as tj, usage  # noqa: E402
 from test_simulator import BRIEF, CHANGES, ORACLE, OWNER_ITEMS, ans, out  # noqa: E402
 
+import audit_owner as ao  # noqa: E402
+import run_probe as rp  # noqa: E402
 import run_trajectory as rt  # noqa: E402
 
 
@@ -238,9 +242,59 @@ class RunOptionsTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             rt.owner_model_from_arg('{"k": 1}')
 
-    def test_the_replicate_defaults_to_the_trajectory_id(self):
-        self.assertEqual(rt.replicate_from_args("t-bare-1", None), "t-bare-1")
-        self.assertEqual(rt.replicate_from_args("t-bare-1", "r7"), "r7")
+    def test_a_trajectory_needs_a_replicate(self):
+        parser = rt.build_parser()
+        with self.assertRaises(SystemExit), contextlib.redirect_stderr(io.StringIO()):
+            parser.parse_args(["--arm", "bare", "--id", "t-bare-1"])
+        self.assertEqual(parser.parse_args(["--arm", "bare", "--id", "t-bare-1", "--replicate", "r7"]).replicate, "r7")
+        self.assertNotIn("defaults to the trajectory ID", rt.__doc__)
+
+
+class OwnerBeforeChangeTest(unittest.TestCase):
+    def setUp(self):
+        self.dir = Path(tempfile.mkdtemp())
+        self.owner, _ = make_owner()
+        self.owner.record = [sm.Said(0, "Left from a failed attempt.", None, ("BK-02",))]
+        self.owner.requests = [(0, "the brief")]
+        self.owner.seen = {"docs/a.md": "old"}
+        self.owner.disclosed = {"BK-02"}
+
+    def test_the_first_build_starts_from_an_empty_owner(self):
+        rt.prepare_owner(self.owner, self.dir, 0)
+        self.assertEqual((self.owner.record, self.owner.requests, self.owner.seen, self.owner.disclosed), ([], [], {}, set()))
+
+    def test_a_later_change_starts_from_the_owner_after_the_change_before(self):
+        clean, _ = make_owner()
+        clean.requests = [(0, "the brief")]
+        (self.dir / "owner-state-00.json").write_text(json.dumps(tj.owner_state(clean)))
+        rt.prepare_owner(self.owner, self.dir, 1)
+        self.assertEqual((self.owner.record, self.owner.disclosed, self.owner.seen), ([], set(), {}))
+        self.assertEqual(self.owner.requests, [(0, "the brief")])
+
+    def test_a_later_change_without_the_state_before_it_stops(self):
+        (self.dir / "owner-state.json").write_text(json.dumps(tj.owner_state(self.owner)))
+        with self.assertRaisesRegex(RuntimeError, "owner-state-01.json"):
+            rt.prepare_owner(self.owner, self.dir, 2)
+
+
+class ProbeOptionsTest(unittest.TestCase):
+    def test_a_probe_keys_its_draws_on_the_base_replicate_checkpoint_and_fork(self):
+        self.assertEqual(rp.probe_replicate({"replicate": "r1"}, 3, 2, None), "r1-probe-3-fork-2")
+        self.assertEqual(rp.probe_replicate({"replicate": "r1"}, 3, 2, "x"), "x")
+        self.assertEqual(rp.probe_replicate({}, 3, 2, "x"), "x")
+        with self.assertRaisesRegex(ValueError, "replicate"):
+            rp.probe_replicate({}, 3, 2, None)
+
+    def test_a_probe_of_a_trajectory_with_no_owner_model_says_it_assumed_one(self):
+        self.assertEqual(rp.probe_owner_model({"owner_model_config": asdict(sm.OwnerModel.pilot())}), (sm.OwnerModel.pilot(), False))
+        self.assertEqual(rp.probe_owner_model({}), (sm.OwnerModel(), True))
+
+
+class AuditTest(unittest.TestCase):
+    def test_the_audit_counts_repairs_in_every_owner_call(self):
+        rec = {"calls": [{"problems": ["x"], "repairs": []}, {"problems": [], "repairs": ["a", "b"]}, {"trim": []}]}
+        self.assertEqual(ao.repairs_in(rec), 2)
+        self.assertEqual(ao.repairs_in({"calls": []}), 0)
 
 
 if __name__ == "__main__":

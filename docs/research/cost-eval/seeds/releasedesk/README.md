@@ -29,3 +29,4 @@ The private record of each step is in `hidden/`.
 | 1 | 2026-11-15 | `hidden/probes.md` | `350bc195f74dd40d1f0a3e2846e189e6d31dff4418ad5e18a43c102b391b9df5` |
 | 2 | 2026-11-15 | `hidden/probes.md` | `840a26f3c061b771a129e2079c02f450e9b9e14adc2aba9005d1f13bcecda6b7` |
 | 1 | 2026-11-16 | `hidden/owner-items.json` | `c7e00ae23d66c7968778a61546008ae25faee65de1796772d4982142ae3fee61` |
+| 2 | 2026-11-16 | `hidden/change-script.md` | `6f463a9b6649f7a35f12cb171a2cf888c1195a308a727422eb2f67f5eb559362` |

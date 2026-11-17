@@ -107,6 +107,20 @@ class PassageTest(unittest.TestCase):
         self.assertEqual([p.text for p in ps], ["Intro.", "```\ndef f():\n\n    return 1\n```\n---", "End."])
         self.assertEqual(sum(p.words for p in ps), sm.words(msg))
 
+    def test_a_table_without_leading_pipes_splits_by_row(self):
+        msg = "Fields:\n\nField | Rule\n--- | ---\nnote | optional\nprice | required\n\nOK?"
+        ps = sm.split_stop(msg).passages
+        self.assertEqual([p.text for p in ps], ["Fields:", "Field | Rule\n--- | ---", "note | optional", "price | required", "OK?"])
+        self.assertEqual(sum(p.words for p in ps), sm.words(msg))
+        # A pipe in an ordinary sentence doesn't make a table.
+        self.assertEqual(len(sm.split_stop("Use a | b for either.\nThen continue.").passages), 1)
+
+    def test_an_unclosed_fence_ends_with_its_own_document(self):
+        ps = sm.split_stop("Here:\n\n```\ncode\n\nmore code", [sm.plan_document("Plan one.\n\nPlan two.")]).passages
+        self.assertEqual([(p.source, p.text) for p in ps], [
+            (sm.MESSAGE_SOURCE, "Here:"), (sm.MESSAGE_SOURCE, "```\ncode\n\nmore code"),
+            ("The agent's plan", "Plan one."), ("The agent's plan", "Plan two.")])
+
     def test_the_prompt_shows_each_passage_number_at_its_start_and_only_on_new_lines(self):
         old = "# Notes\n\nNotes are optional.\n\n- one\n- two"
         new = "# Notes\n\nNotes are optional and short.\nThey are kept as typed.\n\n- one\n- two\n- three"
@@ -230,9 +244,88 @@ class DrawTest(unittest.TestCase):
 
     def test_a_correction_tied_to_no_item_is_keyed_on_its_quoted_words(self):
         k = sm.contradiction_key
-        self.assertEqual(k({"item": "none", "wrong": "Orders  are\nkept a Week"}), k({"item": "none", "wrong": "orders are kept a week"}))
-        self.assertNotEqual(k({"item": "none", "wrong": "orders are kept a week"}), k({"item": "none", "wrong": "orders are kept a month"}))
-        self.assertEqual(k({"item": "BK-03", "wrong": "anything"}), k({"item": "BK-03", "wrong": "something else"}))
+        none = lambda wrong, passage=1: {"item": "none", "passage": passage, "wrong": wrong}
+        self.assertEqual(k(none("Orders  are\nkept a Week")), k(none("orders are kept a week")))
+        self.assertNotEqual(k(none("orders are kept a week")), k(none("orders are kept a month")))
+        self.assertEqual(k({"item": "BK-03", "passage": 1, "wrong": "anything"}), k({"item": "BK-03", "passage": 2, "wrong": "else"}))
+
+    def test_something_left_out_and_tied_to_no_item_is_keyed_on_a_constant(self):
+        k = sm.contradiction_key
+        self.assertEqual(k({"item": "none", "passage": 0, "wrong": "the note field"}),
+                         k({"item": "none", "passage": 0, "wrong": "notes, which I asked for"}))
+        self.assertNotEqual(k({"item": "none", "passage": 0, "wrong": "x"}), k({"item": "none", "passage": 1, "wrong": "x"}))
+
+    def test_one_item_contradicted_at_two_stops_and_passages_shares_one_uniform(self):
+        w, _ = owner("bounded", out("approval", corrections=[cor("BK-03", "Keep every order.", passage=1)]),
+                     out("approval", corrections=[cor("BK-03", "Keep them all.", wrong="purge", passage=2)]))
+        w.start_change(self.c[1])
+        u1 = w.respond("Delete old orders.", code_written=False).draws[0]["u"]
+        u2 = w.respond("More words here.\n\nPurge orders yearly.", code_written=False).draws[0]["u"]
+        self.assertEqual(u1, u2)
+        self.assertEqual(u1, sm.uniform("s1", "BK-03", "contradiction", key(self.c[1])))
+
+    def test_n_counts_the_unsaid_items_touching_the_same_passage(self):
+        both = out("approval", touches=[touch("BK-02", 1), touch("BK-09", 1)])
+        w, _ = owner("diligent", both, replicate="fan")
+        w.start_change(self.c[1])
+        rates = {d["item"]: d["r"] for d in w.respond("Orders and notes.", code_written=False).draws}
+        self.assertEqual(rates, {"BK-02": sm.recall_rate(M, "medium", direct=True, n=2),
+                                 "BK-09": sm.recall_rate(M, "low", direct=True, n=2)})
+        # An item the passage already states doesn't count, and neither does one the owner has disclosed.
+        w, _ = owner("diligent", out("approval", touches=[touch("BK-02", 1, "says"), touch("BK-09", 1)]))
+        w.start_change(self.c[1])
+        self.assertEqual([d["r"] for d in w.respond("Orders and notes.", code_written=False).draws], [LOW_DIRECT])
+        w, _ = owner("diligent", copy.deepcopy(both))
+        w.disclosed.add("BK-02")
+        w.start_change(self.c[1])
+        self.assertEqual([(d["item"], d["r"]) for d in w.respond("Orders and notes.", code_written=False).draws],
+                         [("BK-09", LOW_DIRECT)])
+
+    def test_bounded_recall_is_attention_times_the_capped_rate(self):
+        msg = "\n\n".join(["filler " * 300] * 5 + ["Refunds go through the till.", "Notes go in a text field."])
+        o = out("approval", touches=[touch("BK-07", 6), touch("BK-09", 7)])
+        w, _ = owner("bounded", o)
+        w.start_change(self.c[5])
+        draws = {d["item"]: d for d in w.respond(msg, code_written=False).draws}
+        a6 = sm.attention(M, w=1500, read_before=1500)
+        a7 = sm.attention(M, w=1505, read_before=1505)
+        self.assertAlmostEqual(draws["BK-07"]["p"], a6 * min(sm.recall_rate(M, "high", direct=True), 0.8))  # the cap binds
+        self.assertAlmostEqual(draws["BK-09"]["p"], a7 * LOW_DIRECT)  # it doesn't
+        self.assertLess(draws["BK-07"]["p"], 0.5)
+
+    def test_dormancy_applies_on_review_after_the_first_build_and_at_a_probe(self):
+        on = sm.OwnerModel(dormancy=True)
+        o = out("approval", touches=[touch("BK-02", 1, "adjacent"), touch("BK-09", 2, "direct")])
+        dormant = sm.recall_rate(on, "medium", direct=False, after_first_build=True)
+        for change, adjacent in ((sm.first_build(BRIEF), MED_ADJ), (self.c[1], dormant), (sm.parse_probe(CHANGES, 0), dormant)):
+            with self.subTest(change.number, probe=change.probe):
+                w, _ = owner("diligent", copy.deepcopy(o), model=on, replicate="never")
+                w.start_change(change)
+                rates = {d["item"]: d["r"] for d in w.respond("Orders all day.\n\nNotes in a field.", code_written=False).draws}
+                self.assertEqual(rates, {"BK-02": adjacent, "BK-09": LOW_DIRECT})
+
+    def test_dormancy_on_broad_questions_follows_its_setting(self):
+        q = out("questions", [broad("Anything else?", ["BK-09"])])
+        dormant = sm.recall_rate(sm.OwnerModel(dormancy=True), "low", direct=False, after_first_build=True)
+        for setting, want in ((True, dormant), (False, LOW_ADJ)):
+            with self.subTest(setting):
+                w, _ = owner("diligent", copy.deepcopy(q), model=sm.OwnerModel(dormancy=True, dormancy_on_broad=setting))
+                w.start_change(self.c[1])
+                self.assertEqual(w.respond("Anything else?", code_written=False).draws[0]["r"], want)
+
+    def test_an_item_a_passage_states_gets_no_recall_draw_at_that_stop(self):
+        w, _ = owner("diligent", out("approval", touches=[touch("BK-09", 1, "says"), touch("BK-09", 2, "direct")]))
+        w.start_change(self.c[1])
+        self.assertEqual(w.respond("Notes are kept as typed.\n\nNotes go in a field.", code_written=False).draws, [])
+
+    def test_a_correction_repeated_word_for_word_is_said_once(self):
+        o = out("approval", corrections=[cor("BK-03", "Keep every order.", passage=1), cor("BK-03", "Keep every order.", passage=2),
+                                         cor("BK-03", "Never purge orders.", passage=2)])
+        w, _ = owner("diligent", o)
+        w.start_change(self.c[1])
+        r = w.respond("Delete old orders.\n\nAlso delete them yearly.", code_written=False)
+        self.assertEqual([c["text"] for c in r.kept], ["Keep every order.", "Never purge orders."])
+        self.assertEqual(r.reply, "Keep every order.\n\nNever purge orders.\n\nOtherwise, go ahead.")
 
     def test_recall_happens_at_the_first_passage_whose_probability_exceeds_u(self):
         rep = find_replicate(lambda u: MED_ADJ < u < MED_DIRECT, ("BK-02", "recall", key(self.c[1])))
@@ -488,23 +581,16 @@ class CheckOutputTest(unittest.TestCase):
             w.respond(message, code_written=False)
         return str(cm.exception)
 
-    def test_bad_passages_touches_and_breadths_are_refused(self):
+    def test_structural_faults_are_retried_and_then_refused(self):
         cases = {
             "passage 3": out("approval", corrections=[cor("BK-03", "Keep every order.", passage=3)]),
             "passage 5": out("approval", touches=[touch("BK-02", 5)]),
             "passage 0": out("approval", touches=[touch("BK-02", 0)]),
-            "BK-01 isn't an Askable rule": out("approval", touches=[touch("BK-01", 1)]),
-            "BK-03 isn't an Askable rule": out("approval", touches=[touch("BK-03", 1)]),
-            "BK-07, which the owner doesn't hold": out("approval", touches=[touch("BK-07", 1)]),
             "level 'strong'": out("approval", touches=[touch("BK-02", 1, "strong")]),
-            "two levels": out("approval", touches=[touch("BK-02", 1, "direct"), touch("BK-02", 1, "adjacent")]),
-            "a contradiction is not a touch": out("approval", corrections=[cor("BK-02", "We close at six.", passage=2)],
-                                                  touches=[touch("BK-02", 2)]),
-            "left out": out("approval", corrections=[cor("BK-02", "We close at six.", passage=0)]),
             "passage number": out("approval", corrections=[cor("BK-03", "See [P1]: keep every order.")]),
+            "rule identifier": out("approval", corrections=[cor("BK-03", "As BK-03 says, keep every order.")]),
+            "empty correction": out("approval", corrections=[cor("BK-03", "  ")]),
             "breadth": out("questions", [ans("Closing time?", "Six.", ["BK-02"], breadth="wide")]),
-            "BK-02 isn't in play": out("questions", [broad("Anything else?", ["BK-02"])]),
-            "BK-01 isn't an Askable rule in play": out("questions", [broad("Anything else?", ["BK-01"])]),
         }
         for why, o in cases.items():
             with self.subTest(why):
@@ -523,13 +609,130 @@ class CheckOutputTest(unittest.TestCase):
         r = w.respond("One.\n\nTwo.", code_written=False)
         self.assertEqual(len(ask.prompts), 2)
         self.assertTrue(r.calls[0]["problems"])
-        self.assertEqual(r.calls[1]["problems"], [])
+        self.assertEqual((r.calls[1]["problems"], r.calls[1]["repairs"]), ([], []))
 
-    def test_a_stated_item_this_change_asked_for_may_be_pointed_out_as_missing(self):
-        w, _ = owner("diligent", out("approval", corrections=[cor("BK-10", "Keep the order number.", wrong="number", passage=0)]),
-                     out("completion"))
+    def repaired(self, o, change=1, message="One.\n\nTwo."):
+        """Respond once with o; it must be repaired, not retried. Returns (reply, repairs)."""
+        w, ask = owner("diligent", o, o, o)
+        w.start_change(script()[change])
+        r = w.respond(message, code_written=False)
+        self.assertEqual(len(ask.prompts), 1)
+        self.assertEqual(r.calls[0]["problems"], [])
+        self.assertTrue(r.calls[0]["repairs"])
+        return r, r.calls[0]["repairs"]
+
+    def test_deterministic_slips_are_repaired_and_logged_without_a_retry(self):
+        for item in ("BK-01", "BK-03", "BK-07"):  # stated, recognized on sight, not yet held
+            with self.subTest(item):
+                r, repairs = self.repaired(out("approval", touches=[touch(item, 1)]))
+                self.assertEqual(r.draws, [])
+                self.assertIn(item, repairs[0])
+        r, repairs = self.repaired(out("approval", corrections=[cor("BK-02", "We close at six.", passage=2)],
+                                       touches=[touch("BK-02", 2), touch("BK-02", 1, "adjacent")]))
+        self.assertEqual([(d["event"], d["passage"]) for d in r.draws], [("contradiction", 2)])  # passage 1's touch stays,
+        self.assertEqual([c["item"] for c in r.kept], ["BK-02"])  # but the item is disclosed by its correction
+        r, repairs = self.repaired(out("questions", [broad("Anything else?", ["BK-02", "BK-01", "BK-09"])]))
+        self.assertEqual(r.answers[0]["in_scope"], ["BK-09"])  # BK-02 isn't in play at change 1; BK-01 isn't askable
+        self.assertEqual(len(repairs), 2)
+        r, repairs = self.repaired(out("approval", corrections=[cor("BK-02", "We close at six.", passage=0)]))
+        self.assertEqual((r.kept, r.dropped, r.reply), ([], [], "That looks fine. Go ahead."))
+
+    def test_two_levels_for_one_item_and_passage_keep_the_weaker(self):
+        for levels, kept in ((("direct", "adjacent"), "adjacent"), (("says", "direct"), "says"), (("adjacent", "says"), "says")):
+            with self.subTest(levels):
+                r, repairs = self.repaired(out("approval", touches=[touch("BK-09", 1, levels[0]), touch("BK-09", 1, levels[1])]))
+                if kept == "says":
+                    self.assertEqual(r.draws, [])
+                else:
+                    self.assertEqual(r.draws[0]["r"], LOW_ADJ)
+
+    def test_a_left_out_correction_may_cite_only_this_changes_request_or_none(self):
+        # Change 3 asked for BK-10: kept. BK-01 was stated at the start, not in this change's request: dropped, logged.
+        w, ask = owner("diligent", out("approval", corrections=[cor("BK-10", "Keep the order number.", wrong="number", passage=0),
+                                                                cor("BK-01", "Record the customer.", wrong="customer", passage=0)]))
         w.start_change(script()[3])
-        self.assertEqual([c["item"] for c in w.respond("Plan: move the order. OK?", code_written=False).kept], ["BK-10"])
+        r = w.respond("Plan: move the order. OK?", code_written=False)
+        self.assertEqual([c["item"] for c in r.kept], ["BK-10"])
+        self.assertEqual(len(ask.prompts), 1)
+        self.assertTrue(any("BK-01" in x for x in r.calls[0]["repairs"]))
+        # At the first build the request is the brief, so its stated items may be pointed out as missing.
+        w, _ = owner("diligent", out("approval", corrections=[cor("BK-01", "Record the customer.", wrong="customer", passage=0)]))
+        w.start_change(sm.first_build(BRIEF))
+        self.assertEqual([c["item"] for c in w.respond("Plan: orders. OK?", code_written=False).kept], ["BK-01"])
+        # A probe's request names no oracle item.
+        w, _ = owner("diligent", out("approval", corrections=[cor("BK-01", "Record the customer.", wrong="customer", passage=0)]))
+        w.start_change(sm.parse_probe(CHANGES, 1))
+        self.assertEqual(w.respond("Plan: list orders. OK?", code_written=False).kept, [])
+
+    def test_a_trim_drop_is_ignored_for_a_requested_item_even_at_the_first_build(self):
+        o = out("approval", corrections=[cor("BK-01", "Record the customer.", wrong="customer", passage=0)])
+        w, _ = owner("diligent", o, trim=lambda p: {"parts": [{"index": 1, "text": "DROP"}]})
+        w.start_change(sm.first_build(BRIEF))
+        self.assertEqual([c["item"] for c in w.respond("Plan: orders. OK?", code_written=False).kept], ["BK-01"])
+
+    def test_the_trim_still_guards_a_left_out_correction_tied_to_no_item(self):
+        o = out("approval", corrections=[cor("none", "Also keep it short.", wrong="length", passage=0)])
+        w, _ = owner("diligent", o, trim=lambda p: {"parts": [{"index": 1, "text": "DROP"}]})
+        w.start_change(script()[1])
+        r = w.respond("Plan: notes. OK?", code_written=False)
+        self.assertEqual((r.kept, r.reply), ([], "That looks fine. Go ahead."))
+
+    def test_identifiers_are_the_oracles_own(self):
+        pattern = sm.id_pattern(oracle().ids())
+        self.assertTrue(pattern.search("as BK-12 says"))
+        for text in ("UTC-5", "ISO-8601", "Room B-12"):
+            self.assertIsNone(pattern.search(text), text)
+        w, ask = owner("diligent", out("questions", [ans("Which zone?", "We work in UTC-5, dates in ISO-8601.", ["BK-02"])]))
+        w.start_change(script()[1])
+        self.assertEqual(w.respond("Which zone?", code_written=False).calls[0]["problems"], [])
+        self.assertIn("Ships at UTC-5.", sm.owner_text("Ships at UTC-5. Graded under BK-02.", pattern))
+        self.assertNotIn("Graded", sm.owner_text("Ships at UTC-5. Graded under BK-02.", pattern))
+        data = {**OWNER_ITEMS, "BK-02": {"tier": "medium", "recall": "We stop at six, UTC-5."}}
+        self.assertEqual(sm.parse_owner_items(data, oracle())["BK-02"].recall, "We stop at six, UTC-5.")
+
+
+# ---------------------------------------------------------------------------- clarifications settle items
+
+
+class ClarificationSettlesTest(unittest.TestCase):
+    """Change 3's late clarification settles BK-02 in the fixture: once it is delivered, or found already settled, the
+    item is disclosed and no recall line for it can follow, in that reply or later."""
+
+    def setUp(self):
+        self.c3 = script()[3]
+        # Draws that would recall BK-02 both on review and from a broad question, if they were made.
+        self.rep = find_replicate(lambda r, b: r < MED_DIRECT and b < MED_ADJ,
+                                  ("BK-02", "recall", key(self.c3)), ("BK-02", "broad", key(self.c3)))
+
+    def test_a_delivered_clarification_discloses_what_it_settles(self):
+        done = out("completion", [broad("Anything else?", ["BK-02"])], touches=[touch("BK-02", 1)])
+        w, _ = owner("diligent", out("approval"), done, out("approval", touches=[touch("BK-02", 1)]), replicate=self.rep)
+        w.start_change(self.c3)
+        w.respond("Plan: move orders. OK?", code_written=False)
+        r = w.respond("Done: orders are taken until late. Anything else?", code_written=True)
+        self.assertEqual(r.redirect_event, "delivered")
+        self.assertIn("BK-02", w.disclosed)
+        self.assertEqual([d for d in r.draws if d["item"] == "BK-02"], [])
+        self.assertNotIn(RECALL["BK-02"], r.reply)
+        self.assertEqual(r.reply, f'By "move" I mean keep the same order number.\n\n{sm.NOTHING_ELSE}\n\nOtherwise, go ahead.')
+        self.assertIn({"item": "BK-02", "reason": "redirect"}, r.shared)
+        self.assertEqual(w.respond("Orders are taken until late.", code_written=True).draws, [])  # nor later
+
+    def test_a_clarification_found_already_settled_discloses_what_it_settles(self):
+        o = out("questions", [ans("Keep the number?", "Yes.", ["BK-10"])], settled=True, touches=[touch("BK-02", 1)])
+        w, _ = owner("diligent", o, replicate=self.rep)
+        w.start_change(self.c3)
+        r = w.respond("Orders are taken until late. Should a moved order keep its number?", code_written=False)
+        self.assertEqual(r.redirect_event, "settled")
+        self.assertIn("BK-02", w.disclosed)
+        self.assertEqual(r.draws, [])
+        self.assertIn({"item": "BK-02", "reason": "settled"}, r.shared)
+
+    def test_a_clarification_must_settle_items_the_oracle_has(self):
+        bad = sm.parse_change_script(CHANGES.replace("**Redirect settles:** BK-02.", "**Redirect settles:** BK-99."))
+        w, _ = owner()
+        with self.assertRaisesRegex(ValueError, "BK-99"):
+            w.start_change(bad[3])
 
 
 # ------------------------------------------------------------------------------------------- owner items
@@ -593,6 +796,28 @@ class PromptTest(unittest.TestCase):
             self.assertIn(phrase, t)
         self.assertIn("Silence is not a contradiction", t)
         self.assertIn("Show me what you have in mind", t)
+
+    def test_rule_3_draws_the_line_between_targeted_and_broad_with_an_example_each_side(self):
+        t = sm.TEMPLATE_PATH.read_text(encoding="utf-8")
+        rule3 = t.split("\n3. ", 1)[1].split("\n4. ", 1)[0]
+        self.assertIn("one decision", rule3)
+        self.assertIn('"Can a customer spend loyalty points on the delivery fee?"', rule3)  # targeted
+        for broad_example in ('"How should loyalty points work?"', '"Anything about loyalty points?"', '"Any other edge cases?"'):
+            self.assertIn(broad_example, rule3)
+
+    def test_the_prompts_examples_stay_out_of_the_seeds_domains(self):
+        t = sm.TEMPLATE_PATH.read_text(encoding="utf-8").lower()
+        for word in ("cancel", "booking", "time zone", "release", "approval of"):
+            self.assertNotIn(word, t, word)
+
+    def test_a_recognized_rule_shown_wrong_is_a_correction_and_touches_replace_no_correction(self):
+        t = sm.TEMPLATE_PATH.read_text(encoding="utf-8")
+        self.assertIn("opposite of a rule you recognize on sight is a correction, with that rule's response, never a touch", t)
+        self.assertIn("Touches never replace a correction", t)
+
+    def test_a_question_put_to_the_owner_is_never_a_touch(self):
+        t = sm.TEMPLATE_PATH.read_text(encoding="utf-8")
+        self.assertIn("never for a question the agent puts to you", t)
 
     def test_askable_items_already_told_are_marked(self):
         text = sm.render_items(sm.released_items(oracle(), 1), {"BK-09"}, disclosed={"BK-09", "BK-01"})

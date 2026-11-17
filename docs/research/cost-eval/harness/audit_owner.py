@@ -4,6 +4,7 @@ simulator's fixed scenarios.
     ../plumbing/with-token.sh python3.12 audit_owner.py --id s0-bare [--all]
 
 By default only replies that shared something or answered a question are judged; --all judges every reply.
+Also counts, over every owner reply, the slips in the model's output that the harness repaired instead of retrying.
 Writes ../runs/<id>/owner-audit.json.
 """
 
@@ -23,6 +24,11 @@ from costeval import executor, simulator  # noqa: E402
 IMAGE = "lid-cost-eval-executor:2.1.323"
 
 
+def repairs_in(rec: dict) -> int:
+    """How many slips the harness repaired, instead of retrying, across one owner record's model calls."""
+    return sum(len(c.get("repairs") or []) for c in rec.get("calls") or [])
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--id", required=True)
@@ -35,8 +41,11 @@ def main(argv=None) -> int:
     judge = executor.RoleSession(image=IMAGE, config_volume="ce-roles-cfg", model=args.judge_model,
                                  claude_code_version="2.1.323", effort="medium")
     jobs = []
+    repairs: dict[str, int] = {}  # every owner record's repairs, judged or not
     for path in sorted(run.glob("change-*/owner-*.json")):
         rec = json.loads(path.read_text())
+        if repairs_in(rec):
+            repairs[f"{path.parent.name}/{path.stem}"] = repairs_in(rec)
         if not (args.all or rec["shared"] or rec["answers"]):
             continue
         prompt = [c for c in rec["calls"] if "trim" not in c][-1]["prompt"]
@@ -50,15 +59,18 @@ def main(argv=None) -> int:
         r = executor.run_role(judge, prompt, json_schema=simulator.judge_schema_json())
         j = r.structured or {}
         return {"stop": f"{path.parent.name}/{path.stem}", "reply": rec["reply"], "shared": rec["shared"],
+                "repairs": repairs_in(rec),
                 "leaks": [d for d in j.get("disclosures", []) if not d["licensed"]], "invented": j.get("invented", []),
                 "judge": j, "cost_usd": r.usage.reported_cost_usd}
 
     with cf.ThreadPoolExecutor(max_workers=4) as pool:
         results = list(pool.map(go, jobs))
     flagged = [r for r in results if r["leaks"] or r["invented"]]
-    out = {"judged": len(results), "flagged": len(flagged), "results": results}
+    out = {"judged": len(results), "flagged": len(flagged), "repairs": sum(repairs.values()), "repairs_by_stop": repairs,
+           "results": results}
     (run / "owner-audit.json").write_text(json.dumps(out, indent=1))
-    print(f"{args.id}: judged {len(results)} replies, {len(flagged)} flagged")
+    print(f"{args.id}: judged {len(results)} replies, {len(flagged)} flagged, {sum(repairs.values())} repairs "
+          f"in {len(repairs)} owner replies")
     for r in flagged:
         print(f"  {r['stop']}: leaks {[l['item'] for l in r['leaks']]} invented {len(r['invented'])}")
         for l in r["leaks"]:

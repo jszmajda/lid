@@ -61,7 +61,7 @@ def main(argv=None) -> int:
     ap.add_argument("--before", required=True)
     ap.add_argument("--repeats", type=int, default=4)
     ap.add_argument("--name", required=True)
-    ap.add_argument("--seed", default="benchtime", help="unused: the recorded prompt holds the seed; accepted so older command lines parse")
+    ap.add_argument("--seed", default="benchtime", help="the seed whose oracle names the item identifiers")
     ap.add_argument("--owner-model", default="claude-sonnet-5-5")
     ap.add_argument("--judge-model", default="claude-opus-5-5")
     ap.add_argument("--after", help="owner template to swap in (default: the current prompts/simulator.md); pass the "
@@ -72,6 +72,8 @@ def main(argv=None) -> int:
     after = Path(args.after).read_text(encoding="utf-8") if args.after else (HERE / "prompts" / "simulator.md").read_text(encoding="utf-8")
     if args.trim_template:
         simulator.TRIM_TEMPLATE_PATH = Path(args.trim_template).resolve()
+    oracle = simulator.parse_oracle((HERE.parent / "seeds" / args.seed / "hidden" / "oracle.md").read_text(encoding="utf-8"))
+    ids = simulator.id_pattern(oracle.ids())  # a trimmed part that gains an identifier keeps its old wording
     owner = executor.RoleSession(image=IMAGE, config_volume="ce-roles-cfg", model=args.owner_model,
                                  claude_code_version="2.1.323", effort="medium")
     judge = executor.RoleSession(image=IMAGE, config_volume="ce-roles-cfg", model=args.judge_model,
@@ -92,7 +94,7 @@ def main(argv=None) -> int:
         out = {**out, "answers": [a for a in out.get("answers", []) if a.get("breadth", "targeted") != "broad"]}
         calls: list[dict] = []
         simulator.trim_reply(lambda p: executor.run_role(owner, p, json_schema=simulator.trim_schema_json()).structured,
-                             message, out, calls)
+                             message, out, calls, ids=ids)
         reply = "\n\n".join([a["answer"] for a in out["answers"]] + [c["text"] for c in out["corrections"]])
         shared = sorted({i for a in out["answers"] for i in a["items"]} | {c["item"] for c in out["corrections"] if c["item"] != "none"})
         j = executor.run_role(judge, simulator.judge_prompt(prompt, reply, None), json_schema=simulator.judge_schema_json()).structured or {}

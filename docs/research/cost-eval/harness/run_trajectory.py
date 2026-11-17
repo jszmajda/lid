@@ -7,8 +7,9 @@ Records go to ../runs/<id>/, which git ignores: they hold the seed's hidden orac
 stay private until the runs that use the seed are finished. The arm's workspace and configuration live in Docker
 volumes named after the trajectory (ce-<id>-ws and ce-<id>-cfg); its commits are the checkpoints.
 
---replicate is the seed every owner draw is keyed on, shared by the trajectories being compared (each arm and policy
-in a replicate, and a redirect's paired runs); it defaults to the trajectory ID. --owner-model-config picks the
+--replicate is required: the seed every owner draw is keyed on. Give the same value to every trajectory being
+compared (each arm and policy in a replicate, and a redirect's paired runs); draws are never keyed on the trajectory
+itself, so a forgotten value can't quietly make one arm's draws independent of the others'. --owner-model-config picks the
 owner's attention and recall constants: a preset ("central" or "pilot"), a JSON object of settings (with an optional
 "preset"), or a path to a JSON file holding one. Both are recorded in trajectory.json. The seed's
 hidden/owner-items.json must give every askable item a tier and recall line.
@@ -53,9 +54,19 @@ def owner_model_from_arg(value: str | None) -> simulator.OwnerModel:
     return simulator.OwnerModel.from_config(config)
 
 
-def replicate_from_args(trajectory_id: str, replicate: str | None) -> str:
-    """The replicate seed: as given, or the trajectory ID, which reproduces runs made before replicates existed."""
-    return replicate or trajectory_id
+EMPTY_OWNER_STATE = {"record": [], "requests": [], "seen": {}, "disclosed": []}
+
+
+def prepare_owner(owner: simulator.Owner, out: Path, n: int) -> None:
+    """Set the owner as it stood before change n: empty for the first build, so a retried first build carries nothing
+    from a failed attempt; otherwise as saved after change n - 1. A later change with no saved state can't start."""
+    if n == 0:
+        trajectory.restore_owner_state(owner, EMPTY_OWNER_STATE)
+        return
+    prev = out / f"owner-state-{n - 1:02d}.json"
+    if not prev.exists():
+        raise RuntimeError(f"no {prev.name}: change {n} needs the owner as it stood after change {n - 1}")
+    trajectory.restore_owner_state(owner, json.loads(prev.read_text()))
 
 
 def diagnose(trajectory: str, n: int, change: simulator.Change, seed: str, name: str | None = None) -> str:
@@ -80,7 +91,7 @@ def diagnose(trajectory: str, n: int, change: simulator.Change, seed: str, name:
     return "passed"
 
 
-def main(argv=None) -> int:
+def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--arm", required=True)
     ap.add_argument("--id", required=True, help="trajectory ID: letters, digits and dashes")
@@ -93,9 +104,15 @@ def main(argv=None) -> int:
     ap.add_argument("--round-cap", type=int, default=trajectory.ROUND_CAP)
     ap.add_argument("--turn-timeout", type=int, default=3600)
     ap.add_argument("--lid-repo", type=Path, default=None, help="a LID checkout with release tags (default: this one)")
-    ap.add_argument("--replicate", default=None, help="the seed the owner's draws are keyed on (default: the trajectory ID)")
+    ap.add_argument("--replicate", required=True,
+                    help="the seed the owner's draws are keyed on, the same for every trajectory being compared")
     ap.add_argument("--owner-model-config", default=None,
                     help="the owner's attention and recall constants: a preset (central, pilot), a JSON object, or a JSON file")
+    return ap
+
+
+def main(argv=None) -> int:
+    ap = build_parser()
     args = ap.parse_args(argv)
 
     if not all(c.isalnum() or c == "-" for c in args.id):
@@ -104,7 +121,7 @@ def main(argv=None) -> int:
         owner_model = owner_model_from_arg(args.owner_model_config)
     except (ValueError, OSError) as e:
         ap.error(f"--owner-model-config: {e}")
-    replicate = replicate_from_args(args.id, args.replicate)
+    replicate = args.replicate
     seed_dir = HERE.parent / "seeds" / args.seed
     oracle_path, script_path, brief_path = seed_dir / "hidden" / "oracle.md", seed_dir / "hidden" / "change-script.md", seed_dir / "brief.md"
     items_path = seed_dir / "hidden" / "owner-items.json"
@@ -165,8 +182,6 @@ def main(argv=None) -> int:
 
     owner = simulator.Owner(oracle=oracle, brief=brief, policy=args.policy, replicate=meta["replicate"], ask=ask, trim=trim,
                             model=simulator.OwnerModel.from_config(meta["owner_model_config"]), owner_items=owner_items)
-    if state_path.exists():
-        trajectory.restore_owner_state(owner, json.loads(state_path.read_text()))
 
     def turn(prompt, stream_path, *, resume=None, permission_mode="bypassPermissions"):
         return executor.run_turn(session, prompt, stream_path, resume=resume, permission_mode=permission_mode)
@@ -175,11 +190,13 @@ def main(argv=None) -> int:
         if str(n) in meta["changes"] and meta["changes"][str(n)].get("finished") is not None and not meta["changes"][str(n)].get("error"):
             print(f"change {n}: already run, skipping")
             continue
-        prev_state = out / f"owner-state-{n - 1:02d}.json"
-        if n > 0 and prev_state.exists():
-            # Start each change from the owner as it stood after the previous one, so a failed attempt at this
-            # change leaves nothing behind in the owner's record.
-            trajectory.restore_owner_state(owner, json.loads(prev_state.read_text()))
+        try:
+            # Start each change from the owner as it stood before it, so a failed attempt at this change leaves
+            # nothing behind in the owner's record.
+            prepare_owner(owner, out, n)
+        except RuntimeError as e:
+            print(f"change {n}: {e}", flush=True)
+            return 1
         change = simulator.first_build(brief) if n == 0 else script[n]
         if change.request is None and change.symptom is not None:
             fired = diagnose(args.id, n, change, args.seed)

@@ -8,8 +8,11 @@ and the owner as it stood after that change. The probe runs as one change, with 
 the trajectory's model, effort, policy, and owner model. Records go to ../runs/<id>-probe<at>-<fork>/; the original
 trajectory is untouched.
 
-The owner's draws are keyed on --replicate, by default the trajectory's replicate with the fork number appended, so
-fork n of every arm in a replicate shares draws and repeated forks of one trajectory don't.
+The owner's draws are keyed on --replicate, by default <the trajectory's replicate>-probe-<at>-fork-<fork>, so fork n
+at one checkpoint shares draws across every arm in a replicate, while repeated forks, and forks at other checkpoints,
+don't. A trajectory that recorded no replicate can be probed only with --replicate. One that recorded no owner model is
+probed at the central values, and the fork's trajectory.json says so ("owner_model_assumed"). The fork records the
+current hashes of the inputs that could have changed since the trajectory ran ("..._now") beside the trajectory's.
 """
 
 from __future__ import annotations
@@ -29,6 +32,22 @@ from costeval import executor, simulator, trajectory  # noqa: E402
 from run_trajectory import CLAUDE_CODE, IMAGE, ROLES_VOLUME, sha256  # noqa: E402
 
 
+def probe_replicate(base: dict, at: int, fork: int, given: str | None) -> str:
+    """The fork's replicate: as given, or the base trajectory's with the checkpoint and fork number added."""
+    if given:
+        return given
+    if not base.get("replicate"):
+        raise ValueError("the trajectory recorded no replicate; give one with --replicate")
+    return f"{base['replicate']}-probe-{at}-fork-{fork}"
+
+
+def probe_owner_model(base: dict) -> tuple[simulator.OwnerModel, bool]:
+    """The base trajectory's owner model, and whether it had to be assumed (a trajectory that predates one)."""
+    if "owner_model_config" not in base:
+        return simulator.OwnerModel(), True
+    return simulator.OwnerModel.from_config(base["owner_model_config"]), False
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--id", required=True, help="the trajectory to fork")
@@ -36,10 +55,15 @@ def main(argv=None) -> int:
     ap.add_argument("--fork", type=int, required=True, help="the fork's number, for repeated runs from one checkpoint")
     ap.add_argument("--lid-repo", type=Path, default=None)
     ap.add_argument("--replicate", default=None, help="the seed the owner's draws are keyed on (default: the "
-                                                      "trajectory's replicate, then -probe-fork-<n>)")
+                                                      "trajectory's replicate, then -probe-<at>-fork-<fork>)")
     args = ap.parse_args(argv)
     base_dir = HERE.parent / "runs" / args.id
     base = json.loads((base_dir / "trajectory.json").read_text())
+    try:
+        replicate = probe_replicate(base, args.at, args.fork, args.replicate)
+    except ValueError as e:
+        print(f"{args.id}: {e}")
+        return 2
     commit = base["changes"][str(args.at)]["commit"]
     state_path = base_dir / f"owner-state-{args.at:02d}.json"
     if not state_path.exists():
@@ -68,10 +92,9 @@ def main(argv=None) -> int:
     oracle = simulator.parse_oracle((seed_dir / "hidden" / "oracle.md").read_text(encoding="utf-8"))
     items_path = seed_dir / "hidden" / "owner-items.json"
     owner_items = simulator.load_owner_items(items_path, oracle)
-    replicate = args.replicate or f"{base.get('replicate', args.id)}-probe-fork-{args.fork}"
-    if "owner_model_config" not in base:
+    owner_model, assumed = probe_owner_model(base)
+    if assumed:
         print(f"{args.id} recorded no owner model (it predates one); the probe uses the central values")
-    owner_model = simulator.OwnerModel.from_config(base.get("owner_model_config"))
     brief = (seed_dir / "brief.md").read_text(encoding="utf-8")
     change = simulator.parse_probe(script_path.read_text(encoding="utf-8"), args.at)
     role = executor.RoleSession(image=IMAGE, config_volume=ROLES_VOLUME, model=base["owner_model"],
@@ -94,9 +117,12 @@ def main(argv=None) -> int:
                                         effort=base["effort"], plugin_dirs=arm.plugin_dirs)
     meta = {"id": fid, "fork_of": args.id, "at": args.at, "commit": commit, "arm": arm.name, "seed": base["seed"],
             "model": base["model"], "effort": base["effort"], "policy": base["policy"], "owner_model": base["owner_model"],
-            "replicate": replicate, "owner_model_config": asdict(owner_model),
+            "replicate": replicate, "owner_model_config": asdict(owner_model), "owner_model_assumed": assumed,
             "lid_release": arm.lid_release, "started": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-            "hashes": {**base["hashes"], "change_script_now": sha256(script_path), "owner_items_now": sha256(items_path)},
+            "hashes": {**base["hashes"], "change_script_now": sha256(script_path), "owner_items_now": sha256(items_path),
+                       "oracle_now": sha256(seed_dir / "hidden" / "oracle.md"),
+                       "simulator_template_now": sha256(simulator.TEMPLATE_PATH),
+                       "trim_template_now": sha256(simulator.TRIM_TEMPLATE_PATH)},
             "volumes": {"workspace": ws_vol, "config": cfg_vol}, "changes": {}}
 
     def turn(prompt, stream_path, *, resume=None, permission_mode="bypassPermissions"):
