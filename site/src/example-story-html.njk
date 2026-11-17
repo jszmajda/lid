@@ -1,0 +1,9 @@
+---
+pagination:
+  data: examples.htmlStories
+  size: 1
+  alias: e
+permalink: "/examples/{{ e.slug }}/story/"
+eleventyExcludeFromCollections: true
+---
+{# @spec ONB-SHOWCASE-025, ONB-SHOWCASE-026, ONB-SHOWCASE-028: served exactly as written, plus the bar. #}{{ e.storyHtml | safe }}

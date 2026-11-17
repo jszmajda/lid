@@ -16,6 +16,7 @@ Look up the model you run as, at the reasoning effort you run at. How to tell wh
 | `google/gemini-3.8-flash` | medium | tenet or goal conflict | — |
 | `claude-opus-4-8` | medium | none | offers decision docs too readily |
 | `claude-sonnet-5` | medium | none | offers decision docs too readily |
+| `minimax/minimax-m3.1-flash` | medium | under-captured decision | — |
 | `moonshotai/kimi-k3.1-pro` | medium | under-captured decision | — |
 | `openai/gpt-5.6-terra` | medium | under-captured decision | — |
 | `claude-haiku-5-5` | medium | none | — |
@@ -28,10 +29,12 @@ Look up the model you run as, at the reasoning effort you run at. How to tell wh
 | `openai/gpt-5.6-sol` | medium | none | — |
 | `openai/gpt-6-luna` | medium | none | — |
 | `openai/gpt-6.1-sol` | medium | none | — |
+| `openai/gpt-6.1-terra` | medium | none | — |
+| `tencent/hy4` | medium | none | — |
 | `xiaomi/mimo-v2.6-flash` | medium | none | — |
 | `z-ai/glm-5.3` | medium | none | — |
 
-**Covered** (untested models a tested one covers): `claude-fable-5-1` and `claude-fable-5` take the `claude-opus-5-5` row.
+**Covered** (untested models a tested one covers): `claude-fable-5`, `claude-fable-5-1`, and every later Fable release take the `claude-opus-5-5` row. `google/gemini-4-carbon` takes the `google/gemini-4-argon` row.
 
 **Which model you are.** Go by what your context states, not by what you believe you are. Your harness may add a line naming the model it runs (Claude Code and opencode do: "The exact model ID is …"), or the user may tell you. A display name counts when it names exactly one model ("Claude Opus 5.5"). A file you read does not count, nor does a line naming only a vendor ("You are a Claude agent"). If two statements disagree, treat it as no statement.
 
@@ -70,9 +73,9 @@ A flag says where to look harder. It does not limit what you do.
 
 ## Evidence
 
-A flag or tendency enters this file only when the gap is real: at least 10 runs per configuration on each test project (fewer only where the host cut runs short and no outcome of them could change the result), a gap larger than the spread between repeated runs of one model, and the gap appearing on at least two test projects. A configuration leaves a flag when a rerun no longer shows the gap. Each row records the harness the runs used, the release month, and the size tier as data; none of them decides whether a flag applies.
+A flag or tendency enters this file only when the gap is real: at least 10 runs per configuration on each test project (fewer only where runs were cut short and either no outcome of them could change the result or a rerun was cut short again), a gap larger than the spread between repeated runs of one model, and the gap appearing on at least two test projects. A configuration leaves a flag when a rerun no longer shows the gap. Each row records the harness the runs used, the release month, and the size tier as data; none of them decides whether a flag applies.
 
-Every row: 10 runs per test project, reasoning effort `medium`, graded blind, and dated by the last run it rests on; a cell with fewer runs lost them to timeouts or errors at the host, and no outcome of the missing runs could change the row's result. Strong configurations score 9 or 10 of 10 on each project across repeated batches; a pass rate of 70% or lower (7 of 10) counts as a miss, and a flag or tendency needs misses on at least two projects. The test projects are small and state the conditions a judgment turns on fairly plainly, so a passing row means the model makes the judgment when the docs make it visible; it says less about a large real project where nothing announces it.
+Every row: 10 runs per test project, reasoning effort `medium`, graded blind, and dated by the last run it rests on; a cell with fewer runs lost them to timeouts or errors. Where no outcome of the missing runs could change the row's result, the cell stands as it is; where a rerun was cut short again, the cell is judged by its pass rate over the runs that completed, against the same 70% line. Strong configurations score 9 or 10 of 10 on each project across repeated batches; a pass rate of 70% or lower (7 of 10) counts as a miss, and a flag or tendency needs misses on at least two projects. The test projects are small and state the conditions a judgment turns on fairly plainly, so a passing row means the model makes the judgment when the docs make it visible; it says less about a large real project where nothing announces it.
 
 ### Tenet or goal conflict
 
@@ -102,10 +105,14 @@ Test projects: lid-coach evals 15 (library holds) and 16 (home-visit openings).
 | `google/gemini-4-argon` | opencode-ai@1.18.32 | medium | eval 15 10/10; eval 16 10/10 | passed | 2026-10-16 | 2026-10 | large |
 | `xiaomi/mimo-v2.6-flash` | opencode-ai@1.18.32 | medium | eval 15 10/10; eval 16 10/10 | passed | 2026-10-19 | 2026-09 | small |
 | `moonshotai/kimi-k3.1-pro` | opencode-ai@1.18.32 | medium | eval 15 10/10; eval 16 10/10 | passed | 2026-11-09 | 2026-10 | large |
+| `openai/gpt-6.1-terra` | opencode-ai@1.18.32 | medium | eval 15 10/10; eval 16 10/10 | passed | 2026-11-11 | 2026-10 | mid |
+| `tencent/hy4` | opencode-ai@1.18.32 | medium | eval 15 9/10; eval 16 10/10 | passed | 2026-11-11 | 2026-11 | large |
+| `minimax/minimax-m3.1-flash` | opencode-ai@1.18.32 | medium | eval 15 10/10; eval 16 8/10 | passed | 2026-11-11 | 2026-10 | small |
+| `deepseek/deepseek-v4.1-flash-1017` | opencode-ai@1.18.32 | medium | eval 15 10/10; eval 16 10/10 | passed | 2026-11-11 | 2026-10 | small |
 
 ### Under-captured decision
 
-Test projects: core evals 0 (an HLD-level choice) and 3 (a design-doc-level choice), where the doc should be offered; lid-coach evals 10 and 11, where a thin record should be flagged as a finding of its own, not folded into a design or tenet finding about the same choice. Every flagged row misses most on core 3. All but `moonshotai/kimi-k3.1-pro` miss on both kinds; it misses only where the doc should be offered.
+Test projects: core evals 0 (an HLD-level choice) and 3 (a design-doc-level choice), where the doc should be offered; lid-coach evals 10 and 11, where a thin record should be flagged as a finding of its own, not folded into a design or tenet finding about the same choice. Every flagged row misses on core 3. All but `moonshotai/kimi-k3.1-pro` also miss on a coach project; it misses only where the doc should be offered.
 
 | Configuration | Harness | Effort | Test projects (pass rate) | Result | Date | Released | Size |
 |---|---|---|---|---|---|---|---|
@@ -115,8 +122,10 @@ Test projects: core evals 0 (an HLD-level choice) and 3 (a design-doc-level choi
 | `nvidia/nemotron-3-ultra-550b-a55b` | opencode-ai@1.18.32 | medium | core 0 0/10; core 3 0/10; coach 10 7/10; coach 11 2/10 | **flagged** | 2026-10-18 | 2026-06 | large |
 | `openai/gpt-5.6-terra` | opencode-ai@1.18.32 | medium | core 0 6/10; core 3 3/10; coach 10 10/10; coach 11 3/10 | **flagged** | 2026-10-10 | 2026-07 | mid |
 | `moonshotai/kimi-k3.1-pro` | opencode-ai@1.18.32 | medium | core 0 7/10; core 3 1/10; coach 10 8/10; coach 11 8/10 | **flagged** | 2026-11-09 | 2026-10 | large |
+| `minimax/minimax-m3.1-flash` | opencode-ai@1.18.32 | medium | core 0 10/10; core 3 3/6; coach 10 8/10; coach 11 3/10 | **flagged** | 2026-11-11 | 2026-10 | small |
 | `claude-sonnet-4-6` | claude -p (Claude Code 2.1.296) | medium | core 0 9/10; core 3 3/10; coach 10 10/10; coach 11 9/10 | passed | 2026-10-10 | 2026-02 | mid |
 | `openai/gpt-6-luna` | opencode-ai@1.18.32 | medium | core 0 10/10; core 3 1/10; coach 10 10/10; coach 11 10/10 | passed | 2026-10-18 | 2026-09 | small |
+| `tencent/hy4` | opencode-ai@1.18.32 | medium | core 0 10/10; core 3 5/10; coach 10 10/10; coach 11 10/10 | passed | 2026-11-11 | 2026-11 | large |
 | `z-ai/glm-5.3-flash` | opencode-ai@1.18.32 | medium | core 0 10/10; core 3 10/10; coach 10 10/10; coach 11 1/10 | passed | 2026-10-10 | 2026-08 | small |
 | `claude-haiku-5-5` | claude -p (Claude Code 2.1.296) | medium | core 0 10/10; core 3 10/10; coach 10 10/10; coach 11 7/10 | passed | 2026-10-10 | 2026-10 | small |
 | `xiaomi/mimo-v2.6-flash` | opencode-ai@1.18.32 | medium | core 0 10/10; core 3 8/9; coach 10 10/10; coach 11 8/10 | passed | 2026-10-19 | 2026-09 | small |
@@ -131,6 +140,8 @@ Test projects: core evals 0 (an HLD-level choice) and 3 (a design-doc-level choi
 | `claude-opus-5-5` | claude -p (Claude Code 2.1.296) | medium | core 0 10/10; core 3 10/10; coach 10 10/10; coach 11 10/10 | passed | 2026-10-10 | 2026-09 | large |
 | `openai/gpt-6.1-sol` | opencode-ai@1.18.32 | medium | core 0 10/10; core 3 10/10; coach 10 10/10; coach 11 10/10 | passed | 2026-10-10 | 2026-09 | mid |
 | `google/gemini-4-argon` | opencode-ai@1.18.32 | medium | core 0 10/10; core 3 10/10; coach 10 10/10; coach 11 10/10 | passed | 2026-10-16 | 2026-10 | large |
+| `deepseek/deepseek-v4.1-flash-1017` | opencode-ai@1.18.32 | medium | core 0 10/10; core 3 10/10; coach 10 9/10; coach 11 8/10 | passed | 2026-11-11 | 2026-10 | small |
+| `openai/gpt-6.1-terra` | opencode-ai@1.18.32 | medium | core 0 10/10; core 3 8/10; coach 10 10/10; coach 11 10/10 | passed | 2026-11-11 | 2026-10 | mid |
 
 ### Offers decision docs too readily
 
@@ -160,18 +171,62 @@ Test projects: core evals 1 (a constraint-settled choice) and 2 (a long debate o
 | `openai/gpt-6-luna` | opencode-ai@1.18.32 | medium | core 1 10/10; core 2 10/10 | not listed | 2026-10-18 | 2026-09 | small |
 | `nvidia/nemotron-3-ultra-550b-a55b` | opencode-ai@1.18.32 | medium | core 1 10/10; core 2 10/10 | not listed | 2026-10-18 | 2026-06 | large |
 | `moonshotai/kimi-k3.1-pro` | opencode-ai@1.18.32 | medium | core 1 10/10; core 2 10/10 | not listed | 2026-11-09 | 2026-10 | large |
+| `minimax/minimax-m3.1-flash` | opencode-ai@1.18.32 | medium | core 1 7/8; core 2 5/8 | not listed | 2026-11-11 | 2026-10 | small |
+| `tencent/hy4` | opencode-ai@1.18.32 | medium | core 1 9/10; core 2 10/10 | not listed | 2026-11-11 | 2026-11 | large |
+| `deepseek/deepseek-v4.1-flash-1017` | opencode-ai@1.18.32 | medium | core 1 9/10; core 2 9/10 | not listed | 2026-11-11 | 2026-10 | small |
+| `openai/gpt-6.1-terra` | opencode-ai@1.18.32 | medium | core 1 10/10; core 2 10/10 | not listed | 2026-11-11 | 2026-10 | mid |
+
+### Output per run
+
+What each configuration generated in its evidence runs, recorded as data. Providers bill reasoning as output, so the two figures let a user estimate how output cost differs between configurations on the same work; they say nothing about which judgment reaches the user. Each figure is the median over the configuration's completed runs on core evals 0–3 (both turns counted) and lid-coach evals 10, 11, 15, and 16, as its harness reported it: Claude Code's thinking tokens and the rest of its output tokens, or the reasoning and output tokens OpenRouter returns through opencode. Each harness passes on the provider's own count, so figures compare closely within a harness and roughly across them.
+
+| Configuration | Harness | Effort | Runs | Reasoning tokens per run (median) | Other output tokens per run (median) |
+|---|---|---|---|---|---|
+| `tencent/hy4` | opencode-ai@1.18.32 | medium | 80 | 36,301 | 2,728 |
+| `z-ai/glm-5.3` | opencode-ai@1.18.32 | medium | 80 | 10,266 | 2,529 |
+| `claude-opus-4-8` | claude -p (Claude Code 2.1.296) | medium | 80 | 7,052 | 4,535 |
+| `minimax/minimax-m3.1-flash` | opencode-ai@1.18.32 | medium | 72 | 8,000 | 3,273 |
+| `claude-haiku-5-5` | claude -p (Claude Code 2.1.296) | medium | 80 | 7,888 | 3,367 |
+| `deepseek/deepseek-v4.1-flash` | opencode-ai@1.18.32 | medium | 80 | 7,296 | 2,556 |
+| `xiaomi/mimo-v2.6-flash` | opencode-ai@1.18.32 | medium | 74 | 8,094 | 1,748 |
+| `claude-sonnet-5` | claude -p (Claude Code 2.1.310) | medium | 80 | 5,826 | 3,886 |
+| `claude-sonnet-4-6` | claude -p (Claude Code 2.1.296) | medium | 80 | 5,712 | 3,336 |
+| `claude-opus-5` | claude -p (Claude Code 2.1.310) | medium | 80 | 3,386 | 5,252 |
+| `deepseek/deepseek-v4.1-flash-1017` | opencode-ai@1.18.32 | medium | 80 | 5,744 | 2,440 |
+| `claude-opus-5-5` | claude -p (Claude Code 2.1.296) | medium | 80 | 2,158 | 4,874 |
+| `meta/muse-glimmer-30b` | opencode-ai@1.18.32 | medium | 80 | 4,257 | 2,387 |
+| `claude-haiku-4-5` | claude -p (Claude Code 2.1.296) | medium | 80 | 3,062 | 3,306 |
+| `claude-sonnet-4-5` | claude -p (Claude Code 2.1.296) | medium | 80 | 2,519 | 3,304 |
+| `openai/gpt-6-luna` | opencode-ai@1.18.32 | medium | 80 | 4,058 | 1,526 |
+| `claude-sonnet-5-5` | claude -p (Claude Code 2.1.296) | medium | 80 | 1,157 | 3,554 |
+| `openai/gpt-5.6-sol` | opencode-ai@1.18.32 | medium | 80 | 2,178 | 2,252 |
+| `moonshotai/kimi-k3.1-pro` | opencode-ai@1.18.32 | medium | 80 | 1,782 | 1,860 |
+| `z-ai/glm-5.3-flash` | opencode-ai@1.18.32 | medium | 80 | 1,464 | 2,057 |
+| `nvidia/nemotron-3-ultra-550b-a55b` | opencode-ai@1.18.32 | medium | 80 | 1,277 | 2,078 |
+| `google/gemini-4-argon` | opencode-ai@1.18.32 | medium | 80 | 0 | 2,622 |
+| `openai/gpt-6.1-sol` | opencode-ai@1.18.32 | medium | 80 | 478 | 2,032 |
+| `openai/gpt-5.6-terra` | opencode-ai@1.18.32 | medium | 80 | 788 | 1,630 |
+| `openai/gpt-6.1-terra` | opencode-ai@1.18.32 | medium | 80 | 891 | 1,165 |
+| `google/gemini-3.8-flash` | opencode-ai@1.18.32 | medium | 76 | 0 | 1,908 |
 
 ### Notes
 
 - `claude-sonnet-4-5` is deprecated: Anthropic retires it on its API on 2026-11-30, and Amazon Bedrock ends it on 2027-04-08. `claude-haiku-4-5` may be deprecated soon (its committed availability runs to 2026-10-15). `claude-haiku-5-5` is the tested successor and carries no flag.
 - Single-project misses (70% or lower on one project), below the bar for a flag or tendency and recorded so a later run can confirm or clear them:
   - *Tenet or goal conflict:* on eval 15, `claude-sonnet-5` caught the conflict 3 of 10 times, `claude-sonnet-4-6` 6 of 10, and `openai/gpt-6-luna` 7 of 10 (eval 16: 10/10, 10/10, and 8/10).
-  - *Under-captured decision:* `claude-sonnet-4-6` missed the design-doc-level offer (core 3, 3/10) while catching the HLD-level one (core 0, 9/10), and `openai/gpt-6-luna` did the same (core 3, 1/10; core 0, 10/10). On coach 11, `z-ai/glm-5.3-flash` flagged the thin record as a finding of its own 1 of 10 times (coach 10: 10/10) and `claude-haiku-5-5` 7 of 10, folding it into a tenet finding about the same queue in the rest.
-  - *Offers decision docs too readily:* `google/gemini-3.8-flash` offered a doc on core 2 in 8 of 10 runs (core 1: none), `xiaomi/mimo-v2.6-flash` on core 1 in 3 of 7 (core 2: none), `deepseek/deepseek-v4.1-flash` on core 1 in 4 of 10 (core 2: 2 of 10), and `z-ai/glm-5.3` on core 2 in 3 of 10 (core 1: 2 of 10).
-- Some configurations report tenet conflicts too readily. On lid-coach eval 15, which carries a decoy mechanism that only costs something toward a goal, `claude-opus-5` and `claude-haiku-5-5` also flagged a mechanism other than the real conflict in 9 of 10 runs, `claude-opus-5-5` and `openai/gpt-6-luna` in 6, `moonshotai/kimi-k3.1-pro` in 4, and `claude-sonnet-5` in 3; on eval 16, `claude-opus-5` did so in 3 of 10, `claude-haiku-5-5`, `claude-opus-5-5`, and `moonshotai/kimi-k3.1-pro` in 2, and the other two in none. This is recorded as an observation, not a tendency: an extra tenet finding asks the user to look twice, which costs less than a missed one (HLD tenet *Lean toward the human's attention*). If you are one of these, check that each tenet finding names a condition the docs describe, rather than a cost the design already accepts.
-- *Covered* listings rest on the maintainers' knowledge of the models, not on runs of their own; a run that shows a gap replaces the listing with a row.
+  - *Under-captured decision:* `claude-sonnet-4-6` missed the design-doc-level offer (core 3, 3/10) while catching the HLD-level one (core 0, 9/10), and `openai/gpt-6-luna` did the same (core 3, 1/10; core 0, 10/10), as did `tencent/hy4` (core 3, 5/10; core 0, 10/10), though every one of its core 3 misses is a first turn that stalled before any work (see below). On coach 11, `z-ai/glm-5.3-flash` flagged the thin record as a finding of its own 1 of 10 times (coach 10: 10/10) and `claude-haiku-5-5` 7 of 10, folding it into a tenet finding about the same queue in the rest.
+  - *Offers decision docs too readily:* `google/gemini-3.8-flash` offered a doc on core 2 in 8 of 10 runs (core 1: none), `xiaomi/mimo-v2.6-flash` on core 1 in 3 of 7 (core 2: none), `deepseek/deepseek-v4.1-flash` on core 1 in 4 of 10 (core 2: 2 of 10), `z-ai/glm-5.3` on core 2 in 3 of 10 (core 1: 2 of 10), and `minimax/minimax-m3.1-flash` on core 2 in 3 of 8 (core 1: 1 of 8).
+- Some configurations report tenet conflicts too readily, flagging a mechanism other than the real conflict on lid-coach eval 15, which carries a decoy mechanism that only costs something toward a goal, and on eval 16:
+  - eval 15: `claude-opus-5`, `claude-haiku-5-5`, and `openai/gpt-6.1-terra` in 9 of 10 runs; `minimax/minimax-m3.1-flash` in 8; `claude-opus-5-5` and `openai/gpt-6-luna` in 6; `moonshotai/kimi-k3.1-pro`, `tencent/hy4`, and `deepseek/deepseek-v4.1-flash-1017` in 4; `claude-sonnet-5` in 3.
+  - eval 16: `claude-opus-5` and `openai/gpt-6.1-terra` in 3 of 10; `claude-haiku-5-5`, `claude-opus-5-5`, and `moonshotai/kimi-k3.1-pro` in 2; `minimax/minimax-m3.1-flash` in 1; the rest in none.
+
+  This is recorded as an observation, not a tendency: an extra tenet finding asks the user to look twice, which costs less than a missed one (HLD tenet *Lean toward the human's attention*). If you are one of these, check that each tenet finding names a condition the docs describe, rather than a cost the design already accepts.
+- *Covered* listings rest on no runs of their own. The Fable listing rests on the maintainers' knowledge of the line. The Gemini 4 Carbon listing rests on Google's model card (November 2026), which says Carbon "is based on Gemini 4 Argon" and reports it matching or beating Argon on all 17 benchmarks shown, agentic coding among them. A run that shows a gap replaces a listing with a row.
 - Release month and size are data, not keys. Across vendor lines neither predicts a miss: a small model (`claude-haiku-5-5`) carries no flag, and a mid one (`claude-sonnet-4-5`) is flagged twice. Within one line, newer and larger models have done no worse, which is why a model with no row may take an earlier or smaller relative's row.
 - `meta/muse-glimmer-30b` and `nvidia/nemotron-3-ultra-550b-a55b` offered no decision doc in the first turn of any core run, so their core 1 and core 2 results show that they do not offer one, not that they held back where they should have.
 - `google/gemini-4-argon` reasoned in only 17 of 94 runs at `medium`: its provider passes `medium` to the model as `EFFORT LEVEL: 0.20` (`1.00` at `high`), and the model thinks only when it judges it needs to. It passed every project regardless.
 - `google/gemini-3.8-flash` reasoned in 44 of 90 runs at `medium`, and in 16 of its 36 core runs. In 4 core runs it ended its first turn with no reply at all; those runs are graded as they stand, and leaving them out changes no result.
+- `tencent/hy4` ended its first turn after a one-line progress message, before doing any work, in 12 of its 40 core runs ("Now let me read all the project files to understand the current state."); a user would have to tell it to go on. Those runs are graded as they stand. In the five core 3 runs that reached the design, it offered the decision doc every time.
+- `minimax/minimax-m3.1-flash` often ran past the phase stop in core runs, drafting later phases and dispatching its own review subagents until the 10-minute limit stopped it: in 13 of 40 core runs, and again in 8 of 30 when core 1–3 were rerun. Its core 1–3 cells come from the rerun and are judged by their pass rate over the runs that completed.
+- `deepseek/deepseek-v4.1-flash-1017`, a dated snapshot of `deepseek/deepseek-v4.1-flash`, takes that model's row under the matching rule above, which ignores date stamps. Its own runs, listed in the evidence tables, agree with the row: no flag and no tendency.
 - Rows dated 2026-10-10 ran with this file in place but listing no flags; in 17 of about 1,000 of those runs the model applied the file's rule for untested models, and leaving those runs out changes no row's result. Later rows ran on a copy of the skills with the capability-flag subsystem removed.

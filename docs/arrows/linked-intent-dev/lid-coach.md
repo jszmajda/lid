@@ -63,7 +63,7 @@ The skill is directly invokable as `/lid-coach` — no command stub needed per C
 | Conversational Guidance | LID-COACH-052 | 1 | 0 | 0 |
 | **Total** | | **18** | **34** | **0** |
 
-**Summary:** The table above records iteration-1 (2026-05-15). Current state: 34 of 69 specs `[x]` (exercised by an eval assertion, or for `LID-COACH-002` the invocation guard, by the packaging checks' Claude Code part, which confirms a model call to the skill is refused), 35 `[ ]` (in the skill body, not yet exercised); the capability roster ran evals 10, 11, 15, and 16 on 22 model configurations (13 for 1.4.0, nine more from 2026-10-16 to 2026-11-09) (see `docs/arrows/index.yaml` and `references/capability-flags.md`).
+**Summary:** The table above records iteration-1 (2026-05-15). Current state: 34 of 69 specs `[x]` (exercised by an eval assertion, or for `LID-COACH-002` the invocation guard, by the packaging checks' Claude Code part, which confirms a model call to the skill is refused), 35 `[ ]` (in the skill body, not yet exercised); the capability roster ran evals 10, 11, 15, and 16 on 26 model configurations (13 for 1.4.0, 13 more from 2026-10-16 to 2026-11-11) (see `docs/arrows/index.yaml` and `references/capability-flags.md`).
 
 ## Key Findings
 

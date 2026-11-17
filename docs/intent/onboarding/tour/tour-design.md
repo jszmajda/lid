@@ -1,6 +1,6 @@
 ---
-parent: high-level-design
-prefix: TOUR
+parent: onboarding
+prefix: ONB-TOUR
 ---
 
 # LLD: Newcomer Tour
@@ -36,7 +36,7 @@ Each route that makes the offer carries a short passage in its own skill: a chec
 
 Verification:
 
-- **Scenario evals** in the eval suites of the skills that make the offer (the workflow skill, `update-lid`, `map-codebase`). They check that the card appears at the top of the first message on each route, that the route's own message still follows in the same message, that carrying on proceeds as before, that saying yes to the card starts the tour and then returns to the pending question, and that asking for the tour later gives it. Their assertions carry `TOUR-*` spec IDs under the plugin's eval-metadata convention, so the coverage audit counts them toward this segment. The evals also confirm that the three files exist.
+- **Scenario evals** in the eval suites of the skills that make the offer (the workflow skill, `update-lid`, `map-codebase`). They check that the card appears at the top of the first message on each route, that the route's own message still follows in the same message, that carrying on proceeds as before, that saying yes to the card starts the tour and then returns to the pending question, and that asking for the tour later gives it. Their assertions carry `ONB-TOUR-*` spec IDs under the plugin's eval-metadata convention, so the coverage audit counts them toward this segment. The evals also confirm that the three files exist.
 - **Content check.** Most of this segment's requirements describe fixed text: the steps, the example, the words, the looks. A blind reader given only the three tour files and this segment's specs checks each of those requirements against the files. Reading the files is a stronger test of static text than running scenarios, and it is the content's test in the tests-first sense: the specs exist before the files, and the check fails until the files meet them.
 - **Claim review.** Every claim in the card and the tour traces to an HLD section (*What the tour claims* below), every claim in a topic traces to the HLD or to the design doc of the segment that owns the capability (*Going further* below), and the review that keeps the marketing site coherent with the HLD covers the tour the same way.
 - **Packaging checks** keep every line of the three files within the plugin's line limit, and confirm that `tour.md` and `tour-topics.md` stay out of the workflow skill's reference list, and so out of the assembled workflow doc.
@@ -154,13 +154,10 @@ Each note appears at most once in the session and runs to about two sentences, p
 
 ### The built-in example
 
-The example is a request most people have met as users of software, small enough to trace briefly at each level, and vague in a way a careful reader notices at once. The tour uses **a 30-day free trial**:
+The tour uses the 30-day free trial that the `onboarding` sub-HLD defines for all its children: the request, what it leaves to the agent, the Tokyo boundary question, the tenet, and the settled 720-hour line (`docs/intent/onboarding/onboarding-design.md` § *The Shared Example*). Its steps use it this way:
 
-- *The request:* "Give new users a 30-day free trial."
-- *Decisions it hands over without saying so:* when the trial starts (at signup, or at first use); what happens when it ends (the account locks, or it is charged); whether someone can start a second trial with a new email address; and when exactly day 30 ends.
-- *The boundary question it follows down:* when exactly does day 30 end, and in whose time zone? Someone who signs up at 11 p.m. on the 1st, in Tokyo, is about to find out.
 - *The guess, and how a pause catches it (step 2):* the agent's first draft of the low-level design ends the trial at midnight at the end of day 30, in the server's time zone, which quietly takes most of a day from the person in Tokyo. The before-and-after change replaces it with the settled line: the trial ends 720 hours after signup, so everyone gets exactly 30 days.
-- *The tenet (step 3):* "Customer delight over perfect cost management: when a choice could go either way, we lean toward the customer." Its opposite, keeping costs as low as possible when a choice could go either way, is a choice another business could reasonably make, which is what makes it a tenet. With it in the high-level design, the agent would have given everyone the full 720 hours without being asked, because ending at the server's midnight takes hours away from some customers, depending on where and when they sign up. The marketing site's home page uses the same tenet in the same example, so a reader meets one story in both places. For contrast, "write good code" is a statement whose opposite nobody would choose, so it settles nothing.
+- *The tenet (step 3):* "Customer delight over perfect cost management: when a choice could go either way, we lean toward the customer." Its opposite, keeping costs as low as possible when a choice could go either way, is a choice another business could reasonably make, which is what makes it a tenet. With it in the high-level design, the agent would have given everyone the full 720 hours without being asked, because ending at the server's midnight takes hours away from some customers, depending on where and when they sign up. For contrast, "write good code" is a statement whose opposite nobody would choose, so it settles nothing.
 - *The rest of the chain (step 4):* the requirement line restates the settled boundary with an ID; a test refers to that ID; and so does the code that ends the trial. The test and code are written in TypeScript.
 
 The example's excerpts at each level, its IDs, test, code, and search result are written out in `tour.md`, so the tour never depends on reading or searching the person's project.
@@ -291,7 +288,6 @@ Cascade notes into segments that point at this one without depending on its spec
 | Going further | Short topics on LID's other capabilities in `tour-topics.md`, listed when the opening ends and read one at a time | The topics inside `tour.md`; no topics, with the tour linking to the written guides of issue #54 | A person who has met LID wants to know what else it can do, and the moment after the opening is when they are most curious. A separate file means the agent reads only the topic asked for, and a host without a plugin system fetches topics only when one is asked for. Putting the topics in `tour.md` would load every topic into the context of everyone who takes only the opening. The written guides teach how to apply LID to particular situations, which is a different reader at a different moment. |
 | Topic titles | Plain words, with LID's term introduced inside the topic | LID's own terms as titles | The titles appear in step 5, where the opening's limit on LID terms applies, and a plain title tells a newcomer what the topic is about. |
 | Example source | A built-in example | Researching the person's own project for an example; the person's own request at setup | A built-in example costs no research turns or tokens (*Introduce LID fast*), always contains a real open question, and works the same for a joining person who does not yet know the project. An example people already half-know makes LID clearer than one drawn from the person's own domain. The person's own request may contain no open question to show, and joining has no request to use at all. |
-| Which example | A 30-day free trial | The marketing site's account-scoped sign-in; a tax holding period; a split bill | Most people have met a free trial as users. The question of when day 30 ends, and in whose time zone, is concrete and has a real cost when guessed wrong. The site's sign-in example traces cleanly but has no natural boundary question to show a pause catching. |
 | The example's before-and-after | The agent's plausible guess in the low-level design, replaced at the pause by the settled line | A vague line made precise; the correction made at the requirement line | The card promises that a wrong guess is caught while it is still a sentence. Showing a guess being replaced keeps that promise in the example itself, and the low-level design is where a boundary like this is decided. |
 | What the IDs are for, in the tour | The agent uses them to find everything a change touches, across many files | The person uses them to check a behavior against its requirement | People rarely search the IDs themselves, while the agent does so on nearly every change. Finding every connected piece when a requirement changes is what keeps a large project easy to change over time. |
 | Tenets in the opening | A step of their own, with the defensible-opposite test and an example tenet that settles the example's question | A topic only | Most people know what a principle is, but a tenet is a narrower idea, and it is where a newcomer first states their own leanings in the high-level design. |
@@ -326,6 +322,6 @@ Cascade notes into segments that point at this one without depending on its spec
 - `docs/intent/linked-intent-dev/core/core-design.md`: the workflow the tour describes, Phase 1 bootstrap, and the workflow skill's newcomer tour passage.
 - `docs/intent/linked-intent-dev/update-lid/update-lid-design.md`: the setup routes and the mode question.
 - `docs/intent/arrow-maintenance/map-codebase/map-codebase-design.md`: the brownfield route and its first message.
-- `docs/intent/marketing-site/marketing-site-design.md`: the tour page, the register and claim-tracing the tour follows, and the opening question it shares with the site.
+- `docs/intent/onboarding/marketing-site/marketing-site-design.md`: the tour page, the register and claim-tracing the tour follows, and the opening question it shares with the site.
 - `docs/decisions/workflow-distribution.md`: how hosts without a plugin system receive the workflow.
 - `docs/intent/packaging-checks/packaging-checks-design.md`: the workflow-doc assembly.

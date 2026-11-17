@@ -24,7 +24,7 @@ There is no build system or application code. The plugins are prose (skills, ref
 - **`tools/`**: Maintainer tooling that ships in no plugin
   - **`alt-model-evals/`**: runs the skills' eval suites on non-Claude models (optional evidence, never a merge gate; see `docs/intent/alt-model-evals/`)
   - **`packaging-checks/`**: checks that the plugins are well-formed and load whole on a host (the merge gate; see `docs/intent/packaging-checks/`); also regenerates the shipped workflow doc
-  - **`cascade-recording/`**: records the home page's cascade demo by driving Claude Code through one change in a small free-trial project (see `docs/intent/cascade-recording/`)
+  - **`cascade-recording/`**: records the home page's cascade demo by driving Claude Code through one change in a small free-trial project (see `docs/intent/onboarding/cascade-recording/`)
 
 ## Plugin Architecture (Claude Code)
 

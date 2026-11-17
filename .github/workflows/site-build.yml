@@ -1,6 +1,6 @@
 name: Build and deploy marketing site
 
-# @spec MKT-SITE-032
+# @spec ONB-SITE-032
 
 on:
   push:

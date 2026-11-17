@@ -2,7 +2,7 @@
 // files in the linked-intent-dev plugin, so the page and the in-agent tour
 // share one source. The site renders the marked regions and leaves out the
 // parts marked as making sense only inside the agent.
-// @spec MKT-SITE-073, MKT-SITE-074, MKT-SITE-077, MKT-SITE-079, MKT-SITE-080
+// @spec ONB-SITE-073, ONB-SITE-074, ONB-SITE-077, ONB-SITE-079, ONB-SITE-080
 
 import { readFileSync } from "node:fs";
 import path from "node:path";

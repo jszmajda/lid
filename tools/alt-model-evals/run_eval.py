@@ -2,7 +2,7 @@
 """Run LID's behavioral eval suites on non-Claude models through OpenRouter.
 
     tools/alt-model-evals/run_eval.py <skill> <eval-ids> <model>
-        [--runs N] [--timeout SECONDS] [--no-container]
+        [--runs N] [--timeout SECONDS] [--idle-timeout SECONDS] [--no-container]
 
 Each run stages the eval's fixture and a copy of plugins/, executes the
 opencode coding agent against the model inside a container, and captures the
@@ -40,7 +40,9 @@ RUNNER_DIR = Path(__file__).resolve().parent
 REPO_ROOT = RUNNER_DIR.parent.parent
 DOCKERFILE = RUNNER_DIR / "Dockerfile"
 
-DEFAULT_TIMEOUT = 600
+DEFAULT_TIMEOUT = 1800
+DEFAULT_IDLE_TIMEOUT = 600
+POLL_SECONDS = 1
 STOP_GRACE_SECONDS = 10
 MEMORY_LIMIT_BYTES = 2 * 1024 ** 3  # docker's --memory 2g is 2 GiB
 CONTAINER_HOME = "/home/eval"
@@ -166,6 +168,32 @@ def build_prompt(name, plugins_dir, prompt, date, conversational=False):
         "Today's date is %s.\n"
         "4. Your final message must be the exact user-facing response and nothing else.\n"
     ) % (name, plugins_dir, prompt, CONVERSATIONAL if conversational else NON_INTERACTIVE, date)
+
+
+# @spec ALT-EVAL-RUN-004, ALT-EVAL-RUN-012
+def wait_with_limits(proc, events, run_limit, idle_limit, started, poll=POLL_SECONDS):
+    """Wait for the harness to exit. Returns None when it does, or the limit that
+    stopped it: "run" once it has lasted run_limit seconds, "inactivity" once it has
+    written nothing to its event stream for idle_limit seconds. The run limit is
+    checked first, so a turn that reaches both at once records "run"."""
+    last, size = started, 0
+    while True:
+        try:
+            proc.wait(timeout=poll)
+            return None
+        except subprocess.TimeoutExpired:
+            pass
+        now = time.monotonic()
+        try:
+            current = os.path.getsize(events)
+        except OSError:
+            current = size
+        if current != size:
+            size, last = current, now
+        if now - started >= run_limit:
+            return "run"
+        if now - last >= idle_limit:
+            return "inactivity"
 
 
 # @spec ALT-EVAL-RUN-001, ALT-EVAL-RUN-002, ALT-EVAL-RUN-003, ALT-EVAL-RUN-004
@@ -629,7 +657,7 @@ def run_one(ctx, ev, n, run_dir):
             home = Path(tempfile.mkdtemp(prefix="lid-alt-eval-home-"))
 
         def turn(text, cont, suffix):
-            """Run the harness once; returns (status, summary, exit_code, (start, end), error, interrupted)."""
+            """Run the harness once; returns (status, summary, exit_code, (start, end), error, interrupted, limit)."""
             nonlocal harness
             with open(out / ("events%s.jsonl" % suffix), "wb") as stdout, \
                     open(out / ("stderr%s.log" % suffix), "wb") as stderr:
@@ -642,12 +670,13 @@ def run_one(ctx, ev, n, run_dir):
                     argv = docker_run_argv(name, ctx["image"], scratch, ctx["model"], text,
                                            ctx["variant"], cont)
                     harness = Harness(argv, stdout, stderr, container=name)
-                begun, timed_out, stopped = harness.started, False, False
+                begun, timed_out, stopped, limit = harness.started, False, False, None
                 try:
-                    harness.proc.wait(timeout=ctx["timeout"])
-                except subprocess.TimeoutExpired:
-                    timed_out = True
-                    harness.stop()
+                    limit = wait_with_limits(harness.proc, out / ("events%s.jsonl" % suffix),
+                                             ctx["timeout"], ctx["idle_timeout"], begun)
+                    if limit:
+                        timed_out = True
+                        harness.stop()
                 except KeyboardInterrupt:
                     stopped = True
                     signal.signal(signal.SIGINT, signal.SIG_IGN)
@@ -660,9 +689,9 @@ def run_one(ctx, ev, n, run_dir):
             err = summ["error_message"]
             if st == "harness_error" and not err:
                 err = "harness exited with code %s" % code
-            return st, summ, code, (begun, ended), err, stopped
+            return st, summ, code, (begun, ended), err, stopped, (limit if st == "timeout" else None)
 
-        status, summary, exit_code, (started, finished), error_message, interrupted = turn(prompt, False, "")
+        status, summary, exit_code, (started, finished), error_message, interrupted, limit = turn(prompt, False, "")
         (out / "response.md").write_text(summary["response"])
 
         def capture(dest):
@@ -679,11 +708,12 @@ def run_one(ctx, ev, n, run_dir):
                 first = Path(tempfile.mkdtemp(prefix="turn1-", dir=str(scratch)))
                 capture(first)
                 shutil.move(str(first / "changes.patch"), str(out / "changes1.patch"))
-                st2, summ2, code2, (b2, e2), err2, interrupted = turn(ev["follow_up"]["prompt"], True, "2")
+                st2, summ2, code2, (b2, e2), err2, interrupted, limit2 = turn(ev["follow_up"]["prompt"], True, "2")
                 (out / "response2.md").write_text(summ2["response"])
                 follow_up = {"status": st2, "duration_ms": int(round((e2 - b2) * 1000)),
                              "total_cost_usd": summ2["total_cost_usd"], "tokens": summ2["tokens"],
-                             "tool_calls": summ2["tool_calls"], "exit_code": code2, "error_message": err2}
+                             "tool_calls": summ2["tool_calls"], "exit_code": code2, "error_message": err2,
+                             "timeout_limit": limit2}  # @spec ALT-EVAL-OUT-019
             else:
                 follow_up = {"status": "skipped"}
         # @spec ALT-EVAL-OUT-017
@@ -699,6 +729,7 @@ def run_one(ctx, ev, n, run_dir):
             "tool_calls": summary["tool_calls"],
             "exit_code": exit_code,
             "error_message": error_message,
+            "timeout_limit": limit,  # @spec ALT-EVAL-OUT-019
         }
         if follow_up is not None:
             timing["follow_up"] = follow_up  # @spec ALT-EVAL-RUN-011: status stays the first turn's
@@ -744,7 +775,10 @@ def parse_args(argv):
     p.add_argument("model", help="OpenRouter model ID, e.g. z-ai/glm-5.3-flash")
     p.add_argument("--runs", type=positive, default=1, help="runs per eval (default 1)")
     p.add_argument("--timeout", type=positive, default=DEFAULT_TIMEOUT,
-                   help="per-run limit on the harness, in seconds (default %d)" % DEFAULT_TIMEOUT)
+                   help="run limit: the longest each turn may run, in seconds (default %d)" % DEFAULT_TIMEOUT)
+    p.add_argument("--idle-timeout", type=positive, default=DEFAULT_IDLE_TIMEOUT,
+                   help="inactivity limit: the longest each turn may go without writing to its "
+                        "event stream, in seconds (default %d)" % DEFAULT_IDLE_TIMEOUT)
     p.add_argument("--effort", default=DEFAULT_EFFORT,
                    help="reasoning effort pinned for the model, e.g. low, medium, high, max; "
                         "'default' leaves the model's own default (default: %s)" % DEFAULT_EFFORT)
@@ -756,7 +790,7 @@ def parse_args(argv):
     return p.parse_args(argv)
 
 
-# @spec ALT-EVAL-CLI-001, ALT-EVAL-CLI-005, ALT-EVAL-CLI-006, ALT-EVAL-CLI-007,
+# @spec ALT-EVAL-CLI-001, ALT-EVAL-CLI-005, ALT-EVAL-CLI-006, ALT-EVAL-CLI-007, ALT-EVAL-CLI-013,
 #       ALT-EVAL-CLI-008, ALT-EVAL-RUN-007, ALT-EVAL-RUN-008, ALT-EVAL-OUT-011, ALT-EVAL-OUT-012
 def main(argv):
     args = parse_args(argv)
@@ -798,6 +832,7 @@ def main(argv):
         "harness": HARNESS,
         "sandbox": "none" if args.no_container else "container",
         "timeout": args.timeout,
+        "idle_timeout": args.idle_timeout,
         "runs": args.runs,
         "head_commit": head,
         "plugins_tree": tree,
@@ -807,7 +842,7 @@ def main(argv):
     write_json(batch_dir / "batch.json", batch)
 
     ctx = {"key": key, "model": args.model, "effort": args.effort, "variant": args.variant, "skill_dir": skill_dir, "date": date,
-           "timeout": args.timeout, "bare": args.no_container, "image": image}
+           "timeout": args.timeout, "idle_timeout": args.idle_timeout, "bare": args.no_container, "image": image}
     results, consecutive_errors, state = [], 0, "complete"
     try:
         for eval_id in eval_ids:

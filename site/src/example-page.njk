@@ -1,0 +1,84 @@
+---
+layout: base.njk
+pagination:
+  data: examples.entries
+  size: 1
+  alias: e
+permalink: "/examples/{{ e.slug }}/"
+eleventyComputed:
+  title: "{{ e.project }}"
+  description: "{{ e.tagline }}"
+eleventyExcludeFromCollections: true
+---
+
+<!-- @spec ONB-SHOWCASE-016, ONB-SHOWCASE-017, ONB-SHOWCASE-018, ONB-SHOWCASE-019, ONB-SHOWCASE-020, ONB-SHOWCASE-021, ONB-SHOWCASE-022, ONB-SHOWCASE-023, ONB-SHOWCASE-029, ONB-SHOWCASE-033 -->
+<div class="page wrap">
+  <p class="crumb"><a href="/examples/">Examples</a> <span class="ptr" aria-hidden="true"></span></p>
+
+  <div class="proj">
+    <div class="proj-main">
+      <p class="kicker"><span>{{ e.credit }}</span> · {{ "Open source" if e.open_source else "Code private" }}{% if e.size %} <span class="size">{{ e.size }}</span>{% endif %}</p>
+      <h1>{{ e.project }}</h1>
+      <p class="lede">{{ e.tagline }}</p>
+      <div class="brief">{{ e.brief | markdown | safe }}</div>
+
+      {% if e.story %}
+      <div class="node story-link{% if not (e.story.file or e.story.url) %} is-pending{% endif %}">
+        <p class="kicker"><span>The story</span> · {% if e.story.file %}Hosted here{% elif e.story.url %}{{ e.story.url | host }}{% else %}To come{% endif %}</p>
+        <p class="story-title">{{ e.story.title }}</p>
+        <p class="by">{{ e.story.byline }}</p>
+        {% if e.story.file %}<a class="btn btn-ghost" href="/examples/{{ e.slug }}/story/">Read the story <span class="ptr" aria-hidden="true"></span></a>
+        {% elif e.story.url %}<a class="btn btn-ghost" href="{{ e.story.url }}">Read the story <span class="ptr" aria-hidden="true"></span></a>
+        {% else %}<p class="muted">This story is still to come.</p>{% endif %}
+      </div><!-- /story-link -->
+      {% endif %}
+    </div><!-- /proj-main -->
+
+    <aside class="proj-side">
+      {% if e.pictures.length %}
+      <a class="node shot" href="/examples/{{ e.slug }}/{{ e.pictures[0].file }}" data-zoom><img src="/examples/{{ e.slug }}/{{ e.pictures[0].file }}" alt="{{ e.pictures[0].alt }}"><span class="zoom-hint" aria-hidden="true">Enlarge</span></a>
+      {% if e.pictures.length > 1 %}<div class="gallery">{% for p in e.pictures.slice(1) %}<a class="node shot small" href="/examples/{{ e.slug }}/{{ p.file }}" data-zoom><img src="/examples/{{ e.slug }}/{{ p.file }}" alt="{{ p.alt }}" loading="lazy"></a>{% endfor %}</div>{% endif %}
+      {% endif %}
+      <div class="node facts-card">
+        <p class="facts-h">How big it is</p>
+        {% if e.size %}<span class="size">{{ e.size }}</span>{% endif %}
+        {% if e.stats.length %}<dl>{% for s in e.stats %}<dt>{{ s[0] }}</dt><dd>{{ s[1] }}</dd>{% endfor %}</dl>{% endif %}
+        {% if e.stats_source %}<p class="muted tiny">{{ e.stats_source }}</p>{% endif %}
+        {% if e.links.repo or e.links.hld or e.links.intent_tree or e.links.live %}
+        <ul class="facts-links">
+          {% if e.links.repo %}<li><a href="{{ e.links.repo }}">The repository</a></li>{% endif %}
+          {% if e.links.hld %}<li><a href="{{ e.links.hld }}">The HLD</a></li>{% endif %}
+          {% if e.links.intent_tree %}<li><a href="{{ e.links.intent_tree }}">The whole intent tree</a></li>{% endif %}
+          {% if e.links.live %}<li><a href="{{ e.links.live }}">{{ e.links.live | host }}</a></li>{% endif %}
+        </ul>
+        {% endif %}
+      </div>
+    </aside>
+  </div>
+
+  {% if e.tree %}
+  <!-- @spec ONB-SHOWCASE-046, ONB-SHOWCASE-047 -->
+  <section class="sec-sm tree-section" aria-labelledby="tree-heading">
+    <h2 class="h2-sm" id="tree-heading">Its intent tree</h2>
+    <figure class="node shape">
+      <div class="tree-wrap{% if e.drawing.scrolls %} scrolls{% endif %}">{{ e.drawing.svg | safe }}<div class="t-tip" hidden></div></div>
+      <figcaption class="muted">
+        <span class="key"><svg viewBox="0 0 40 14" aria-hidden="true"><rect class="t-hld" x="1" y="1" width="38" height="12" rx="4"/></svg> the HLD</span>
+        <span class="key"><svg viewBox="0 0 40 14" aria-hidden="true"><rect class="t-sub" x="1" y="1" width="38" height="12" rx="4"/></svg> a sub-HLD</span>
+        <span class="key"><svg viewBox="0 0 40 14" aria-hidden="true"><rect class="t-lld" x="9" y="1" width="22" height="12" rx="4"/></svg> a design doc</span>
+        {% if e.drawing.counted %}
+        <span class="key"><svg viewBox="0 0 14 14" aria-hidden="true"><circle class="t-dot" cx="7" cy="7" r="4"/></svg> {{ "1 built spec" if e.drawing.perDot == 1 else e.drawing.perDot + " built specs" }}</span>
+        <span class="key"><svg viewBox="0 0 14 14" aria-hidden="true"><circle class="t-gap" cx="7" cy="7" r="4"/></svg> {{ "1 open spec" if e.drawing.perDot == 1 else e.drawing.perDot + " open specs" }}</span>
+        {% endif %}
+        {% if e.drawing.named %}<span class="note-line">Hover or tap a node to see its name.</span>{% endif %}
+      </figcaption>
+    </figure>
+  </section>
+  {% endif %}
+</div>
+
+<dialog class="zoom" id="zoom" aria-label="Enlarged picture">
+  <button class="zoom-close" type="button" aria-label="Close">×</button>
+  <img alt="">
+</dialog>
+<script src="{{ '/assets/js/showcase.js' | url }}?v={{ buildId }}" defer></script>

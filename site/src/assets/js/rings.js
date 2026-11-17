@@ -3,7 +3,7 @@
 // time, src/_data/rings.js calls renderStatic() for the hero and for each explainer's fallback;
 // in the browser, mount() animates the explainers as the reader scrolls. Both draw through the
 // same draw(), so the static and the animated drawing cannot drift apart.
-// @spec MKT-SITE-111, MKT-SITE-113, MKT-SITE-114, MKT-SITE-115, MKT-SITE-117, MKT-SITE-118, MKT-SITE-119, MKT-SITE-120, MKT-SITE-121, MKT-SITE-122, MKT-SITE-123, MKT-SITE-124
+// @spec ONB-SITE-111, ONB-SITE-113, ONB-SITE-114, ONB-SITE-115, ONB-SITE-117, ONB-SITE-118, ONB-SITE-119, ONB-SITE-120, ONB-SITE-121, ONB-SITE-122, ONB-SITE-123, ONB-SITE-124
 
 export const W = 640;
 export const H = 420;

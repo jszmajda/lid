@@ -34,7 +34,11 @@
     { "model": "xiaomi/mimo-v2.6-flash", "date": "2026-10-19", "evals": "10,11,15,16", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "172/180" },
     { "model": "claude-opus-5", "date": "2026-10-24", "evals": "10,11,15,16", "effort": "medium", "passed": "163/180" },
     { "model": "claude-sonnet-5", "date": "2026-10-24", "evals": "10,11,15,16", "effort": "medium", "passed": "167/180" },
-    { "model": "moonshotai/kimi-k3.1-pro", "date": "2026-11-09", "evals": "10,11,15,16", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "166/180" }
+    { "model": "moonshotai/kimi-k3.1-pro", "date": "2026-11-09", "evals": "10,11,15,16", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "166/180" },
+    { "model": "openai/gpt-6.1-terra", "date": "2026-11-11", "evals": "10,11,15,16", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "167/180" },
+    { "model": "tencent/hy4", "date": "2026-11-11", "evals": "10,11,15,16", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "171/180" },
+    { "model": "minimax/minimax-m3.1-flash", "date": "2026-11-11", "evals": "10,11,15,16", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "135/180" },
+    { "model": "deepseek/deepseek-v4.1-flash-1017", "date": "2026-11-11", "evals": "10,11,15,16", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "166/180" }
   ],
   "evals": [
     {

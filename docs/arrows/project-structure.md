@@ -4,7 +4,7 @@ The repo-meta segment — owns the artifacts that describe the project itself ra
 
 ## Status
 
-**AUDITED** — last audited 2026-06-07 (git SHA `527cf08c9150`); revised 2026-10-24 by the packaging-checks change (#86, #87) and 2026-11-09 and 2026-11-11 by the Kiro plugin-host change. 102 of 102 active specs implemented. The former build-time checks (`PROJ-STRUCT-039`–`041`) are superseded by the `packaging-checks` segment, which now verifies this segment's rules.
+**AUDITED** — last audited 2026-06-07 (git SHA `527cf08c9150`); revised 2026-10-24 by the packaging-checks change (#86, #87) and 2026-11-09 and 2026-11-11 by the Kiro plugin-host change. 105 of 105 active specs implemented. The former build-time checks (`PROJ-STRUCT-039`–`041`) are superseded by the `packaging-checks` segment, which now verifies this segment's rules. 2026-11-16: `CONTRIBUTING.md` gained "Share a project you built" and the example pull-request template sits beside the default one (`PROJ-STRUCT-087`–`089`, implemented); the template's contents belong to `examples-showcase`.
 
 ## References
 
@@ -15,7 +15,7 @@ The repo-meta segment — owns the artifacts that describe the project itself ra
 - `docs/intent/project-structure/project-structure-design.md`
 
 ### EARS
-- `docs/intent/project-structure/project-structure-specs.md` (102 active specs, prefix `PROJ-STRUCT-*`; `-014` retired; `-039`–`-041` and `-061` superseded)
+- `docs/intent/project-structure/project-structure-specs.md` (105 active specs, prefix `PROJ-STRUCT-*`; `-014` retired; `-039`–`-041` and `-061` superseded)
 
 ### Tests / Build checks
 - The `packaging-checks` segment's tool (`tools/packaging-checks/`) verifies this segment's rules before every merge: skill and command files, frontmatter, the shared version and CHANGELOG, the workflow doc, links in `CONTRIBUTING.md` and `docs/setup.md`, marketplace manifests, the Agent Plugins manifests, and the `CLAUDE.md` symlink.
@@ -51,23 +51,23 @@ The repo-meta segment — owns the artifacts that describe the project itself ra
 
 | Category (per LLD groupings) | Implemented | Active gap | Deferred |
 |---|---|---|---|
-| CONTRIBUTING.md (audience, trivial, out-of-scope, variants, gate, mechanics incl. packaging checks `-070`) | 18 `[x]` | 0 | 0 |
+| CONTRIBUTING.md (audience, trivial, out-of-scope, variants, gate, mechanics incl. packaging checks `-070`, sharing a project `-087`–`-088`) | 20 `[x]` | 0 | 0 |
 | AGENTS.md / CLAUDE.md (incl. `tools/` `-068`, editing guidelines `-071`) | 7 `[x]` | 0 | 0 |
-| docs/setup.md (incl. plugin hosts `-062`, Kiro plugin host `-087`–`-099`, `-106`, `-107`, opencode skills host `-072`, tour link `-086`, host pointers `-101`) | 23 `[x]` | 0 | 0 |
+| docs/setup.md (incl. plugin hosts `-062`, Kiro plugin host `-090`–`-102`, `-109`, `-110`, opencode skills host `-072`, tour link `-086`, host pointers `-104`) | 23 `[x]` | 0 | 0 |
 | .claude-plugin/marketplace.json (no `version`, `-030`) | 3 `[x]` | 0 | 0 |
 | .cursor-plugin manifests (`-056`–`-058`, `-060`) | 4 `[x]` | 0 | 0 |
-| Agent Plugins manifests (`-103`–`-105`) | 3 `[x]` | 0 | 0 |
+| Agent Plugins manifests (`-106`–`-108`) | 3 `[x]` | 0 | 0 |
 | Repo-root file pointers | 3 `[x]` | 0 | 0 |
 | .gitignore / .claude/settings.json | 5 `[x]` | 0 | 0 |
 | LICENSE, CODE_OF_CONDUCT, SECURITY, CITATION | 5 `[x]` | 0 | 0 |
-| .github/ contribution templates (PR template's *Packaging checks* line, `-053`) | 3 `[x]` | 0 | 0 |
+| .github/ contribution templates (PR template's *Packaging checks* line, `-053`; default template beside the example one, `-089`) | 4 `[x]` | 0 | 0 |
 | Skill and command files (`-073`–`-076`, `-084`) | 5 `[x]` | 0 | 0 |
 | CHANGELOG, versions, releases (`-043`–`-046`, `-054`, `-063`, `-077`–`-081`) | 11 `[x]` | 0 | 0 |
-| Cascade obligations (incl. `-082`, `-083`, `-085`, `-100`, `-102`) | 11 `[x]` | 0 | 0 |
+| Cascade obligations (incl. `-082`, `-083`, `-085`, `-103`, `-105`) | 11 `[x]` | 0 | 0 |
 | Arrow registration | 1 `[x]` | 0 | 0 |
-| **Total** (recounted from the spec file) | **102** | **0** | **0** |
+| **Total** (recounted from the spec file) | **105** | **0** | **0** |
 
-**Summary:** 102 of 102 active specs implemented. The Kiro plugin-host change added `docs/setup.md`'s Kiro section (`087`–`099`, `106`, `107`), its pointer from the `AGENTS.md` tool list (`101`), the Agent Plugins manifests Kiro installs from (`103`–`105`), and two cascade obligations (`100`, `102`); it extended `046` and `060` to the new manifests and `038` to hosts that install from them, and narrowed `083` to the opencode section and `085` to each section that lists model-invocable skills. The packaging-checks change (#86, #87) added the rules for skill and command files (`073`–`076`, `084`), the shared version and the release step that travels with each change (`046`, `077`–`081`), the opencode skills host (`072`, `085`), and the pull-request record (`053`, `070`); it superseded the build-time-check specs `039`–`041` (now `PKG-CHECK-018`–`020`) and the No-Version-Update section `061`.
+**Summary:** 105 of 105 active specs implemented. The Kiro plugin-host change added `docs/setup.md`'s Kiro section (`090`–`102`, `109`, `110`), its pointer from the `AGENTS.md` tool list (`104`), the Agent Plugins manifests Kiro installs from (`106`–`108`), and two cascade obligations (`103`, `105`); it extended `046` and `060` to the new manifests and `038` to hosts that install from them, and narrowed `083` to the opencode section and `085` to each section that lists model-invocable skills. The packaging-checks change (#86, #87) added the rules for skill and command files (`073`–`076`, `084`), the shared version and the release step that travels with each change (`046`, `077`–`081`), the opencode skills host (`072`, `085`), and the pull-request record (`053`, `070`); it superseded the build-time-check specs `039`–`041` (now `PKG-CHECK-018`–`020`) and the No-Version-Update section `061`.
 
 ## Key Findings
 

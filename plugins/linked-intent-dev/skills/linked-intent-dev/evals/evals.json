@@ -1,6 +1,6 @@
 {
   "skill_name": "linked-intent-dev",
-  "tested_with": [{ "model": "claude-haiku-4-5", "date": "2026-10-10", "evals": "0-3", "effort": "medium", "passed": "196/270" }, { "model": "claude-haiku-5-5", "date": "2026-10-10", "evals": "0-3", "effort": "medium", "passed": "256/270" }, { "model": "claude-opus-4-8", "date": "2026-10-10", "evals": "0-3", "effort": "medium", "passed": "248/270" }, { "model": "claude-opus-5-5", "date": "2026-10-10", "evals": "0-3", "effort": "medium", "passed": "270/270" }, { "model": "claude-sonnet-4-5", "date": "2026-10-10", "evals": "0-3", "effort": "medium", "passed": "171/270" }, { "model": "claude-sonnet-4-6", "date": "2026-10-10", "evals": "0-3", "effort": "medium", "passed": "228/270" }, { "model": "claude-sonnet-5-5", "date": "2026-10-10", "evals": "0-3", "effort": "medium", "passed": "260/270" }, { "model": "deepseek/deepseek-v4.1-flash", "date": "2026-10-10", "evals": "0-3", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "262/270" }, { "model": "openai/gpt-5.6-sol", "date": "2026-10-10", "evals": "0-3", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "261/270" }, { "model": "openai/gpt-5.6-terra", "date": "2026-10-10", "evals": "0-3", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "208/270" }, { "model": "openai/gpt-6.1-sol", "date": "2026-10-10", "evals": "0-3", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "270/270" }, { "model": "z-ai/glm-5.3", "date": "2026-10-10", "evals": "0-3", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "258/270" }, { "model": "z-ai/glm-5.3-flash", "date": "2026-10-10", "evals": "0-3", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "242/270" }, { "model": "google/gemini-4-argon", "date": "2026-10-16", "evals": "0-3", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "267/270" }, { "model": "meta/muse-glimmer-30b", "date": "2026-10-16", "evals": "0-3", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "155/270" }, { "model": "google/gemini-3.8-flash", "date": "2026-10-18", "evals": "0-3", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "215/238" }, { "model": "nvidia/nemotron-3-ultra-550b-a55b", "date": "2026-10-18", "evals": "0-3", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "161/270" }, { "model": "openai/gpt-6-luna", "date": "2026-10-18", "evals": "0-3", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "205/270" }, { "model": "xiaomi/mimo-v2.6-flash", "date": "2026-10-19", "evals": "0-3", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "222/235" }, { "model": "claude-opus-5", "date": "2026-10-24", "evals": "0-3", "effort": "medium", "passed": "263/270" }, { "model": "claude-sonnet-5", "date": "2026-10-24", "evals": "0-3", "effort": "medium", "passed": "240/270" }, { "model": "moonshotai/kimi-k3.1-pro", "date": "2026-11-09", "evals": "0-3", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "206/270" }],
+  "tested_with": [{ "model": "claude-haiku-4-5", "date": "2026-10-10", "evals": "0-3", "effort": "medium", "passed": "196/270" }, { "model": "claude-haiku-5-5", "date": "2026-10-10", "evals": "0-3", "effort": "medium", "passed": "256/270" }, { "model": "claude-opus-4-8", "date": "2026-10-10", "evals": "0-3", "effort": "medium", "passed": "248/270" }, { "model": "claude-opus-5-5", "date": "2026-10-10", "evals": "0-3", "effort": "medium", "passed": "270/270" }, { "model": "claude-sonnet-4-5", "date": "2026-10-10", "evals": "0-3", "effort": "medium", "passed": "171/270" }, { "model": "claude-sonnet-4-6", "date": "2026-10-10", "evals": "0-3", "effort": "medium", "passed": "228/270" }, { "model": "claude-sonnet-5-5", "date": "2026-10-10", "evals": "0-3", "effort": "medium", "passed": "260/270" }, { "model": "deepseek/deepseek-v4.1-flash", "date": "2026-10-10", "evals": "0-3", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "262/270" }, { "model": "openai/gpt-5.6-sol", "date": "2026-10-10", "evals": "0-3", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "261/270" }, { "model": "openai/gpt-5.6-terra", "date": "2026-10-10", "evals": "0-3", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "208/270" }, { "model": "openai/gpt-6.1-sol", "date": "2026-10-10", "evals": "0-3", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "270/270" }, { "model": "z-ai/glm-5.3", "date": "2026-10-10", "evals": "0-3", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "258/270" }, { "model": "z-ai/glm-5.3-flash", "date": "2026-10-10", "evals": "0-3", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "242/270" }, { "model": "google/gemini-4-argon", "date": "2026-10-16", "evals": "0-3", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "267/270" }, { "model": "meta/muse-glimmer-30b", "date": "2026-10-16", "evals": "0-3", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "155/270" }, { "model": "google/gemini-3.8-flash", "date": "2026-10-18", "evals": "0-3", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "215/238" }, { "model": "nvidia/nemotron-3-ultra-550b-a55b", "date": "2026-10-18", "evals": "0-3", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "161/270" }, { "model": "openai/gpt-6-luna", "date": "2026-10-18", "evals": "0-3", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "205/270" }, { "model": "xiaomi/mimo-v2.6-flash", "date": "2026-10-19", "evals": "0-3", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "222/235" }, { "model": "claude-opus-5", "date": "2026-10-24", "evals": "0-3", "effort": "medium", "passed": "263/270" }, { "model": "claude-sonnet-5", "date": "2026-10-24", "evals": "0-3", "effort": "medium", "passed": "240/270" }, { "model": "moonshotai/kimi-k3.1-pro", "date": "2026-11-09", "evals": "0-3", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "206/270" }, { "model": "openai/gpt-6.1-terra", "date": "2026-11-11", "evals": "0-3", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "261/270" }, { "model": "tencent/hy4", "date": "2026-11-11", "evals": "0-3", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "233/270" }, { "model": "minimax/minimax-m3.1-flash", "date": "2026-11-11", "evals": "0-3", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "184/216" }, { "model": "deepseek/deepseek-v4.1-flash-1017", "date": "2026-11-11", "evals": "0-3", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "262/270" }],
   "evals": [
     {
       "id": 0,
@@ -117,21 +117,21 @@
       "prompt": "Use the linked-intent-dev skill. I want to build a small app that tracks my reading list.",
       "files": [],
       "assertions": [
-        { "text": "The agent's first message opens with a card: a Markdown blockquote whose bold heading asks whether the person is new to LID", "spec_ids": ["TOUR-010", "TOUR-012", "TOUR-015", "LID-CORE-088"] },
-        { "text": "The card's paragraph says, in full sentences, that the agent writes the request down in layers before any code exists and shows each layer and waits for the person, and that tests and code point back to the requirement they serve, so connected pieces can be found when something changes", "spec_ids": ["TOUR-013"] },
-        { "text": "The card offers the word 'tour' for a walk-through inside the agent and gives the link linked-intent.dev/tour", "spec_ids": ["TOUR-012"] },
-        { "text": "The card's paragraph uses no LID term other than 'LID' (no HLD, LLD, EARS, sub-HLD, segment, cascade, or arrow)", "spec_ids": ["TOUR-014"] },
-        { "text": "Below the card, the same message carries on with setting the project up for LID (for example the mode, or the project's first design questions). The agent does not stop after the card to wait for an answer about the tour", "spec_ids": ["TOUR-011", "LID-CORE-088"] }
+        { "text": "The agent's first message opens with a card: a Markdown blockquote whose bold heading asks whether the person is new to LID", "spec_ids": ["ONB-TOUR-010", "ONB-TOUR-012", "ONB-TOUR-015", "LID-CORE-088"] },
+        { "text": "The card's paragraph says, in full sentences, that the agent writes the request down in layers before any code exists and shows each layer and waits for the person, and that tests and code point back to the requirement they serve, so connected pieces can be found when something changes", "spec_ids": ["ONB-TOUR-013"] },
+        { "text": "The card offers the word 'tour' for a walk-through inside the agent and gives the link linked-intent.dev/tour", "spec_ids": ["ONB-TOUR-012"] },
+        { "text": "The card's paragraph uses no LID term other than 'LID' (no HLD, LLD, EARS, sub-HLD, segment, cascade, or arrow)", "spec_ids": ["ONB-TOUR-014"] },
+        { "text": "Below the card, the same message carries on with setting the project up for LID (for example the mode, or the project's first design questions). The agent does not stop after the card to wait for an answer about the tour", "spec_ids": ["ONB-TOUR-011", "LID-CORE-088"] }
       ],
       "follow_up": {
         "prompt": "tour",
         "assertions": [
-          { "text": "The reply starts the tour: it opens with a bold title line giving its place in the tour, such as 'Tour 1 of 5'", "spec_ids": ["TOUR-016", "TOUR-022", "TOUR-113"] },
-          { "text": "Near its start, the reply asks how the person knows their agent built what they meant (that question or close wording)", "spec_ids": ["TOUR-026"] },
-          { "text": "The reply shows the levels (high-level design, low-level designs, EARS requirements, tests, and code) and introduces EARS with an example of its pattern, such as '…the system shall…'", "spec_ids": ["TOUR-028"] },
-          { "text": "The reply shows a tree of designs branching, with a sub-HLD and designs beneath it, inside a text fence, before it uses the term 'sub-HLD'", "spec_ids": ["TOUR-029", "TOUR-075", "TOUR-128"] },
-          { "text": "The reply ends with bold 'next' and 'done' choices, each followed by a few words saying where it leads", "spec_ids": ["TOUR-023"] },
-          { "text": "The reply does not answer the mode question on the person's behalf or finish setting LID up", "spec_ids": ["TOUR-017"] }
+          { "text": "The reply starts the tour: it opens with a bold title line giving its place in the tour, such as 'Tour 1 of 5'", "spec_ids": ["ONB-TOUR-016", "ONB-TOUR-022", "ONB-TOUR-113"] },
+          { "text": "Near its start, the reply asks how the person knows their agent built what they meant (that question or close wording)", "spec_ids": ["ONB-TOUR-026"] },
+          { "text": "The reply shows the levels (high-level design, low-level designs, EARS requirements, tests, and code) and introduces EARS with an example of its pattern, such as '…the system shall…'", "spec_ids": ["ONB-TOUR-028"] },
+          { "text": "The reply shows a tree of designs branching, with a sub-HLD and designs beneath it, inside a text fence, before it uses the term 'sub-HLD'", "spec_ids": ["ONB-TOUR-029", "ONB-TOUR-075", "ONB-TOUR-128"] },
+          { "text": "The reply ends with bold 'next' and 'done' choices, each followed by a few words saying where it leads", "spec_ids": ["ONB-TOUR-023"] },
+          { "text": "The reply does not answer the mode question on the person's behalf or finish setting LID up", "spec_ids": ["ONB-TOUR-017"] }
         ]
       },
       "notes": "Checks the newcomer tour's offer on the workflow's Phase 1 bootstrap route, and the first step of the tour. The tour's files are tour-offer.md and tour.md in the skill's references."
@@ -142,14 +142,14 @@
       "prompt": "Use the linked-intent-dev skill. I want to build a small app that tracks my reading list.",
       "files": [],
       "assertions": [
-        { "text": "The agent's first message opens with a card: a Markdown blockquote whose bold heading asks whether the person is new to LID", "spec_ids": ["TOUR-010", "TOUR-012", "TOUR-015", "LID-CORE-088"] }
+        { "text": "The agent's first message opens with a card: a Markdown blockquote whose bold heading asks whether the person is new to LID", "spec_ids": ["ONB-TOUR-010", "ONB-TOUR-012", "ONB-TOUR-015", "LID-CORE-088"] }
       ],
       "follow_up": {
         "prompt": "A command-line tool, please.",
         "assertions": [
-          { "text": "The reply goes on with setting up LID and designing the reading-list app as it would have without the card, and does not start the tour", "spec_ids": ["TOUR-018", "TOUR-019"] },
-          { "text": "The reply does not show the tour card again", "spec_ids": ["TOUR-008"] },
-          { "text": "If an instruction file (AGENTS.md or CLAUDE.md) exists at the end of the run, it holds no record of the person's answer to the tour offer", "spec_ids": ["TOUR-084"] }
+          { "text": "The reply goes on with setting up LID and designing the reading-list app as it would have without the card, and does not start the tour", "spec_ids": ["ONB-TOUR-018", "ONB-TOUR-019"] },
+          { "text": "The reply does not show the tour card again", "spec_ids": ["ONB-TOUR-008"] },
+          { "text": "If an instruction file (AGENTS.md or CLAUDE.md) exists at the end of the run, it holds no record of the person's answer to the tour offer", "spec_ids": ["ONB-TOUR-084"] }
         ]
       },
       "notes": "Carrying on with the route's own question declines the tour. Any memory record belongs in the harness's per-person memory, never in the project's files."
@@ -171,7 +171,7 @@
       "follow_up": {
         "prompt": "Actually, could you give me the whole LID tour?",
         "assertions": [
-          { "text": "The reply starts the tour, opening with a bold title line such as 'Tour 1 of 5'", "spec_ids": ["TOUR-021", "TOUR-113", "LID-CORE-093"] }
+          { "text": "The reply starts the tour, opening with a bold title line such as 'Tour 1 of 5'", "spec_ids": ["ONB-TOUR-021", "ONB-TOUR-113", "LID-CORE-093"] }
         ]
       },
       "notes": "A person can ask for the tour, or about one part of LID, at any time. The workflow skill's description covers these requests."
@@ -187,16 +187,16 @@
         { "path": "docs/intent/reading-list/reading-list-specs.md", "content": "# Reading list specs\n\n**LLD**: docs/intent/reading-list/reading-list-design.md\n\n- `[x]` **LIST-001**: When the reader adds a book with a title and an author, the system shall add it to the list with the status \"to read\".\n- `[x]` **LIST-002**: When the reader marks a book finished, the system shall record the date it was finished.\n" }
       ],
       "assertions": [
-        { "text": "The agent's first message on the change opens with a Markdown blockquote card whose bold heading says that this project uses LID", "spec_ids": ["LID-CORE-089", "TOUR-006", "TOUR-010", "TOUR-012"] },
-        { "text": "Below the card, the same message carries on with the change (for example the design or requirement work for the export), introduced as the way to keep moving", "spec_ids": ["TOUR-011"] }
+        { "text": "The agent's first message on the change opens with a Markdown blockquote card whose bold heading says that this project uses LID", "spec_ids": ["LID-CORE-089", "ONB-TOUR-006", "ONB-TOUR-010", "ONB-TOUR-012"] },
+        { "text": "Below the card, the same message carries on with the change (for example the design or requirement work for the export), introduced as the way to keep moving", "spec_ids": ["ONB-TOUR-011"] }
       ],
       "follow_up": {
         "prompt": "Looks right, go ahead.",
         "assertions": [
-          { "text": "The reply goes on with the change without starting the tour or showing the card again", "spec_ids": ["TOUR-018", "TOUR-019", "TOUR-008"] }
+          { "text": "The reply goes on with the change without starting the tour or showing the card again", "spec_ids": ["ONB-TOUR-018", "ONB-TOUR-019", "ONB-TOUR-008"] }
         ]
       },
-      "notes": "Assumes a harness that keeps per-person memory the agent may write, as Claude Code's auto-memory does, with no record of the person meeting LID. On a harness without such memory, showing no card is the correct behavior (TOUR-006), and these assertions do not apply."
+      "notes": "Assumes a harness that keeps per-person memory the agent may write, as Claude Code's auto-memory does, with no record of the person meeting LID. On a harness without such memory, showing no card is the correct behavior (ONB-TOUR-006), and these assertions do not apply."
     }
   ]
 }
