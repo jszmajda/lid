@@ -385,6 +385,9 @@ class OwnerModel:
     scope: str = "change"
     counting: str = "stop"
     broad_uniform: str = "broad"
+    # Label each of several answers with the agent's quoted question. Off by default: in the leak gate the owner
+    # sometimes quoted one question and answered another, which turns "Yes." into the opposite of what it meant.
+    label_answers: bool = False
 
     def __post_init__(self):
         problems = []
@@ -1188,12 +1191,12 @@ def call_costs(reply: OwnerReply) -> dict[str, float]:
     return costs
 
 
-def answer_lines(answers: Sequence[dict]) -> list[str]:
+def answer_lines(answers: Sequence[dict], label: bool = False) -> list[str]:
     """The answers as they go into the reply. With more than one, each carries its label, the agent's own words for
     its question, so a run of "Yes." answers can't be read against the wrong question: "Is that fine? Yes.", or
     "How long can notes be: Yes." for words without a question mark. An answer whose question wasn't quoted goes
-    without a label. One answer stands alone."""
-    if len(answers) < 2:
+    without a label. One answer stands alone. Without `label`, answers go in their order, unlabelled."""
+    if len(answers) < 2 or not label:
         return [a["answer"] for a in answers]
     lines = []
     for a in answers:
@@ -1517,7 +1520,7 @@ class Owner:
             ans["items"] = got
 
         review_lines = [x["line"] for x in recalled if x["via"] == "review"]
-        parts = (([redirect.text] if event == "delivered" else []) + answer_lines(out["answers"])
+        parts = (([redirect.text] if event == "delivered" else []) + answer_lines(out["answers"], self.model.label_answers)
                  + [c["text"] for c in kept] + review_lines)
         kind = out["message_kind"]
         finished = kind == "completion" and not parts

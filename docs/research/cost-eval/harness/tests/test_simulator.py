@@ -3,6 +3,7 @@
 The fixtures are made up, so no hidden seed material appears in this public file.
 """
 
+import dataclasses
 import sys
 import unittest
 from pathlib import Path
@@ -485,6 +486,7 @@ class OwnerTest(unittest.TestCase):
         o = out("questions", [ans("Do you close at six?", "Yes.", ["BK-02"]), ans("How long can notes be", "x", no_view=True),
                               ans("Plan OK?", "Yes.")])
         w, ask = owner("diligent", o)
+        w.model = dataclasses.replace(w.model, label_answers=True)
         w.start_change(self.c[1])
         r = w.respond("Do you close at six? How long can notes be? Plan OK?", code_written=False)
         self.assertEqual(r.reply, "Do you close at six? Yes.\n\nHow long can notes be: No preference, use your judgment.\n\n"
@@ -499,6 +501,7 @@ class OwnerTest(unittest.TestCase):
         # "Should notes cover photos too?" is the owner's paraphrase, and the opposite of what the agent proposed.
         o = out("questions", [ans("Should notes cover photos too?", "Yes."), ans("Should notes be searchable?", "Yes.")])
         w, ask = owner("diligent", o, o)
+        w.model = dataclasses.replace(w.model, label_answers=True)
         w.start_change(self.c[1])
         r = w.respond("I've kept notes to plain text. Is that fine? Should notes be searchable?", code_written=False)
         self.assertEqual(len(ask.prompts), 1)
@@ -510,6 +513,7 @@ class OwnerTest(unittest.TestCase):
         msg = "Plan:\n\nIs the \u2018note\u2019 field   optional? And may notes\nbe edited?"
         o = out("questions", [ans('"Is the \'note\' field optional?"', "Yes."), ans("[P2] may notes be edited?", "Yes.")])
         w, _ = owner("diligent", o)
+        w.model = dataclasses.replace(w.model, label_answers=True)
         w.start_change(self.c[1])
         r = w.respond(msg, code_written=False)
         self.assertEqual(r.calls[0]["repairs"], [])
@@ -517,6 +521,12 @@ class OwnerTest(unittest.TestCase):
         self.assertTrue(sm.quoted_in("may notes be edited?", msg))
         self.assertFalse(sm.quoted_in("", msg))
         self.assertFalse(sm.quoted_in("may notes be deleted?", msg))
+
+    def test_answers_go_unlabelled_by_default(self):
+        o = out("questions", [ans("Do you close at six?", "Yes.", ["BK-02"]), ans("Plan OK?", "Yes.")])
+        w, _ = owner("diligent", o)
+        w.start_change(self.c[1])
+        self.assertEqual(w.respond("Do you close at six? Plan OK?", code_written=False).reply, "Yes.\n\nYes.\n\nGo ahead.")
 
     def test_the_schema_asks_for_the_agents_exact_words(self):
         q = sm.OUTPUT_SCHEMA["properties"]["answers"]["items"]["properties"]["question"]
