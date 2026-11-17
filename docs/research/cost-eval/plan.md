@@ -61,8 +61,8 @@ In total that is about 200 sessions, against about 700 for the pilot as first dr
 
 Alongside the stages:
 
-- `[ ]` Build attention and recall into the owner (design.md, "Attention and recall"), reviewed by Claude Fable first, with tests for the draws.
-- `[ ]` Rate salience for every askable item in both seeds, blind, with four model families; report weighted kappa; freeze with a hash.
+- `[x]` Build attention and recall into the owner (design.md, "Attention and recall"), reviewed by Claude Fable first, with tests for the draws. Done 2026-11-16: 212 tests; Fable reviewed the design and the code.
+- `[x]` Rate salience for every askable item in both seeds, blind, with four model families; report weighted kappa; freeze with a hash. Done 2026-11-16: pooled weighted kappa 0.60, below the 0.7 bar, so median tiers with the shortfall recorded.
 - `[ ]` Check the owner: labelled judgments on about 100 replayed stops, replays of logged stops, stimuli modelled on published experiments, and the constants sweep. A maintainer's play-through is a smoke test only.
 - `[ ]` Run the guessability panel on BenchTime's latent items, so both seeds report latent fidelity by band.
 - `[ ]` Two people label about 100 requests to check the touchpoint rubric (target kappa 0.7 or better).
