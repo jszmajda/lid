@@ -143,9 +143,20 @@ Refund an order and check where it went.
 
 BRIEF = "# Bakery\n\nTrack our orders. Each order records its customer."
 
+# Every askable item's salience tier and recall line (BK-07 is realized on a symptom, so askable once released).
+OWNER_ITEMS = {
+    "BK-02": {"tier": "medium", "recall": "We stop taking orders at six in the evening."},
+    "BK-07": {"tier": "high", "recall": "A refund has to go back to the card it came from."},
+    "BK-09": {"tier": "low", "recall": "Keep notes exactly as they were typed."},
+}
+
 
 def oracle():
     return sm.parse_oracle(ORACLE)
+
+
+def owner_items():
+    return sm.parse_owner_items(OWNER_ITEMS, oracle())
 
 
 def script():
@@ -297,16 +308,16 @@ class PromptTest(unittest.TestCase):
     def test_every_placeholder_is_filled_and_empty_sections_vanish(self):
         p = self.prompt()
         self.assertNotRegex(p, r"\{[A-Z_]+\}")
-        self.assertIn("<agent_message>\nHere is my plan. Shall I go ahead?\n</agent_message>", p)
+        self.assertIn("<agent_message>\n[P1] Here is my plan. Shall I go ahead?\n</agent_message>", p)
         self.assertIn("<brief>", p)
         for absent in ("## What you asked for in earlier changes", "## What you told the agent in earlier changes",
                        "## This change so far", "## Documents the agent asked you to read", "## You have changed your mind"):
             self.assertNotIn(absent, p)
         self.assertNotRegex(p, r"\n{3,}")
 
-    def test_the_agents_message_is_inserted_untouched(self):
+    def test_the_agents_message_is_inserted_untouched_apart_from_passage_numbers(self):
         msg = "Plan:\n\n\n\nStep {NARRATIVE} one."
-        self.assertIn(msg, self.prompt(message=msg))
+        self.assertIn("[P1] Plan:\n\n\n\n[P2] Step {NARRATIVE} one.", self.prompt(message=msg))
 
     def test_a_pending_change_of_mind_is_withheld(self):
         p = self.prompt(change=2)
@@ -352,7 +363,7 @@ class PromptTest(unittest.TestCase):
 
     def test_documents_are_shown_by_name(self):
         p = self.prompt(documents=[sm.Document("docs/design.md", "Orders are deleted after a year.", 6, "x")])
-        self.assertIn('<document name="docs/design.md">\nOrders are deleted after a year.\n</document>', p)
+        self.assertIn('<document name="docs/design.md">\n[P2] Orders are deleted after a year.\n</document>', p)
 
     def test_redirect_state_must_match_the_change(self):
         with self.assertRaises(ValueError):
@@ -361,16 +372,17 @@ class PromptTest(unittest.TestCase):
             self.prompt(change=2, redirect_state=None)
 
 
-def out(kind="approval", answers=(), corrections=(), settled=False):
-    return {"message_kind": kind, "answers": list(answers), "corrections": list(corrections), "clarification_settled": settled}
+def out(kind="approval", answers=(), corrections=(), settled=False, touches=()):
+    return {"message_kind": kind, "answers": list(answers), "corrections": list(corrections), "touches": list(touches),
+            "clarification_settled": settled}
 
 
-def ans(q, a, items=(), no_view=False):
-    return {"question": q, "answer": a, "items": list(items), "no_view": no_view}
+def ans(q, a, items=(), no_view=False, breadth="targeted", in_scope=()):
+    return {"question": q, "breadth": breadth, "answer": a, "items": list(items), "no_view": no_view, "in_scope": list(in_scope)}
 
 
-def cor(item, text, wrong="the agent's words"):
-    return {"item": item, "wrong": wrong, "text": text}
+def cor(item, text, wrong="the agent's words", passage=1):
+    return {"item": item, "passage": passage, "wrong": wrong, "text": text}
 
 
 class FakeAsk:
@@ -382,9 +394,10 @@ class FakeAsk:
         return self.outputs.pop(0)
 
 
-def owner(policy="diligent", *outputs, seed="s1"):
+def owner(policy="diligent", *outputs, replicate="s1", model=None, trim=None):
     ask = FakeAsk(*outputs)
-    return sm.Owner(oracle=oracle(), brief=BRIEF, policy=policy, seed=seed, ask=ask), ask
+    return sm.Owner(oracle=oracle(), brief=BRIEF, policy=policy, replicate=replicate, ask=ask, trim=trim,
+                    model=model or sm.OwnerModel(), owner_items=owner_items()), ask
 
 
 class OwnerTest(unittest.TestCase):
@@ -404,21 +417,25 @@ class OwnerTest(unittest.TestCase):
         self.assertEqual(len(replies["rubber-stamp"].dropped), 1)
         self.assertEqual(replies["rubber-stamp"].shared, [{"item": "BK-02", "reason": "asked"}])
 
-    def test_the_bounded_owner_catches_less_as_reading_grows_and_its_draws_repeat(self):
+    def test_the_pilots_placeholder_curve_is_kept_for_reference(self):
         self.assertEqual(sm.catch_probability("bounded", 0), 1.0)
         self.assertAlmostEqual(sm.catch_probability("bounded", 1500), 0.5)
         self.assertLess(sm.catch_probability("bounded", 6000), sm.catch_probability("bounded", 600))
-        many = [cor("BK-03", f"Correction {i}.") for i in range(40)]
-        long_msg = "word " * 3000
-        kept = []
-        for _ in range(2):
-            w, _ask = owner("bounded", out("approval", corrections=many), seed="fixed")
-            w.start_change(self.c[1])
-            r = w.respond(long_msg, code_written=False)
-            kept.append([c["text"] for c in r.kept])
-            self.assertAlmostEqual(r.catch_probability, 1 / 3)
-        self.assertEqual(kept[0], kept[1])
-        self.assertTrue(0 < len(kept[0]) < 40)
+
+    def test_the_bounded_owner_catches_less_deep_in_a_stop_and_its_draws_repeat(self):
+        long_msg = "word " * 3000 + "\n\nDelete orders after a year."
+        o = out("approval", corrections=[cor("BK-03", "Keep every order.", passage=2)])
+        want = 0.8 * sm.attention(sm.OwnerModel(), w=3000, read_before=3000)
+        kept = {}
+        for rep in (f"fixed-{i}" for i in range(40)):
+            for _ in range(2):
+                w, _ask = owner("bounded", o, replicate=rep)
+                w.start_change(self.c[1])
+                r = w.respond(long_msg, code_written=False)
+                self.assertAlmostEqual((r.kept + r.dropped)[0]["p"], want)
+                kept.setdefault(rep, set()).add(bool(r.kept))
+        self.assertTrue(all(len(v) == 1 for v in kept.values()))  # the same replicate draws the same
+        self.assertTrue(0 < sum(v == {True} for v in kept.values()) < 40)
 
     def test_reading_counts_across_the_change(self):
         w, _ = owner("bounded", out("stop"), out("stop"))
@@ -540,7 +557,7 @@ class TrimTest(unittest.TestCase):
         o = out("approval", [ans("Closing time?", "We close at 18:00, and late orders go to tomorrow.", ["BK-02"]),
                              ans("Colour?", "x", no_view=True)],
                 [cor("BK-03", "Keep old orders.", wrong="delete old orders")])
-        w = sm.Owner(oracle=oracle(), brief=BRIEF, policy="diligent", seed="s", ask=FakeAsk(o), trim=trim)
+        w = owner("diligent", o, replicate="s", trim=trim)[0]
         w.start_change(c[1])
         r = w.respond("Plan: delete old orders. Closing time? Colour?", code_written=False)
         self.assertIn('Part 1 (answer). The question it answers: "Closing time?"', trims[0])
@@ -555,7 +572,7 @@ class TrimTest(unittest.TestCase):
         c = script()
         o = out("approval", [ans("Closing time?", "We close at 18:00.", ["BK-02"])],
                 [cor("BK-03", "Also keep old orders.", wrong="keep this week's orders")])
-        w = sm.Owner(oracle=oracle(), brief=BRIEF, policy="diligent", seed="s", ask=FakeAsk(o),
+        w, _ = owner("diligent", o, replicate="s",
                      trim=lambda p: {"parts": [{"index": 1, "text": "DROP"}, {"index": 2, "text": "DROP"}]})
         w.start_change(c[1])
         r = w.respond("Plan: keep this week's orders. Closing time?", code_written=False)
@@ -568,15 +585,13 @@ class TrimTest(unittest.TestCase):
         c = script()
         # BK-10 is stated in change 3: an omission from that request is still pointed out
         o = out("approval", [], [cor("BK-10", "A moved order also keeps its number.", wrong="move the order")])
-        w = sm.Owner(oracle=oracle(), brief=BRIEF, policy="diligent", seed="s", ask=FakeAsk(o),
-                     trim=lambda p: {"parts": [{"index": 1, "text": "DROP"}]})
+        w, _ = owner("diligent", o, replicate="s", trim=lambda p: {"parts": [{"index": 1, "text": "DROP"}]})
         w.start_change(c[3])
         r = w.respond("Plan: move the order to the new day. OK?", code_written=False)
         self.assertEqual([k["item"] for k in r.kept], ["BK-10"])
 
     def test_nothing_to_trim_makes_no_call(self):
-        w = sm.Owner(oracle=oracle(), brief=BRIEF, policy="diligent", seed="s", ask=FakeAsk(out("approval")),
-                     trim=lambda p: self.fail("trim called"))
+        w, _ = owner("diligent", out("approval"), replicate="s", trim=lambda p: self.fail("trim called"))
         w.start_change(script()[1])
         w.respond("Plan. OK?", code_written=False)
 
@@ -589,6 +604,20 @@ class JudgeTest(unittest.TestCase):
         self.assertIn("> Actually, 3 pounds.", p)
         self.assertNotRegex(p, r"\{[A-Z_]+\}")
         self.assertNotIn("scheduled words", sm.judge_prompt("x", "y"))
+
+    def test_the_judge_is_told_which_recall_lines_were_drawn_and_for_which_items(self):
+        p = sm.judge_prompt("OWNER", "Keep notes exactly as they were typed.",
+                            recalled=[{"item": "BK-09", "line": "Keep notes exactly as they were typed."}])
+        self.assertIn('- [BK-09] "Keep notes exactly as they were typed."', p)
+        self.assertNotRegex(p, r"\{[A-Z_]+\}")
+        self.assertNotIn("recall lines the harness drew", sm.judge_prompt("x", "y").lower())
+
+    def test_the_judges_rules_license_a_broad_question_only_through_drawn_lines(self):
+        t = sm.JUDGE_TEMPLATE_PATH.read_text(encoding="utf-8")
+        self.assertIn("targeted question", t)
+        self.assertIn("A broad question", t)
+        self.assertIn("licenses only the recall lines", t)
+        self.assertNotIn('marked "in play for this change"', t)
 
 
 if __name__ == "__main__":

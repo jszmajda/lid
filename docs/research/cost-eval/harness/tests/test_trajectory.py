@@ -2,6 +2,7 @@
 
 import json
 import sys
+from dataclasses import asdict
 import tempfile
 import unittest
 from pathlib import Path
@@ -10,7 +11,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from costeval import executor, simulator as sm, trajectory as tj, usage  # noqa: E402
-from test_simulator import BRIEF, CHANGES, ORACLE, ans, out  # noqa: E402
+from test_simulator import BRIEF, CHANGES, ORACLE, OWNER_ITEMS, ans, out  # noqa: E402
+
+import run_trajectory as rt  # noqa: E402
 
 
 class ArmTest(unittest.TestCase):
@@ -113,9 +116,11 @@ class Ask:
         return self.outputs.pop(0)
 
 
-def make_owner(*outputs, policy="diligent"):
+def make_owner(*outputs, policy="diligent", replicate="t"):
     ask = Ask(*outputs)
-    return sm.Owner(oracle=sm.parse_oracle(ORACLE), brief=BRIEF, policy=policy, seed="t", ask=ask), ask
+    o = sm.parse_oracle(ORACLE)
+    return sm.Owner(oracle=o, brief=BRIEF, policy=policy, replicate=replicate, ask=ask,
+                    owner_items=sm.parse_owner_items(OWNER_ITEMS, o)), ask
 
 
 class ChangeLoopTest(unittest.TestCase):
@@ -143,7 +148,7 @@ class ChangeLoopTest(unittest.TestCase):
         self.assertEqual([c["mode"] for c in turns.calls], ["plan", "bypassPermissions"])
         self.assertEqual([c["resume"] for c in turns.calls], [None, "s1"])
         self.assertEqual(turns.calls[1]["prompt"], "That looks fine. Go ahead.")
-        self.assertIn('<document name="The agent\'s plan">\nPLAN: notes are stored verbatim.', ask.prompts[0])
+        self.assertIn('<document name="The agent\'s plan">\n[P2] PLAN: notes are stored verbatim.', ask.prompts[0])
         self.assertTrue(r.finished)
         # usage per turn is the difference between consecutive cumulative results
         self.assertAlmostEqual(r.turns[1]["usage"]["reported_cost_usd"], 0.1)
@@ -154,7 +159,7 @@ class ChangeLoopTest(unittest.TestCase):
         turns = FakeTurns(ws, ("Please review docs/design.md.", None, []), ("Done.", None, []))
         owner, ask = make_owner(out("approval"), out("completion"))
         tj.run_change(arm=tj.load_arm("lid-full"), change=self.c[1], owner=owner, turn=turns, workspace=ws, out_dir=self.tmp)
-        self.assertIn('<document name="docs/design.md">\nDesign text.', ask.prompts[0])
+        self.assertIn('<document name="docs/design.md">\n[P2] Design text.', ask.prompts[0])
         self.assertNotIn("readme", ask.prompts[0])
 
     def test_a_late_redirect_waits_for_source_code(self):
@@ -191,9 +196,48 @@ class ChangeLoopTest(unittest.TestCase):
         tj.run_change(arm=tj.load_arm("bare"), change=self.c[1], owner=owner,
                       turn=FakeTurns(ws, ("Length?", None, []), ("Done.", None, [])), workspace=ws, out_dir=self.tmp)
         state = json.loads(json.dumps(tj.owner_state(owner)))
+        self.assertEqual((state["disclosed"], state["replicate"]), (["BK-09"], "t"))
+        self.assertEqual(state["owner_model"], json.loads(json.dumps(asdict(sm.OwnerModel()))))
+        twin, _ = make_owner(replicate="t")
+        tj.restore_owner_state(twin, state)
+        self.assertEqual((twin.record, twin.requests, twin.disclosed), (owner.record, owner.requests, {"BK-09"}))
+
+    def test_a_state_saved_before_disclosure_was_tracked_takes_it_from_the_record(self):
+        state = {"record": [{"change": 1, "said": "Short.", "question": "Length?", "items": ["BK-09"]},
+                            {"change": 1, "said": "No preference, use your judgment.", "question": "Colour?", "items": []}],
+                 "requests": [[1, "Please let me add a note."]], "seen": {}, "policy": "diligent", "seed": "old-id"}
         twin, _ = make_owner()
         tj.restore_owner_state(twin, state)
-        self.assertEqual((twin.record, twin.requests), (owner.record, owner.requests))
+        self.assertEqual(twin.disclosed, {"BK-09"})
+
+    def test_each_owner_record_carries_its_draws_and_recall(self):
+        ws = FakeWorkspace()
+        turns = FakeTurns(ws, ("Done. Orders are accepted all day.", None, ["app/notes.py"]))
+        owner, _ = make_owner(out("completion", touches=[{"item": "BK-02", "passage": 1, "level": "adjacent"}]))
+        r = tj.run_change(arm=tj.load_arm("bare"), change=self.c[1], owner=owner, turn=turns, workspace=ws, out_dir=self.tmp)
+        rec = json.loads((self.tmp / "owner-00.json").read_text())
+        self.assertEqual([d["item"] for d in rec["draws"]], ["BK-02"])
+        self.assertIn("recalled", rec)
+        self.assertEqual(rec["passages"], 1)
+        self.assertNotIn("catch_probability", rec)
+        self.assertEqual(r.owner[0]["draws"], rec["draws"])
+
+
+class RunOptionsTest(unittest.TestCase):
+    def test_the_owner_model_comes_from_a_preset_a_json_object_or_a_file(self):
+        self.assertEqual(rt.owner_model_from_arg(None), sm.OwnerModel())
+        self.assertEqual(rt.owner_model_from_arg("pilot"), sm.OwnerModel.pilot())
+        self.assertEqual(rt.owner_model_from_arg('{"scope": "stop", "half_words": 100}'),
+                         sm.OwnerModel(scope="stop", half_words=100))
+        path = Path(tempfile.mkdtemp()) / "corner.json"
+        path.write_text(json.dumps({"preset": "pilot", "counting": "change"}))
+        self.assertEqual(rt.owner_model_from_arg(str(path)), sm.OwnerModel(**{**asdict(sm.OwnerModel.pilot()), "counting": "change"}))
+        with self.assertRaises(ValueError):
+            rt.owner_model_from_arg('{"k": 1}')
+
+    def test_the_replicate_defaults_to_the_trajectory_id(self):
+        self.assertEqual(rt.replicate_from_args("t-bare-1", None), "t-bare-1")
+        self.assertEqual(rt.replicate_from_args("t-bare-1", "r7"), "r7")
 
 
 if __name__ == "__main__":

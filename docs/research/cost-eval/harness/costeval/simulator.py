@@ -7,10 +7,14 @@ Design: "The user simulator" and "Redirects" in the notebook's design.md.
   withheld (its narrative section and the items it introduces) until it is delivered.
 - **What the owner is shown.** One rule for every arm: the agent's final message, the plan from plan mode if
   there is one, and the changed text of every prose file the message names.
-- **One model call per stop, under every policy.** The model classifies the agent's message, answers its direct
-  questions, and lists every contradiction it finds. The harness then applies the reviewing policy: the
-  diligent owner keeps every correction, the rubber-stamp owner keeps none, and the bounded owner keeps each
-  with a probability that falls as the words read in this change grow. Answers are always kept.
+- **One model call per stop, under every policy.** The stop's new text is split into numbered passages. The model
+  classifies the agent's message, answers its targeted questions, lists the askable items each broad question
+  covers, lists every contradiction with the passage it is in, and reports which passages touch each askable item
+  the owner hasn't disclosed, and how.
+- **Attention and recall are the harness's** ("Attention and recall" in design.md). Seeded draws, keyed on the
+  replicate, the item, the kind of event, and the scope, decide which contradictions the policy keeps and which
+  unsaid items a passage or a broad question brings back. A recalled item's line comes verbatim from the seed's
+  owner-items.json, added after the trim. Targeted answers are always kept.
 - **Redirect timing and words are the harness's.** An early redirect fires at the first approval request or
   completion report, a late one at the first stop after code exists, and the scripted words go in verbatim.
   The model only judges whether a pending clarification has already been settled.
@@ -21,14 +25,16 @@ The template is prompts/simulator.md; the leak judge's is prompts/leak-judge.md.
 
 from __future__ import annotations
 
+import collections
 import copy
 import difflib
 import json
+import math
 import random
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields
 from pathlib import Path
-from typing import Callable, Iterable, Sequence
+from typing import Callable, Iterable, Mapping, Sequence
 
 PROMPTS = Path(__file__).resolve().parent.parent / "prompts"
 TEMPLATE_PATH = PROMPTS / "simulator.md"
@@ -38,21 +44,27 @@ TRIM_TEMPLATE_PATH = PROMPTS / "owner-trim.md"
 POLICIES = ("diligent", "bounded", "rubber-stamp")
 NO_VIEW = "No preference, use your judgment."
 SHOW_ME = "Show me what you have in mind and I'll tell you if it's wrong."
+NOTHING_ELSE = "Nothing else comes to mind."  # a broad question's answer when no draw brings anything back
 KINDS = ("completion", "approval", "questions", "stop")
 FIRE_KINDS = ("approval", "completion")  # what an early redirect waits for
-# Placeholder: the bounded owner catches a contradiction with probability 1 / (1 + w / HALF), where w is the
-# words read so far in this change. Calibrated later from trajectories in which the maintainer plays the owner.
+BREADTHS = ("targeted", "broad")
+LEVELS = ("adjacent", "direct", "says")  # how a passage touches an unsaid askable item; "says" draws nothing
+EVENTS = ("recall", "contradiction", "broad")  # the kinds of event a uniform is keyed on
+# The pilot's placeholder: the bounded owner caught a contradiction with probability 1 / (1 + w / HALF), w being every
+# word shown in the change through the end of the stop. OwnerModel.pilot() reproduces it; catch_probability keeps
+# the original for reference.
 HALF_ATTENTION_WORDS = 1500
 PROSE_SUFFIXES = (".md", ".markdown", ".txt", ".rst", ".adoc")
 ALL = "all"  # every item in force is in play
 
 ITEM_ID = re.compile(r"\b[A-Z]{1,4}-\d+\b")
 STUDY_WORDS = re.compile(r"\b(the owner|scripted|redirect|simulator|the study|graded|grader)\b", re.I)
+PASSAGE_NUMBER = re.compile(r"\[P\d+\]")
 
 OUTPUT_SCHEMA = {
     "type": "object",
     "additionalProperties": False,
-    "required": ["message_kind", "answers", "corrections", "clarification_settled"],
+    "required": ["message_kind", "answers", "corrections", "touches", "clarification_settled"],
     "properties": {
         "message_kind": {"type": "string", "enum": list(KINDS)},
         "answers": {
@@ -60,12 +72,14 @@ OUTPUT_SCHEMA = {
             "items": {
                 "type": "object",
                 "additionalProperties": False,
-                "required": ["question", "answer", "items", "no_view"],
+                "required": ["question", "breadth", "answer", "items", "no_view", "in_scope"],
                 "properties": {
                     "question": {"type": "string"},
+                    "breadth": {"type": "string", "enum": list(BREADTHS)},
                     "answer": {"type": "string"},
                     "items": {"type": "array", "items": {"type": "string"}},
                     "no_view": {"type": "boolean"},
+                    "in_scope": {"type": "array", "items": {"type": "string"}},
                 },
             },
         },
@@ -74,8 +88,19 @@ OUTPUT_SCHEMA = {
             "items": {
                 "type": "object",
                 "additionalProperties": False,
-                "required": ["item", "wrong", "text"],
-                "properties": {"item": {"type": "string"}, "wrong": {"type": "string"}, "text": {"type": "string"}},
+                "required": ["item", "passage", "wrong", "text"],
+                "properties": {"item": {"type": "string"}, "passage": {"type": "integer", "minimum": 0},
+                               "wrong": {"type": "string"}, "text": {"type": "string"}},
+            },
+        },
+        "touches": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["item", "passage", "level"],
+                "properties": {"item": {"type": "string"}, "passage": {"type": "integer", "minimum": 1},
+                               "level": {"type": "string", "enum": list(LEVELS)}},
             },
         },
         "clarification_settled": {"type": "boolean"},
@@ -228,11 +253,14 @@ def owner_text(behavior: str) -> str:
     return re.sub(r"\s+(?:from|after) change \d+(?: onward)?", "", kept)  # the owner doesn't number changes
 
 
-def render_items(items: list[Item], in_play: set[str] | str) -> str:
+def render_items(items: list[Item], in_play: set[str] | str, disclosed: Iterable[str] = ()) -> str:
+    told = set(disclosed)
     lines = []
     for i in items:
         label = i.share
-        if label == "Askable" and (in_play == ALL or i.id in in_play):
+        if label == "Askable" and i.id in told:
+            label += "; you have told the agent this"
+        elif label == "Askable" and (in_play == ALL or i.id in in_play):
             label += "; in play for this change"
         line = f"- [{i.id}] ({label}) {owner_text(i.behavior)}"
         if i.response:
@@ -241,6 +269,194 @@ def render_items(items: list[Item], in_play: set[str] | str) -> str:
                      f'it has in mind, answer only: "{SHOW_ME}"')
         lines.append(line)
     return "\n".join(lines)
+
+
+# ------------------------------------------------------------------------- what the owner may recall, and how well
+
+TIERS = {"low": -1, "medium": 0, "high": 1}  # salience tiers, as the recall logit's tier term
+
+
+@dataclass(frozen=True)
+class OwnerItem:
+    """An askable item's salience tier and recall line: the one sentence, in the owner's voice, that the harness
+    adds to a reply when the item is recalled. Written with the oracle and frozen with it."""
+    tier: str
+    recall: str
+
+
+def recall_eligible(oracle: Oracle) -> list[Item]:
+    """Items recall can bring back: askable ones, including those realized on a symptom (askable once released).
+    Stated items (and their unsaid details) and items recognized on sight are never recalled."""
+    return [i for i in oracle.items if i.kind != "Dropped" and i.in_force is not None and i.share == "Askable"]
+
+
+def complete_owner_items(oracle: Oracle, items: Mapping[str, OwnerItem],
+                         default: OwnerItem | None = None) -> dict[str, OwnerItem]:
+    """Every recall-eligible item's entry. A missing one is an error unless the caller passes a default."""
+    eligible = [i.id for i in recall_eligible(oracle)]
+    for iid in items:
+        if iid not in eligible:
+            raise ValueError(f"owner items: {iid} isn't an askable item of the oracle, so it has no recall")
+    missing = [i for i in eligible if i not in items]
+    if missing and default is None:
+        raise ValueError(f"owner items: no tier and recall line for {', '.join(missing)}")
+    return {i: items.get(i, default) for i in eligible}
+
+
+def parse_owner_items(data: Mapping, oracle: Oracle, *, default: OwnerItem | None = None) -> dict[str, OwnerItem]:
+    """owner-items.json: {"<item>": {"tier": "low" | "medium" | "high", "recall": "<one sentence>"}, ...}, one entry
+    for every askable item."""
+    known = oracle.ids()
+    out: dict[str, OwnerItem] = {}
+    for iid, entry in data.items():
+        if iid not in known:
+            raise ValueError(f"owner items: {iid} isn't an item of the oracle")
+        if not isinstance(entry, Mapping):
+            raise ValueError(f"owner items: {iid}'s entry isn't an object")
+        extra = sorted(set(entry) - {"tier", "recall"})
+        if extra:
+            raise ValueError(f"owner items: {iid} has unexpected keys {extra}")
+        tier, line = entry.get("tier"), entry.get("recall")
+        if tier not in TIERS:
+            raise ValueError(f"owner items: {iid}'s tier must be low, medium, or high, not {tier!r}")
+        if not isinstance(line, str) or not line.strip():
+            raise ValueError(f"owner items: {iid}'s recall line is empty")
+        if ITEM_ID.search(line):
+            raise ValueError(f"owner items: {iid}'s recall line mentions an identifier")
+        out[iid] = OwnerItem(tier, line.strip())
+    return complete_owner_items(oracle, out, default)
+
+
+def load_owner_items(path: Path | str, oracle: Oracle, *, default: OwnerItem | None = None) -> dict[str, OwnerItem]:
+    return parse_owner_items(json.loads(Path(path).read_text(encoding="utf-8")), oracle, default=default)
+
+
+SCOPES = ("stop", "change", "trajectory")  # how long one uniform lasts for an item and kind of event
+COUNTINGS = ("stop", "change", "pilot")  # how w is counted; see OwnerModel
+BROAD_UNIFORMS = ("broad", "recall")  # which uniform a broad question's draw uses; see OwnerModel
+
+
+@dataclass(frozen=True)
+class OwnerModel:
+    """The constants of the owner's attention and recall, at the design's central values. Every field is swept or
+    is a sensitivity case; a run records all of them.
+
+    Attention: a = m · [floor + (1 − floor) / (1 + w / half_words)], with m = 1 − drag · (1 − e^(−t / drag_minutes))
+    and t the minutes of new reading in this change before the passage, at words_per_minute. Recall:
+    logit r = recall_intercept + tier_spacing · tier + direct_weight · direct − fan_weight · ln n.
+
+    counting: how w is counted. "stop": new words before the passage in this stop. "change": new words before the
+    passage in this change. "pilot": every word shown in the change through the end of the stop, one value per stop,
+    as the pilot's placeholder counted it.
+    scope: a uniform lasts one stop, one change, or the whole trajectory.
+    dormancy: multiply adjacent-touch odds by dormancy_odds after the first build; dormancy_on_broad says whether a
+    broad question's draw, made at the adjacent rate, is lowered too.
+    broad_uniform: "broad" gives a broad question's draw its own uniform (design.md keys the uniform on "a broad
+    question" as a kind of event); "recall" shares the item's review-recall uniform for the scope.
+    """
+    floor: float = 0.18  # f
+    half_words: float = 500  # k
+    drag: float = 0.15
+    drag_minutes: float = 22
+    words_per_minute: float = 238
+    catch: float = 0.8  # q
+    recall_intercept: float = -1.1
+    tier_spacing: float = 1.1
+    direct_weight: float = 2.2
+    fan_weight: float = 1.0  # λ
+    dormancy: bool = False
+    dormancy_odds: float = 0.6
+    dormancy_on_broad: bool = True
+    scope: str = "change"
+    counting: str = "stop"
+    broad_uniform: str = "broad"
+
+    def __post_init__(self):
+        problems = []
+        for name, allowed in (("scope", SCOPES), ("counting", COUNTINGS), ("broad_uniform", BROAD_UNIFORMS)):
+            if getattr(self, name) not in allowed:
+                problems.append(f"{name} must be one of {allowed}, not {getattr(self, name)!r}")
+        for name in ("floor", "drag", "catch"):
+            if not 0 <= getattr(self, name) <= 1:
+                problems.append(f"{name} must be between 0 and 1")
+        for name in ("half_words", "drag_minutes", "words_per_minute", "dormancy_odds"):
+            if not getattr(self, name) > 0:
+                problems.append(f"{name} must be positive")
+        if self.fan_weight < 0:
+            problems.append("fan_weight can't be negative")
+        if problems:
+            raise ValueError("owner model: " + "; ".join(problems))
+
+    @classmethod
+    def from_config(cls, config: Mapping | None) -> "OwnerModel":
+        """A preset ("central", the default, or "pilot") with any fields overridden."""
+        cfg = dict(config or {})
+        preset = cfg.pop("preset", "central")
+        if preset not in OWNER_MODEL_PRESETS:
+            raise ValueError(f"owner model: unknown preset {preset!r}")
+        unknown = sorted(set(cfg) - {f.name for f in fields(cls)})
+        if unknown:
+            raise ValueError(f"owner model: unknown settings {unknown}")
+        return cls(**{**OWNER_MODEL_PRESETS[preset], **cfg})
+
+    @classmethod
+    def pilot(cls) -> "OwnerModel":
+        return cls.from_config({"preset": "pilot"})
+
+
+# The pilot's placeholder curve, as one further case: no floor, every read contradiction caught, k = 1,500, no drag,
+# and w as every word shown in the change through the end of the stop.
+OWNER_MODEL_PRESETS = {"central": {}, "pilot": {"floor": 0, "catch": 1, "half_words": 1500, "drag": 0, "counting": "pilot"}}
+
+
+def attention(model: OwnerModel, *, w: float, read_before: float) -> float:
+    """The probability a passage is read: w new words come before it (as model.counting counts them), and
+    read_before new words were shown earlier in this change (for the session drag)."""
+    m = 1 - model.drag * (1 - math.exp(-(read_before / model.words_per_minute) / model.drag_minutes))
+    return m * (model.floor + (1 - model.floor) / (1 + w / model.half_words))
+
+
+def recall_rate(model: OwnerModel, tier: str, *, direct: bool, n: int = 1, after_first_build: bool = False) -> float:
+    """The probability that a passage the owner reads brings back an unsaid askable item: n unsaid items touch the
+    same passage."""
+    if tier not in TIERS:
+        raise ValueError(f"unknown tier {tier!r}")
+    if n < 1:
+        raise ValueError("a touching passage touches at least its own item")
+    logit = (model.recall_intercept + model.tier_spacing * TIERS[tier] + (model.direct_weight if direct else 0.0)
+             - model.fan_weight * math.log(n))
+    if model.dormancy and after_first_build and not direct:
+        logit += math.log(model.dormancy_odds)
+    return 1.0 / (1.0 + math.exp(-logit))
+
+
+def uniform(replicate: str, item: str, event: str, scope_key: str) -> float:
+    """The seeded uniform for one item and kind of event within one scope. Keyed on nothing else, so trajectories
+    in the same replicate (other arms, other policies, a redirect's paired run) share it."""
+    if event not in EVENTS:
+        raise ValueError(f"unknown event {event!r}")
+    return random.Random(f"{replicate}|{item}|{event}|{scope_key}").random()
+
+
+def scope_key(scope: str, change: "Change", stop: int) -> str:
+    """The scope a uniform lasts for. `stop` is the stop's place in its change, needed only to tell one stop from
+    the next when each stop draws afresh."""
+    unit = f"{'probe' if change.probe else 'change'}-{change.number}"
+    if scope == "change":
+        return unit
+    if scope == "stop":
+        return f"{unit}/stop-{stop}"
+    if scope == "trajectory":
+        return "trajectory"
+    raise ValueError(f"unknown scope {scope!r}")
+
+
+def contradiction_key(correction: dict) -> str:
+    """What a contradiction's uniform is keyed on: its item, or for one tied to no item, its quoted words (case and
+    spacing aside)."""
+    if correction.get("item") != "none":
+        return correction["item"]
+    return "none:" + " ".join(str(correction.get("wrong", "")).lower().split())
 
 
 # ---------------------------------------------------------------------------------------- the change script
@@ -386,6 +602,11 @@ class Document:
     shown: str  # what the owner sees: the whole text, or its changes since they last saw it
     words: int  # words counted as read: only text new to the owner
     current: str | None = None  # the document's full text now, remembered as last shown
+    diff: tuple[str, ...] | None = None  # the unified diff's lines when shown as changes; () when unchanged
+
+
+DIFF_HEADER = "Changes since you last read it (lines starting with - were removed, + were added):"
+UNCHANGED = "(Unchanged since you last read it.)"
 
 
 def plan_document(plan: str) -> Document:
@@ -396,11 +617,134 @@ def view_document(name: str, current: str, last_shown: str | None) -> Document:
     if last_shown is None:
         return Document(name, current, words(current), current)
     if last_shown == current:
-        return Document(name, "(Unchanged since you last read it.)", 0, current)
+        return Document(name, UNCHANGED, 0, current, ())
     diff = list(difflib.unified_diff(last_shown.splitlines(), current.splitlines(), lineterm="", n=2))[2:]
     added = sum(words(line[1:]) for line in diff if line.startswith("+"))
-    shown = "Changes since you last read it (lines starting with - were removed, + were added):\n\n" + "\n".join(diff)
-    return Document(name, shown, added, current)
+    return Document(name, DIFF_HEADER + "\n\n" + "\n".join(diff), added, current, tuple(diff))
+
+
+# --------------------------------------------------------------------------------------------------- passages
+
+MESSAGE_SOURCE = "The agent's message"
+
+
+@dataclass(frozen=True)
+class Passage:
+    """One numbered unit of a stop's new text: a paragraph, list item, table row, heading, or fenced block."""
+    number: int  # from 1, in the order shown: the message, the plan, then each named prose file
+    source: str  # MESSAGE_SOURCE or the document's name
+    text: str  # for a re-read file, the added lines without their '+'
+    words: int
+    offset: int  # new words in this stop before the passage's first word
+
+
+@dataclass(frozen=True)
+class StopText:
+    passages: tuple[Passage, ...]
+    message: str  # the message as the owner sees it, each passage marked with its number
+    documents: tuple[tuple[str, str], ...]  # (name, text as shown, passages marked)
+
+
+_HEADING = re.compile(r"^ {0,3}#{1,6}(?:\s|$)")
+_LIST_ITEM = re.compile(r"^\s*(?:[-*+]|\d{1,9}[.)])\s")
+_TABLE_ROW = re.compile(r"^\s*\|")
+_FENCE = re.compile(r"^\s*(`{3,}|~{3,})")
+_CONTENT = re.compile(r"[^\W_]")  # a letter or a digit
+
+
+def _blocks(lines: Sequence[str]) -> list[list[int]]:
+    """Group line indices into passages. A heading or table row is one line; a list item runs until the next item,
+    block, or blank line; a paragraph until a blank line or another block; a fenced block until its closing fence.
+    A block without a letter or digit (a rule, a table's divider) joins the passage before it."""
+    blocks: list[list[int]] = []
+    cur: list[int] | None = None
+    fence: str | None = None
+    for i, line in enumerate(lines):
+        if fence is not None:
+            cur.append(i)
+            if line.strip().startswith(fence):
+                fence, cur = None, None
+            continue
+        if not line.strip():
+            cur = None
+            continue
+        f = _FENCE.match(line)
+        if f:
+            fence, cur = f.group(1), [i]
+            blocks.append(cur)
+        elif _HEADING.match(line) or _TABLE_ROW.match(line):
+            blocks.append([i])
+            cur = None
+        elif _LIST_ITEM.match(line) or cur is None:
+            cur = [i]
+            blocks.append(cur)
+        else:
+            cur.append(i)
+    merged: list[list[int]] = []
+    for b in blocks:
+        if merged and not any(_CONTENT.search(lines[i]) for i in b):
+            merged[-1] = merged[-1] + b
+        else:
+            merged.append(b)
+    if len(merged) > 1 and not any(_CONTENT.search(lines[i]) for i in merged[0]):
+        merged[:2] = [merged[0] + merged[1]]
+    return merged
+
+
+def _mark(n: int) -> str:
+    return f"[P{n}] "
+
+
+def split_stop(message: str, documents: Sequence[Document] = ()) -> StopText:
+    """Number the stop's new text in the order the owner is shown it: the agent's message, then each document (the
+    plan first, then each named prose file). A document read before contributes only its added lines."""
+    passages: list[Passage] = []
+    offset = 0
+
+    def number(lines: Sequence[str], source: str) -> dict[int, int]:
+        nonlocal offset
+        starts = {}
+        for b in _blocks(lines):
+            n = len(passages) + 1
+            wc = sum(words(lines[i]) for i in b)
+            passages.append(Passage(n, source, "\n".join(lines[i] for i in b), wc, offset))
+            offset += wc
+            starts[b[0]] = n
+        return starts
+
+    def marked(lines: Sequence[str], starts: dict[int, int]) -> str:
+        return "\n".join(_mark(starts[i]) + line if i in starts else line for i, line in enumerate(lines))
+
+    mlines = message.strip().splitlines()
+    shown_message = marked(mlines, number(mlines, MESSAGE_SOURCE))
+    shown_docs = []
+    for d in documents:
+        if d.diff is None:
+            lines = d.shown.strip().splitlines()
+            shown_docs.append((d.name, marked(lines, number(lines, d.name))))
+        elif not d.diff:
+            shown_docs.append((d.name, d.shown.strip()))
+        else:
+            out = list(d.diff)
+            i = 0
+            while i < len(d.diff):
+                if not d.diff[i].startswith("+"):
+                    i += 1
+                    continue
+                j = i
+                while j < len(d.diff) and d.diff[j].startswith("+"):
+                    j += 1
+                run = [line[1:] for line in d.diff[i:j]]
+                for k, n in number(run, d.name).items():
+                    out[i + k] = "+" + _mark(n) + run[k]
+                i = j
+            shown_docs.append((d.name, DIFF_HEADER + "\n\n" + "\n".join(out)))
+    return StopText(tuple(passages), shown_message, tuple(shown_docs))
+
+
+def strip_passage_marks(text: str) -> str:
+    """The text without the passage numbers the harness put at the start of lines."""
+    return re.sub(r"(?m)^(\+?)\[P\d+\] ", r"\1", text)
 
 
 def _mention(path: str) -> re.Pattern:
@@ -465,11 +809,11 @@ def _fill(template: str, fills: dict[str, str]) -> str:
 def build_prompt(*, oracle: Oracle, change: Change, brief: str, message: str,
                  documents: Sequence[Document] = (), earlier_requests: Sequence[tuple[int, str]] = (),
                  record: Sequence[Said] = (), turns: Sequence[Turn] = (), redirect_state: str | None = None,
-                 template: str | None = None) -> str:
-    """The owner's prompt for one stop.
+                 template: str | None = None, disclosed: Iterable[str] = ()) -> str:
+    """The owner's prompt for one stop. The message and documents are shown with their passages numbered.
 
     redirect_state: None (no redirect), "pending", "firing" (a change of mind being delivered with this reply),
-    "delivered", or "settled".
+    "delivered", or "settled". disclosed: askable items the owner has already shared.
     """
     template = template if template is not None else TEMPLATE_PATH.read_text(encoding="utf-8")
     r = change.redirect
@@ -523,14 +867,15 @@ def build_prompt(*, oracle: Oracle, change: Change, brief: str, message: str,
             b += "\n\nYou replied:\n\n" + (_blockquote(t.reply) if t.reply else "> (nothing: you accepted the change)")
             blocks.append(b)
         exchange = "## This change so far\n\n" + "\n\n".join(blocks)
+    stop = split_stop(message, documents)
     docs = ""
     if documents:
         docs = "## Documents the agent asked you to read\n\n" + "\n\n".join(
-            f'<document name="{d.name}">\n{d.shown.strip()}\n</document>' for d in documents)
+            f'<document name="{name}">\n{text}\n</document>' for name, text in stop.documents)
 
     return _fill(template, {
         "NARRATIVE": released_narrative(oracle, change.number, withhold_section=change.number if withholding else None),
-        "ITEMS": render_items(items, change.in_play),
+        "ITEMS": render_items(items, change.in_play, disclosed),
         "REQUEST": request,
         "GUIDANCE": guidance,
         "CHANGE_OF_MIND": change_of_mind,
@@ -539,7 +884,7 @@ def build_prompt(*, oracle: Oracle, change: Change, brief: str, message: str,
         "EARLIER_SECTION": earlier,
         "RECORD_SECTION": rec,
         "EXCHANGE_SECTION": exchange,
-        "MESSAGE": message.strip() or "(The agent's message was empty.)",
+        "MESSAGE": stop.message or "(The agent's message was empty.)",
         "DOCUMENTS_SECTION": docs,
     })
 
@@ -551,13 +896,44 @@ def schema_json() -> str:
 # ------------------------------------------------------------------------------------------ checking output
 
 
-def check_output(out: dict, released: set[str], *, clarification_pending: bool) -> tuple[dict, list[str]]:
-    """Normalize the model's output and list what is wrong with it. Returns (normalized, problems)."""
+def _passage_number(n) -> bool:
+    return isinstance(n, int) and not isinstance(n, bool)
+
+
+def check_output(out: dict, items: Sequence[Item], *, clarification_pending: bool, passages: int = 0,
+                 in_play: set[str] | str = ALL) -> tuple[dict, list[str]]:
+    """Normalize the model's output and list what is wrong with it. Returns (normalized, problems).
+
+    items: the items the owner holds at this call; passages: how many numbered passages the stop has; in_play: the
+    change's items in play, which bound a broad question's scope."""
     problems = []
     out = copy.deepcopy(out)
+    released = {i.id: i for i in items}
+    askable = {i for i, it in released.items() if it.share == "Askable"}
+    stated = {i for i, it in released.items() if it.share == "Stated"}
     if out.get("message_kind") not in KINDS:
         problems.append(f"message_kind {out.get('message_kind')!r}")
     for a in out.get("answers", []):
+        breadth = a.get("breadth")
+        if breadth not in BREADTHS:
+            problems.append(f"an answer's breadth is {breadth!r}")
+            continue
+        if breadth == "broad":
+            # The owner doesn't answer a broad question from its rules: recall draws make the answer, so whatever
+            # the model wrote for it is discarded.
+            a["answer"], a["items"], a["no_view"] = "", [], False
+            scope: list[str] = []
+            for i in a.get("in_scope") or []:
+                if i in scope:
+                    continue
+                if i not in askable:
+                    problems.append(f"a broad question's scope lists {i}, but {i} isn't an Askable rule in play for this change")
+                elif in_play != ALL and i not in in_play:
+                    problems.append(f"a broad question's scope lists {i}, but {i} isn't in play for this change")
+                scope.append(i)
+            a["in_scope"] = scope
+            continue
+        a["in_scope"] = []
         if not a.get("no_view") and a.get("answer", "").strip().lower().startswith("no preference"):
             a["no_view"] = True
         if a.get("answer", "").strip().startswith(SHOW_ME[:30]):
@@ -571,13 +947,47 @@ def check_output(out: dict, released: set[str], *, clarification_pending: bool) 
                 problems.append(f"answer shares {i}, which the owner doesn't hold")
         if ITEM_ID.search(a.get("answer", "")):
             problems.append("an answer mentions a rule identifier")
+        if PASSAGE_NUMBER.search(a.get("answer", "")):
+            problems.append("an answer mentions a passage number")
+    contradicted = set()
     for c in out.get("corrections", []):
-        if c.get("item") != "none" and c.get("item") not in released:
-            problems.append(f"correction cites {c.get('item')}, which the owner doesn't hold")
+        item, n = c.get("item"), c.get("passage")
+        if item != "none" and item not in released:
+            problems.append(f"correction cites {item}, which the owner doesn't hold")
+        if not _passage_number(n):
+            problems.append(f"a correction has no passage number: {n!r}")
+        elif not 0 <= n <= passages:
+            problems.append(f"a correction cites passage {n}, which doesn't exist")
+        elif n == 0 and item != "none" and item not in stated:
+            problems.append(f"a correction for something left out cites {item}, which isn't a stated rule: an Askable "
+                            "rule the agent left out is a touch, not a correction")
+        else:
+            contradicted.add((item, n))
         if ITEM_ID.search(c.get("text", "")):
             problems.append("a correction mentions a rule identifier")
+        if PASSAGE_NUMBER.search(c.get("text", "")):
+            problems.append("a correction mentions a passage number")
         if not c.get("text", "").strip():
             problems.append("an empty correction")
+    touches, levels = [], {}
+    for t in out.get("touches") or []:
+        item, n, level = t.get("item"), t.get("passage"), t.get("level")
+        if item not in released:
+            problems.append(f"a touch cites {item}, which the owner doesn't hold")
+        elif item not in askable:
+            problems.append(f"a touch cites {item}, but {item} isn't an Askable rule, so nothing can remind the owner of it")
+        elif not _passage_number(n) or not 1 <= n <= passages:
+            problems.append(f"a touch cites passage {n!r}, which doesn't exist")
+        elif level not in LEVELS:
+            problems.append(f"a touch has level {level!r}")
+        elif (item, n) in contradicted:
+            problems.append(f"{item} is both contradicted and touched in passage {n}: a contradiction is not a touch")
+        elif (item, n) not in levels:
+            levels[(item, n)] = level
+            touches.append({"item": item, "passage": n, "level": level})
+        elif levels[(item, n)] != level:
+            problems.append(f"{item} has two levels in passage {n}")
+    out["touches"] = touches
     if out.get("message_kind") == "questions" and not out.get("answers"):
         problems.append("message_kind is questions but nothing is answered")
     if not clarification_pending:
@@ -598,13 +1008,15 @@ class OwnerReply:
     finished: bool
     message_kind: str
     answers: list[dict]
-    kept: list[dict]
+    kept: list[dict]  # corrections kept, each with its probability p and uniform u
     dropped: list[dict]
     redirect_event: str | None  # "delivered" or "settled" at this stop
     words_shown: int
     words_this_change: int
-    catch_probability: float
-    shared: list[dict]
+    shared: list[dict]  # {"item", "reason"}: asked, contradiction, redirect, or recalled (with "via": review or question)
+    recalled: list[dict] = field(default_factory=list)  # {"item", "line", "via", "passage", "question"}
+    draws: list[dict] = field(default_factory=list)  # every draw made at this stop, fired or not
+    passages: int = 0
     calls: list[dict] = field(default_factory=list)  # each model call: prompt, output, problems
 
 
