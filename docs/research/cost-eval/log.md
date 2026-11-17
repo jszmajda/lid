@@ -4,6 +4,27 @@ Newest entries first. Each entry says what was done, what was decided, and who d
 
 Older entries move to [log-archive/](log-archive/) when this file passes about 2,000 words, and 'Earlier, in brief' at the bottom summarizes them.
 
+## 2026-11-17: BenchTime under the rebuilt owner
+
+**What ran:** bare, cheap discipline, and LID Full on Sonnet 5.5, three trajectories each, under the bounded owner at the central constants. The three arms of each replicate share one draw seed. Then probe forks and grading at changes 2, 6, and 10 with probes version 5 (`harness/run_stage3b.sh`; `runs/stage3b/report.md`). Every trajectory completed. Pilot numbers, not evidence.
+
+| Arm | Items met at change 10 | Latent (askable) items met | Agent cost | Owner replies | Words shown to the owner |
+|---|---|---|---|---|---|
+| bare | 95% | 92% | $2.53 | 19.0 | 5,156 |
+| cheap discipline | 93% | 90% | $4.54 | 23.7 | 14,348 |
+| LID Full | 97% | 96% | $11.17 | 64.7 | 53,431 |
+
+**What the owner did:**
+- **Recall on review was about the same in every arm:** 8 to 10 unsaid items per trajectory. No broad question recalled anything.
+- **The bounded owner caught few contradictions in LID's long documents:** 0.3 kept of 4.0 drawn per trajectory, against 2.7 of 4.3 for bare and 2.7 of 7.0 for cheap discipline. A contradiction deep in a long plan is read near the attention floor.
+- **LID still met the most items,** so its lead here comes from its own asking and specification, not from the owner correcting it.
+
+**Keeping** (items met at change 2 that are still met at change 10) was 100%, 100%, and 98.8%: BenchTime has almost no regressions to measure.
+
+**Comparability:** stage 2's diligent-owner numbers were graded under probes version 4 and the earlier judge rules. These use version 5, and the rerun of executor-caused verdicts, which lifts every arm. The two stages can be compared arm against arm within a stage, not across.
+
+**Reading:** on BenchTime, with Sonnet, a realistic owner leaves the arms 2 to 4 points apart at change 10. LID costs about 4.4 times bare's agent spend and shows the owner about 10 times the words. The seed is near its ceiling for this executor. The latent-heavy seed, ReleaseDesk, is where the arms have room to differ.
+
 ## 2026-11-16: The owner becomes an imperfect person, built on published research
 
 **Decided by the maintainer:**
