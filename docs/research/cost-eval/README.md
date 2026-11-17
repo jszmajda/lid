@@ -41,6 +41,7 @@ Read this section first when you pick the work up in a new session. Update it at
   The verdicts to use are each checkpoint's `rejudge-v4.json`. Cheap-discipline trajectories 1 to 3 are left out. The results carry a leak caveat: the owner leaked through corrections in a few replies, mostly to cheap discipline, and counting those verdicts as not met changes no ordering. `harness/report.py` regenerates the tables (`runs/stage2/report.md`).
 - **The simulated owner was fixed after stage 2** so that a correction quotes words wrong in themselves and never adds what a list left out. It was checked by replaying the real stops and the scripted scenarios (`harness/replay_owner.py`). Every later run uses the fixed owner.
 - **BenchTime's probes are at version 5**, and the judge now says whether each "couldn't exercise" came from the executor or the build; grading reruns executor-caused ones once.
+- **The simulated owner is being rebuilt as an imperfect person** (maintainer's decision, 2026-11-16): it hides nothing on purpose but doesn't realise what it left unsaid, can be reminded by what the agent shows, and misses more as it reads more. Attention and memory become separate seeded draws with constants from published research ([owner-model-research.md](owner-model-research.md); design in [design.md](design.md), "Attention and recall"). Fidelity is reported as surfacing (latent intent reaching the build, by band) and keeping (intent held through change). The design is with Claude Fable for review; then the harness change, blind salience ratings, and the owner checks. ReleaseDesk waits for it.
 - **ReleaseDesk, the second seed, is ready, and its ceiling check is done** ([seeds/releasedesk/README.md](seeds/releasedesk/README.md)). The bare arm under a silent owner meets 90 to 91% of all items, which is over the 85% ceiling, but only 44 to 56% of the latent items, in the order of their guessability bands. **Waiting on the maintainer:** whether to read ReleaseDesk's ceiling on latent items and go ahead (the main session's proposal, in [decisions.md](decisions.md)).
 - **The Docker VM is small** (2 CPUs, 4 GB), which limits how much runs at once. Resizing it means restarting colima, which also stops the maintainer's other containers, so that is the maintainer's call.
 - **Start long jobs as tracked background tasks, or with a watch.** A job started detached sends no notice when it finishes.
@@ -49,9 +50,11 @@ Read this section first when you pick the work up in a new session. Update it at
 
 **Next actions** (milestones M1 and M2 in [plan.md](plan.md)):
 
-1. **When the maintainer rules on ReleaseDesk's ceiling,** run ReleaseDesk's stage 2: three arms on Sonnet, three trajectories each, under the fixed owner, then Opus if the maintainer agrees.
-2. **Write the first report** with `report.py`: cost, attention, and fidelity per arm, by change type, and by guessability band on ReleaseDesk.
-3. **Still to build:** prior-data probes, grading for the probe request, and a scripted check for operating requirements.
+1. **Owner model:** apply Claude Fable's review of the design (`seeds/benchtime/hidden/calibration/owner-model-review.md`), then build attention and recall into the harness with tests, rate salience blind for both seeds' askable items, and run the owner checks (replayed stops, published-experiment stimuli, the constants sweep).
+2. **Then ReleaseDesk's stage 2** on Sonnet under the new owner: bare, cheap discipline, and LID, three trajectories each. Read its ceiling on latent items.
+3. **Run the guessability panel on BenchTime's latent items,** so both seeds report latent fidelity by band.
+4. **Write the first report** with `report.py`, in two parts: surfacing and keeping, against cost and attention.
+5. **Still to build:** prior-data probes, grading for the probe request, and a scripted check for operating requirements.
 
 ## Files
 

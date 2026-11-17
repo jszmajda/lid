@@ -61,7 +61,10 @@ In total that is about 200 sessions, against about 700 for the pilot as first dr
 
 Alongside the stages:
 
-- `[ ]` The maintainer plays the owner on a few trajectories, to calibrate the bounded-attention policy and check the simulator.
+- `[ ]` Build attention and recall into the owner (design.md, "Attention and recall"), reviewed by Claude Fable first, with tests for the draws.
+- `[ ]` Rate salience for every askable item in both seeds, blind, with four model families; report weighted kappa; freeze with a hash.
+- `[ ]` Check the owner: labelled judgments on about 100 replayed stops, replays of logged stops, stimuli modelled on published experiments, and the constants sweep. A maintainer's play-through is a smoke test only.
+- `[ ]` Run the guessability panel on BenchTime's latent items, so both seeds report latent fidelity by band.
 - `[ ]` Two people label about 100 requests to check the touchpoint rubric (target kappa 0.7 or better).
 - `[ ]` A small cross-family grader sample (GPT-6.1 Terra) measures self-preference.
 

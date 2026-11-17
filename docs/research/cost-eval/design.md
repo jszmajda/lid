@@ -176,28 +176,90 @@ In the pilot, redirects test the plumbing only. There are too few to measure.
 Every arm expects a person at different points: LID's phase stops, BMAD's persona conversations, Spec Kit's clarify step and review gates. A model plays that person for every arm, using the same model and the same prompt throughout. It holds the hidden oracle and its disclosure schedule.
 
 - **It keeps a record of its answers.** Every answer is kept for the whole trajectory and given back to the simulator each time, so an owner at change 6 can't contradict what it said at change 2.
-- **Broad questions get narrow answers.** Asked something broad, such as "any other edge cases?", it gives only askable items that concern the current change.
+- **Questions are answered by how specific they are.** A targeted question, one that names the topic of something the owner holds, gets an answer. A broad one, such as "any other edge cases?", works like a passing reminder: each askable item that concerns the current change is recalled on its own draw, at the rate for an adjacent cue (see "Attention and recall").
 - **Silence gets a neutral answer.** Asked about something the oracle doesn't cover, it says "no preference, use your judgment", and the exchange is logged.
-- **It never volunteers.** It offers nothing it wasn't asked for, except emerging items at their scheduled change. Transcripts are audited for leaks.
-- **A correction corrects; it doesn't add.** A correction quotes the agent's words that are wrong in themselves and says only what replaces them. Words that are right as far as they go aren't corrected: a list of checks that leaves out a rule the owner holds is silent about that rule, not a contradiction of it, and an arm that shows more plan doesn't get more of the owner's knowledge for free. The exception is part of this change's own request that the agent left out, which the owner points out. A second call trims each answer and correction to what its question or quoted words need, and drops a correction that only adds something, except for what this change's request asked for.
+- **It never volunteers, but it can be reminded.** A real owner hides nothing on purpose, but doesn't realise what they left unsaid, and doesn't audit themselves for it. When the agent shows something that touches an askable item the owner never stated, the owner may recall it, on a draw the harness makes. Emerging items arrive at their scheduled change. Transcripts are audited for leaks.
+- **A correction corrects; it doesn't add.** A correction quotes the agent's words that are wrong in themselves and says only what replaces them. Words that are right as far as they go aren't corrected: a list of checks that leaves out a rule the owner holds is silent about that rule, not a contradiction of it. The exception is part of this change's own request that the agent left out, which the owner points out. A recall line the harness drew is the one other licensed addition. A second call trims each answer and correction to what its question or quoted words need, and drops a correction that only adds something, except for what this change's request asked for; it keeps drawn recall lines.
 
-- **It sees the same kind of thing from every arm.** At each stop the owner is shown the agent's final message, the plan if the arm used plan mode, and every prose file (Markdown or plain text) that the message names. A file the owner has read before is shown as its changes since then. The owner doesn't read code or tests. The words shown at each stop are logged, counting only text new to the owner.
+- **It sees the same kind of thing from every arm.** At each stop the owner is shown the agent's final message, the plan if the arm used plan mode, and every prose file (Markdown or plain text) that the message names, in that order. A file the owner has read before is shown as its changes since then. The owner doesn't read code or tests. The words shown at each stop are logged, counting only text new to the owner.
 - **It knows only what it would know by then.** The narrative and the items are released by change, without the graders' check sketches. A pending change of mind is withheld, both its narrative section and the items it brings in, until it is delivered, so the owner can't hint at it early.
-- **Redirect timing and words belong to the harness.** An early redirect fires at the first plan, approval request, or completion report. A late one fires at the first stop after this change has touched a source file other than documentation or tests. The scripted words go into the reply verbatim, so every arm hears the same redirect. The model decides only whether a pending clarification has already been settled, which makes it pre-empted.
+- **Redirect timing and words belong to the harness.** An early redirect fires at the first plan, approval request, or completion report. A late one fires at the first stop after this change has touched a source file other than documentation or tests. The scripted words go into the reply verbatim, so every arm hears the same redirect. The model decides only whether a pending clarification has already been settled, which makes it pre-empted. Scripted shifts are mostly additions and clarifications, with reversals rare, which is how requirements change on real projects.
 
-It runs under three policies:
+It runs under three policies, which differ only in attention:
 
-- **Diligent:** reads everything the arm shows it and rejects anything that contradicts the oracle.
-- **Bounded attention:** catches a contradiction with a probability that falls as the reading grows. The placeholder curve is 1 / (1 + w / 1,500), where w is the words shown so far in this change, so an arm can't escape it by splitting a long document across stops. The curve is calibrated from trajectories in which the maintainer plays the owner.
-- **Rubber-stamp:** approves everything and answers only direct questions.
+| Policy | Reads a passage | Keeps a contradiction it read | Recalls an unsaid item a passage touched | Direct questions |
+|---|---|---|---|---|
+| Diligent | always | always | at the item's recall rate | answered |
+| Bounded attention | with probability a, falling with the passage's position in the stop | with probability q | at the item's recall rate | answered |
+| Rubber-stamp | never | never | never | answered |
 
-**One model call serves all three policies.** At each stop the model classifies the agent's message (a completion report, an approval request, direct questions, or a stop partway), answers each direct question, and lists every contradiction it finds, each tied to an oracle item. The harness then applies the policy: the diligent owner keeps every correction, the rubber-stamp owner keeps none, and the bounded owner keeps each one on a seeded draw against the curve. Answers to direct questions are always kept. The harness puts the reply together from the kept parts, so a correction never asks the agent for another round, and the prompt is identical under every policy.
+The diligent owner is an ideal proofreader of what it reads, but its memory stays fallible: an owner that recalled every unsaid item a document touched would hand the oracle to whichever arm shows the most text. The bounded owner is the estimate of a person.
 
-**Leaks are measured, not assumed away.** The simulator is tested live on fixed scenarios before counted runs, each run at least ten times, and on real stops from earlier runs, replayed with any change to its instructions. A separate judge, on a different model, reads everything the owner was given and the reply it sent, and lists every item the reply shared without licence. Counted runs start only when the confirmed leak rate is at most 5% of replies overall, with no scenario above 2 in 10. Every flagged leak is checked by hand before it counts. Owner replies in real runs are audited the same way, and a leak that could have changed a verdict is reported with a sensitivity figure that counts that verdict as not met.
+**One model call serves all three policies.** At each stop the model:
+- classifies the agent's message: a completion report, an approval request, direct questions, or a stop partway;
+- answers each direct question, and marks it targeted or broad;
+- lists every contradiction it finds, tied to an oracle item, with the passage it found it in;
+- for each askable item not yet disclosed, says whether the shown text touches it (not at all, adjacently, or directly), quotes the passage, and drafts the one line an owner would say on recalling it.
 
-The diligent policy alone would act as a perfect proofreader, which rewards whichever arm shows the most text. Results are therefore reported under all three policies, and as a function of how likely the owner is to catch a contradiction. The end of every change is a review stop too: the owner reviews the agent's report under the policy. So every arm, the bare arm included, runs under all three policies, and an arm whose report shows the owner more gets more checked, which is a real cost and benefit of that way of reporting.
+The harness then applies the policy with seeded draws and puts the reply together from the kept parts, so a correction never asks the agent for another round, and the prompt is identical under every policy.
 
-To check that the simulator behaves like a person, the maintainer plays the owner on a few trajectories, and those results are compared with the simulator's.
+### Attention and recall
+
+The owner's behaviour on review is two factors, each a seeded draw by the harness: attention, which belongs to the policy, and memory, which belongs to the item. The grounding, sources, and the strength of each claim are in [owner-model-research.md](owner-model-research.md).
+
+**Attention.** A passage is read with probability a = m · [f + (1 − f) / (1 + w / k)]:
+- **w** is the new words before the passage in this stop, in the order shown;
+- **f = 0.18** is a floor: some of any text gets read;
+- **k = 500** words sets how fast attention falls;
+- **m = 1 − 0.15 · (1 − e^(−t/22))** is a mild drag over a session, where t is minutes of new reading so far in this change at 238 words a minute.
+
+A contradiction that is read is caught with probability **q = 0.8**. The shape comes from code-review experiments and the prose constants from reading research; no study measures owners reading plans, so f and k are judgment calls. The words-before-the-passage rule follows the reading data, and it still charges length, because a longer document has more of its text deep inside it.
+
+**Recall.** An askable item the owner never stated, touched by a passage it read, is recalled with the probability in this table:
+
+| Salience | Adjacent touch | Direct touch |
+|---|---|---|
+| Low | 0.10 | 0.50 |
+| Medium | 0.25 | 0.75 |
+| High | 0.50 | 0.90 |
+
+It is a logistic, logit r = −1.1 + 1.1 · tier + 2.2 · direct − λ · ln n, with tier −1, 0, or 1. Here n is the number of unsaid items the same passage touches, so one passage that touches many items reminds the owner less of each (**λ = 1**). The two medium cells are anchored on prospective-memory and cued-recall rates, and the spacing between tiers is a judgment call. Recall applies to askable items only. An item recognised on sight can't be put into words, so it keeps its own trigger: the agent shows its opposite.
+
+**Draws.**
+- **One draw per item per new cue.** Each item gets one seeded uniform per new cue, shared across the three policies, so policy differences within a seed aren't draw noise.
+- **No second try on the same text.** An item isn't drawn again against text it was drawn against, only when new text touches it. Re-showing the same plan buys nothing.
+- **A recalled item is disclosed** from then on, as if the agent had asked.
+
+**Salience is rated before any runs, blind.**
+- **The rubric:** each askable item gets a tier from one question: how often would this owner, in their ordinary work, run into this concern? High means weekly or more; medium, occasionally; low, rarely (an edge case, a process step, a style or non-functional concern).
+- **Salience is accessibility, not stakes.** A high-stakes background assumption can sit in the low tier.
+- **The raters:** four model families other than the owner's, each seeing only the owner narrative and the item's text, several samples each. Each item takes the median tier, and agreement is reported as weighted kappa against a bar of 0.7.
+- **Freezing:** the tiers, rubric, and instructions are frozen with a hash before counted runs. A tier changed after runs appears only as a sensitivity case.
+- **Distribution check:** if a third or more of a seed's unsaid set lands in the high tier, the oracle has probably left unsaid what a real owner would have stated, and is revisited.
+- **A limitation:** no study has checked model ratings of salience against people's, so human raters replace or check them if any become available.
+
+**The constants are swept, not trusted.** Results are reported across this range, and any conclusion that changes within it is reported as depending on the constants:
+- k of 100, 500, and 1,500;
+- q of 0.6, 0.8, and 0.9;
+- recall tiers ±50% apart;
+- λ of 0, 1, and 3;
+- a dormancy variant that multiplies adjacent-touch odds by 0.6 after the first build;
+- w counted within a stop or across the whole change.
+
+The pilot's original curve, 1 / (1 + w / 1,500) with w counted across the change, is the corner f = 0, q = 1, k = 1,500 of this sweep.
+
+**Leaks are measured, not assumed away.** The simulator is tested live on fixed scenarios before counted runs, each run at least ten times, and on real stops from earlier runs, replayed with any change to its instructions. A separate judge, on a different model, reads everything the owner was given and the reply it sent, and lists every item the reply shared without licence. It is told which recall lines the harness drew, so it doesn't count them. Counted runs start only when the confirmed leak rate is at most 5% of replies overall, with no scenario above 2 in 10. Every flagged leak is checked by hand before it counts. Owner replies in real runs are audited the same way, and a leak that could have changed a verdict is reported with a sensitivity figure that counts that verdict as not met.
+
+The diligent policy alone would act as a perfect proofreader, which rewards whichever arm shows the most text. Results are therefore reported under all three policies and across the sweep. The end of every change is a review stop too: the owner reviews the agent's report under the policy. So every arm, the bare arm included, runs under all three policies, and an arm whose report shows the owner more gets more checked, which is a real cost and benefit of that way of reporting.
+
+**Checking that the owner behaves like a person.** One person playing the owner would mostly measure that person: in one elicitation study, who played the client explained 18–26% of the outcome. So the checks target the owner model's judgments and the robustness of the conclusions:
+- **Labelled judgments:** about 100 replayed stops are labelled for contradictions and touch levels, against a kappa bar of 0.7, by someone other than the session that built the simulator.
+- **Real interviews:** where a corpus of real elicitation interviews is available, its interviewer turns are replayed into the owner and its disclosures compared with the real stakeholder's.
+- **Own stops replayed:** the simulator's logged stops are replayed whenever its instructions or model change.
+- **Published-experiment stimuli:** the same contradiction planted in a short plan and a long one, and the same unsaid item touched directly and adjacently, to check that end-to-end rates land in the published bands.
+- **The sweep above.**
+
+A maintainer's play-through is a smoke test, not a calibration.
 
 ## Human cost
 
