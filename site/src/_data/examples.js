@@ -7,10 +7,12 @@ import { fileURLToPath } from "node:url";
 import { loadEntries } from "../../scripts/entries.js";
 import { measureTree } from "../../scripts/intent-tree.js";
 import { drawTree, sizeName } from "../../scripts/tree-svg.js";
+import { addPreviewTags, DEFAULT_CARD } from "../../scripts/previews.js";
 
 const srcDir = join(dirname(fileURLToPath(import.meta.url)), "..");
 const repoDir = join(srcDir, "..", "..");
 const repoUrl = "https://github.com/jszmajda/lid";
+const SITE_URL = JSON.parse(readFileSync(join(srcDir, "_data", "site.json"), "utf8")).url;
 const esc = (s) => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 
 // The thin bar a hosted story.html gets as its body's first child. Inline styles only, and no
@@ -25,7 +27,17 @@ function withStory(entry) {
   if (entry.story && entry.story.file === "story.md") return { ...entry, storyMarkdown: readFileSync(join(srcDir, "examples", entry.slug, "story.md"), "utf8") };
   if (!entry.story || entry.story.file !== "story.html") return entry;
   const source = readFileSync(join(srcDir, "examples", entry.slug, "story.html"), "utf8");
-  const storyHtml = source.replace(/<body\b[^>]*>/i, (tag) => tag + storyBar(entry));
+  const pic = entry.pictures[0];
+  const withTags = addPreviewTags(source, {
+    title: entry.story.title,
+    description: entry.tagline,
+    url: `${SITE_URL}/examples/${entry.slug}/story/`,
+    image: SITE_URL + (pic ? `/examples/${entry.slug}/${pic.file}` : DEFAULT_CARD.path),
+    imageAlt: pic ? pic.alt : DEFAULT_CARD.alt,
+    imageWidth: pic ? pic.width : DEFAULT_CARD.width,
+    imageHeight: pic ? pic.height : DEFAULT_CARD.height,
+  });
+  const storyHtml = withTags.replace(/<body\b[^>]*>/i, (tag) => tag + storyBar(entry));
   return { ...entry, storyHtml };
 }
 

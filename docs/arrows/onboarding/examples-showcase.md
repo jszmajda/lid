@@ -4,7 +4,7 @@ The site's showcase of projects built with LID: the index at `/examples/`, a pag
 
 ## Status
 
-**MAPPED**, a new leaf segment sampled 2026-11-16 and not yet audited. All 93 `ONB-SHOWCASE` specs are implemented and covered by `site/tests/showcase.test.js` and `site/tests/intent-tree.test.js`; the index, a project's page, the zoom dialog, and the tree labels were checked by eye in both themes and at phone width. First entries: compost (Friday's; its story written by Claude), Clowder (spoiler-safe names only), portfolio-tracker, and Threadkeeper (private, drawn without names).
+**MAPPED**, a new leaf segment sampled 2026-11-16 and not yet audited. All 95 `ONB-SHOWCASE` specs are implemented and covered by `site/tests/showcase.test.js` and `site/tests/intent-tree.test.js`; the index, a project's page, the zoom dialog, and the tree labels were checked by eye in both themes and at phone width. First entries: compost (Friday's; its story written by Claude), Clowder (spoiler-safe names only), portfolio-tracker, and Threadkeeper (private, drawn without names).
 
 ## References
 
@@ -18,7 +18,7 @@ The site's showcase of projects built with LID: the index at `/examples/`, a pag
 - `docs/intent/onboarding/examples-showcase/examples-showcase-design.md`
 
 ### EARS
-- `docs/intent/onboarding/examples-showcase/examples-showcase-specs.md` (93 specs, prefix `ONB-SHOWCASE-*`)
+- `docs/intent/onboarding/examples-showcase/examples-showcase-specs.md` (95 specs, prefix `ONB-SHOWCASE-*`)
 
 ### Tests
 - `site/tests/showcase.test.js`: entry validation (every build-failing rule), size names, the tree drawing, the built index, project pages, hosted stories, and the example pull-request template.
@@ -28,6 +28,7 @@ The site's showcase of projects built with LID: the index at `/examples/`, a pag
 - `site/scripts/intent-tree.js`: the counter (Node, no dependencies; also imported by the build)
 - `site/scripts/tree-svg.js`: the tree drawing and size names
 - `site/scripts/entries.js`: reads and checks entries; any broken rule fails the build
+- `site/scripts/previews.js`: link-preview tags (shared with `marketing-site`'s layout) and picture sizes
 - `site/src/_data/examples.js`: the showcase's data, the reference trees, and the hosted story's bar
 - `site/src/examples.njk`, `site/src/example-page.njk`, `site/src/example-story.njk`, `site/src/example-story-html.njk`
 - `site/src/assets/js/showcase.js`, `site/src/assets/css/main.css` § 17b
@@ -49,12 +50,12 @@ The site's showcase of projects built with LID: the index at `/examples/`, a pag
 | Category | Implemented | Active gap | Deferred |
 |---|---|---|---|
 | Index and credit lines (`001`–`015`) | 15 `[x]` | 0 | 0 |
-| Project pages, stories, pictures (`016`–`033`) | 18 `[x]` | 0 | 0 |
+| Project pages, stories, pictures, link previews (`016`–`033`, `094`, `095`) | 20 `[x]` | 0 | 0 |
 | Tree drawing and size names (`034`–`051`, `091`, `092`) | 20 `[x]` | 0 | 0 |
 | Entries, the build, the tree file (`052`–`069`, `090`) | 19 `[x]` | 0 | 0 |
 | The counter (`070`–`085`, `093`) | 17 `[x]` | 0 | 0 |
 | Contributing (`086`–`089`) | 4 `[x]` | 0 | 0 |
-| **Total** | **93** | **0** | **0** |
+| **Total** | **95** | **0** | **0** |
 
 ## Key Findings
 

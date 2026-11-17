@@ -8,6 +8,10 @@ permalink: "/examples/{{ e.slug }}/story/"
 eleventyComputed:
   title: "{{ e.story.title }}"
   description: "{{ e.tagline }}"
+  socialImage: "{{ ('/examples/' + e.slug + '/' + e.pictures[0].file) if e.pictures.length else '' }}"
+  socialImageAlt: "{{ e.pictures[0].alt if e.pictures.length else '' }}"
+  socialImageWidth: "{{ e.pictures[0].width if e.pictures.length else '' }}"
+  socialImageHeight: "{{ e.pictures[0].height if e.pictures.length else '' }}"
 eleventyExcludeFromCollections: true
 ---
 

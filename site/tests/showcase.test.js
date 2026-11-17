@@ -10,6 +10,7 @@ import assert from "node:assert/strict";
 import { fileURLToPath } from "node:url";
 import { loadEntries, parseTreeYaml } from "../scripts/entries.js";
 import { drawTree, sizeName, specsPerDot } from "../scripts/tree-svg.js";
+import { addPreviewTags, imageSize } from "../scripts/previews.js";
 
 const siteDir = join(dirname(fileURLToPath(import.meta.url)), "..");
 const repoDir = join(siteDir, "..");
@@ -330,7 +331,7 @@ describe("the built showcase", () => {
     }
   });
 
-  // @spec ONB-SHOWCASE-024, ONB-SHOWCASE-025, ONB-SHOWCASE-026, ONB-SHOWCASE-028
+  // @spec ONB-SHOWCASE-024, ONB-SHOWCASE-025, ONB-SHOWCASE-026, ONB-SHOWCASE-028, ONB-SHOWCASE-065
   it("hosts stories: Markdown in the site's style, HTML as written plus one bar", () => {
     for (const e of entries.filter((x) => x.story && x.story.file)) {
       const served = page(`examples/${e.slug}/story/index.html`);
@@ -347,7 +348,8 @@ describe("the built showcase", () => {
         assert.ok(text(bar[1]).includes(text(e.owner)));
         assert.ok(text(bar[1]).includes(text(e.story.author)));
         assert.doesNotMatch(bar[1], /class=/);
-        assert.equal(served.replace(bar[1], ""), source);
+        const added = served.match(/<!-- lid:preview -->[\s\S]*?<!-- \/lid:preview -->/);
+        assert.equal(served.replace(bar[1], "").replace(added ? added[0] : "", ""), source);
       }
     }
   });
@@ -432,5 +434,79 @@ describe("the example pull-request template", () => {
     assert.match(tpl, /- \[ \] I own this project, or its owner has agreed/);
     assert.match(tpl, /- \[ \] Every picture and every word/);
     assert.match(tpl, /- \[ \] If an AI wrote the story's words, the entry credits it/);
+  });
+});
+
+describe("link previews for the showcase", () => {
+  const meta = (page, key) => {
+    const m = page.match(new RegExp(`<meta (?:property|name)="${key}" content="([^"]*)"`));
+    return m ? m[1].replace(/&amp;/g, "&").replace(/&#39;/g, "'").replace(/&quot;/g, '"') : null;
+  };
+
+  // @spec ONB-SHOWCASE-094
+  it("reads a picture's pixel size from its PNG or JPEG header", () => {
+    assert.deepEqual(imageSize(PNG), { width: 1, height: 1 });
+    const jpeg = Buffer.from("ffd8ffe000104a46494600010100000100010000ffc0001108012c01f403012200021101031101", "hex");
+    assert.deepEqual(imageSize(jpeg), { width: 500, height: 300 });
+  });
+
+  // @spec ONB-SHOWCASE-095
+  it("adds only the preview tags a page lacks, at the end of its head, and keeps the author's", () => {
+    const tags = { title: "T", description: "D", url: "https://linked-intent.dev/examples/x/story/", image: "https://linked-intent.dev/x.png", imageAlt: "A", imageWidth: 10, imageHeight: 20 };
+    const bare = addPreviewTags("<html><head><title>x</title></head><body>b</body></html>", tags);
+    for (const k of ["og:title", "og:description", "og:image", "og:image:alt", "og:image:width", "og:image:height", "og:url", "og:site_name", "og:type", "twitter:card"]) assert.ok(meta(bare, k) !== null, k);
+    assert.match(bare, /<link rel="canonical" href="https:\/\/linked-intent\.dev\/examples\/x\/story\/"/);
+    assert.match(bare, /<!-- lid:preview -->[\s\S]*<!-- \/lid:preview --><\/head>/);
+    const own = addPreviewTags('<html><head><meta property="og:title" content="Mine"><link rel="canonical" href="https://example.com/a"></head><body></body></html>', tags);
+    assert.equal(meta(own, "og:title"), "Mine");
+    assert.equal((own.match(/og:title/g) || []).length, 1);
+    assert.equal((own.match(/rel="canonical"/g) || []).length, 1);
+    const all = '<html><head><meta property="og:title" content="a"><meta property="og:description" content="b"><meta property="og:image" content="c"><meta property="og:image:alt" content="d"><meta property="og:image:width" content="1"><meta property="og:image:height" content="1"><meta property="og:url" content="e"><meta property="og:site_name" content="f"><meta property="og:type" content="g"><meta name="twitter:card" content="h"><link rel="canonical" href="i"></head><body></body></html>';
+    assert.equal(addPreviewTags(all, tags), all);
+  });
+
+  describe("on the built pages", () => {
+    let out;
+    let entries;
+    const page = (path) => readFileSync(join(out, path), "utf8");
+    before(() => {
+      out = mkdtempSync(join(tmpdir(), "lid-previews-"));
+      roots.push(out);
+      execFileSync("npx", ["eleventy", `--output=${out}`], { cwd: siteDir, stdio: "pipe" });
+      entries = loadEntries(join(siteDir, "src", "examples"));
+    });
+
+    // @spec ONB-SHOWCASE-094, ONB-SITE-136, ONB-SITE-137
+    it("previews each project's page and Markdown story with its first picture, or the default card", () => {
+      for (const e of entries) {
+        const paths = [`examples/${e.slug}/index.html`, ...(e.story && e.story.file === "story.md" ? [`examples/${e.slug}/story/index.html`] : [])];
+        for (const path of paths) {
+          const p = page(path);
+          assert.equal(meta(p, "og:url"), `https://linked-intent.dev/${path.replace(/index\.html$/, "")}`, path);
+          if (e.pictures.length) {
+            const pic = e.pictures[0];
+            const size = imageSize(readFileSync(join(siteDir, "src", "examples", e.slug, pic.file)));
+            assert.equal(meta(p, "og:image"), `https://linked-intent.dev/examples/${e.slug}/${pic.file}`, path);
+            assert.equal(meta(p, "og:image:alt"), pic.alt, path);
+            assert.equal(meta(p, "og:image:width"), String(size.width), path);
+            assert.equal(meta(p, "og:image:height"), String(size.height), path);
+          } else {
+            assert.equal(meta(p, "og:image"), "https://linked-intent.dev/assets/social-card.png", path);
+          }
+          assert.equal(meta(p, "twitter:card"), "summary_large_image", path);
+        }
+      }
+    });
+
+    // @spec ONB-SHOWCASE-095
+    it("adds preview tags to a hosted HTML story's head", () => {
+      for (const e of entries.filter((x) => x.story && x.story.file === "story.html")) {
+        const p = page(`examples/${e.slug}/story/index.html`);
+        assert.equal(meta(p, "og:url"), `https://linked-intent.dev/examples/${e.slug}/story/`);
+        assert.ok(meta(p, "og:title"));
+        assert.ok(meta(p, "og:image").startsWith("https://linked-intent.dev/"));
+        assert.equal(meta(p, "twitter:card"), "summary_large_image");
+      }
+    });
   });
 });

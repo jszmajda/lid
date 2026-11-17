@@ -149,6 +149,14 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 - `[ ]` **ONB-SITE-036**: Where the `docs/arrows/` overlay is present in this repository, the site SHALL appear as a named segment in `docs/arrows/index.yaml` with the same schema as plugin segments.
 - `[x]` **ONB-SITE-037**: The site SHALL NOT claim capabilities or behaviors that are not present in the current plugin LLDs.
 
+## Link Previews
+
+- `[x]` **ONB-SITE-135**: Every page SHALL carry `og:title`, `og:description`, `og:type`, and `og:site_name` metadata, with `og:site_name` set to "Linked-Intent Development" and the title and description matching the page's own.
+- `[x]` **ONB-SITE-136**: Every page SHALL carry a canonical link and an `og:url`, both set to the page's absolute address on `https://linked-intent.dev`.
+- `[x]` **ONB-SITE-137**: Every page SHALL carry an `og:image` given as an absolute `https` address, with `og:image:alt`, `og:image:width`, and `og:image:height`, and a `twitter:card` of `summary_large_image`.
+- `[x]` **ONB-SITE-138**: When a page names no picture of its own, its `og:image` SHALL be `/assets/social-card.png`, a 1200×630 PNG.
+- `[x]` **ONB-SITE-139**: The default card SHALL show the wordmark, the home page's h1 question, the site's address, and the rings drawing, and SHALL be made from a source page in `site/brand/social/`.
+
 ## Repository README
 
 - `[x]` **ONB-SITE-059**: The repository README body SHALL state both linkage payoffs — navigation (the arrow walkable in tokens) and attestation (coherence checkable by search) — consistent with HLD § Approach: Linkage-based Intent Tracking, without modifying the README's opening pitch (independently owned; see `ONB-SITE-001`).

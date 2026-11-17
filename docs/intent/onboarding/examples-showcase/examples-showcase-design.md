@@ -50,6 +50,10 @@ An entry may host its story on the site, in one of two forms:
 
 A story is its author's words. Under the parent's rule for content the site presents, the site never edits it, and the site's copy register does not apply to it. The tagline and the brief are the site's framing of the project, so the copy register applies to them, and the maintainer edits them at review when needed.
 
+### Link previews
+
+A link to a project's page, or to a hosted story, previews with the project's own first picture and its alt text; an entry without pictures uses the site's default card. A hosted `story.html` is its author's page, but most such pages carry no preview metadata, so the build adds to its `<head>` each preview tag the page lacks, built from the entry: the story's title, the tagline, the first picture (or the default card), the story's address, and the site's name. Those tags change nothing a reader sees, and a tag the author wrote always wins.
+
 ### Pictures
 
 Every picture on a project's page leads to its full-size file, so it can be enlarged without JavaScript; on the index, a card's picture leads to the project's page instead. With JavaScript, clicking a picture opens it over the page in a dialog that closes on a click, on Escape, or on its close button. Each picture carries the alt text its entry gives.
@@ -124,6 +128,7 @@ The build is the gate for an entry: **any rule below that an entry breaks fails 
 - `story` names at most one of `file` and `url`. A `file` is `story.md` or `story.html`, and it exists. A story file in the folder that the entry does not name is an error.
 - `story.md` has no front matter of its own: its title is `story.title`, its date the entry's `date`.
 - `story.html` has a `<body>` element, contains no script, and loads no image, style sheet, font, or frame from outside its folder (links to other sites are fine), so a hosted story can never bring tracking onto the site, as `marketing-site` promises. The build inserts the bar as the body's first child, styled inline so the author's styles and the bar's stay apart, and serves the page at `/examples/<slug>/story/` with the entry folder's other files beside it, so the page's relative links resolve.
+- The build adds to a `story.html`'s `<head>` each link-preview tag the page lacks (see *Link previews*); `<head>` must exist for that, so a page without one fails the build.
 
 **The credit line** is the owner's name with `'s project` ("Friday's project"). When `story.author` differs from `owner`, compared exactly, it adds "post written by" and the author. The story card and a hosted story's byline use `story.byline` when given, otherwise "by" and the author. A card whose entry has no story is headed by the project's name.
 
