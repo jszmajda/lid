@@ -25,8 +25,9 @@ IMAGE = "lid-cost-eval-executor:2.1.323"
 
 
 def repairs_in(rec: dict) -> int:
-    """How many slips the harness repaired, instead of retrying, across one owner record's model calls."""
-    return sum(len(c.get("repairs") or []) for c in rec.get("calls") or [])
+    """How many slips the harness repaired, instead of retrying, across one owner record's model calls (the main and
+    trim calls, and the touch calls)."""
+    return sum(len(c.get("repairs") or []) for c in (rec.get("calls") or []) + (rec.get("touch_calls") or []))
 
 
 def main(argv=None) -> int:

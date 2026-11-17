@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from costeval import executor, simulator as sm, trajectory as tj, usage  # noqa: E402
-from test_simulator import BRIEF, CHANGES, ORACLE, OWNER_ITEMS, ans, out  # noqa: E402
+from test_simulator import BRIEF, CHANGES, ORACLE, OWNER_ITEMS, FakeAsk, ans, out  # noqa: E402
 
 import audit_owner as ao  # noqa: E402
 import run_probe as rp  # noqa: E402
@@ -111,19 +111,10 @@ class FakeWorkspace:
         return {p: self.files[p] for p in paths}
 
 
-class Ask:
-    def __init__(self, *outputs):
-        self.outputs, self.prompts = list(outputs), []
-
-    def __call__(self, prompt):
-        self.prompts.append(prompt)
-        return self.outputs.pop(0)
-
-
 def make_owner(*outputs, policy="diligent", replicate="t"):
-    ask = Ask(*outputs)
+    ask = FakeAsk(*outputs)  # touches written beside a main output are what the touch call after it returns
     o = sm.parse_oracle(ORACLE)
-    return sm.Owner(oracle=o, brief=BRIEF, policy=policy, replicate=replicate, ask=ask,
+    return sm.Owner(oracle=o, brief=BRIEF, policy=policy, replicate=replicate, ask=ask, touch=ask.touch,
                     owner_items=sm.parse_owner_items(OWNER_ITEMS, o)), ask
 
 
@@ -229,6 +220,23 @@ class ChangeLoopTest(unittest.TestCase):
         self.assertEqual([x["item"] for x in rec["recalled"]], ["BK-02"] if fired else [])
         self.assertEqual(r.rounds, 2 if fired else 1)  # a recall at a completion report keeps the change open
 
+    def test_each_owner_record_keeps_both_calls_and_their_costs(self):
+        ws = FakeWorkspace()
+        ask = FakeAsk(out("completion", touches=[{"item": "BK-02", "passage": 1, "level": "adjacent"}]), out("completion"))
+        o = sm.parse_oracle(ORACLE)
+        owner = sm.Owner(oracle=o, brief=BRIEF, policy="diligent", replicate="t", owner_items=sm.parse_owner_items(OWNER_ITEMS, o),
+                         ask=lambda p: (ask(p), 0.03), touch=lambda p: (ask.touch(p), 0.01))
+        r = tj.run_change(arm=tj.load_arm("bare"), change=self.c[1], owner=owner,
+                          turn=FakeTurns(ws, ("Done. Orders are accepted all day.", None, ["app/notes.py"]), ("Done.", None, [])),
+                          workspace=ws, out_dir=self.tmp)
+        rec = json.loads((self.tmp / "owner-00.json").read_text())
+        self.assertEqual([c["cost_usd"] for c in rec["calls"]], [0.03])
+        self.assertEqual([c["cost_usd"] for c in rec["touch_calls"]], [0.01])
+        self.assertIn("## What to report", rec["touch_calls"][0]["prompt"])
+        self.assertEqual(rec["costs"], {"main": 0.03, "touch": 0.01, "trim": 0.0})
+        self.assertEqual(r.owner[0]["costs"], rec["costs"])
+        self.assertNotIn("touch_calls", r.owner[0])  # prompts stay in the per-stop file, as main calls do
+
 
 class RunOptionsTest(unittest.TestCase):
     def test_the_owner_model_comes_from_a_preset_a_json_object_or_a_file(self):
@@ -292,8 +300,9 @@ class ProbeOptionsTest(unittest.TestCase):
 
 class AuditTest(unittest.TestCase):
     def test_the_audit_counts_repairs_in_every_owner_call(self):
-        rec = {"calls": [{"problems": ["x"], "repairs": []}, {"problems": [], "repairs": ["a", "b"]}, {"trim": []}]}
-        self.assertEqual(ao.repairs_in(rec), 2)
+        rec = {"calls": [{"problems": ["x"], "repairs": []}, {"problems": [], "repairs": ["a", "b"]}, {"trim": []}],
+               "touch_calls": [{"problems": [], "repairs": ["c"]}]}
+        self.assertEqual(ao.repairs_in(rec), 3)
         self.assertEqual(ao.repairs_in({"calls": []}), 0)
 
 

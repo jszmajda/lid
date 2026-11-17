@@ -283,9 +283,10 @@ def run_change(*, arm: Arm, change: simulator.Change, owner: simulator.Owner, tu
                     "answers": rep.answers, "kept": rep.kept, "dropped": rep.dropped, "redirect_event": rep.redirect_event,
                     "words_shown": rep.words_shown, "words_this_change": rep.words_this_change, "passages": rep.passages,
                     "shared": rep.shared, "recalled": rep.recalled, "draws": rep.draws, "documents": [d.name for d in docs],
-                    "code_written": any(is_code_path(p) for p in changed)}
+                    "code_written": any(is_code_path(p) for p in changed), "costs": simulator.call_costs(rep)}
             res.owner.append(orec)
-            (out_dir / f"owner-{k:02d}.json").write_text(json.dumps({**orec, "calls": rep.calls}, indent=1), encoding="utf-8")
+            (out_dir / f"owner-{k:02d}.json").write_text(
+                json.dumps({**orec, "calls": rep.calls, "touch_calls": rep.touch_calls}, indent=1), encoding="utf-8")
             res.rounds = k + 1
             if rep.finished:
                 res.finished = True

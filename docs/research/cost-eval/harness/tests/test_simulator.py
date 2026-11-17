@@ -396,18 +396,27 @@ def cor(item, text, wrong="the agent's words", passage=1):
 
 
 class FakeAsk:
+    """Plays the owner's model. Each output is one main call's; touches written beside it (out(..., touches=...))
+    are what the touch call that follows returns."""
+
     def __init__(self, *outputs):
-        self.outputs, self.prompts = list(outputs), []
+        self.outputs, self.prompts, self.touch_prompts, self.last_touches = list(outputs), [], [], []
 
     def __call__(self, prompt):
         self.prompts.append(prompt)
-        return self.outputs.pop(0)
+        o = dict(self.outputs.pop(0))
+        self.last_touches = o.pop("touches", [])
+        return o
+
+    def touch(self, prompt):
+        self.touch_prompts.append(prompt)
+        return {"touches": [dict(t) for t in self.last_touches]}
 
 
-def owner(policy="diligent", *outputs, replicate="s1", model=None, trim=None):
+def owner(policy="diligent", *outputs, replicate="s1", model=None, trim=None, touch=None):
     ask = FakeAsk(*outputs)
     return sm.Owner(oracle=oracle(), brief=BRIEF, policy=policy, replicate=replicate, ask=ask, trim=trim,
-                    model=model or sm.OwnerModel(), owner_items=owner_items()), ask
+                    touch=touch or ask.touch, model=model or sm.OwnerModel(), owner_items=owner_items()), ask
 
 
 class OwnerTest(unittest.TestCase):
@@ -471,6 +480,18 @@ class OwnerTest(unittest.TestCase):
         w, _ = owner("rubber-stamp", out("completion", corrections=[cor("BK-03", "Keep old orders.")]))
         w.start_change(self.c[1])
         self.assertTrue(w.respond("Done.", code_written=True).finished)
+
+    def test_several_answers_each_carry_their_question(self):
+        o = out("questions", [ans("Closing time?", "Yes.", ["BK-02"]), ans("Note length", "x", no_view=True),
+                              ans("Plan OK?", "Yes.")])
+        w, _ = owner("diligent", o)
+        w.start_change(self.c[1])
+        r = w.respond("Close at six? How long can notes be? Plan OK?", code_written=False)
+        self.assertEqual(r.reply, "Closing time? Yes.\n\nNote length: No preference, use your judgment.\n\nPlan OK? Yes.\n\nGo ahead.")
+        self.assertEqual(w.said_now[0], sm.Said(1, "Yes.", "Closing time?", ("BK-02",)))  # the record keeps them apart
+        w, _ = owner("diligent", out("questions", [ans("Closing time?", "Six in the evening.", ["BK-02"])]))
+        w.start_change(self.c[1])
+        self.assertEqual(w.respond("When do you close?", code_written=False).reply, "Six in the evening.\n\nGo ahead.")
 
     def test_show_me_answers_share_nothing(self):
         w, _ = owner("diligent", out("questions", [ans("Failed move?", sm.SHOW_ME, ["BK-03"])]))
@@ -563,33 +584,53 @@ class TrimTest(unittest.TestCase):
         trims = []
         def trim(prompt):
             trims.append(prompt)
-            return {"parts": [{"index": 1, "text": "We close at 18:00."}, {"index": 2, "text": "Keep old orders, and also many more words than before."}]}
+            return {"parts": [{"index": 1, "text": "We close at 18:00."}, {"index": 2, "text": "Same-day orders are free, and also many more words."}]}
         o = out("approval", [ans("Closing time?", "We close at 18:00, and late orders go to tomorrow.", ["BK-02"]),
                              ans("Colour?", "x", no_view=True)],
-                [cor("BK-03", "Keep old orders.", wrong="delete old orders")])
+                [cor("BK-04", "Same-day orders are free.", wrong="charge for same-day orders")])
         w = owner("diligent", o, replicate="s", trim=trim)[0]
         w.start_change(c[1])
-        r = w.respond("Plan: delete old orders. Closing time? Colour?", code_written=False)
+        r = w.respond("Plan: charge for same-day orders. Closing time? Colour?", code_written=False)
         self.assertIn('Part 1 (answer). The question it answers: "Closing time?"', trims[0])
-        self.assertIn('Part 2 (correction). The agent\'s words it corrects: "delete old orders"', trims[0])
+        self.assertIn('Part 2 (correction). The agent\'s words it corrects: "charge for same-day orders"', trims[0])
         self.assertNotIn("Colour", trims[0].split("</agent_message>")[1])
         self.assertEqual(r.answers[0]["answer"], "We close at 18:00.")
-        self.assertEqual(r.kept[0]["text"], "Keep old orders.")  # a longer edit is refused
+        self.assertEqual(r.kept[0]["text"], "Same-day orders are free.")  # a longer edit is refused
         self.assertEqual(r.calls[-1]["trim"], [{"part": 1, "before": "We close at 18:00, and late orders go to tomorrow.",
                                                 "after": "We close at 18:00."}])
 
     def test_a_correction_trimmed_to_drop_is_removed_but_an_answer_never_is(self):
         c = script()
         o = out("approval", [ans("Closing time?", "We close at 18:00.", ["BK-02"])],
-                [cor("BK-03", "Also keep old orders.", wrong="keep this week's orders")])
+                [cor("BK-04", "Also make same-day orders free.", wrong="free next-day orders")])
         w, _ = owner("diligent", o, replicate="s",
                      trim=lambda p: {"parts": [{"index": 1, "text": "DROP"}, {"index": 2, "text": "DROP"}]})
         w.start_change(c[1])
-        r = w.respond("Plan: keep this week's orders. Closing time?", code_written=False)
+        r = w.respond("Plan: free next-day orders. Closing time?", code_written=False)
         self.assertEqual(r.answers[0]["answer"], "We close at 18:00.")
         self.assertEqual(r.kept + r.dropped, [])
-        self.assertNotIn("old orders", r.reply)
-        self.assertEqual(r.calls[-1]["trim"], [{"part": 2, "before": "Also keep old orders.", "after": None}])
+        self.assertNotIn("same-day", r.reply)
+        self.assertEqual(r.calls[-1]["trim"], [{"part": 2, "before": "Also make same-day orders free.", "after": None}])
+
+    def test_a_recognized_on_sight_response_is_never_trimmed(self):
+        c = script()
+        trims = []
+
+        def trim(prompt):
+            trims.append(prompt)
+            return {"parts": [{"index": 1, "text": "DROP"}, {"index": 2, "text": "No."}]}
+        o = out("approval", corrections=[cor("BK-04", "Same-day orders are free.", wrong="charge for same-day orders"),
+                                         cor("BK-03", "No, keep every order we've ever taken.", wrong="delete old orders")])
+        w, _ = owner("diligent", o, replicate="s", trim=trim)
+        w.start_change(c[1])
+        r = w.respond("Plan: charge for same-day orders and delete old orders.", code_written=False)
+        self.assertNotIn("keep every order", trims[0])
+        self.assertEqual([k["text"] for k in r.kept], ["No, keep every order we've ever taken."])
+        w, _ = owner("diligent", out("approval", corrections=[cor("BK-03", "No, keep every order we've ever taken.")]),
+                     replicate="s", trim=lambda p: self.fail("trim called"))
+        w.start_change(c[1])
+        self.assertEqual(w.respond("Plan: delete old orders.", code_written=False).kept[0]["text"],
+                         "No, keep every order we've ever taken.")
 
     def test_a_drop_is_ignored_for_what_this_changes_request_asked_for(self):
         c = script()
@@ -629,6 +670,10 @@ class JudgeTest(unittest.TestCase):
         self.assertIn("licenses only the recall lines listed above as drawn", t)
         self.assertNotIn('marked "in play for this change"', t)
         self.assertNotIn("the reply's notes", t)
+
+    def test_the_judge_knows_several_answers_each_begin_with_their_question(self):
+        t = sm.JUDGE_TEMPLATE_PATH.read_text(encoding="utf-8")
+        self.assertIn("begins with the question it answers", t)
 
 
 if __name__ == "__main__":

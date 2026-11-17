@@ -102,14 +102,16 @@ def main(argv=None) -> int:
     costs: list[float] = []
 
     def call(schema: str):
-        def run(prompt: str) -> dict:
+        def run(prompt: str) -> tuple[dict, float]:
             r = executor.run_role(role, prompt, json_schema=schema)
-            costs.append(r.usage.reported_cost_usd or 0.0)
-            return r.structured
+            cost = r.usage.reported_cost_usd or 0.0
+            costs.append(cost)
+            return r.structured, cost
         return run
 
     owner = simulator.Owner(oracle=oracle, brief=brief, policy=base["policy"], replicate=replicate,
-                            ask=call(simulator.schema_json()), trim=call(simulator.trim_schema_json()),
+                            ask=call(simulator.schema_json()), touch=call(simulator.touch_schema_json()),
+                            trim=call(simulator.trim_schema_json()),
                             model=owner_model, owner_items=owner_items)
     trajectory.restore_owner_state(owner, json.loads(state_path.read_text()))
     session = executor.ContainerSession(image=IMAGE, workspace_volume=ws_vol, config_volume=cfg_vol, model=base["model"],
@@ -122,6 +124,7 @@ def main(argv=None) -> int:
             "hashes": {**base["hashes"], "change_script_now": sha256(script_path), "owner_items_now": sha256(items_path),
                        "oracle_now": sha256(seed_dir / "hidden" / "oracle.md"),
                        "simulator_template_now": sha256(simulator.TEMPLATE_PATH),
+                       "touch_template_now": sha256(simulator.TOUCH_TEMPLATE_PATH),
                        "trim_template_now": sha256(simulator.TRIM_TEMPLATE_PATH)},
             "volumes": {"workspace": ws_vol, "config": cfg_vol}, "changes": {}}
 

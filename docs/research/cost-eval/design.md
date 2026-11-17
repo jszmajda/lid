@@ -195,13 +195,14 @@ It runs under three policies, which differ only in attention:
 
 The diligent owner is an ideal proofreader of what it reads, but its memory stays fallible: an owner that recalled every unsaid item a document touched would hand the oracle to whichever arm shows the most text. The bounded owner is the estimate of a person. A question is addressed to the owner, so attention doesn't apply to it, and every policy answers questions the same way.
 
-**One model call serves all three policies.** The harness splits each stop's new text into numbered passages: a paragraph, list item, table row, or heading, and in a re-read file only its added lines. It shows the owner the numbers. At each stop the model:
+**Two model calls serve all three policies.** The harness splits each stop's new text into numbered passages: a paragraph, list item, table row, or heading, and in a re-read file only its added lines. It shows the owner the numbers. At each stop the main call:
 - classifies the agent's message: a completion report, an approval request, direct questions, or a stop partway;
-- marks each direct question targeted or broad, and answers each targeted one;
-- lists every contradiction it finds, tied to an oracle item and to the numbered passage it found it in. A correction for something left out of this change's request has no passage;
-- for each askable item not yet disclosed, gives the numbered passages that touch it and how: adjacently (the passage is about something nearby) or directly (it describes the behaviour the item governs). A passage that already states the item correctly is marked as saying it, and a passage that says the opposite is a contradiction, not a touch.
+- marks each direct question targeted or broad, answers each targeted one, and for a broad one lists the askable items its scope covers;
+- lists every contradiction it finds, tied to an oracle item and to the numbered passage it found it in, including the opposite of a rule recognised on sight. A correction for something left out of this change's request has no passage.
 
-The harness then applies the policy with seeded draws and puts the reply together from the kept parts, so a correction never asks the agent for another round, and the prompt is identical under every policy. At a stop where a redirect fires and the model is called twice, contradictions and touches come from the second call.
+A second call, the touch call, sees only the narrative, the askable items not yet disclosed, and the numbered text. For each item, it gives the passages that touch it and how: adjacently (the passage is about something nearby) or directly (it describes the behaviour the item governs). A passage that already states the item correctly is marked as saying it. A passage that says the opposite is a contradiction, which belongs to the main call, and a question put to the owner is never a touch. Keeping touches out of the main call keeps that call as close as possible to the owner's plain review. Folded into one call, the extra work made the owner miss objections it otherwise caught. The touch call doesn't run under the rubber-stamp policy, which draws no review recall.
+
+The harness then applies the policy with seeded draws and puts the reply together from the kept parts, so a correction never asks the agent for another round, and the prompts are identical under every policy. When a reply carries several answers, each is labelled with its question. A scripted response to a rule recognised on sight is never trimmed. At a stop where a redirect fires and the main call runs twice, contradictions come from its second run, and the touch call runs on that state.
 
 ### Attention and recall
 

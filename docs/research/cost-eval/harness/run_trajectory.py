@@ -142,7 +142,7 @@ def main(argv=None) -> int:
         "lid_release": arm.lid_release, "round_cap": args.round_cap, "neutral_sentence": trajectory.NEUTRAL_SENTENCE,
         "hashes": {"brief": sha256(brief_path), "oracle": sha256(oracle_path), "change_script": sha256(script_path),
                    "owner_items": sha256(items_path), "simulator_template": sha256(simulator.TEMPLATE_PATH),
-                   "trim_template": sha256(simulator.TRIM_TEMPLATE_PATH)},
+                   "touch_template": sha256(simulator.TOUCH_TEMPLATE_PATH), "trim_template": sha256(simulator.TRIM_TEMPLATE_PATH)},
         "volumes": {"workspace": ws_vol, "config": cfg_vol},
     }
     workspace = trajectory.DockerWorkspace(IMAGE, ws_vol)
@@ -170,17 +170,18 @@ def main(argv=None) -> int:
                                 claude_code_version=CLAUDE_CODE, effort="medium")
     owner_costs: list[float] = []
 
-    def ask(prompt: str) -> dict:
-        r = executor.run_role(role, prompt, json_schema=simulator.schema_json())
-        owner_costs.append(r.usage.reported_cost_usd or 0.0)
-        return r.structured
+    def call(schema: str):
+        """One owner role call: its structured output and cost, which the owner records with the call."""
+        def run(prompt: str) -> tuple[dict, float]:
+            r = executor.run_role(role, prompt, json_schema=schema)
+            cost = r.usage.reported_cost_usd or 0.0
+            owner_costs.append(cost)
+            return r.structured, cost
+        return run
 
-    def trim(prompt: str) -> dict:
-        r = executor.run_role(role, prompt, json_schema=simulator.trim_schema_json())
-        owner_costs.append(r.usage.reported_cost_usd or 0.0)
-        return r.structured
-
-    owner = simulator.Owner(oracle=oracle, brief=brief, policy=args.policy, replicate=meta["replicate"], ask=ask, trim=trim,
+    owner = simulator.Owner(oracle=oracle, brief=brief, policy=args.policy, replicate=meta["replicate"],
+                            ask=call(simulator.schema_json()), touch=call(simulator.touch_schema_json()),
+                            trim=call(simulator.trim_schema_json()),
                             model=simulator.OwnerModel.from_config(meta["owner_model_config"]), owner_items=owner_items)
 
     def turn(prompt, stream_path, *, resume=None, permission_mode="bypassPermissions"):

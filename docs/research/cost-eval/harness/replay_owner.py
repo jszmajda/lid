@@ -9,9 +9,9 @@ Each stop is `trajectory:change-NN/owner-MM` followed by expectations: `-BT-19` 
 those words. The recorded prompt is taken from the owner record, and only the lines of the owner's instructions that
 differ between `--before` and the current `prompts/simulator.md` are swapped, so the knowledge, the change, and the
 agent's message are exactly what the owner saw. The answer then goes through the current trim prompt and the leak
-judge. A replay makes no recall draws: a broad question's text from the model is discarded, as a run discards it, and
-the model's touches and broad-question scopes are recorded for inspection. Writes ../runs/stage2/replay-<name>/ and
-prints a summary.
+judge. A replay replays the main call only: it makes no touch call and no recall draws. A broad question's text from
+the model is discarded, as a run discards it, and its scope is recorded for inspection. Several answers are shown with
+their questions, as in a run. Writes ../runs/stage2/replay-<name>/ and prints a summary.
 """
 
 from __future__ import annotations
@@ -74,6 +74,7 @@ def main(argv=None) -> int:
         simulator.TRIM_TEMPLATE_PATH = Path(args.trim_template).resolve()
     oracle = simulator.parse_oracle((HERE.parent / "seeds" / args.seed / "hidden" / "oracle.md").read_text(encoding="utf-8"))
     ids = simulator.id_pattern(oracle.ids())  # a trimmed part that gains an identifier keeps its old wording
+    scripted = {i.id for i in oracle.items if i.response}  # recognized-on-sight responses are never trimmed
     owner = executor.RoleSession(image=IMAGE, config_volume="ce-roles-cfg", model=args.owner_model,
                                  claude_code_version="2.1.323", effort="medium")
     judge = executor.RoleSession(image=IMAGE, config_volume="ce-roles-cfg", model=args.judge_model,
@@ -94,8 +95,8 @@ def main(argv=None) -> int:
         out = {**out, "answers": [a for a in out.get("answers", []) if a.get("breadth", "targeted") != "broad"]}
         calls: list[dict] = []
         simulator.trim_reply(lambda p: executor.run_role(owner, p, json_schema=simulator.trim_schema_json()).structured,
-                             message, out, calls, ids=ids)
-        reply = "\n\n".join([a["answer"] for a in out["answers"]] + [c["text"] for c in out["corrections"]])
+                             message, out, calls, ids=ids, scripted=scripted)
+        reply = "\n\n".join(simulator.answer_lines(out["answers"]) + [c["text"] for c in out["corrections"]])
         shared = sorted({i for a in out["answers"] for i in a["items"]} | {c["item"] for c in out["corrections"] if c["item"] != "none"})
         j = executor.run_role(judge, simulator.judge_prompt(prompt, reply, None), json_schema=simulator.judge_schema_json()).structured or {}
         leaks = [d for d in j.get("disclosures", []) if not d["licensed"]]
@@ -104,7 +105,7 @@ def main(argv=None) -> int:
         problems += [f"says {t!r}" for t in st["text_not"] if t.lower() in reply.lower()]
         result = {"stop": f"{st['id']}:{st['stop']}", "k": k, "reply": reply, "shared": shared, "problems": problems,
                   "leaks": leaks, "invented": j.get("invented", []), "trim": calls[0]["trim"] if calls else [],
-                  "touches": out.get("touches", []), "broad": [{"question": a.get("question"), "in_scope": a.get("in_scope", [])}
+                  "broad": [{"question": a.get("question"), "in_scope": a.get("in_scope", [])}
                                                                for a in broad],
                   "recorded_reply": rec["reply"]}
         (out_dir / f"{st['id']}--{st['stop'].replace('/', '-')}--{k}.json").write_text(json.dumps(result, indent=1))

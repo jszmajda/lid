@@ -28,6 +28,17 @@ MED_DIRECT = sm.recall_rate(M, "medium", direct=True)
 RECALL = {i: d["recall"] for i, d in OWNER_ITEMS.items()}
 
 
+class FakeTouches:
+    """A touch call that returns these touch lists in turn."""
+
+    def __init__(self, *outputs):
+        self.outputs, self.prompts = [list(o) for o in outputs], []
+
+    def __call__(self, prompt):
+        self.prompts.append(prompt)
+        return {"touches": [dict(t) for t in self.outputs.pop(0)]}
+
+
 def touch(item, passage, level="direct"):
     return {"item": item, "passage": passage, "level": level}
 
@@ -408,7 +419,8 @@ class DrawTest(unittest.TestCase):
         self.assertIn("BK-02", w.disclosed)
         r = w.respond("Orders are accepted until closing.", code_written=False)
         self.assertEqual(r.draws, [])
-        self.assertIn("[BK-02] (Askable; mentioned to the agent)", ask.prompts[1])
+        self.assertNotIn("[BK-02]", ask.touch_prompts[-1])  # the touch call no longer asks about it
+        self.assertIn("[BK-09]", ask.touch_prompts[-1])
 
     def test_a_recalled_item_is_never_drawn_for_again(self):
         c1, c4 = self.c[1], self.c[4]
@@ -537,18 +549,18 @@ class RecallReplyTest(unittest.TestCase):
 
         def trim(prompt):
             trims.append(prompt)
-            return {"parts": [{"index": 1, "text": "Keep every order."}]}
-        o = out("approval", corrections=[cor("BK-03", "Keep every order we have ever taken.", wrong="delete old orders")],
+            return {"parts": [{"index": 1, "text": "We close at six."}]}
+        o = out("approval", corrections=[cor("BK-02", "We close at six in the evening.", wrong="close at five")],
                 touches=[touch("BK-09", 2, "direct")])
         w, _ = owner("diligent", o, replicate=self.rep, trim=trim)
         w.start_change(self.c[1])
-        r = w.respond("Plan: delete old orders.\n\nNotes go in a text field.", code_written=False)
-        self.assertEqual(r.reply, f"Keep every order.\n\n{RECALL['BK-09']}\n\nOtherwise, go ahead.")
+        r = w.respond("Plan: orders close at five.\n\nNotes go in a text field.", code_written=False)
+        self.assertEqual(r.reply, f"We close at six.\n\n{RECALL['BK-09']}\n\nOtherwise, go ahead.")
         self.assertNotIn(RECALL["BK-09"], trims[0])
         self.assertEqual(r.recalled, [{"item": "BK-09", "line": RECALL["BK-09"], "via": "review", "passage": 2, "question": None}])
         self.assertIn({"item": "BK-09", "reason": "recalled", "via": "review"}, r.shared)
         self.assertIn(sm.Said(1, RECALL["BK-09"], None, ("BK-09",)), w.said_now)
-        self.assertEqual(w.disclosed, {"BK-03", "BK-09"})
+        self.assertEqual(w.disclosed, {"BK-02", "BK-09"})
 
     def test_a_recall_at_a_completion_report_keeps_the_change_open(self):
         w, _ = owner("diligent", out("completion", touches=[touch("BK-09", 1, "direct")]), replicate=self.rep)
@@ -601,25 +613,31 @@ class CheckOutputTest(unittest.TestCase):
         self.assertIn("passage", self.failure(o))
 
     def test_valid_output_passes_and_a_bad_one_is_retried(self):
-        bad = out("approval", touches=[touch("BK-02", 9)])
-        good = out("approval", corrections=[cor("none", "Notes are what I asked for.", wrong="notes", passage=0)],
-                   touches=[touch("BK-02", 1, "says"), touch("BK-09", 2, "adjacent"), touch("BK-09", 2, "adjacent")])
-        w, ask = owner("diligent", bad, good)
+        bad = out("approval", corrections=[cor("BK-03", "Keep every order.", passage=9)])
+        good = out("approval", corrections=[cor("none", "Notes are what I asked for.", wrong="notes", passage=0)])
+        w, ask = owner("diligent", bad, good, touch=FakeTouches([touch("BK-02", 9)], [touch("BK-02", 1, "says"),
+                                                                 touch("BK-09", 2, "adjacent"), touch("BK-09", 2, "adjacent")]))
         w.start_change(script()[1])
         r = w.respond("One.\n\nTwo.", code_written=False)
-        self.assertEqual(len(ask.prompts), 2)
+        self.assertEqual(len(ask.prompts), 2)  # the main call is retried on its own fault
         self.assertTrue(r.calls[0]["problems"])
         self.assertEqual((r.calls[1]["problems"], r.calls[1]["repairs"]), ([], []))
+        self.assertEqual(len(r.touch_calls), 2)  # and the touch call on its own
+        self.assertTrue(r.touch_calls[0]["problems"])
+        self.assertEqual((r.touch_calls[1]["problems"], r.touch_calls[1]["repairs"]), ([], []))
 
     def repaired(self, o, change=1, message="One.\n\nTwo."):
-        """Respond once with o; it must be repaired, not retried. Returns (reply, repairs)."""
+        """Respond once with o; it must be repaired, not retried. Returns (reply, repairs from both calls)."""
         w, ask = owner("diligent", o, o, o)
         w.start_change(script()[change])
         r = w.respond(message, code_written=False)
         self.assertEqual(len(ask.prompts), 1)
-        self.assertEqual(r.calls[0]["problems"], [])
-        self.assertTrue(r.calls[0]["repairs"])
-        return r, r.calls[0]["repairs"]
+        self.assertLessEqual(len(ask.touch_prompts), 1)
+        calls = r.calls + r.touch_calls
+        self.assertEqual([c["problems"] for c in calls], [[] for _ in calls])
+        repairs = [x for c in calls for x in c["repairs"]]
+        self.assertTrue(repairs)
+        return r, repairs
 
     def test_deterministic_slips_are_repaired_and_logged_without_a_retry(self):
         for item in ("BK-01", "BK-03", "BK-07"):  # stated, recognized on sight, not yet held
@@ -776,7 +794,7 @@ class OwnerItemsTest(unittest.TestCase):
                 sm.parse_owner_items(data, oracle())
 
     def test_an_owner_needs_an_entry_for_every_askable_item(self):
-        args = dict(oracle=oracle(), brief=BRIEF, policy="diligent", replicate="r", ask=FakeAsk())
+        args = dict(oracle=oracle(), brief=BRIEF, policy="diligent", replicate="r", ask=FakeAsk(), touch=FakeAsk().touch)
         with self.assertRaises(ValueError):
             sm.Owner(**args)
         with self.assertRaisesRegex(ValueError, "BK-07"):
@@ -784,18 +802,36 @@ class OwnerItemsTest(unittest.TestCase):
         w = sm.Owner(**args, owner_items={}, default_owner_item=sm.OwnerItem("medium", "Something I forgot."))
         self.assertEqual(w.owner_items["BK-07"].tier, "medium")
 
+    def test_an_owner_needs_a_touch_call_unless_it_never_recalls_on_review(self):
+        args = dict(oracle=oracle(), brief=BRIEF, replicate="r", ask=FakeAsk(), owner_items=sm.parse_owner_items(OWNER_ITEMS, oracle()))
+        for policy in ("diligent", "bounded"):
+            with self.subTest(policy), self.assertRaisesRegex(ValueError, "touch"):
+                sm.Owner(**args, policy=policy)
+        sm.Owner(**args, policy="rubber-stamp")
+
 
 # --------------------------------------------------------------------------------------------- the prompt
 
 
 class PromptTest(unittest.TestCase):
-    def test_the_owner_is_told_about_passages_touches_and_question_breadth(self):
+    def test_the_main_call_is_told_about_passages_and_question_breadth_but_not_touches(self):
         t = sm.TEMPLATE_PATH.read_text(encoding="utf-8")
-        for phrase in ("[P3]", "`touches`", "`adjacent`", "`direct`", "`says`", "`targeted`", "`broad`", "`in_scope`",
-                       "`passage`", "added to your reply for you"):
+        for phrase in ("[P3]", "`targeted`", "`broad`", "`in_scope`", "`passage`", "added to your reply for you",
+                       "Silence is not a contradiction", "Show me what you have in mind"):
             self.assertIn(phrase, t)
-        self.assertIn("Silence is not a contradiction", t)
-        self.assertIn("Show me what you have in mind", t)
+        for gone in ("`touches`", "a touch", "`adjacent`", "`says`", "mentioned to the agent", "Passages and touches"):
+            self.assertNotIn(gone, t)
+        self.assertNotIn("touches", sm.OUTPUT_SCHEMA["properties"])
+        self.assertEqual(set(sm.TOUCH_SCHEMA["properties"]), {"touches"})
+        self.assertEqual(json.loads(sm.touch_schema_json()), sm.TOUCH_SCHEMA)
+
+    def test_the_touch_call_is_told_the_levels_and_what_is_never_a_touch(self):
+        t = sm.TOUCH_TEMPLATE_PATH.read_text(encoding="utf-8")
+        for phrase in ("`adjacent`", "`direct`", "`says`", "[P3]", "never for a question the agent puts to you",
+                       "says the opposite of a rule", "gluten-free"):
+            self.assertIn(phrase, t)
+        for gone in ("`answers`", "`corrections`", "message_kind"):
+            self.assertNotIn(gone, t)
 
     def test_rule_3_draws_the_line_between_targeted_and_broad_with_an_example_each_side(self):
         t = sm.TEMPLATE_PATH.read_text(encoding="utf-8")
@@ -806,24 +842,27 @@ class PromptTest(unittest.TestCase):
             self.assertIn(broad_example, rule3)
 
     def test_the_prompts_examples_stay_out_of_the_seeds_domains(self):
-        t = sm.TEMPLATE_PATH.read_text(encoding="utf-8").lower()
-        for word in ("cancel", "booking", "time zone", "release", "approval of"):
-            self.assertNotIn(word, t, word)
+        for path in (sm.TEMPLATE_PATH, sm.TOUCH_TEMPLATE_PATH):
+            t = path.read_text(encoding="utf-8").lower()
+            for word in ("cancel", "booking", "time zone", "release", "approval of"):
+                self.assertNotIn(word, t, f"{path.name}: {word}")
 
-    def test_a_recognized_rule_shown_wrong_is_a_correction_and_touches_replace_no_correction(self):
+    def test_a_recognized_rule_shown_wrong_is_a_correction_with_its_response(self):
         t = sm.TEMPLATE_PATH.read_text(encoding="utf-8")
-        self.assertIn("opposite of a rule you recognize on sight is a correction, with that rule's response, never a touch", t)
-        self.assertIn("Touches never replace a correction", t)
+        self.assertIn("including the opposite of a rule you recognize on sight, answered with that rule's response", t)
 
-    def test_a_question_put_to_the_owner_is_never_a_touch(self):
-        t = sm.TEMPLATE_PATH.read_text(encoding="utf-8")
-        self.assertIn("never for a question the agent puts to you", t)
-
-    def test_askable_items_already_told_are_marked(self):
-        text = sm.render_items(sm.released_items(oracle(), 1), {"BK-09"}, disclosed={"BK-09", "BK-01"})
-        self.assertIn("[BK-09] (Askable; mentioned to the agent)", text)
-        self.assertIn("[BK-02] (Askable) ", text)
-        self.assertIn("[BK-01] (Stated) ", text)
+    def test_the_touch_prompt_holds_only_the_unsaid_askable_rules_and_the_numbered_text(self):
+        o, c = oracle(), script()[1]
+        p = sm.touch_prompt(oracle=o, change=c, message="Orders come in.\n\nNotes too.",
+                            documents=[sm.plan_document("Plan: a note field.")], disclosed={"BK-09"})
+        self.assertIn("[BK-02]", p)
+        for absent in ("[BK-09]", "[BK-01]", "[BK-03]", "[BK-04]", "[BK-07]", "Grader-only", "## How you respond"):
+            self.assertNotIn(absent, p)
+        self.assertIn("I run a small bakery", p)  # the owner's own words, for meaning
+        self.assertIn("[P1] Orders come in.\n\n[P2] Notes too.", p)
+        self.assertIn('<document name="The agent\'s plan">\n[P3] Plan: a note field.\n</document>', p)
+        self.assertNotRegex(p, r"\{[A-Z_]+\}")
+        self.assertEqual(sm.touch_items(o, c, disclosed={"BK-09"}), ["BK-02"])
 
     def test_a_fork_copies_the_disclosed_set(self):
         w, _ = owner()
@@ -831,6 +870,66 @@ class PromptTest(unittest.TestCase):
         twin = w.fork()
         twin.disclosed.add("BK-09")
         self.assertEqual((w.disclosed, twin.disclosed), ({"BK-02"}, {"BK-02", "BK-09"}))
+
+
+# ------------------------------------------------------------------------------------------- the touch call
+
+
+class TouchCallTest(unittest.TestCase):
+    def setUp(self):
+        self.c = script()
+
+    def test_the_touch_call_runs_only_when_some_unsaid_askable_item_and_some_passage_could_meet(self):
+        cases = [("diligent", "Orders come in.", (), 1), ("bounded", "Orders come in.", (), 1),
+                 ("rubber-stamp", "Orders come in.", (), 0),  # it never recalls on review
+                 ("diligent", "", (), 0),  # no passages
+                 ("diligent", "Orders come in.", ("BK-02", "BK-09"), 0)]  # every askable item already disclosed
+        for policy, message, disclosed, calls in cases:
+            with self.subTest(policy=policy, message=message, disclosed=disclosed):
+                w, ask = owner(policy, out("approval", touches=[touch("BK-02", 1)]) if message else out("stop"))
+                w.disclosed.update(disclosed)
+                w.start_change(self.c[1])
+                r = w.respond(message, code_written=False)
+                self.assertEqual((len(ask.touch_prompts), len(r.touch_calls)), (calls, calls))
+
+    def test_both_calls_are_recorded_apart_with_their_costs(self):
+        ask = FakeAsk(out("approval", touches=[touch("BK-02", 1)]))
+        w = sm.Owner(oracle=oracle(), brief=BRIEF, policy="diligent", replicate="r", owner_items=sm.parse_owner_items(OWNER_ITEMS, oracle()),
+                     ask=lambda p: (ask(p), 0.02), touch=lambda p: (ask.touch(p), 0.005))
+        w.start_change(self.c[1])
+        r = w.respond("Orders come in.", code_written=False)
+        self.assertEqual([c["cost_usd"] for c in r.calls], [0.02])
+        self.assertEqual([c["cost_usd"] for c in r.touch_calls], [0.005])
+        self.assertEqual(r.touch_calls[0]["output"], {"touches": [touch("BK-02", 1)]})
+        self.assertIn("## What to report", r.touch_calls[0]["prompt"])
+        self.assertNotIn("## What to report", r.calls[0]["prompt"])
+        self.assertEqual(sm.call_costs(r), {"main": 0.02, "touch": 0.005, "trim": 0.0})
+
+    def test_a_failing_touch_call_is_retried_then_stops_the_owner(self):
+        w, ask = owner("diligent", out("approval"), touch=FakeTouches([touch("BK-02", 7)], [touch("BK-02", 7)], [touch("BK-02", 7)]))
+        w.start_change(self.c[1])
+        with self.assertRaisesRegex(sm.OwnerFailed, "passage 7"):
+            w.respond("Orders come in.", code_written=False)
+        self.assertEqual(len(ask.prompts), 1)  # the main call isn't repeated for the touch call's fault
+
+    def test_the_touch_call_drops_what_the_main_call_contradicts_and_rules_it_wasnt_asked_about(self):
+        w, ask = owner("diligent", out("approval", corrections=[cor("BK-02", "We close at six.", passage=1)]),
+                       touch=FakeTouches([touch("BK-02", 1), touch("BK-01", 2), touch("BK-09", 2)]))
+        w.disclosed.add("BK-09")
+        w.start_change(self.c[1])
+        r = w.respond("Orders close at five.\n\nNotes go in a field.", code_written=False)
+        self.assertEqual(r.touch_calls[0]["problems"], [])
+        self.assertEqual(len(r.touch_calls[0]["repairs"]), 3)
+        self.assertEqual([d["event"] for d in r.draws], ["contradiction"])
+
+    def test_at_a_redirect_stop_the_touch_call_sees_the_changed_mind(self):
+        rep = find_replicate(lambda u: u < MED_DIRECT, ("BK-02", "recall", key(self.c[2])))
+        w, ask = owner("diligent", out("approval", touches=[touch("BK-02", 1)]), out("approval"), replicate=rep)
+        w.start_change(self.c[2])
+        r = w.respond("Plan: free deliveries; orders are taken until late. OK?", code_written=False)
+        self.assertEqual((len(ask.prompts), len(ask.touch_prompts)), (2, 1))
+        self.assertIn("have a fee", ask.touch_prompts[0])  # change 2's narrative, released once the mind has changed
+        self.assertEqual(r.draws, [])  # the touches are the second call's
 
 
 if __name__ == "__main__":
