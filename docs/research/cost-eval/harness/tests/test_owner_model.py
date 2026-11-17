@@ -585,6 +585,28 @@ class RecallReplyTest(unittest.TestCase):
 # ---------------------------------------------------------------------------------------- checking output
 
 
+class OneDecisionOnceTest(unittest.TestCase):
+    def test_an_answer_about_an_item_replaces_a_correction_of_the_same_item(self):
+        o = out("questions", [ans("Do you close at five?", "No, we close at six.", ["BK-02"])],
+                corrections=[cor("BK-02", "We close at six.", wrong="close at five"), cor("BK-03", "Keep every order.", passage=2)])
+        w, ask = owner("diligent", o)
+        w.start_change(script()[1])
+        r = w.respond("Do you close at five?\n\nPlan: delete old orders.", code_written=False)
+        self.assertEqual(len(ask.prompts), 1)
+        self.assertEqual([c["item"] for c in r.kept], ["BK-03"])
+        self.assertEqual(r.reply, "No, we close at six.\n\nKeep every order.\n\nOtherwise, go ahead.")
+        self.assertTrue(any("BK-02" in x for x in r.calls[0]["repairs"]))
+        self.assertEqual([d["item"] for d in r.draws if d["event"] == "contradiction"], ["BK-03"])
+
+    def test_an_answer_that_shares_nothing_leaves_corrections_alone(self):
+        o = out("questions", [ans("Do you close at five?", "x", no_view=True)],
+                corrections=[cor("BK-02", "We close at six.", wrong="close at five")])
+        w, _ = owner("diligent", o)
+        w.start_change(script()[1])
+        r = w.respond("Do you close at five?", code_written=False)
+        self.assertEqual([c["item"] for c in r.kept], ["BK-02"])
+
+
 class CheckOutputTest(unittest.TestCase):
     def failure(self, o, change=1, message="One.\n\nTwo."):
         w, _ = owner("diligent", o, o, o)
@@ -649,7 +671,8 @@ class CheckOutputTest(unittest.TestCase):
                                        touches=[touch("BK-02", 2), touch("BK-02", 1, "adjacent")]))
         self.assertEqual([(d["event"], d["passage"]) for d in r.draws], [("contradiction", 2)])  # passage 1's touch stays,
         self.assertEqual([c["item"] for c in r.kept], ["BK-02"])  # but the item is disclosed by its correction
-        r, repairs = self.repaired(out("questions", [broad("Anything else?", ["BK-02", "BK-01", "BK-09"])]))
+        r, repairs = self.repaired(out("questions", [broad("Anything else?", ["BK-02", "BK-01", "BK-09"])]),
+                                   message="One.\n\nAnything else?")
         self.assertEqual(r.answers[0]["in_scope"], ["BK-09"])  # BK-02 isn't in play at change 1; BK-01 isn't askable
         self.assertEqual(len(repairs), 2)
         r, repairs = self.repaired(out("approval", corrections=[cor("BK-02", "We close at six.", passage=0)]))
@@ -832,6 +855,15 @@ class PromptTest(unittest.TestCase):
             self.assertIn(phrase, t)
         for gone in ("`answers`", "`corrections`", "message_kind"):
             self.assertNotIn(gone, t)
+
+    def test_the_touch_call_counts_describing_how_the_governed_thing_works_as_direct(self):
+        t = sm.TOUCH_TEMPLATE_PATH.read_text(encoding="utf-8")
+        direct = t.split("- `direct`:", 1)[1].split("\n", 1)[0]
+        self.assertIn("how the thing your rule governs works", direct)
+        self.assertIn("even if it never states your rule", direct)
+        self.assertIn("without describing how the thing your rule governs works", t.split("- `adjacent`:", 1)[1].split("\n", 1)[0])
+        self.assertIn("loyalty point", t)  # a second example, on each side of the line
+        self.assertIn("touches it directly, even though", t)
 
     def test_rule_3_draws_the_line_between_targeted_and_broad_with_an_example_each_side(self):
         t = sm.TEMPLATE_PATH.read_text(encoding="utf-8")

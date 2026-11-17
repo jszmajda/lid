@@ -74,7 +74,9 @@ OUTPUT_SCHEMA = {
                 "additionalProperties": False,
                 "required": ["question", "breadth", "answer", "items", "no_view", "in_scope"],
                 "properties": {
-                    "question": {"type": "string"},
+                    "question": {"type": "string", "description": (
+                        "The agent's own words for the question, quoted exactly: a short span copied from its message, "
+                        "such as \"Is that fine?\". It labels your answer when you answer more than one question.")},
                     "breadth": {"type": "string", "enum": list(BREADTHS)},
                     "answer": {"type": "string"},
                     "items": {"type": "array", "items": {"type": "string"}},
@@ -982,16 +984,49 @@ def _passage_number(n) -> bool:
 LEVEL_STRENGTH = {"says": 0, "adjacent": 1, "direct": 2}  # two levels for one item and passage keep the weaker
 
 
+_QUOTE_MARKS = str.maketrans({"\u2018": "'", "\u2019": "'", "\u201c": '"', "\u201d": '"'})
+
+
+def _label_text(question: str) -> str:
+    """A question as it labels an answer: without passage numbers or the quote marks around it, spaced simply."""
+    q = " ".join(re.sub(r"\[P\d+\]\s*", "", question).split())
+    return q.strip("\"'\u2018\u2019\u201c\u201d").strip()
+
+
+def quoted_in(question: str, message: str) -> bool:
+    """Whether the question is the agent's own words: a non-empty span of its message, ignoring passage numbers,
+    spacing, and the kind of quote marks."""
+    q = _label_text(question).translate(_QUOTE_MARKS)
+    text = " ".join(strip_passage_marks(message).translate(_QUOTE_MARKS).split())
+    return bool(q) and q in text
+
+
+def label_answers(answers: Sequence[dict], message: str) -> list[str]:
+    """Set each answer's label: its question when that is the agent's own words, else none, so a paraphrase (which
+    can name the alternative the agent didn't propose) never labels an answer. Returns a repair for each dropped."""
+    repairs = []
+    for a in answers:
+        if quoted_in(a.get("question", ""), message):
+            a["label"] = _label_text(a["question"])
+        else:
+            a["label"] = None
+            repairs.append(f"the question {a.get('question', '')!r} isn't the agent's own words, so its answer is shown "
+                           "without a label")
+    return repairs
+
+
 def check_output(out: dict, items: Sequence[Item], *, clarification_pending: bool, passages: int = 0,
                  in_play: set[str] | str = ALL, requested: Iterable[str] = (),
-                 ids: re.Pattern | None = None) -> tuple[dict, list[str], list[str]]:
+                 ids: re.Pattern | None = None, message: str | None = None) -> tuple[dict, list[str], list[str]]:
     """Normalize the model's output. Returns (normalized, problems, repairs).
 
     Problems are structural faults, which a fresh call may fix: unknown kinds, passage numbers that don't exist,
     identifiers or passage numbers in the owner's words, an empty correction, a no-view answer that shares something.
     Repairs are slips with one right answer, made here and logged instead of retried: a broad question's scope naming
-    an item that isn't askable or in play, and a correction for something left out that cites an item this change's
-    request didn't ask for. Touches come from their own call; see check_touches.
+    an item that isn't askable or in play; a correction for something left out that cites an item this change's
+    request didn't ask for; a correction of an item a targeted answer in the same reply shares (the answer gives the
+    decision, so it isn't said twice); and, when `message` is given, a question that isn't the agent's own words,
+    whose answer then goes without a label. Touches come from their own call; see check_touches.
 
     items: the items the owner holds at this call; passages: how many numbered passages the stop has; in_play: the
     change's items in play, which bound a broad question's scope; requested: the items this change's own request asks
@@ -1061,8 +1096,15 @@ def check_output(out: dict, items: Sequence[Item], *, clarification_pending: boo
         if not c.get("text", "").strip():
             problems.append("an empty correction")
         corrections.append(c)
-    out["corrections"] = corrections
+    answered = {i for a in out.get("answers", []) if a.get("breadth") == "targeted" and not a.get("no_view")
+                for i in a.get("items", [])}
+    for c in corrections:
+        if c.get("item") in answered:
+            repairs.append(f"dropped the correction of {c['item']}: an answer in the same reply gives that decision")
+    out["corrections"] = [c for c in corrections if c.get("item") not in answered]
     out.pop("touches", None)  # touches come from their own call
+    if message is not None:
+        repairs += label_answers([a for a in out.get("answers", []) if a.get("breadth") in BREADTHS], message)
     if out.get("message_kind") == "questions" and not out.get("answers"):
         problems.append("message_kind is questions but nothing is answered")
     if not clarification_pending:
@@ -1147,15 +1189,17 @@ def call_costs(reply: OwnerReply) -> dict[str, float]:
 
 
 def answer_lines(answers: Sequence[dict]) -> list[str]:
-    """The answers as they go into the reply. With more than one, each carries its question (the owner's few words),
-    so a run of "Yes." answers can't be read against the wrong question: "Closing time? Yes.", or "Note length: Yes."
-    for a question written without a question mark. One answer stands alone."""
+    """The answers as they go into the reply. With more than one, each carries its label, the agent's own words for
+    its question, so a run of "Yes." answers can't be read against the wrong question: "Is that fine? Yes.", or
+    "How long can notes be: Yes." for words without a question mark. An answer whose question wasn't quoted goes
+    without a label. One answer stands alone."""
     if len(answers) < 2:
         return [a["answer"] for a in answers]
     lines = []
     for a in answers:
-        q = a["question"].strip().rstrip(":").strip()
-        lines.append(f"{q} {a['answer']}" if q.endswith("?") else f"{q}: {a['answer']}")
+        q = a.get("label", _label_text(a["question"]))  # no label when the question wasn't the agent's own words
+        q = q.rstrip(":").strip() if q else q
+        lines.append(a["answer"] if not q else f"{q} {a['answer']}" if q.endswith("?") else f"{q}: {a['answer']}")
     return lines
 
 
@@ -1284,7 +1328,7 @@ class Owner:
                             documents=documents, earlier_requests=self.requests, record=self.record,
                             turns=self.turns, redirect_state=state, template=self.template)
 
-    def _call(self, prompt: str, state: str | None, calls: list[dict], passages: int) -> dict:
+    def _call(self, prompt: str, state: str | None, calls: list[dict], passages: int, message: str) -> dict:
         r = self.change.redirect
         withheld = r.introduces if (r and r.kind == "change of mind" and state == "pending") else ()
         items = released_items(self.oracle, self.change.number, withhold=withheld)
@@ -1292,7 +1336,8 @@ class Owner:
         for _ in range(self.max_attempts):
             raw, cost = _result(self.ask(prompt))
             out, problems, repairs = check_output(raw, items, clarification_pending=pending_cl, passages=passages,
-                                                  in_play=self.change.in_play, requested=self._requested_now(), ids=self.ids)
+                                                  in_play=self.change.in_play, requested=self._requested_now(), ids=self.ids,
+                                                  message=message)
             calls.append({"prompt": prompt, "output": raw, "problems": problems, "repairs": repairs, "cost_usd": cost})
             if not problems:
                 return out
@@ -1369,10 +1414,10 @@ class Owner:
         state = self.redirect_state  # the redirect state the last main call saw
         if change_of_mind and late_fires:
             state = "firing"
-            out = self._call(self._prompt(message, documents, state), state, calls, npass)
+            out = self._call(self._prompt(message, documents, state), state, calls, npass, message)
             event = "delivered"
         else:
-            out = self._call(self._prompt(message, documents, state), state, calls, npass)
+            out = self._call(self._prompt(message, documents, state), state, calls, npass, message)
             fires = pending and (late_fires or (redirect.timing == "early" and out["message_kind"] in FIRE_KINDS))
             if pending and redirect.kind == "clarification" and out["clarification_settled"]:
                 event = "settled"
@@ -1380,7 +1425,7 @@ class Owner:
                 # Answer again from the view the owner holds once they have changed their mind. Contradictions come
                 # from this second call, and the touch call sees the same view.
                 state = "firing"
-                out = self._call(self._prompt(message, documents, state), state, calls, npass)
+                out = self._call(self._prompt(message, documents, state), state, calls, npass, message)
                 event = "delivered"
             elif fires:
                 event = "delivered"

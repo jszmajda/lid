@@ -96,6 +96,7 @@ def main(argv=None) -> int:
         calls: list[dict] = []
         simulator.trim_reply(lambda p: executor.run_role(owner, p, json_schema=simulator.trim_schema_json()).structured,
                              message, out, calls, ids=ids, scripted=scripted)
+        labels = simulator.label_answers(out["answers"], message)  # only the agent's own words label an answer
         reply = "\n\n".join(simulator.answer_lines(out["answers"]) + [c["text"] for c in out["corrections"]])
         shared = sorted({i for a in out["answers"] for i in a["items"]} | {c["item"] for c in out["corrections"] if c["item"] != "none"})
         j = executor.run_role(judge, simulator.judge_prompt(prompt, reply, None), json_schema=simulator.judge_schema_json()).structured or {}
@@ -105,7 +106,7 @@ def main(argv=None) -> int:
         problems += [f"says {t!r}" for t in st["text_not"] if t.lower() in reply.lower()]
         result = {"stop": f"{st['id']}:{st['stop']}", "k": k, "reply": reply, "shared": shared, "problems": problems,
                   "leaks": leaks, "invented": j.get("invented", []), "trim": calls[0]["trim"] if calls else [],
-                  "broad": [{"question": a.get("question"), "in_scope": a.get("in_scope", [])}
+                  "label_repairs": labels, "broad": [{"question": a.get("question"), "in_scope": a.get("in_scope", [])}
                                                                for a in broad],
                   "recorded_reply": rec["reply"]}
         (out_dir / f"{st['id']}--{st['stop'].replace('/', '-')}--{k}.json").write_text(json.dumps(result, indent=1))

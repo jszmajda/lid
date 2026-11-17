@@ -24,11 +24,11 @@ The agent's text is split into numbered passages: a paragraph, a list item, a ta
 
 For each rule above, list each passage that touches it, and how:
 
-- `adjacent`: the passage is about something nearby, such as the same feature or object, but not the behaviour the rule governs.
-- `direct`: the passage describes the behaviour the rule governs, without saying what the rule says and without contradicting it.
+- `direct`: the passage describes how the thing your rule governs works (the step, calculation, or decision your rule is about), even if it never states your rule and is silent on the point your rule settles.
+- `adjacent`: the passage is about something nearby, such as the same feature or object, without describing how the thing your rule governs works.
 - `says`: the passage already says what the rule says.
 
-For example, if your rule is that gluten-free loaves are baked on their own tray, a passage on how loaves are assigned to trays touches it directly, and a passage that only lists the gluten-free range touches it adjacently.
+For example, if your rule is that gluten-free loaves are baked on their own tray, a passage on how loaves are assigned to trays touches it directly, and a passage that only lists the gluten-free range touches it adjacently. If your rule is that a loyalty point is worth one penny, a passage explaining how points become a discount at the till touches it directly, even though it never says what a point is worth, and a passage that only says customers can see their points balance touches it adjacently. When you are unsure which it is, ask whether the passage explains how the thing your rule governs works: if it does, the touch is direct.
 
 - A passage that says the opposite of a rule contradicts it. That is not a touch: leave it out.
 - A passage that leaves a rule out, such as a list of cases without it, touches it at most.

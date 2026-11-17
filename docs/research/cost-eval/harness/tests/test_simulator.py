@@ -481,17 +481,47 @@ class OwnerTest(unittest.TestCase):
         w.start_change(self.c[1])
         self.assertTrue(w.respond("Done.", code_written=True).finished)
 
-    def test_several_answers_each_carry_their_question(self):
-        o = out("questions", [ans("Closing time?", "Yes.", ["BK-02"]), ans("Note length", "x", no_view=True),
+    def test_several_answers_each_carry_the_agents_own_words_for_their_question(self):
+        o = out("questions", [ans("Do you close at six?", "Yes.", ["BK-02"]), ans("How long can notes be", "x", no_view=True),
                               ans("Plan OK?", "Yes.")])
-        w, _ = owner("diligent", o)
+        w, ask = owner("diligent", o)
         w.start_change(self.c[1])
-        r = w.respond("Close at six? How long can notes be? Plan OK?", code_written=False)
-        self.assertEqual(r.reply, "Closing time? Yes.\n\nNote length: No preference, use your judgment.\n\nPlan OK? Yes.\n\nGo ahead.")
-        self.assertEqual(w.said_now[0], sm.Said(1, "Yes.", "Closing time?", ("BK-02",)))  # the record keeps them apart
+        r = w.respond("Do you close at six? How long can notes be? Plan OK?", code_written=False)
+        self.assertEqual(r.reply, "Do you close at six? Yes.\n\nHow long can notes be: No preference, use your judgment.\n\n"
+                                  "Plan OK? Yes.\n\nGo ahead.")
+        self.assertEqual(w.said_now[0], sm.Said(1, "Yes.", "Do you close at six?", ("BK-02",)))  # the record keeps them apart
+        self.assertEqual(r.calls[0]["repairs"], [])
         w, _ = owner("diligent", out("questions", [ans("Closing time?", "Six in the evening.", ["BK-02"])]))
         w.start_change(self.c[1])
         self.assertEqual(w.respond("When do you close?", code_written=False).reply, "Six in the evening.\n\nGo ahead.")
+
+    def test_a_label_that_isnt_the_agents_own_words_is_dropped_not_retried(self):
+        # "Should notes cover photos too?" is the owner's paraphrase, and the opposite of what the agent proposed.
+        o = out("questions", [ans("Should notes cover photos too?", "Yes."), ans("Should notes be searchable?", "Yes.")])
+        w, ask = owner("diligent", o, o)
+        w.start_change(self.c[1])
+        r = w.respond("I've kept notes to plain text. Is that fine? Should notes be searchable?", code_written=False)
+        self.assertEqual(len(ask.prompts), 1)
+        self.assertEqual(r.reply, "Yes.\n\nShould notes be searchable? Yes.\n\nGo ahead.")
+        self.assertEqual(len(r.calls[0]["repairs"]), 1)
+        self.assertIn("Should notes cover photos too?", r.calls[0]["repairs"][0])
+
+    def test_a_quoted_label_may_differ_in_spacing_quote_marks_and_passage_numbers(self):
+        msg = "Plan:\n\nIs the \u2018note\u2019 field   optional? And may notes\nbe edited?"
+        o = out("questions", [ans('"Is the \'note\' field optional?"', "Yes."), ans("[P2] may notes be edited?", "Yes.")])
+        w, _ = owner("diligent", o)
+        w.start_change(self.c[1])
+        r = w.respond(msg, code_written=False)
+        self.assertEqual(r.calls[0]["repairs"], [])
+        self.assertEqual(r.reply, "Is the 'note' field optional? Yes.\n\nmay notes be edited? Yes.\n\nGo ahead.")
+        self.assertTrue(sm.quoted_in("may notes be edited?", msg))
+        self.assertFalse(sm.quoted_in("", msg))
+        self.assertFalse(sm.quoted_in("may notes be deleted?", msg))
+
+    def test_the_schema_asks_for_the_agents_exact_words(self):
+        q = sm.OUTPUT_SCHEMA["properties"]["answers"]["items"]["properties"]["question"]
+        self.assertIn("exact", q["description"])
+        self.assertIn("agent's", q["description"])
 
     def test_show_me_answers_share_nothing(self):
         w, _ = owner("diligent", out("questions", [ans("Failed move?", sm.SHOW_ME, ["BK-03"])]))
@@ -674,6 +704,8 @@ class JudgeTest(unittest.TestCase):
     def test_the_judge_knows_several_answers_each_begin_with_their_question(self):
         t = sm.JUDGE_TEMPLATE_PATH.read_text(encoding="utf-8")
         self.assertIn("begins with the question it answers", t)
+        self.assertIn("the agent's own words", t)
+        self.assertNotIn("in a few words", t)
 
 
 if __name__ == "__main__":

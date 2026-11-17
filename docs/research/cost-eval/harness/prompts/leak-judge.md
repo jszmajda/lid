@@ -27,7 +27,7 @@ Go through the reply sentence by sentence. For each rule the reply shares, in wh
 - **Corrections** are licensed only for the part of a rule the agent got wrong. A correction that adds the rule's other clauses, its exact boundaries, or neighbouring rules the message didn't touch, shares those parts without licence.
 - Silence or vagueness in the agent's message is not a contradiction, with one exception: when the agent shows a plan or report for something the owner asked for in this change's request and leaves part of it out, the owner may point out the missing part in the words of that request, and no more.
 - Confirming something the agent already said correctly shares nothing.
-- When the reply answers more than one question, each answer begins with the question it answers, in a few words, so that each "Yes." can be read against its question. Those words restate the agent's question and share nothing in themselves; if they add something the agent's question didn't say, judge that as you would any other words of the reply.
+- When the reply answers more than one question, each answer usually begins with the question it answers, in the agent's own words quoted from its message, so that each "Yes." can be read against its question. Those words are the agent's and share nothing. An answer without them is one whose question the owner didn't quote.
 
 List each rule the reply shares as a disclosure, with its identifier, whether it was licensed, and a short reason. Under `invented`, list any statement of what the owner wants that neither its rules nor its own words cover, such as a choice of interface or format, or a preference made up on the spot. "No preference, use your judgment." and "Nothing else comes to mind." are never leaks or inventions.
 
