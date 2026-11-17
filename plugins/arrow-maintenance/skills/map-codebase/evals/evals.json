@@ -68,8 +68,8 @@
         { "path": "src/index.ts", "content": "import { addBook } from \"./books\";\n\nconsole.log(addBook([], \"Middlemarch\", \"George Eliot\"));\n" }
       ],
       "assertions": [
-        { "text": "The skill's first message opens with a card: a Markdown blockquote whose bold heading asks whether the person is new to LID", "spec_ids": ["TOUR-010", "TOUR-012", "TOUR-015", "TOUR-005", "SCALE-MAP-035"] },
-        { "text": "Below the card, the same message carries the skill's own opening: the warning that mapping is costly and its first question, such as whether to map the whole project or only parts of it", "spec_ids": ["TOUR-011", "SCALE-MAP-035", "SCALE-MAP-001"] },
+        { "text": "The skill's first message opens with a card: a Markdown blockquote whose bold heading asks whether the person is new to LID", "spec_ids": ["ONB-TOUR-010", "ONB-TOUR-012", "ONB-TOUR-015", "ONB-TOUR-005", "SCALE-MAP-035"] },
+        { "text": "Below the card, the same message carries the skill's own opening: the warning that mapping is costly and its first question, such as whether to map the whole project or only parts of it", "spec_ids": ["ONB-TOUR-011", "SCALE-MAP-035", "SCALE-MAP-001"] },
         { "text": "The skill does not start reading the codebase's files for the sweep before the person answers", "spec_ids": ["SCALE-MAP-001", "SCALE-MAP-035"] }
       ],
       "notes": "The newcomer tour's offer on the brownfield route comes before the costly sweep. map-codebase reaches tour-offer.md by loading the linked-intent-dev skill."

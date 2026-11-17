@@ -4,7 +4,7 @@ The repo-meta segment — owns the artifacts that describe the project itself ra
 
 ## Status
 
-**AUDITED** — last audited 2026-06-07 (git SHA `527cf08c9150`); revised 2026-10-24 by the packaging-checks change (#86, #87). 80 of 80 active specs implemented. The former build-time checks (`PROJ-STRUCT-039`–`041`) are superseded by the `packaging-checks` segment, which now verifies this segment's rules.
+**AUDITED** — last audited 2026-06-07 (git SHA `527cf08c9150`); revised 2026-10-24 by the packaging-checks change (#86, #87). 80 of 80 active specs implemented. The former build-time checks (`PROJ-STRUCT-039`–`041`) are superseded by the `packaging-checks` segment, which now verifies this segment's rules. 2026-11-16: `CONTRIBUTING.md` gained "Share a project you built" and the example pull-request template sits beside the default one (`PROJ-STRUCT-087`–`089`, implemented); the template's contents belong to `examples-showcase`.
 
 ## References
 

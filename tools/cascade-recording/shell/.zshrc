@@ -1,4 +1,4 @@
-# @spec CASCADE-REC-012, CASCADE-REC-013
+# @spec ONB-REC-012, ONB-REC-013
 # Startup for the shell a take records: a plain prompt, no history file, and
 # a `claude` that runs Claude Code configured by the take.
 unsetopt prompt_sp

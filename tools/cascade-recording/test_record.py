@@ -11,7 +11,7 @@ tests needs its dependencies (`npm ci` in tools/cascade-recording/trial-app/);
 that test is skipped without them.
 """
 
-# @spec CASCADE-REC-001, CASCADE-REC-002, CASCADE-REC-003, CASCADE-REC-004, CASCADE-REC-005, CASCADE-REC-006, CASCADE-REC-007
+# @spec ONB-REC-001, ONB-REC-002, ONB-REC-003, ONB-REC-004, ONB-REC-005, ONB-REC-006, ONB-REC-007
 import html
 import json
 import os
@@ -56,14 +56,14 @@ def plain_lines(text):
 
 
 class TrialProject(unittest.TestCase):
-    # @spec CASCADE-REC-001
+    # @spec ONB-REC-001
     def test_holds_the_files_the_cards_show(self):
         for name in ["docs/high-level-design.md", "docs/intent/trial/trial-design.md",
                      "docs/intent/trial/trial-specs.md", "tests/trial.test.ts", "src/trial.ts",
                      "AGENTS.md", "CLAUDE.md", ".claude/settings.json", "package.json", "package-lock.json"]:
             self.assertTrue((TRIAL_APP / name).exists(), name)
 
-    # @spec CASCADE-REC-002
+    # @spec ONB-REC-002
     def test_every_quoted_line_appears_in_the_project(self):
         quotes = page_quotes()
         self.assertEqual(set(quotes), {"docs/high-level-design.md", "docs/intent/trial/trial-design.md",
@@ -73,13 +73,13 @@ class TrialProject(unittest.TestCase):
             for line in lines:
                 self.assertIn(line, have, "%s: %s" % (path, line))
 
-    # @spec CASCADE-REC-003
+    # @spec ONB-REC-003
     def test_types_the_change_the_page_shows(self):
         bubble = re.search(r'<div class="bubble"><span class="who">[^<]*</span><p>(.*?)</p>',
                            section(page_source(), "change"), re.S)
         self.assertEqual(rec.REQUEST, html.unescape(bubble.group(1)))
 
-    # @spec CASCADE-REC-004
+    # @spec ONB-REC-004
     def test_sets_up_lid_at_the_shipped_version(self):
         agents = (TRIAL_APP / "AGENTS.md").read_text()
         block = agents[agents.index("## LID\n"):].split("\n\n")[0]
@@ -89,7 +89,7 @@ class TrialProject(unittest.TestCase):
         self.assertTrue((TRIAL_APP / "CLAUDE.md").is_symlink())
         self.assertEqual(os.readlink(TRIAL_APP / "CLAUDE.md"), "AGENTS.md")
 
-    # @spec CASCADE-REC-005
+    # @spec ONB-REC-005
     def test_tests_run_with_vitest_and_pass(self):
         package = json.loads((TRIAL_APP / "package.json").read_text())
         self.assertIn("vitest", package["scripts"]["test"])
@@ -99,7 +99,7 @@ class TrialProject(unittest.TestCase):
         run = subprocess.run(["npm", "test", "--silent"], cwd=TRIAL_APP, capture_output=True, text=True)
         self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
 
-    # @spec CASCADE-REC-006
+    # @spec ONB-REC-006
     def test_code_and_tests_cite_the_requirements(self):
         defined = set(re.findall(r"\*\*(TRIAL-\d{3})\*\*", (TRIAL_APP / "docs/intent/trial/trial-specs.md").read_text()))
         self.assertEqual(defined, {"TRIAL-001", "TRIAL-002", "TRIAL-003"})
@@ -109,7 +109,7 @@ class TrialProject(unittest.TestCase):
                 cited |= set(re.findall(r"TRIAL-\d{3}", line))
             self.assertEqual(cited, defined, name)
 
-    # @spec CASCADE-REC-007
+    # @spec ONB-REC-007
     def test_allows_the_commands_a_take_runs(self):
         allow = json.loads((TRIAL_APP / ".claude/settings.json").read_text())["permissions"]["allow"]
         for command in ["npm test", "grep", "git diff"]:
@@ -117,14 +117,14 @@ class TrialProject(unittest.TestCase):
 
 
 class BeforeRecording(unittest.TestCase):
-    # @spec CASCADE-REC-008
+    # @spec ONB-REC-008
     def test_names_each_missing_program(self):
         present = {"git", "npm", "claude"}
         missing = rec.missing_programs(lambda name: "/bin/" + name if name in present else None)
         self.assertEqual(missing, ["tmux", "asciinema"])
         self.assertEqual(rec.missing_programs(lambda name: "/bin/" + name), [])
 
-    # @spec CASCADE-REC-009
+    # @spec ONB-REC-009
     def test_starts_from_a_fresh_committed_copy(self):
         with tempfile.TemporaryDirectory() as tmp:
             src, dest = Path(tmp, "src"), Path(tmp, "take")
@@ -151,7 +151,7 @@ class BeforeRecording(unittest.TestCase):
             status = subprocess.run(["git", "status", "--porcelain"], cwd=dest, capture_output=True, text=True).stdout
             self.assertEqual(status, "")
 
-    # @spec CASCADE-REC-010
+    # @spec ONB-REC-010
     def test_leaves_only_the_tour_record_in_memory(self):
         with tempfile.TemporaryDirectory() as tmp:
             home, take = Path(tmp, "home"), Path(tmp, "trial-app")
@@ -178,7 +178,7 @@ def zsh(env_extra, command, path):
 
 @unittest.skipUnless(shutil.which("zsh"), "zsh is not installed")
 class RecordedTerminal(unittest.TestCase):
-    # @spec CASCADE-REC-011
+    # @spec ONB-REC-011
     def test_records_a_fixed_size_session_without_a_status_bar(self):
         argv = rec.tmux_argv("/tmp/trial-app", Path("/tmp/raw.cast"), {"HOME": "/h"})
         self.assertEqual(argv[:3], ["tmux", "-L", rec.TMUX_SOCKET])
@@ -189,7 +189,7 @@ class RecordedTerminal(unittest.TestCase):
         conf = Path(argv[argv.index("-f") + 1]).read_text()
         self.assertRegex(conf, r"(?m)^set -g status off$")
 
-    # @spec CASCADE-REC-012
+    # @spec ONB-REC-012
     def test_shell_shows_a_plain_prompt_and_prints_nothing_first(self):
         env = rec.take_env({"HOME": "/h", "USER": "u", "LOGNAME": "u", "PATH": "/bin", "LANG": "C",
                             "TMPDIR": "/t", "SECRET": "x", "TERM": "screen"}, model="m", effort="e")
@@ -206,7 +206,7 @@ class RecordedTerminal(unittest.TestCase):
         self.assertNotIn("command not found", typed.stdout + typed.stderr)
         self.assertIn("ok", typed.stdout + typed.stderr)
 
-    # @spec CASCADE-REC-013
+    # @spec ONB-REC-013
     def test_claude_runs_with_the_working_tree_plugin_and_no_user_settings(self):
         with tempfile.TemporaryDirectory() as tmp:
             stub = Path(tmp, "claude")
@@ -374,7 +374,7 @@ class Script(unittest.TestCase):
         states = [(["design"], False), (["design"], False), (["design", "specs"], False), (ALL, True)]
         return run_take(full_take_scenes([20, 10, 15, 60]), states)
 
-    # @spec CASCADE-REC-014, CASCADE-REC-023
+    # @spec ONB-REC-014, ONB-REC-023
     def test_narrates_and_runs_the_opening_and_closing_commands(self):
         self.assertEqual(rec.OPENING, [
             ("This app has LID set up. Its trial design says when a free trial ends:",
@@ -395,7 +395,7 @@ class Script(unittest.TestCase):
         self.assertEqual(lines[6:8], ["# " + rec.CLAUDE_INTRO, "claude"])
         self.assertEqual(lines[-6:], pairs(rec.CLOSING))
 
-    # @spec CASCADE-REC-015
+    # @spec ONB-REC-015
     def test_types_shell_lines_only_at_a_prompt(self):
         take, term, error = self.take()
         shell = {line for comment, command in rec.OPENING + rec.CLOSING for line in ("# " + comment, command)}
@@ -404,7 +404,7 @@ class Script(unittest.TestCase):
             if kind == "line" and text in shell:
                 self.assertEqual(screen.splitlines()[-1], "$", text)
 
-    # @spec CASCADE-REC-015
+    # @spec ONB-REC-015
     def test_types_with_a_human_rhythm(self):
         import random
         rng, base = random.Random(1), 0.035
@@ -421,7 +421,7 @@ class Script(unittest.TestCase):
         take, term, error = self.take()
         self.assertEqual(take.log["seed"], 7)
 
-    # @spec CASCADE-REC-016
+    # @spec ONB-REC-016
     def test_types_the_request_once_claude_is_ready(self):
         take, term, error = self.take()
         lines = [event for event in term.events if event[0] == "line"]
@@ -429,7 +429,7 @@ class Script(unittest.TestCase):
         self.assertEqual(lines[at + 1][1], rec.REQUEST)
         self.assertEqual(lines[at + 1][3], READY)
 
-    # @spec CASCADE-REC-017, CASCADE-REC-028
+    # @spec ONB-REC-017, ONB-REC-028
     def test_finds_each_working_stretch_from_the_hint(self):
         take, term, error = self.take()
         stretches = take.log["stretches"]
@@ -441,7 +441,7 @@ class Script(unittest.TestCase):
         for (start, end), replied in zip(stretches, replies):
             self.assertGreaterEqual(replied - end, rec.Options().settle)
 
-    # @spec CASCADE-REC-028
+    # @spec ONB-REC-028
     def test_logs_each_typed_line(self):
         take, term, error = self.take()
         typed = term.lines() + term.asides()
@@ -450,7 +450,7 @@ class Script(unittest.TestCase):
         self.assertTrue(all(end > start for start, end in spans))
         self.assertEqual(spans, sorted(spans))
 
-    # @spec CASCADE-REC-030, CASCADE-REC-042
+    # @spec ONB-REC-030, ONB-REC-042
     def test_holds_after_each_comment_and_aside(self):
         take, term, error = self.take()
         texts = ["# " + comment for comment, _ in rec.OPENING] + ["# " + rec.CLAUDE_INTRO]
@@ -462,7 +462,7 @@ class Script(unittest.TestCase):
             self.assertAlmostEqual(hold, 1 + len(text) / 40, delta=0.01, msg=text)
         self.assertEqual((rec.Options().hold_base, rec.Options().read_rate), (1.0, 40.0))
 
-    # @spec CASCADE-REC-042
+    # @spec ONB-REC-042
     def test_holds_after_a_short_output_and_before_npm_test(self):
         scenes = full_take_scenes([20, 10, 15, 60])
         first = rec.OPENING[0][1]
@@ -479,7 +479,7 @@ class Script(unittest.TestCase):
         self.assertLess(npm_hold[1], entered["npm test"], "npm test's comment holds before npm test runs")
         self.assertLess(intro_hold[1], entered["claude"], "the comment introducing Claude Code holds before it starts")
 
-    # @spec CASCADE-REC-042
+    # @spec ONB-REC-042
     def test_counts_the_lines_a_command_printed(self):
         command = rec.OPENING[0][1]
         screen = "$ # a comment\n$ %s\n## When the trial ends\n\nThe trial ends 720 hours after signup.\n$" % command
@@ -487,7 +487,7 @@ class Script(unittest.TestCase):
         self.assertEqual(rec.output_lines("$ " + command + "\nold\n$ " + command + "\nnew\n$", command), 1)
         self.assertEqual(rec.output_lines("lots of output\n$", command), 0)
 
-    # @spec CASCADE-REC-043
+    # @spec ONB-REC-043
     def test_types_an_aside_holds_and_clears_it_before_each_reply(self):
         take, term, error = self.take()
         self.assertEqual(len(term.asides()), 4)
@@ -502,7 +502,7 @@ class Script(unittest.TestCase):
         for aside in term.asides():
             self.assertTrue(aside.startswith("(") and aside.endswith(")"), aside)
 
-    # @spec CASCADE-REC-044
+    # @spec ONB-REC-044
     def test_writes_each_aside_from_what_the_tool_can_check(self):
         before = ("- `[x]` **TRIAL-001**: When a new user signs up, the system shall start a trial.\n"
                   "- `[x]` **TRIAL-002**: While a trial is active, the system shall give the user full access.\n"
@@ -550,7 +550,7 @@ class Script(unittest.TestCase):
         self.assertEqual(aside("exit"), "(Claude updated the tests and the code, and the tests pass.)")
         self.assertEqual(aside("approved", changed=set(ALL), given={"correction", "handoff"}), "(Claude waits for your review.)")
 
-    # @spec CASCADE-REC-045
+    # @spec ONB-REC-045
     def test_clears_the_screen_before_and_after_claude_code(self):
         take, term, error = self.take()
         sequence = [(kind, text) for kind, text, _, _ in term.events if kind in ("key", "line")]
@@ -564,7 +564,7 @@ class Script(unittest.TestCase):
         self.assertAlmostEqual(before[1], first_clear, places=2)
         self.assertEqual(rec.Options().clear_hold, 3.0)
 
-    # @spec CASCADE-REC-019, CASCADE-REC-020, CASCADE-REC-021, CASCADE-REC-022
+    # @spec ONB-REC-019, ONB-REC-020, ONB-REC-021, ONB-REC-022
     def test_corrects_then_approves_then_hands_off_then_exits(self):
         take, term, error = self.take()
         lines = term.lines()
@@ -576,7 +576,7 @@ class Script(unittest.TestCase):
         self.assertEqual(rec.REPLIES["handoff"], "Looks good. Take it from here on your own: update the test and the code, and show me when the tests pass.")
         self.assertEqual(rec.REPLIES["approved"], "Approved.")
 
-    # @spec CASCADE-REC-019, CASCADE-REC-020, CASCADE-REC-021
+    # @spec ONB-REC-019, ONB-REC-020, ONB-REC-021
     def test_picks_replies_by_what_changed(self):
         self.assertEqual(rec.choose_reply(set(), set()), "approved")
         self.assertEqual(rec.choose_reply({"design"}, set()), "correction")
@@ -586,7 +586,7 @@ class Script(unittest.TestCase):
         self.assertEqual(rec.choose_reply({"design", "specs"}, {"handoff"}), "approved")
         self.assertEqual(rec.choose_reply({"design", "specs", "test"}, {"handoff"}), "approved")
 
-    # @spec CASCADE-REC-022
+    # @spec ONB-REC-022
     def test_does_not_exit_while_the_tests_fail(self):
         states = [(ALL, False), (ALL, True)]
         take, term, error = run_take(full_take_scenes([5, 5]), states)
@@ -595,7 +595,7 @@ class Script(unittest.TestCase):
 
 
 class Answers(unittest.TestCase):
-    # @spec CASCADE-REC-018, CASCADE-REC-040
+    # @spec ONB-REC-018, ONB-REC-040
     def test_chooses_the_option_that_keeps_720_hours(self):
         scenes = full_take_scenes([5, 5, 5])
         scenes[FIRST_STOP] = [(0.3, READY), (5, WORKING), (0, MENU)]
@@ -610,7 +610,7 @@ class Answers(unittest.TestCase):
         menu_pause = take.log["pauses"][len(rec.OPENING) + 2]
         self.assertAlmostEqual(menu_pause[1] - menu_pause[0], 4.0, places=2)
 
-    # @spec CASCADE-REC-040
+    # @spec ONB-REC-040
     def test_reads_a_menu_and_submits_chosen_answers(self):
         cursor, options = rec.parse_menu(MENU)
         self.assertEqual(cursor, 1)
@@ -635,7 +635,7 @@ class Answers(unittest.TestCase):
                     (2, "744 hours (Recommended) Always at least as long as any local rule.")]
         self.assertEqual(rec.choose_option(fallback), 2, "the agent's recommendation comes first")
 
-    # @spec CASCADE-REC-040
+    # @spec ONB-REC-040
     def test_fails_when_no_option_can_be_chosen(self):
         scenes = full_take_scenes([5])
         scenes[FIRST_STOP] = [(0.3, READY), (5, WORKING),
@@ -644,7 +644,7 @@ class Answers(unittest.TestCase):
         self.assertIsNotNone(error)
         self.assertIn("B: midnight ending day 30", str(error))
 
-    # @spec CASCADE-REC-041
+    # @spec ONB-REC-041
     def test_takes_the_agents_recommendation_before_any_file_changes(self):
         self.assertEqual(rec.REPLIES["recommendation"], "Go with your recommendation.")
         self.assertEqual(rec.choose_reply(set(), set(), "I recommend C, the first midnight."), "recommendation")
@@ -658,7 +658,7 @@ class Answers(unittest.TestCase):
 
 
 class FailedTakes(unittest.TestCase):
-    # @spec CASCADE-REC-024
+    # @spec ONB-REC-024
     def test_stops_at_the_trust_prompt(self):
         scenes = full_take_scenes([])[:FIRST_STOP - 1]
         scenes.append([(0, "Quick safety check: Is this a project you created or one you trust?\n"
@@ -667,7 +667,7 @@ class FailedTakes(unittest.TestCase):
         self.assertIsNotNone(error)
         self.assertIn("run `claude` once in", str(error))
 
-    # @spec CASCADE-REC-025
+    # @spec ONB-REC-025
     def test_stops_at_a_prompt_a_reply_cannot_answer(self):
         scenes = full_take_scenes([5])
         scenes[FIRST_STOP] = [(0.3, READY), (5, WORKING),
@@ -676,17 +676,17 @@ class FailedTakes(unittest.TestCase):
         self.assertIsNotNone(error)
         self.assertIn("Do you want to proceed?", str(error))
 
-    # @spec CASCADE-REC-026
+    # @spec ONB-REC-026
     def test_stops_after_too_many_stops(self):
         take, term, error = run_take(full_take_scenes([2] * 5), [(["design"], False)], stop_limit=3)
         self.assertIn("more than 3 times", str(error))
 
-    # @spec CASCADE-REC-026
+    # @spec ONB-REC-026
     def test_stops_at_the_time_limit(self):
         take, term, error = run_take(full_take_scenes([10_000]), [([], False)], time_limit=120)
         self.assertIn("time limit", str(error))
 
-    # @spec CASCADE-REC-027
+    # @spec ONB-REC-027
     def test_a_failed_take_keeps_its_recording_and_log(self):
         with tempfile.TemporaryDirectory() as tmp:
             folder = Path(tmp)
@@ -709,7 +709,7 @@ def length(events):
 
 
 class Timing(unittest.TestCase):
-    # @spec CASCADE-REC-029
+    # @spec ONB-REC-029
     def test_shortens_long_working_stretches_only(self):
         _, events = cast([(1.0, "o", "x")] * 50)
         log = {"stretches": [[10.0, 50.0], [45.0, 45.0]], "pauses": []}
@@ -721,7 +721,7 @@ class Timing(unittest.TestCase):
         _, out = rec.retime(*cast(events), short, rec.Options())
         self.assertAlmostEqual(sum(e[0] for e, t in zip(out, range(1, 51)) if 10 < t <= 15), 5.0, places=6)
 
-    # @spec CASCADE-REC-046
+    # @spec ONB-REC-046
     def test_speeds_up_typing_by_the_typing_speed(self):
         events = [(0.1, "o", "k")] * 40
         log = {"stretches": [], "pauses": [], "typing": [[1.0, 3.0]]}
@@ -737,20 +737,20 @@ class Timing(unittest.TestCase):
             rec.main(["--retime", str(folder), "--typing-speed", "2"])
             self.assertAlmostEqual(length(rec.read_cast(folder / "cascade.cast")[1]), 3.0, places=4)
 
-    # @spec CASCADE-REC-030, CASCADE-REC-031
+    # @spec ONB-REC-030, ONB-REC-031
     def test_keeps_reading_pauses_and_caps_other_gaps(self):
         _, events = cast([(1.0, "o", "a"), (10.0, "o", "b"), (6.0, "o", "c")])
         log = {"stretches": [], "pauses": [[12.0, 16.0]]}
         _, out = rec.retime(*cast(events), log, rec.Options())
         self.assertEqual([round(e[0], 6) for e in out], [1.0, 1.5, 4.0 + 1.5])
 
-    # @spec CASCADE-REC-032
+    # @spec ONB-REC-032
     def test_keeps_every_event_unchanged(self):
         events = [(0.5, "o", "a"), (3.0, "m", ""), (0.1, "r", "100x30"), (2.0, "o", "\u001b[1mb"), (0.0, "x", "0")]
         _, out = rec.retime(*cast(events), {"stretches": [[0.0, 4.0]], "pauses": []}, rec.Options())
         self.assertEqual([e[1:] for e in out], [list(e[1:]) for e in events])
 
-    # @spec CASCADE-REC-033
+    # @spec ONB-REC-033
     def test_writes_the_title_size_and_theme(self):
         header, _ = rec.retime(*cast([(1.0, "o", "a")]), {"stretches": [], "pauses": []}, rec.Options())
         self.assertEqual(header["title"], "LID cascade: end trials at local midnight")
@@ -763,13 +763,13 @@ class Timing(unittest.TestCase):
             self.assertRegex(color, r"^#[0-9a-f]{6}$")
         self.assertNotIn("idle_time_limit", header)
 
-    # @spec CASCADE-REC-034
+    # @spec ONB-REC-034
     def test_flags_a_take_over_180_seconds(self):
         self.assertNotIn("over 180", rec.length_report(180.0))
         self.assertIn("over 180", rec.length_report(181.0))
         self.assertIn("3:01", rec.length_report(181.0))
 
-    # @spec CASCADE-REC-035
+    # @spec ONB-REC-035
     def test_retimes_a_take_again_without_recording(self):
         with tempfile.TemporaryDirectory() as tmp:
             folder = Path(tmp)
@@ -784,7 +784,7 @@ class Timing(unittest.TestCase):
 
 
 class WhatATakeLeaves(unittest.TestCase):
-    # @spec CASCADE-REC-036
+    # @spec ONB-REC-036
     def test_writes_the_take_folder(self):
         self.assertEqual(rec.takes_folder(), HERE / "takes")
         self.assertRegex(rec.take_name(), r"^\d{8}-\d{6}$")
@@ -796,7 +796,7 @@ class WhatATakeLeaves(unittest.TestCase):
             self.assertEqual(rec.finish(folder, log, rec.Options(), diff="diff --git a b\n"), 0)
             self.assertEqual(sorted(p.name for p in folder.iterdir()), ["cascade.cast", "diff.patch", "raw.cast", "take.json"])
 
-    # @spec CASCADE-REC-037
+    # @spec ONB-REC-037
     def test_logs_what_ran_and_what_happened(self):
         with tempfile.TemporaryDirectory() as tmp:
             folder = Path(tmp)
@@ -816,7 +816,7 @@ class WhatATakeLeaves(unittest.TestCase):
         self.assertAlmostEqual(saved["retimed_length"], 4.5)
         self.assertEqual(saved["outcome"], {"complete": False, "reason": "time limit"})
 
-    # @spec CASCADE-REC-047
+    # @spec ONB-REC-047
     def test_names_a_poster_frame_after_the_request(self):
         take, term, error = Script().take()
         typed = next(t for kind, text, t, _ in term.events if kind == "line" and text == rec.REQUEST) - take.t0
@@ -834,14 +834,14 @@ class WhatATakeLeaves(unittest.TestCase):
             rec.finish(folder, dict(log, stops=[], outcome={"complete": True}), rec.Options(), diff="")
             self.assertEqual(json.loads((folder / "take.json").read_text())["poster"], "npt:0:11")
 
-    # @spec CASCADE-REC-038
+    # @spec ONB-REC-038
     def test_git_ignores_takes_and_dependencies(self):
         for path in ["tools/cascade-recording/takes/20261111-120000/raw.cast",
                      "tools/cascade-recording/trial-app/node_modules/vitest/index.js"]:
             run = subprocess.run(["git", "check-ignore", "-q", path], cwd=REPO_ROOT)
             self.assertEqual(run.returncode, 0, path)
 
-    # @spec CASCADE-REC-039
+    # @spec ONB-REC-039
     def test_never_uploads(self):
         source = (HERE / "record.py").read_text()
         self.assertNotRegex(source, r"[\"']upload[\"']")

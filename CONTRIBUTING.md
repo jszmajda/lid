@@ -99,6 +99,14 @@ tools/packaging-checks/packaging_checks.py
 
 On a contributor's pull request, the run that gates the merge is the maintainer's, on the final commit after the version is raised (see *Release / versioning*). A contributor's own run may therefore fail only the version checks, and its host parts may be *owed*.
 
+## Share a project you built
+
+Built something with LID? The site's Examples pages show projects built with it, each with a page of its own, its intent tree drawn out, and a link to the story of how it was built. Add yours with a pull request that adds one folder, `site/src/examples/<your-project>/`.
+
+Open the pull request with the example template: add `?template=example.md` to the pull request's URL, or copy [`.github/PULL_REQUEST_TEMPLATE/example.md`](.github/PULL_REQUEST_TEMPLATE/example.md) into its description. It lists the folder's files and how to make your tree file. The format in full, with every rule the site's build checks, is in the [`examples-showcase` design doc](docs/intent/onboarding/examples-showcase/examples-showcase-design.md).
+
+An entry is content within that segment's existing design, so adding one walks no arrow: no design doc, specs, or tests to write. You need no *Packaging checks* line either; the maintainer records it. Private projects are welcome: the page shows only what you choose, and your tree can be drawn without a single name in it.
+
 ## Release / versioning
 
 The three plugins share one semver version, set in each plugin's `.claude-plugin/plugin.json`. It is also the LID conventions version a project records as `- Version:` in its `## LID` block. No marketplace manifest carries a version: Claude Code reads it from `plugin.json`, and the Cursor manifests omit it.
