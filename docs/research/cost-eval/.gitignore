@@ -2,3 +2,5 @@
 runs/
 research_notes/
 reports/
+# Discusses a private project; keep out of the public notebook.
+seeds/large-scale-perspective.md

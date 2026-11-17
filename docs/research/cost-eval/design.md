@@ -111,7 +111,32 @@ The main session then edits the drafts for quality before the maintainer reviews
 - **History replay.** An open-source project at an early commit, with its next real issues as the change requests and the tests those changes added as hidden tests.
 - **SlopCodeBench as-is.** Running a benchmark that someone else designed, with a LID arm added, checks our results against a test we didn't shape. SlopCodeBench gives each agent a Jinja system-prompt template. Whether it can load a Claude Code plugin or a project AGENTS.md hasn't been checked yet.
 
-The maintainer's own public LID projects already contain LID's docs, which would give LID an unfair advantage, so they aren't used as comparison seeds.
+The maintainer's own public LID projects already contain LID's docs, which would give LID an unfair advantage. So they aren't used as ordinary comparison seeds. One serves a narrower purpose: **a falsification test at scale.**
+
+**The question.** Does LID pay off once a codebase is larger than the agent can hold, for example once the source exceeds the model's context window?
+
+**Why it's a best case.** LID keeps the docs it built, so the test is a best case for LID. A null result, with room shown by a ceiling check, counts against the hypothesis. The maintainer has agreed to that in advance. A LID win shows only that written intent helps an agent that has it.
+
+**The project.** Clowder, a public Rust terminal game built entirely under LID. Its non-test source is about 270k tokens, past a 200k window.
+
+**How it runs.** Each change is forked from the same final snapshot and discarded, two or three repeats per change. Then one short chain of changes per arm shows whether the docs keep up.
+
+**Three arms:**
+- **bare, stripped:** a bare agent on a stripped repository, without docs, agent instruction files, or spec-ID comments. Its tests are thinned at random, across modules, to the test-to-source ratio bare agents wrote on the first seed: about 0.6, against Clowder's 3.6;
+- **bare, full:** a bare agent on the full repository, docs included, without the LID plugin;
+- **LID Full.**
+
+The first against the third is the falsification test. The second against the third separates LID's process from its artifacts.
+
+**The oracle.** The existing specs count as established behaviour, which is the keeping measure. Each change's new intent is written fresh, outside them, so the LID arm doesn't hold the answer key.
+
+**Grading.** A held-out slice of the existing tests, removed from every arm, grades keeping. Probes with interface extraction grade new intent.
+
+**What else is measured:**
+- the existing tests each arm edits or deletes;
+- the cost of getting back to green;
+- intent reach: whether the agent opened any file that states a graded item, so a failure reads as "never saw it" or "saw it and broke it";
+- context occupancy and compaction.
 
 ## The change script
 
