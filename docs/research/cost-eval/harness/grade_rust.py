@@ -188,7 +188,11 @@ def main(argv=None, *, checkpoint=None, run_role=executor.run_role) -> int:
             summary["visible_assertions"] = {k: audit[k] for k in ("kept", "deleted", "weakened", "not_found_at_start",
                                                                    "flagged")}
         # from here on graders read code and tests only, whatever the arm, and no history
-        prepared = rg.prepare_for_graders(ck, base, commit)
+        manifest_path = Path((meta.get("fork_of") or {}).get("variants") or "") / "manifest.json"
+        manifest = json.loads(manifest_path.read_text()) if manifest_path.is_file() else {}
+        pattern = (((manifest.get("variants") or {}).get("stripped") or {}).get("report") or {}).get("spec_id_pattern")
+        prepared = rg.prepare_for_graders(ck, base, commit, spec_pattern=pattern)
+        summary["stripped_for_graders"] = prepared["stripped"]
         summary["doc_changes"] = prepared["doc_changes"]
         summary["hidden_from_graders"] = len(prepared["hidden"])
         variants = Path((meta.get("fork_of") or {}).get("variants") or "")

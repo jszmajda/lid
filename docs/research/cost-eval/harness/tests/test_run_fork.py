@@ -133,6 +133,19 @@ class ForkTest(unittest.TestCase):
         meta = json.loads((f.runs / "cf-stripped-bare-200k-c04-r2" / "trajectory.json").read_text())
         self.assertEqual(meta["owner_scope"], sm.FORK_SCOPE)
 
+    def test_a_null_fork_prepares_the_snapshot_and_records_it_unchanged_with_no_session(self):
+        f = Fixture()
+        argv = [a for a in f.argv() if a not in ("--arm", "bare")]
+        self.assertEqual(rf.main([*argv, "--null"], deps=f.deps()), 0)
+        meta = json.loads((f.runs / "cf-stripped-null-200k-c01-r2" / "trajectory.json").read_text())
+        self.assertEqual((meta["arm"], meta["lid_release"]), ("null", None))
+        self.assertEqual(meta["changes"]["1"]["commit"], meta["start_commit"])  # its result is where it started
+        self.assertTrue(meta["changes"]["1"]["null"])
+        self.assertEqual((f.sessions, f.installed, f.ask.prompts), ([], [], []))  # no agent, no LID, no owner
+        self.assertEqual(meta["owner_scope"], sm.FORK_SCOPE)
+        with self.assertRaises(SystemExit):
+            rf.main(argv, deps=f.deps())  # a real fork names its arm
+
     def test_telemetry_reads_a_fork_and_takes_its_window_from_the_record(self):
         f = Fixture()
         rf.main(f.argv(), deps=f.deps())

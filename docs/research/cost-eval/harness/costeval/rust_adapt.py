@@ -103,9 +103,9 @@ def _ident(c: str) -> bool:
     return c.isalnum() or c == "_"
 
 
-def mask(text: str) -> str:
-    """The text with comments blanked and string and char literals' contents filled with x, same length and lines,
-    so braces, commas, and words found in it are code."""
+def mask(text: str, string_fill: str = "x") -> str:
+    """The text with comments blanked and string and char literals' contents filled with x (or string_fill), same
+    length and lines, so braces, commas, and words found in it are code."""
     out, i, n = list(text), 0, len(text)
 
     def blank(a: int, b: int, ch: str) -> None:
@@ -134,16 +134,16 @@ def mask(text: str) -> str:
             close = '"' + m.group(1)
             j = text.find(close, m.end())
             j = n if j < 0 else j
-            blank(m.end(), j, "x")
+            blank(m.end(), j, string_fill)
             i = j + len(close)
         elif c == '"':
             j = i + 1
             while j < n and text[j] != '"':
                 j += 2 if text[j] == "\\" else 1
-            blank(i + 1, j, "x")
+            blank(i + 1, j, string_fill)
             i = j + 1
         elif c == "'" and (m := _CHAR.match(text, i)):
-            blank(i + 1, m.end() - 1, "x")
+            blank(i + 1, m.end() - 1, string_fill)
             i = m.end()
         else:
             i += 1

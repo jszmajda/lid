@@ -31,6 +31,7 @@ import time
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Callable
 
 HERE = Path(__file__).resolve().parent
@@ -59,7 +60,10 @@ def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--variants", type=Path, required=True, help="the folder clowder_variants.py wrote (its manifest.json)")
     ap.add_argument("--variant", required=True, help="full, lid, or stripped")
-    ap.add_argument("--arm", required=True)
+    ap.add_argument("--arm", help="required unless --null")
+    ap.add_argument("--null", action="store_true",
+                    help="no agent and no owner: prepare the fork's snapshot as for any arm (planted bug and all) and "
+                         "record it unchanged as the change's result, to dry-run grading on a build with no change")
     ap.add_argument("--change", type=int, required=True)
     ap.add_argument("--repeat", type=int, required=True, help="the fork's number, for repeats of one change")
     ap.add_argument("--replicate", required=True, help="the seed the owner's draws are keyed on")
@@ -171,7 +175,12 @@ def _role_calls(owner_model: str, costs: list[float]):
 
 def main(argv=None, *, deps: Deps | None = None) -> int:
     deps = deps or Deps()
-    args = build_parser().parse_args(argv)
+    ap = build_parser()
+    args = ap.parse_args(argv)
+    if args.null:
+        args.arm = "null"
+    elif not args.arm:
+        ap.error("--arm is required (or --null)")
     manifest = json.loads((args.variants / "manifest.json").read_text())
     if args.variant not in manifest["variants"]:
         print(f"no variant {args.variant!r} in {args.variants}")
@@ -198,7 +207,8 @@ def main(argv=None, *, deps: Deps | None = None) -> int:
     change = script[args.change]
     owner_items = simulator.load_owner_items(items_path, oracle)
     brief = brief_path.read_text(encoding="utf-8")
-    arm = trajectory.load_arm(args.arm)
+    arm = (SimpleNamespace(name="null", lid_release=None, workspace_files={}, plugins=(), plugin_dirs=()) if args.null
+           else trajectory.load_arm(args.arm))
     owner_model = owner_model_from_arg(args.owner_model_config)
     isolation = (executor.Isolation(window=args.window) if args.no_isolate
                  else executor.Isolation.for_public_seed(window=args.window))
@@ -242,6 +252,13 @@ def main(argv=None, *, deps: Deps | None = None) -> int:
         "started": datetime.now(timezone.utc).isoformat(timespec="seconds"), "changes": {},
     }
     meta_path.write_text(json.dumps(meta, indent=1))
+    if args.null:  # the change's result is the snapshot it started from
+        meta["changes"][str(args.change)] = {"title": change.title, "null": True, "rounds": 0, "finished": True,
+                                             "capped": False, "error": None, "commit": base, "redirect": None,
+                                             "agent_cost_usd": 0.0, "owner_cost_usd": 0.0, "minutes": 0.0}
+        meta_path.write_text(json.dumps(meta, indent=1))
+        print(f"{fid}: null fork at {base}", flush=True)
+        return 0
 
     costs: list[float] = []
     ask, touch, trim = deps.ask, deps.touch, deps.trim

@@ -29,7 +29,7 @@ Read this section first when you pick the work up in a new session. Update it at
 - **The plumbing test is done** (see [log.md](log.md) and [log-archive/](log-archive/)). LID's phase stops work headless, cost accounting is understood, and executor sessions run in a Linux container with the maintainer's subscription token.
 - **BenchTime's probes** (92, for all 53 graded items) are at version 2, after Claude Fable's spot-check of grader verdicts found six asking more than their oracle items. The oracle is at version 3 and the change script at version 2.
 - **The simulated owner passed its leak threshold** (2026-11-14): 15 live scenarios × 10 runs with no confirmed leaks, judged by Opus. In real runs so far, the leak audit has flagged about 1 judged reply in 40. "The user simulator" in [design.md](design.md) describes how it works.
-- **The harness** ([harness/](harness/README.md)) runs trajectories, probe forks, grading, re-judging, owner audits, touchpoint classification, and spot-check sampling, with 104 tests. Runs are recorded in the git-ignored `runs/` folder, which stays private because the owner's prompts hold the hidden oracle.
+- **The harness** ([harness/](harness/README.md)) runs trajectories, probe forks, grading, re-judging, owner audits, touchpoint classification, and spot-check sampling, with 372 tests. Runs are recorded in the git-ignored `runs/` folder, which stays private because the owner's prompts hold the hidden oracle.
 - **The graders are calibrated** (2026-11-14). Sonnet 5.5 judges and Haiku 5.5 executes. The judge agreed with itself on all 44 probes, and a whole-pipeline regrade agreed on all 44. Four seeded violations were each caught, and Claude Fable, standing in for the maintainer, agreed with 35 of 36 sampled verdicts. Grading costs about $1 per checkpoint notional. The three prior-data probes aren't implemented and are reported as not run. Calibration notes are in `seeds/benchtime/hidden/calibration/`.
 - **Pilot stage 0 passed:** all three arms on Sonnet 5.5, a build plus two changes. Plumbing only.
 - **Pilot stage 1 settled the executor.** A bare arm on Opus 5.5 met 88% to 92% of BenchTime's items even with a silent owner, which is above the ceiling threshold. On Sonnet 5.5 it met 76% to 80%. Under the maintainer's rule, Sonnet is BenchTime's main executor, and Opus results there are reported as limited by the ceiling.
@@ -42,27 +42,30 @@ Read this section first when you pick the work up in a new session. Update it at
 - **The simulated owner was fixed after stage 2** so that a correction quotes words wrong in themselves and never adds what a list left out. It was checked by replaying the real stops and the scripted scenarios (`harness/replay_owner.py`). Every later run uses the fixed owner.
 - **BenchTime's probes are at version 5**, and the judge now says whether each "couldn't exercise" came from the executor or the build; grading reruns executor-caused ones once.
 - **The simulated owner is now an imperfect person** (maintainer's decision, 2026-11-16): it hides nothing on purpose but doesn't realise what it left unsaid, can be reminded by what the agent shows, and misses more as it reads more. Attention and memory are separate seeded draws, with constants from published research ([owner-model-research.md](owner-model-research.md); design in [design.md](design.md), "Attention and recall"). It is built and reviewed (212 tests); both seeds' salience tiers and recall lines are frozen in `owner-items.json`. Trajectories now need `--replicate`, shared by the arms being compared. Fidelity is reported as surfacing and keeping. It passed its leak gate on the final prompt (0 confirmed leaks in 260 replies; a recognised-on-sight objection in 18 of 20 runs) and a live smoke check. **BenchTime under the rebuilt owner is done** (bounded policy, three trajectories per arm; [log.md](log.md), 2026-11-17; `runs/stage3b/report.md`): items met at change 10 were bare 95%, cheap discipline 93%, LID Full 97%, at agent costs of $2.53, $4.54, and $11.17.
-- **ReleaseDesk, the second seed, is ready, and its ceiling check is done** ([seeds/releasedesk/README.md](seeds/releasedesk/README.md)). The bare arm under a silent owner meets 90 to 91% of all items, which is over the 85% ceiling, but only 44 to 56% of the latent items, in the order of their guessability bands. **Waiting on the maintainer:** whether to read ReleaseDesk's ceiling on latent items and go ahead (the main session's proposal, in [decisions.md](decisions.md)).
+- **ReleaseDesk, the second seed, is ready, and its ceiling check is done** ([seeds/releasedesk/README.md](seeds/releasedesk/README.md)). The bare arm under a silent owner met 90 to 91% of all items but only 44 to 56% of latent items. The maintainer chose to read its ceiling on latent items, and to grow ReleaseDesk into the large greenfield test later, sized by what Clowder shows.
+- **The Clowder falsification test is prepared, not yet run** ([seeds/clowder/README.md](seeds/clowder/README.md); design.md, "Later seeds and variants"; plan.md milestone M2c). It tests "LID pays off once a codebase is larger than the agent can hold" on the maintainer's public LID-built Rust game. The setup:
+  - **forks:** twelve changes, each forked from the final snapshot;
+  - **arms:** bare on a stripped repository, bare on the full repository, and LID Full;
+  - **the dose:** a 1M or a 200k context window;
+  - **grading:** held-out tests for keeping, and probes against each arm's own API for new intent.
+
+  The changes were reviewed by Claude Fable and GPT-6.2 Astra, and the harness is built and tested.
 - **The Docker VM is small** (2 CPUs, 4 GB), which limits how much runs at once. Resizing it means restarting colima, which also stops the maintainer's other containers, so that is the maintainer's call.
 - **Start long jobs as tracked background tasks, or with a watch.** A job started detached sends no notice when it finishes.
 - **The maintainer has handed the pilot to the main session** (2026-11-14): run it on your own judgment, and bring the maintainer only decisions that are really theirs. Pushing to the draft pull request is allowed; marking it ready, merging, and releasing are not. Claude Fable stands in for the maintainer's detailed reviews (probes, oracles, verdict spot-checks).
 - **No counted runs yet.**
 
-**Next actions** (milestones M1 and M2 in [plan.md](plan.md)):
+**Next actions** (milestones M2 and M2c in [plan.md](plan.md)):
 
-1. **Extend `report.py`** for recalled intent (review and question), contradictions kept against drawn, and keeping (items met earlier and still met later), as worked out by hand for the 2026-11-17 log entry.
-2. **Finish the owner checks:**
-   - labelled judgments on about 100 replayed stops, by a reader other than the builder;
-   - the constants sweep on replayed stops;
-   - the three replayed stops where the owner still errs (a wrong "Yes." in 8 of 10 runs, and catches in 5 and 6 of 10).
-3. **Settle with the maintainer:**
-   - the draw scope (default: per change);
-   - how w counts (default: within a stop);
-   - how far the sweep runs end to end;
-   - ReleaseDesk's latent set, which trips the salience check (2 of 6 high).
-4. **Then ReleaseDesk's stage 2** on Sonnet: bare, cheap discipline, and LID, three trajectories each, one shared replicate seed per triple. Read its ceiling on latent items.
-5. **Run the guessability panel on BenchTime's latent items,** so both seeds report latent fidelity by band.
-6. **Write the first report** with `report.py`, extended for surfacing and keeping and for recalled intent.
+1. **Null-arm dry run of Clowder's grading** (the untouched snapshot graded as if an arm changed nothing), then the pilot. Run bare on the stripped repository first, as a ceiling check, then all three arms at both windows.
+2. **Extend `report.py`** for recalled intent (review and question), contradictions kept against drawn, keeping, the Clowder measures (held-out retention, missing items, intent reach, cost to green, edits to visible tests), and the window dose.
+3. **Finish the owner checks:**
+   - labelled judgments on about 100 replayed stops;
+   - the constants sweep on replayed stops, plus the generous and stingy corners end to end;
+   - the three replayed stops where the owner still errs.
+4. **Then, sized by Clowder's result:** cross-crate Clowder changes, and growing ReleaseDesk into the large greenfield test.
+5. **Run the guessability panel on BenchTime's latent items.**
+6. **Write the first report.**
 7. **Still to build:** prior-data probes, grading for the probe request, and a scripted check for operating requirements.
 
 ## Files

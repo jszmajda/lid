@@ -204,6 +204,7 @@ class GradeProbesTest(unittest.TestCase):
         self.assertEqual(extraction["role"].model, g.extraction_model)
         self.assertEqual(execution["role"].model, g.execute_model)
         self.assertNotIn("Expected observation", ck.files["/work/out/probes-b01.md"])  # the executor never sees it
+        self.assertIn("### S0: A new game\nStart a new game.", ck.files["/work/out/probes-b01.md"])  # the setups in full
         self.assertIn("Expected observation", judge["prompt"])
         self.assertIn("P-NEW01-a observed", judge["prompt"])
         for c in calls:
@@ -407,7 +408,8 @@ KEPT_ASSERTIONS = {"changes": {"3": [
     {"keeps": "CLK-303", "file": SOC, "test": "a_gone_test", "assert": "assert_eq!(count(), 1)"},
     {"keeps": "CLK-303", "file": SOC, "test": "adopt_rule_spends_charm", "assert": "assert_eq!(s.pep(), 3)"},
     {"keeps": "CLK-304", "file": "crates/core/tests/integration/old.rs", "test": "rules_survive_save",
-     "assert": "assert_eq!(load(save(&state())).rules, state().rules)"}]}}
+     "assert": "assert_eq!(load(save(&state())).rules, state().rules)"},
+    {"keeps": "CLK-506", "file": "crates/core/tests/integration/thinned.rs", "test": "t", "assert": "assert!(x)"}]}}
 
 
 class VisibleAssertionsTest(unittest.TestCase):
@@ -433,9 +435,10 @@ class VisibleAssertionsTest(unittest.TestCase):
             ("weakened", "the test is now #[ignore]"),
             ("deleted", "the test is gone"),
             ("not found at the start", "the assertion isn't in the test at the change's start"),
-            ("kept", "present (layout and message aside)")])
+            ("kept", "present (layout and message aside)"),
+            ("not found at the start", "the file isn't in this checkout at the change's start (a variant without it)")])
         self.assertEqual(a["assertions"][3]["now"], ["assert!(saved(&s).rules.len() >= 1);"])
-        self.assertEqual((a["kept"], a["deleted"], a["weakened"], a["not_found_at_start"]), (3, 2, 2, 1))
+        self.assertEqual((a["kept"], a["deleted"], a["weakened"], a["not_found_at_start"]), (3, 2, 2, 2))
         self.assertEqual([(f["keeps"], f["status"]) for f in a["flagged"]],
                          [("CLK-301", "deleted"), ("CLK-305", "weakened"), ("CLK-305", "weakened"), ("CLK-303", "deleted")])
 
@@ -457,36 +460,97 @@ class CodeOnlyCheckoutTest(unittest.TestCase):
         self.assertEqual(hidden, [".claude/settings.json", "AGENTS.md", "CLAUDE.md", "GEMINI.md", "crates/core/AGENTS.md",
                                   "docs/intent/a.md", "tools/check.py"])
 
-    def test_the_extraction_reads_a_code_and_tests_diff_and_doc_changes_are_counted_apart(self):
+    def test_readme_and_spec_ids_are_stripped_as_the_variant_builder_strips_them(self):
+        import re
+        pattern = re.compile(r"\b(?:SIM-ENG)-\d{3,}[a-z]?\b")
+        changed = rg.strip_texts({"crates/core/src/lib.rs": HEAD_LIB, "README.md": README, "crates/core/src/x.rs": "fn x() {}\n"},
+                                 pattern)
+        self.assertEqual(changed["crates/core/src/lib.rs"], "pub fn tick() {}\n/// Ticks.\npub fn t2() {}\n")
+        self.assertNotIn("Linked-Intent", changed["README.md"])
+        self.assertIn("A game.", changed["README.md"])
+        self.assertNotIn("crates/core/src/x.rs", changed)  # nothing to strip, nothing rewritten
+        # code tokens are never changed: comments and string contents are stripped as the builder strips them
+        code = ('let id = "the tick (SIM-ENG-009)"; // the rule (SIM-ENG-009)\nfoo(bar(), 1)  ; // @spec SIM-ENG-009\n'
+                '    assert!(ok,\n        "held as a set (SIM-ENG-009)"\n    );\n')
+        self.assertEqual(rg.strip_texts({"a.rs": code}, pattern)["a.rs"],
+                         'let id = "the tick"; // the rule\nfoo(bar(), 1)  ;\n    assert!(ok,\n        "held as a set"\n    );\n')
+
+    def test_tests_that_read_the_docs_go_as_the_variant_builder_drops_them(self):
+        import re
+        pattern = re.compile(r"\b(?:SIM-ENG)-\d{3,}[a-z]?\b")
+        texts = {"crates/core/tests/integration/main.rs": "mod common;\nmod tables;\nmod rules;\n",
+                 "crates/core/tests/integration/tables.rs":
+                     '#[test]\nfn rows() {\n    let d = include_str!("../../../../docs/intent/x.md");\n    assert!(!d.is_empty());\n}\n',
+                 "crates/core/src/ach.rs": ('pub fn a() {}\n\n#[cfg(test)]\nmod tests {\n    /// The table.\n    #[test]\n'
+                                            '    fn matches() {\n        let d = include_str!("../../../docs/intent/a.md");\n'
+                                            '        assert!(d.len() > 0);\n    }\n}\n')}
+        changed, removed, dropped = rg.transform_texts(texts, pattern)
+        self.assertEqual(removed, ["crates/core/tests/integration/tables.rs"])
+        self.assertEqual(changed["crates/core/tests/integration/main.rs"], "mod common;\nmod rules;\n")
+        self.assertNotIn("include_str", changed["crates/core/src/ach.rs"])
+        self.assertIn("pub fn a() {}", changed["crates/core/src/ach.rs"])
+        self.assertEqual(dropped, ["crates/core/src/ach.rs::matches", "crates/core/tests/integration/tables.rs"])
+
+    def test_the_extraction_reads_a_stripped_code_and_tests_diff_and_doc_changes_are_counted_apart(self):
         class Ck(FakeCk):
+            def __init__(self):
+                super().__init__()
+                self.writes = []
+
             def sh(self, script, stdin=None, check=True):
                 self.scripts.append(script)
+                if "awk" in script:
+                    self.writes.append((script.split("&&")[0], stdin))
+                    return ""
+                if rg.STREAM_MARK in script:  # fetch the files named on stdin
+                    root = "base" if "/work/strip-base" in script else "head"
+                    texts = {"head": {"docs/intent/x-specs.md": "- **SIM-ENG-009** a rule\n", "crates/core/src/lib.rs": HEAD_LIB,
+                                      "README.md": README},
+                             "base": {"crates/core/src/lib.rs": "pub fn tick() {} // @spec SIM-ENG-009\n"}}[root]
+                    return "".join(f"{rg.STREAM_MARK} {f}\n{texts[f]}" for f in stdin.split() if f in texts)
+                if "ls-files" in script and "specs" in script:
+                    return "docs/intent/x-specs.md\n"
                 if "ls-files" in script:
-                    return "Cargo.toml\nAGENTS.md\ndocs/intent/x.md\ncrates/core/src/lib.rs\nREADME.md\n"
+                    return "Cargo.toml\nAGENTS.md\ndocs/intent/x.md\ndocs/intent/x-specs.md\ncrates/core/src/lib.rs\nREADME.md\n"
                 if "--numstat" in script:
                     return "5\t1\tdocs/intent/x.md\n2\t0\tREADME.md\n3\t3\tAGENTS.md\n10\t2\tcrates/core/src/lib.rs\n"
-                if "git grep" in script or "-type l" in script:
-                    return ""
+                if "grep -rlI" in script:
+                    return "./crates/core/src/lib.rs\n"
+                if "git grep -lI" in script and "docs/intent" not in script:
+                    return "crates/core/src/lib.rs\ndocs/intent/x-specs.md\n"
                 if "wc -c" in script:
                     return "1234\n"
                 return ""
+        import re
         ck = Ck()
-        r = rg.prepare_for_graders(ck, "b0", "c1")
+        r = rg.prepare_for_graders(ck, "b0", "c1", spec_pattern=None)
         self.assertEqual(r["doc_changes"], {"files": 3, "lines_added": 10, "lines_removed": 4,
                                             "paths": ["AGENTS.md", "README.md", "docs/intent/x.md"]})
-        self.assertEqual(r["hidden"], ["AGENTS.md", "docs/intent/x.md"])
+        self.assertEqual(r["hidden"], ["AGENTS.md", "docs/intent/x-specs.md", "docs/intent/x.md"])
+        self.assertTrue(re.search(r["spec_id_pattern"], "SIM-ENG-009"))  # from the arm's own specs: new prefixes go too
+        head, base = dict((w[0].strip(), w[1]) for w in ck.writes)["cd /work/app"], dict((w[0].strip(), w[1]) for w in ck.writes)["cd /work/strip-base"]
+        self.assertIn("pub fn tick() {}\n/// Ticks.\n", head)
+        self.assertNotIn("@spec", head + base)
+        self.assertNotIn("Linked-Intent", head)
+        self.assertNotIn("x-specs.md", head)  # hidden files are removed, not stripped
+        self.assertIn("git archive b0", next(s for s in ck.scripts if "/work/strip-base" in s and "archive" in s))
         diff = next(s for s in ck.scripts if "/work/out/arm.diff" in s)
-        self.assertIn("git diff b0 c1", diff)
+        self.assertIn("write-tree", diff)
+        self.assertIn('git diff "$b" "$h"', diff)  # the two stripped trees, not the commits
         for excluded in (":(exclude,glob)**/*.md", ":(exclude)docs", ":(exclude).claude", ":(exclude,glob)**/AGENTS.md"):
             self.assertIn(excluded, diff)
         removal = next(s for s in ck.scripts if s.startswith("cd /work/app && rm -rf"))
         self.assertIn("'AGENTS.md'", removal)
-        self.assertIn("'docs/intent/x.md'", removal)
         self.assertIn(".git", removal)  # no history to read docs from
         self.assertIn("'docs' '.claude'", removal)  # the directories too, not left empty
         self.assertIn("-type d -empty -delete", removal)
+        self.assertIn("/work/strip-base", removal)
         self.assertIn("/work/out/arm.diff", rg.extraction_prompt([]))
         self.assertNotIn("git diff", rg.extraction_prompt([]))
+
+
+HEAD_LIB = "pub fn tick() {} // @spec SIM-ENG-009\n/// Ticks (SIM-ENG-009).\npub fn t2() {}\n"
+README = "# Clowder\n\nA game.\n\nBuilt with Linked-Intent Development; see AGENTS.md.\n"
 
 
 IMPLEMENTATION_ITEMS = [("NEW-01", "Kittens can be renamed."), ("NEW-02", "Something later happens.")]

@@ -4,6 +4,7 @@ The fixture is made up, so no hidden probe appears in this public file.
 """
 
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -156,6 +157,32 @@ class SetupTest(unittest.TestCase):
         self.assertIn("Each probe is independent", grading.render_for_execution(ps.probes[:1], ps.setup_notes))
         self.assertIn("Each probe is independent", grading.render_for_judgment(ps.probes[:1], ps.setup_notes))
         self.assertNotIn("Conventions", grading.render_for_execution(ps.probes[:1]))
+
+    def test_the_executor_reads_the_full_description_of_each_setup_its_probes_use(self):
+        ps = grading.parse_probes(PROBES)
+        uses_s1 = [p for p in ps.probes if p.setup == "S1"]
+        text = grading.render_for_execution(uses_s1, ps.setup_notes, ps.setups)
+        self.assertIn("deliveries are off", text)  # S1's own description
+        self.assertIn("### S0: Example shop", text)  # S1 names S0, so S0 comes too
+        self.assertLess(text.index("### S0"), text.index("### S1"))
+        self.assertLess(text.index("### S1"), text.index("## P-"))
+        only_s0 = [p for p in ps.probes if p.setup == "S0"][:1]
+        self.assertNotIn("deliveries are off", grading.render_for_execution(only_s0, ps.setup_notes, ps.setups))
+
+    def test_the_service_executor_gets_the_setups_too(self):
+        from types import SimpleNamespace
+        from unittest import mock
+        ps = grading.parse_probes(PROBES)
+        put = {}
+        ck = SimpleNamespace(tools_volume="tools", network="net", put=lambda vol, path, text: put.__setitem__(path, text),
+                             admin=lambda worker, payload: {}, log_lines=lambda worker, bid: [])
+        g = SimpleNamespace(execute_model="m", role=lambda *a, **k: "role")
+        with mock.patch.object(grading.executor, "run_role",
+                               return_value=SimpleNamespace(text="", usage=SimpleNamespace(reported_cost_usd=0, models={}),
+                                                            duration_s=0.1)):
+            grading.execute_batch(ck, g, 0, "b01", [p for p in ps.probes if p.setup == "S1"], Path(tempfile.mkdtemp()),
+                                  ps.setup_notes, setups=ps.setups)
+        self.assertIn("deliveries are off", put["/work/probes-b01.md"])
 
     def test_setup_problems_are_missing_snapshots_and_cannot_marks(self):
         lines = [{"op": "mark", "request": {"text": "CANNOT S0: no token"}}, {"op": "http", "request": {}}]

@@ -404,11 +404,12 @@ RERUN = ("cd /work/app && mkdir -p /work/out/probes && for f in crates/*/tests/{
 
 
 def _judge_batch(ck, g: RustGraders, batch: list, bid: str, out: Path, *, volume: str, conventions: str,
-                 run_role: Callable, attempts: int, helpers: dict | None, sessions: dict) -> dict[str, dict]:
+                 run_role: Callable, attempts: int, helpers: dict | None, sessions: dict,
+                 setups: dict[str, str] | None = None) -> dict[str, dict]:
     """Execution, the harness's own run of each probe's test, and judgment, for one batch."""
     bdir = out / bid
     bdir.mkdir(parents=True, exist_ok=True)
-    rendered = grading.render_for_execution(batch, conventions)
+    rendered = grading.render_for_execution(batch, conventions, setups)
     ck.put(f"/work/out/probes-{bid}.md", rendered)
     (bdir / "probes.md").write_text(rendered, encoding="utf-8")
     try:
@@ -469,7 +470,7 @@ def grade_probes(ck, g: RustGraders, probeset: grading.ProbeSet, probes: list, *
         sessions["extraction"]["implementation_problems"] = problems
     conventions = probeset.setup_notes
     kw = dict(volume=volume, conventions=conventions, run_role=run_role, attempts=attempts, helpers=helpers,
-              sessions=sessions)
+              sessions=sessions, setups=probeset.setups)
     verdicts: dict[str, dict] = {}
     for k, batch in enumerate(grading.batches(probes, batch_size), start=1):
         verdicts.update(_judge_batch(ck, g, batch, f"b{k:02d}", out, **kw))
@@ -535,15 +536,131 @@ def _is_doc(path: str) -> bool:
     return path.endswith(".md") or path.split("/", 1)[0] in HIDDEN_DIRS or path.rsplit("/", 1)[-1] in AGENT_FILES
 
 
-def prepare_for_graders(ck, base: str, commit: str) -> dict:
-    """Make the checkpoint a code-only checkout, after the harness's own git steps: count the arm's changes to docs
-    and instruction files (context for cost and attention, never graded); write the diff the extraction reads,
-    /work/out/arm.diff, of code and tests only; then remove what graders don't see, and the history (.git) that
-    would show it."""
+STREAM_MARK = "@@ce-file@@"
+CANDIDATES = "-e '@spec' -e '-[0-9][0-9][0-9]' -e 'docs/'"  # a superset of the files the builder's stripping changes
+
+
+def _strip_prose(text: str, pattern: re.Pattern) -> str:
+    import clowder_variants as cv
+    return cv.strip_spec_ids(text + "\n", pattern)[0].rstrip("\n")
+
+
+def _strip_rust(text: str, pattern: re.Pattern) -> str:
+    """The variant builder's spec-ID stripping, on comments and string contents only: a comment line as the builder
+    strips it, and on a code line the comment and each string's contents stripped as prose, with every code token
+    left exactly as it was. The builder's own pass tidies a whole line, code included, which can break it
+    ("fn f() {} // @spec X" loses its "()")."""
+    import clowder_variants as cv
+    masked = rust_adapt.mask(text, string_fill="\x00")
+    out, at = [], 0
+    for line in text.splitlines(keepends=True):
+        m = masked[at:at + len(line)]
+        at += len(line)
+        if "@spec" not in line and not pattern.search(line):
+            out.append(line)
+            continue
+        body, nl = (line[:-1], "\n") if line.endswith("\n") else (line, "")
+        mb = m[:len(body)]
+        starts = [k for k, (c, mc) in enumerate(zip(body, mb)) if mc == " " and not c.isspace()]
+        c = starts[0] if starts else len(body)
+        if starts and not body[:c].strip():  # a comment line, as the builder strips it
+            out.append(cv.strip_spec_ids(line, pattern)[0])
+            continue
+        code, pieces, k = body[:c], [], 0
+        for run in re.finditer("\x00+", mb[:c]):  # each string's contents, as prose
+            content = code[run.start():run.end()]
+            if "@spec" in content or pattern.search(content):
+                content = _strip_prose(content, pattern)
+            pieces += [code[k:run.start()], content]
+            k = run.end()
+        code = "".join(pieces + [code[k:]])
+        comment = _strip_prose(body[c:], pattern).strip() if starts else ""
+        out.append((code.rstrip() + " " + comment if comment else code.rstrip() if starts else code) + nl)
+    return "".join(out)
+
+
+def strip_texts(texts: dict[str, str], pattern: re.Pattern) -> dict[str, str]:
+    """The files the variant builder's own stripping changes (clowder_variants.py), changed as it changes them:
+    README.md without the paragraphs that describe LID, and every file without `@spec` annotations and spec-ID
+    citations, in Rust in comments and strings only."""
+    import clowder_variants as cv
+    out = {}
+    for path, text in texts.items():
+        new = cv._readme(text)[0] if path == "README.md" else text
+        new = _strip_rust(new, pattern) if path.endswith(".rs") else cv.strip_spec_ids(new, pattern)[0]
+        if new != text:
+            out[path] = new
+    return out
+
+
+def transform_texts(texts: dict[str, str], pattern: re.Pattern) -> tuple[dict[str, str], list[str], list[str]]:
+    """The variant builder's stripping of a tree, given the files it can change: the tests that read the docs go
+    (whole files, with their `mod` lines, and single test functions), then README and spec IDs are stripped.
+    Returns (files changed, files removed, what went as tests)."""
+    import clowder_variants as cv
+    files = {p: t.encode() for p, t in texts.items()}
+    try:
+        dropped = cv.drop_doc_tests(files)
+    except ValueError:  # code outside a test reads the docs: leave the tests as they are
+        files, dropped = {p: t.encode() for p, t in texts.items()}, []
+    after = {p: b.decode() for p, b in files.items()}
+    after.update(strip_texts(after, pattern))
+    removed = sorted(p for p in texts if p not in after)
+    return {p: t for p, t in after.items() if t != texts[p]}, removed, dropped
+
+
+def _fetch(ck, root: str, paths: list[str]) -> dict[str, str]:
+    """The text of these files under root, in one call."""
+    if not paths:
+        return {}
+    out = ck.sh(f"cd {root} && while read -r f; do [ -f \"$f\" ] || continue; printf '%s %s\\n' '{STREAM_MARK}' \"$f\"; "
+                f"cat \"$f\"; [ -z \"$(tail -c1 \"$f\")\" ] || echo; done", stdin="\n".join(paths) + "\n", check=False)
+    files, path, buf = {}, None, []
+    for line in out.split("\n"):
+        if line.startswith(STREAM_MARK + " "):
+            if path is not None:
+                files[path] = "\n".join(buf) + "\n"
+            path, buf = line[len(STREAM_MARK) + 1:], []
+        elif path is not None:
+            buf.append(line)
+    if path is not None:
+        files[path] = "\n".join(buf).rstrip("\n") + "\n"
+    return files
+
+
+def _write(ck, root: str, files: dict[str, str]) -> None:
+    """Write these files under root, in one call."""
+    if not files:
+        return
+    stream = "".join(f"{STREAM_MARK} {p}\n{t if t.endswith(chr(10)) else t + chr(10)}" for p, t in sorted(files.items()))
+    ck.sh(f"cd {root} && awk 'index($0, \"{STREAM_MARK} \") == 1 {{ if (f != \"\") close(f); "
+          f"f = substr($0, {len(STREAM_MARK) + 2}); printf \"\" > f; next }} {{ print > f }}'", stdin=stream, check=False)
+
+
+def grading_spec_pattern(ck, manifest_pattern: str | None) -> re.Pattern:
+    """Spec IDs as the variant builder found them in the snapshot (the manifest's pattern) and as the arm's own
+    specs write them, so a prefix an arm adds is stripped too."""
+    import clowder_variants as cv
+    specs = _fetch(ck, "/work/app", ck.sh("cd /work/app && git ls-files '*-specs.md'", check=False).split())
+    own = cv.spec_id_pattern(cv.Tree(commit="", files={p: t.encode() for p, t in specs.items()})).pattern
+    parts = [x for x in (manifest_pattern, own) if x and x != "(?!)"]
+    return re.compile("|".join(f"(?:{x})" for x in parts)) if parts else re.compile("(?!)")
+
+
+def prepare_for_graders(ck, base: str, commit: str, *, spec_pattern: str | None = None) -> dict:
+    """Make the checkpoint a code-only checkout, after the harness's own git steps, the same for every arm:
+
+    - count the arm's changes to docs and instruction files (context for cost and attention, never graded);
+    - strip README.md and spec IDs as the variant builder strips the stripped variant, in the arm's checkout and in a
+      copy of the starting commit, and write the diff the extraction reads, /work/out/arm.diff, between the two
+      stripped trees, of code and tests only, so an `@spec` comment the arm added doesn't show either;
+    - remove what the variant builder strips (docs/, .claude/, agent instruction files, LID tooling), and the history
+      (.git) that would show it.
+    spec_pattern: the variant manifest's spec-ID pattern, if the run was forked from a variant."""
     paths = ck.sh("cd /work/app && git ls-files", check=False).split()
     links = {}
     for line in ck.sh("cd /work/app && find . -path ./.git -prune -o -type l -exec sh -c "
-                      "'printf \"%s\\t%s\\n\" \"$1\" \"$(readlink \"$1\")\"' _ {} \\;", check=False).splitlines():
+                      "'printf \"%s\\t%s\\n\" \"$1\" \"$(readlink \"$1\")\"' _ {} \;", check=False).splitlines():
         if "\t" in line:
             p, t = line.split("\t", 1)
             links[p.removeprefix("./")] = t
@@ -559,14 +676,42 @@ def prepare_for_graders(ck, base: str, commit: str) -> dict:
             docs["lines_removed"] += int(parts[1]) if parts[1].isdigit() else 0
             docs["paths"].append(parts[2])
     docs["paths"].sort()
+    pattern = grading_spec_pattern(ck, spec_pattern)
+    gone = set(hidden)
+    # the arm's checkout, stripped in place
+    head = [f for f in ck.sh(f"cd /work/app && git grep -lI {CANDIDATES} 2>/dev/null", check=False).split() if f not in gone]
+    mains = {f for f in paths if re.fullmatch(r"crates/[^/]+/tests/[^/]+/main\.rs", f)}
+    head_changed, head_removed, head_dropped = transform_texts(
+        _fetch(ck, "/work/app", sorted((set(head) | mains | ({"README.md"} & set(paths))) - gone)), pattern)
+    _write(ck, "/work/app", head_changed)
+    if head_removed:
+        ck.sh("cd /work/app && rm -f " + " ".join(f"'{p}'" for p in head_removed), check=False)
+    # the starting commit, copied out and stripped the same way
+    ck.sh(f"rm -rf /work/strip-base && mkdir -p /work/strip-base && cd /work/app && git archive {base} | tar -x -C /work/strip-base",
+          check=False)
+    listed = [f.removeprefix("./") for f in ck.sh(f"cd /work/strip-base && grep -rlI {CANDIDATES} . 2>/dev/null; "
+                                                  "find . -path './crates/*/tests/*/main.rs'", check=False).split()]
+    base_paths = sorted({f for f in listed if f not in gone and not f.startswith(("docs/", ".claude/"))
+                         and f.rsplit("/", 1)[-1] not in AGENT_FILES} | {"README.md"})
+    base_changed, base_removed, _ = transform_texts(_fetch(ck, "/work/strip-base", base_paths), pattern)
+    _write(ck, "/work/strip-base", base_changed)
+    if base_removed:
+        ck.sh("cd /work/strip-base && rm -f " + " ".join(f"'{p}'" for p in base_removed), check=False)
     excludes = [":(exclude)docs", ":(exclude).claude", ":(exclude,glob)**/*.md",
                 *(f":(exclude,glob)**/{f}" for f in AGENT_FILES), *(f":(exclude){p}" for p in sorted(marked))]
-    size = ck.sh(f"mkdir -p /work/out && cd /work/app && git diff {base} {commit} -- . "
-                 + " ".join(f"'{x}'" for x in excludes) + " > /work/out/arm.diff; wc -c < /work/out/arm.diff", check=False)
+    size = ck.sh("mkdir -p /work/out && cd /work/app && "
+                 "GIT_INDEX_FILE=/work/idx-head git add -A . && h=$(GIT_INDEX_FILE=/work/idx-head git write-tree) && "
+                 "GIT_INDEX_FILE=/work/idx-base git --work-tree=/work/strip-base -C /work/strip-base "
+                 "--git-dir=/work/app/.git add -A . && "
+                 "b=$(GIT_INDEX_FILE=/work/idx-base git --git-dir=/work/app/.git write-tree) && "
+                 "git diff \"$b\" \"$h\" -- . " + " ".join(f"'{x}'" for x in excludes)
+                 + " > /work/out/arm.diff; wc -c < /work/out/arm.diff", check=False)
     # a clean checkout has no empty directories (git tracks none), so any left now held only hidden files
     ck.sh("cd /work/app && rm -rf " + " ".join(f"'{p}'" for p in [*hidden, *HIDDEN_DIRS]) + " .git"
-          " && find . -mindepth 1 -type d -empty -delete", check=False)
-    return {"hidden": hidden, "doc_changes": docs, "diff_bytes": int(size.strip() or 0) if size.strip().isdigit() else None}
+          " /work/strip-base /work/idx-head /work/idx-base && find . -mindepth 1 -type d -empty -delete", check=False)
+    return {"hidden": hidden, "doc_changes": docs, "diff_bytes": int(size.strip()) if size.strip().isdigit() else None,
+            "spec_id_pattern": pattern.pattern,
+            "stripped": {"files": len(head_changed), "start_files": len(base_changed), "doc_tests_dropped": head_dropped}}
 
 
 # ------------------------------------------------------------------------------- items, and what they count
@@ -681,7 +826,11 @@ def audit_visible_assertions(entries: list[dict], show: Callable[[str, str], str
             head_at = next((k for k, l in enumerate(lines) if re.search(rf"\bfn\s+{re.escape(e['test'])}\b", l)), 0)
             return "\n".join(lines[:head_at]), "\n".join(lines[head_at:])
         was = fn(base, e["file"])
-        if not was or not was[1] or not any(_core(m, a) == _core(*want[:2]) for m, a, _ in _assertions(was[1])):
+        if was is None:
+            rows.append({**row, "status": "not found at the start",
+                         "detail": "the file isn't in this checkout at the change's start (a variant without it)"})
+            continue
+        if not was[1] or not any(_core(m, a) == _core(*want[:2]) for m, a, _ in _assertions(was[1])):
             rows.append({**row, "status": "not found at the start",
                          "detail": "the assertion isn't in the test at the change's start"})
             continue

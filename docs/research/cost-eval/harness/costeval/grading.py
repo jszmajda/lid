@@ -129,10 +129,26 @@ def batches(probes: list[Probe], size: int = 4) -> list[list[Probe]]:
     return out
 
 
-def render_for_execution(batch: list[Probe], conventions: str = "") -> str:
-    """The probes as the executor sees them: the probe set's conventions, then scenarios only, never expected
-    observations."""
+def setups_used(batch: list[Probe], setups: dict[str, str]) -> list[str]:
+    """The setups a batch's probes use, and every setup their descriptions name (S1 built on S0), in order."""
+    want, todo = set(), [p.setup for p in batch]
+    while todo:
+        s = todo.pop()
+        if s in want or s not in setups:
+            continue
+        want.add(s)
+        body = setups[s].split("\n", 1)[1] if "\n" in setups[s] else ""
+        todo += re.findall(r"\bS\d+\b", body)
+    return sorted(want, key=lambda s: int(s[1:]))
+
+
+def render_for_execution(batch: list[Probe], conventions: str = "", setups: dict[str, str] | None = None) -> str:
+    """The probes as the executor sees them: the probe set's conventions, the full description of each setup the
+    batch uses (and of each setup those build on), then scenarios only, never expected observations."""
     head = f"## Conventions for every probe\n\n{conventions.strip()}\n\n" if conventions.strip() else ""
+    used = setups_used(batch, setups or {})
+    if used:
+        head += "## Setups these probes use\n\n" + "\n\n".join(setups[s] for s in used) + "\n\n"
     return head + "\n\n".join(f"## {p.id}\n\n- **Setup:** {p.setup}\n- **Needs:** {', '.join(p.needs) or 'none'}\n"
                        f"- **Scenario:**\n{p.scenario}" for p in batch)
 
@@ -498,8 +514,8 @@ def prepare_setups(ck: Checkpoint, g: Graders, probeset: ProbeSet, names: list[s
 
 
 def execute_batch(ck: Checkpoint, g: Graders, worker: int, bid: str, batch: list[Probe], out: Path,
-                  conventions: str = "") -> list[dict]:
-    ck.put(ck.tools_volume, f"/work/probes-{bid}.md", render_for_execution(batch, conventions))
+                  conventions: str = "", setups: dict[str, str] | None = None) -> list[dict]:
+    ck.put(ck.tools_volume, f"/work/probes-{bid}.md", render_for_execution(batch, conventions, setups))
     ck.admin(worker, {"batch": bid})
     role = g.role(g.execute_model, tools=("Bash", "Read"), workspace_volume=ck.tools_volume, network=ck.network,
                   env=(("GT_CONTROL", f"http://app{worker}:9000"), ("PATH", TOOL_PATH)), timeout_s=2400)
@@ -512,7 +528,7 @@ def execute_batch(ck: Checkpoint, g: Graders, worker: int, bid: str, batch: list
     ck.admin(worker, {"batch": None})
     lines = ck.log_lines(worker, bid)
     out.mkdir(parents=True, exist_ok=True)
-    (out / "probes.md").write_text(render_for_execution(batch, conventions), encoding="utf-8")
+    (out / "probes.md").write_text(render_for_execution(batch, conventions, setups), encoding="utf-8")
     (out / "log.jsonl").write_text("\n".join(json.dumps(r) for r in lines), encoding="utf-8")
     (out / "execution.json").write_text(json.dumps(session, indent=1), encoding="utf-8")
     return lines

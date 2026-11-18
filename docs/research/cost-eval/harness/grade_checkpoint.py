@@ -116,12 +116,12 @@ def main(argv=None) -> int:
                 except queue.Empty:
                     return
                 bdir = out / "batches" / bid
-                lines = grading.execute_batch(ck, g, k, bid, batch, bdir, probeset.setup_notes)
+                lines = grading.execute_batch(ck, g, k, bid, batch, bdir, probeset.setup_notes, setups=probeset.setups)
                 if "error" in json.loads((bdir / "execution.json").read_text()):
                     # A killed or failed session leaves a partial log: run the batch again under a new name.
                     bid = bid + "r"
                     bdir = out / "batches" / bid
-                    lines = grading.execute_batch(ck, g, k, bid, batch, bdir, probeset.setup_notes)
+                    lines = grading.execute_batch(ck, g, k, bid, batch, bdir, probeset.setup_notes, setups=probeset.setups)
                 v = grading.judge_batch(g, batch, lines, bdir, conventions=probeset.setup_notes)
                 verdicts.update(v)
                 print(f"{bid} on worker {k}: " + ", ".join(f"{p.id} {v.get(p.id, {}).get('verdict', '?')}" for p in batch), flush=True)
