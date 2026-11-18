@@ -9,8 +9,16 @@ USER root
 RUN apt-get update -qq \
  && apt-get install -y -qq --no-install-recommends build-essential pkg-config procps >/dev/null \
  && rm -rf /var/lib/apt/lists/*
+# jj, which Clowder's own instructions ask agents to use; its full and lid variants are colocated jj repositories.
+ARG JJ_VERSION=0.46.0
+RUN mkdir /tmp/jj \
+ && curl -fsSL "https://github.com/jj-vcs/jj/releases/download/v${JJ_VERSION}/jj-v${JJ_VERSION}-$(uname -m)-unknown-linux-musl.tar.gz" \
+    | tar -xz -C /tmp/jj \
+ && install -m 755 "$(find /tmp/jj -type f -name jj | head -1)" /usr/local/bin/jj \
+ && rm -rf /tmp/jj && jj --version
 
 USER agent
+RUN jj config set --user user.name "Lab Owner" && jj config set --user user.email owner@example.invalid
 ARG RUST_VERSION=1.89.0
 ENV RUSTUP_HOME=/home/agent/.rustup CARGO_HOME=/home/agent/.cargo
 ENV PATH=/home/agent/.cargo/bin:$PATH

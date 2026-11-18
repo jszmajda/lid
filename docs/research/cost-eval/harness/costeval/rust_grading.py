@@ -312,8 +312,11 @@ class RustCheckpoint:
     def export(self, workspace_volume: str) -> None:
         self.runner(["docker", "run", "--rm", "-v", f"{executor._volume(workspace_volume)}:/src:ro",
                      "-v", f"{executor._volume(self.volume)}:/work", self.image, "sh", "-c",
-                     f"find /work -mindepth 1 -delete && git clone -q /src /work/app && cd /work/app && "
-                     f"git checkout -q {self.commit} && mkdir -p /work/out"], check=True, capture_output=True, text=True)
+                     # .git alone, checked out at the exact commit: a commit on a detached HEAD (jj leaves one, and
+                     # so does the harness's own) is found, and no jj state, build output, or untracked file comes along
+                     f"find /work -mindepth 1 -delete && mkdir -p /work/app /work/out && cp -a /src/.git /work/app/.git && "
+                     f"cd /work/app && git checkout -q -f --detach {self.commit} && git clean -fdxq"],
+                    check=True, capture_output=True, text=True)
 
     def drop_target(self) -> None:
         self.sh("rm -rf /work/target", check=False)

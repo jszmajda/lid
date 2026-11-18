@@ -63,8 +63,8 @@ class Fixture:
         self.variants.mkdir()
         (self.variants / "manifest.json").write_text(json.dumps({
             "source_commit": "abc123", "seed": "v1", "held_out": ["crates/core/tests/integration/x.rs"],
-            "variants": {"stripped": {"commit": "c0ffee", "volume": "ce-cv-v1-stripped"},
-                         "lid": {"commit": "beef", "volume": "ce-cv-v1-lid"}}}))
+            "variants": {"stripped": {"commit": "c0ffee", "volume": "ce-cv-v1-stripped", "vcs": "git"},
+                         "lid": {"commit": "beef", "volume": "ce-cv-v1-lid", "vcs": "jj"}}}))
         self.runs = self.root / "runs"
         self.sessions, self.installed = [], []
         self.ws = FakeWorkspace()
@@ -93,7 +93,7 @@ class ForkTest(unittest.TestCase):
         meta = json.loads((run / "trajectory.json").read_text())
         self.assertEqual(meta["id"], fid)
         self.assertEqual(meta["fork_of"], {"variants": str(f.variants), "variant": "stripped", "volume": "ce-cv-v1-stripped",
-                                           "commit": "c0ffee", "source_commit": "abc123", "variant_seed": "v1"})
+                                           "commit": "c0ffee", "source_commit": "abc123", "variant_seed": "v1", "vcs": "git"})
         self.assertEqual((meta["change"], meta["repeat"], meta["replicate"], meta["arm"]), (1, 2, "r1", "bare"))
         self.assertEqual(meta["isolation"], executor.Isolation.for_public_seed(window="200k").record())
         self.assertEqual(meta["window"], "200k")
@@ -143,9 +143,30 @@ class PlantedBugTest(unittest.TestCase):
         script_text = apply["cmd"][-1]
         self.assertIn("git apply --check", script_text)
         self.assertIn("--amend", script_text)  # one commit, so `git show` can't reveal the planted change
+        # and nothing still reaches the snapshot before the bug: no reflog, no jj state or jj keep refs, main moved
+        for step in ("rm -rf .jj", "refs/jj", "update-ref refs/heads/main HEAD", "reflog expire --expire=now --all",
+                     "gc -q --prune=now"):
+            self.assertIn(step, script_text)
+        self.assertLess(script_text.index("rm -rf .jj"), script_text.index("git apply --check"))
         self.assertIn(rf.cv.DATE, script_text)
         copy_at = next(i for i, c in enumerate(docker.calls) if "/src:ro" in " ".join(c["cmd"]))
         self.assertLess(copy_at, docker.calls.index(apply))
+
+    def test_a_jj_variant_gets_a_fresh_colocated_jj_repository_after_any_planted_bug(self):
+        f = Fixture(sidecar=PATCH)
+        docker = Docker()
+        self.assertEqual(rf.main(f.argv(variant="lid", arm="lid-full"), deps=f.deps(docker)), 0)
+        scripts = [c["cmd"][-1] for c in docker.calls]
+        init = next(i for i, s in enumerate(scripts) if "jj git init --colocate" in s)
+        plant = next(i for i, s in enumerate(scripts) if "git apply" in s)
+        self.assertLess(plant, init)
+        self.assertIn("rm -rf .jj", scripts[init])
+        meta = json.loads((f.runs / "cf-lid-lid-full-200k-c01-r2" / "trajectory.json").read_text())
+        self.assertEqual(meta["fork_of"]["vcs"], "jj")
+        g = Fixture()
+        docker = Docker()
+        rf.main(g.argv(), deps=g.deps(docker))
+        self.assertFalse(any("jj git init" in c["cmd"][-1] for c in docker.calls))
 
     def test_a_sidecar_patch_counts_and_an_explicit_one_wins(self):
         self.assertIsNotNone(json.loads(self._run_with(sidecar=PATCH))["planted_bug"])

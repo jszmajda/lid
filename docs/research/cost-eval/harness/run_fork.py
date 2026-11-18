@@ -112,18 +112,33 @@ def copy_variant(deps: Deps, image: str, variant_volume: str, workspace_volume: 
                 "sh", "-c", "find /work -mindepth 1 -delete && cp -a /src/. /work/"], what="copying the variant")
 
 
+# Nothing may still reach the snapshot as it was before the bug: jj's own state and the refs it keeps commits alive
+# with go first (a jj variant gets a fresh jj repository afterwards), then the amend, main moved onto it, the reflog
+# expired, and the old commit pruned.
+_FORGET = ("rm -rf .jj && (git for-each-ref --format='%(refname)' refs/jj | xargs -r -n1 git update-ref -d)")
+_PRUNE = ("git update-ref refs/heads/main HEAD && git reflog expire --expire=now --all && git gc -q --prune=now")
+
+
 def plant_bug(deps: Deps, image: str, workspace_volume: str, patch: str, *, variant: str, change: int) -> str:
-    """Apply the patch and amend it into the snapshot's commit, at the variants' fixed date. Returns the new commit."""
+    """Apply the patch and amend it into the snapshot's commit, at the variants' fixed date, leaving no trace of the
+    commit before it. Returns the new commit."""
     date = cv.DATE
-    script = ("cd /work && cat > /tmp/planted.diff && git apply --check /tmp/planted.diff && git apply /tmp/planted.diff"
+    script = (f"cd /work && {_FORGET} && cat > /tmp/planted.diff && git apply --check /tmp/planted.diff"
+              " && git apply /tmp/planted.diff"
               f" && git add -A && GIT_COMMITTER_DATE='{date}' git commit -q --amend --no-edit --date='{date}'"
-              " && rm /tmp/planted.diff && git rev-parse HEAD")
+              f" && rm /tmp/planted.diff && {_PRUNE} && git rev-parse HEAD")
     p = deps.docker(["docker", "run", "--rm", "-i", "-v", f"{workspace_volume}:/work", image, "sh", "-c", script],
                     input=patch, capture_output=True, text=True)
     if p.returncode != 0:
         raise RuntimeError(f"the planted bug for change {change} doesn't apply cleanly to the {variant} variant: "
                            f"{(p.stderr or '')[-800:]}")
     return p.stdout.strip()
+
+
+def init_jj(deps: Deps, image: str, workspace_volume: str) -> None:
+    """A fresh colocated jj repository over the snapshot, so jj's history starts at the commit the arm starts from."""
+    _run(deps, ["docker", "run", "--rm", "-v", f"{workspace_volume}:/work", image, "sh", "-c",
+                f"cd /work && {_FORGET} && jj git init --colocate >/dev/null 2>&1"], what="setting up jj")
 
 
 def add_arm_files(deps: Deps, image: str, workspace_volume: str, arm: trajectory.Arm) -> None:
@@ -192,6 +207,8 @@ def main(argv=None, *, deps: Deps | None = None) -> int:
     copy_variant(deps, args.image, variant["volume"], ws_vol)
     if patch is not None:
         plant_bug(deps, args.image, ws_vol, patch, variant=args.variant, change=args.change)
+    if variant.get("vcs") == "jj":
+        init_jj(deps, args.image, ws_vol)
     if arm.lid_release:
         repo = args.lid_repo or Path(subprocess.run(["git", "-C", str(HERE), "rev-parse", "--show-toplevel"],
                                                     capture_output=True, text=True, check=True).stdout.strip())
@@ -206,7 +223,7 @@ def main(argv=None, *, deps: Deps | None = None) -> int:
     meta = {
         "id": fid, "fork_of": {"variants": str(args.variants), "variant": args.variant, "volume": variant["volume"],
                                "commit": variant["commit"], "source_commit": manifest.get("source_commit"),
-                               "variant_seed": manifest.get("seed")},
+                               "variant_seed": manifest.get("seed"), "vcs": variant.get("vcs", "git")},
         "arm": arm.name, "seed": args.seed_dir.name, "change": args.change, "repeat": args.repeat, "model": args.model,
         "effort": args.effort, "claude_code": CLAUDE_CODE, "image": args.image, "policy": args.policy,
         "owner_model": args.owner_model, "replicate": args.replicate, "owner_model_config": asdict(owner_model),

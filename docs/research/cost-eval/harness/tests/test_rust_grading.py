@@ -70,6 +70,19 @@ def held_dir() -> Path:
     return d
 
 
+class ExportTest(unittest.TestCase):
+    def test_the_checkpoint_is_the_exact_commit_from_git_alone_without_jj_or_build_output(self):
+        calls = []
+        ck = rg.RustCheckpoint(name="cf-x-c03", commit="c1", image="img",
+                               runner=lambda cmd, **kw: calls.append(cmd) or subprocess.CompletedProcess(cmd, 0, "", ""))
+        ck.export("ce-cf-x-ws")
+        script = calls[0][-1]
+        self.assertIn("cp -a /src/.git /work/app/.git", script)
+        self.assertIn("git checkout -q -f --detach c1", script)
+        self.assertIn("git clean -fdxq", script)
+        self.assertNotIn("git clone", script)  # a commit the arm left on a detached HEAD is still found
+
+
 class HeldOutTargetsTest(unittest.TestCase):
     def test_each_held_out_file_becomes_its_own_target_beside_the_original_helpers(self):
         files = rg.held_out_targets(held_dir(), ["crates/core/tests/integration/beta.rs", "crates/ui/tests/term.rs"])

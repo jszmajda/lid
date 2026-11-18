@@ -148,6 +148,15 @@ class FetchContextTest(unittest.TestCase):
         self.assertFalse(any("/tests/" in p or p.startswith("docs/") for p in files))
 
 
+class ImageTest(unittest.TestCase):
+    def test_the_image_pins_jj_and_gives_it_the_workspaces_identity(self):
+        text = bri.DOCKERFILE.read_text()
+        self.assertIn("ARG JJ_VERSION=0.46.0", text)
+        self.assertIn("jj-vcs/jj/releases/download", text)
+        self.assertIn('jj config set --user user.name "Lab Owner"', text)
+        self.assertIn("jj config set --user user.email owner@example.invalid", text)
+
+
 class SpecIdTest(unittest.TestCase):
     def test_the_spec_id_pattern_comes_from_the_specs(self):
         repo, commit = make_repo()
@@ -232,6 +241,17 @@ class VariantPlanTest(unittest.TestCase):
         self.assertGreater(len({tuple(cv.choose_held_out(self.tree, share=0.5, seed=f"s{k}")) for k in range(8)}), 1)
         small = cv.choose_held_out(self.tree, share=0.15, seed="s1")  # 15% of 4 rounds to 1; of 2 and 1, to 0
         self.assertEqual([p.rsplit("/", 1)[0] for p in small], ["crates/widgets/tests/integration"])
+
+    def test_full_and_lid_are_jj_repositories_and_stripped_stays_plain_git(self):
+        plans = cv.plan_variants(self.tree, held_out=[], seed="s1")
+        self.assertEqual({n: v.vcs for n, v in plans.items()}, {"full": "jj", "lid": "jj", "stripped": "git"})
+        calls = []
+        runner = lambda cmd, **kw: calls.append(cmd) or subprocess.CompletedProcess(cmd, 0, b"", b"")  # noqa: E731
+        repo = Path(tempfile.mkdtemp())
+        cv.load_volume(repo, "ce-cv-x-full", jj=True, runner=runner)
+        self.assertIn("jj git init --colocate", calls[-1][-1])
+        cv.load_volume(repo, "ce-cv-x-stripped", jj=False, runner=runner)
+        self.assertNotIn("jj", calls[-1][-1])
 
     def test_the_variants_differ_only_as_designed(self):
         held = ["crates/widgets/tests/integration/beta.rs"]

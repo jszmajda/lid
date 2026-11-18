@@ -402,3 +402,158 @@ class WindowTest(unittest.TestCase):
         self.assertEqual(reported["window"], 1000000)  # the synthetic session reports a 1M window
         self.assertEqual(ct.trajectory_telemetry(self.run_dir(), window=123456, fetch=None)["window"], 123456)
         self.assertEqual([c["change"] for c in reported["changes"]], [3])
+
+
+def bash_call(mid, tid, command, u=None):
+    return assistant(mid, [tool_use(tid, "Bash", {"command": command})], u or usage(1, 100, 10))
+
+
+def bash_out(tid, text, is_error=False):
+    if is_error:
+        return tool_result(tid, f"Exit code 101\n{text}", f"Error: Exit code 101\n{text}", is_error=True)
+    return tool_result(tid, text, {"stdout": text, "stderr": "", "interrupted": False})
+
+
+def edit_call(mid, tid, path):
+    return assistant(mid, [tool_use(tid, "Edit", {"file_path": path, "old_string": "a", "new_string": "b"})], usage(1, 100, 10))
+
+
+REACH_ITEMS = {"items": {
+    "I-1": [{"path": "docs/intent/x-design.md", "lines": [10, 20]}],
+    "I-2": ["docs/intent/y-specs.md"],
+    "I-3": [{"path": "src/b.rs", "lines": [1, 50]}],
+    "I-4": [{"path": "src/b.rs", "search": "fn moved"}],
+    "I-5": [{"path": "docs/never.md"}],
+    "I-6": [{"path": "src/c.rs", "lines": [1, 3]}],
+    "I-7": [{"path": "docs/never.md"}, {"path": "src/a.rs", "search": "fn kept"}],
+}}
+
+
+def reach_turn():
+    return [
+        {"type": "system", "subtype": "init", "cwd": "/work", "session_id": "s1"},
+        assistant("m1", [tool_use("r1", "Read", {"file_path": "/work/docs/intent/x-design.md"})], usage(1, 100, 10)),
+        read_result("r1", "/work/docs/intent/x-design.md", [f"line {k}" for k in range(1, 51)]),
+        bash_call("m2", "b1", "cat src/a.rs"),
+        bash_out("b1", "fn kept() {}\nfn other() {}"),
+        edit_call("m3", "e1", "/work/src/a.rs"),
+        tool_result("e1", "The file has been updated."),
+        bash_call("m4", "b2", "cat docs/intent/y-specs.md && head -5 src/c.rs"),
+        bash_out("b2", "specs\nfirst lines of c"),
+        assistant("m5", [tool_use("r2", "Read", {"file_path": "/work/src/b.rs", "offset": 100, "limit": 21})], usage(1, 100, 10)),
+        read_result("r2", "/work/src/b.rs", ["fn moved() {}"] + ["x"] * 20, start=100),
+    ]
+
+
+class IntentReachTest(unittest.TestCase):
+    def test_items_load_from_a_generic_file(self):
+        path = Path(tempfile.mkdtemp()) / "reach.json"
+        path.write_text(json.dumps(REACH_ITEMS))
+        items = ct.load_reach_items(path)
+        self.assertEqual(items["I-2"], [{"path": "docs/intent/y-specs.md", "lines": None, "search": None}])
+        self.assertEqual(items["I-1"][0]["lines"], [(10, 20)])
+        path.write_text(json.dumps({"I-9": [{"path": "a", "lines": [5]}]}))
+        with self.assertRaises(ValueError):
+            ct.load_reach_items(path)
+
+    def test_reach_before_the_first_edit_and_at_all(self):
+        turn = ct.parse_stream(reach_turn())
+        items = ct.parse_reach_items(REACH_ITEMS)
+        c = ct.rollup_change([turn], None, 200000)
+        reach = ct.intent_reach([turn], items, "/work")
+        self.assertEqual(c["first_edit"], {"turn": 0, "tool": "Edit", "path": "src/a.rs"})
+        got = {i: (r["read_before_first_edit"], r["read_at_all"]) for i, r in reach["items"].items()}
+        self.assertEqual(got, {
+            "I-1": (True, True),     # its lines were read, before the edit
+            "I-2": (False, True),    # read by a shell cat, after the edit
+            "I-3": (False, False),   # src/b.rs was read, but only lines 100-120
+            "I-4": (False, True),    # the search string was in what the Read returned
+            "I-5": (False, False),
+            "I-6": (False, False),   # head shows the file's start, but which lines can't be told
+            "I-7": (True, True),     # one of its places: the string was in what cat printed
+        })
+        self.assertTrue(reach["items"]["I-6"]["touched"])
+        self.assertEqual(reach["items"]["I-1"]["first_read"], {"turn": 0, "via": "Read", "path": "docs/intent/x-design.md"})
+        self.assertEqual(reach["summary"], {"items": 7, "read_before_first_edit": 2, "read_at_all": 4})
+
+    def test_shell_writes_into_the_repository_count_as_edits(self):
+        for cmd, edits in (("sed -i 's/a/b/' src/x.rs", True), ("cat > src/new.rs <<'EOF'\nfn x() {}\nEOF", True),
+                           ("echo hi > /dev/null", False), ("cargo test 2>&1 | tail -20", False),
+                           ("printf x | tee docs/n.md", True), ("echo x > /tmp/scratch.txt", False),
+                           ("cargo build > target/log.txt", False), ("git apply fix.patch", True)):
+            with self.subTest(cmd):
+                self.assertEqual(ct.bash_writes(cmd, "/work", "/work"), edits)
+
+
+CARGO_FAIL = "test result: FAILED. 3 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out"
+CARGO_OK = "test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out"
+COMPILE_FAIL = "error[E0308]: mismatched types\nerror: could not compile `clowder-core` (lib) due to 1 previous error"
+
+
+class CostToGreenTest(unittest.TestCase):
+    def test_cargo_test_runs_are_classified(self):
+        self.assertEqual(ct.cargo_outcome(CARGO_FAIL, False), "fail")
+        self.assertEqual(ct.cargo_outcome(CARGO_OK, False), "pass")
+        self.assertEqual(ct.cargo_outcome(COMPILE_FAIL, True), "fail")
+        self.assertEqual(ct.cargo_outcome(CARGO_OK + "\n" + CARGO_FAIL, False), "fail")
+        self.assertEqual(ct.cargo_outcome("Output too large. Preview: Compiling", True), "fail")  # only the exit code tells
+        self.assertEqual(ct.cargo_outcome("Output too large. Preview: Compiling", False), "unknown")
+        self.assertTrue(ct.is_cargo_test("cd /work && cargo test -p clowder-core 2>&1 | tail -30"))
+        self.assertFalse(ct.is_cargo_test("cargo build --release"))
+
+    def events(self):
+        return [
+            {"type": "system", "subtype": "init", "cwd": "/work", "session_id": "s1"},
+            bash_call("m1", "t1", "cargo test", usage(5, 1000, 100, out=50)),
+            bash_out("t1", CARGO_FAIL, is_error=True),
+            bash_call("m2", "t2", "cargo test", usage(6, 2000, 200, out=60)),
+            bash_out("t2", CARGO_OK),
+            bash_call("m3", "t3", "cargo test 2>&1 | tail", usage(7, 3000, 300, out=70)),
+            bash_out("t3", COMPILE_FAIL),
+            bash_call("m4", "t4", "cargo test", usage(8, 4000, 400, out=80)),
+            bash_out("t4", CARGO_OK),
+            assistant("m5", [{"type": "text", "text": "done"}], usage(9, 5000, 500, out=90)),
+        ]
+
+    def test_from_the_first_failing_run_to_the_last_passing_one(self):
+        ev = self.events()
+        turn = ct.parse_stream(ev)
+        g = ct.cost_to_green([turn])
+        self.assertEqual((g["red"], g["green_again"], g["runs"], g["failing_runs"]), (True, True, 4, 2))
+        # the calls that came after the first failure's result and before the last pass's result: m2, m3, m4
+        self.assertEqual(g["api_calls"], 3)
+        self.assertEqual(g["output_tokens"], 60 + 70 + 80)
+        self.assertEqual(g["input_tokens"], 6 + 7 + 8)
+        self.assertEqual(g["cache_read_tokens"], 2000 + 3000 + 4000)
+        self.assertEqual(g["cache_write_tokens"], 200 + 300 + 400)
+        self.assertEqual(g["turns"], 1)
+        # split across two session turns: the window spans both
+        a, b = ct.parse_stream(ev[:5]), ct.parse_stream([ev[0]] + ev[5:])
+        g2 = ct.cost_to_green([a, b])
+        self.assertEqual((g2["api_calls"], g2["turns"]), (3, 2))
+
+    def test_never_red_and_never_green_again(self):
+        ok = ct.cost_to_green([ct.parse_stream([bash_call("m1", "t1", "cargo test"), bash_out("t1", CARGO_OK)])])
+        self.assertEqual((ok["red"], ok["api_calls"]), (False, 0))
+        red = ct.cost_to_green([ct.parse_stream([bash_call("m1", "t1", "cargo test"), bash_out("t1", CARGO_FAIL),
+                                                 assistant("m2", [{"type": "text", "text": "giving up"}], usage(1, 10, 1, out=7))])])
+        self.assertEqual((red["red"], red["green_again"], red["api_calls"], red["output_tokens"]), (True, False, 1, 7))
+
+    def test_both_measures_are_in_a_changes_rollup(self):
+        turn = ct.parse_stream(self.events())
+        c = ct.rollup_change([turn], None, 200000)
+        self.assertEqual(c["cost_to_green"]["api_calls"], 3)
+        self.assertIsNone(c["first_edit"])
+
+
+class ReachOnARunTest(unittest.TestCase):
+    def test_a_run_gets_intent_reach_per_change_when_given_items(self):
+        run = Path(tempfile.mkdtemp())
+        (run / "trajectory.json").write_text(json.dumps({"id": "cf-y", "arm": "bare", "start_commit": "a",
+                                                         "changes": {"2": {"title": "t", "commit": "b"}}}))
+        (run / "change-02").mkdir()
+        (run / "change-02" / "turn-00.stream.jsonl").write_text("\n".join(json.dumps(e) for e in reach_turn()))
+        t = ct.trajectory_telemetry(run, window=None, fetch=None, reach_items=ct.parse_reach_items(REACH_ITEMS))
+        self.assertEqual(t["changes"][0]["intent_reach"]["summary"]["read_at_all"], 4)
+        self.assertNotIn("intent_reach", ct.trajectory_telemetry(run, window=None, fetch=None)["changes"][0])
+        self.assertEqual(ct.parse_reach_items({"I": ["./.claude/x.md"]})["I"][0]["path"], ".claude/x.md")

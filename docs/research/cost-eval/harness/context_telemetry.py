@@ -29,6 +29,13 @@ What it measures, per turn and rolled up per change (a change is one session; it
   persisted counts only if the persisted file was then Read); and a touched share, the bytes of every repository file
   any read form reached, which bounds coverage from above. Blob sizes are bytes, so Read coverage is measured in UTF-8
   bytes too; characters returned are measured in characters.
+- First edit: the change's first edit to the repository, by an edit tool, or by a shell command that writes into it
+  (an in-place sed or perl, git apply or patch, a redirection or tee to a path under the root other than target/).
+- Intent reach (with --reach-items, a JSON file of where each graded item is stated: paths, optionally line ranges or
+  search strings): per item, whether the change read a place it is stated before its first edit, and at all, by the
+  Read tool's exact lines, a whole-file shell read, or the search string in what a read returned.
+- Cost to green: the API calls, tokens, and session turns from the change's first failing `cargo test` run to its last
+  passing one (cargo's own output decides, then the exit code; output too long to return is "unknown").
 """
 
 from __future__ import annotations
@@ -403,6 +410,49 @@ def bash_reads(command: str, cwd: str = DEFAULT_ROOT, root: str = DEFAULT_ROOT) 
     return out
 
 
+# --- Edits and cargo runs --------------------------------------------------------------------------------------
+
+EDIT_TOOLS = {"Edit", "MultiEdit", "Write", "NotebookEdit"}
+REDIRECT = re.compile(r"(?:^|[^0-9&<>])>{1,2}\s*([^\s;&|<>()]+)")
+CARGO_TEST = re.compile(r"\bcargo\s+(?:\+\S+\s+)?(?:test|nextest\s+run)\b")
+
+
+def bash_writes(command: str, cwd: str = DEFAULT_ROOT, root: str = DEFAULT_ROOT) -> bool:
+    """Whether a shell command writes a file in the repository: an in-place sed or perl, git apply or patch, or a
+    redirection or tee into a path under the root other than target/. A heuristic: a script that writes files itself
+    (python, say) isn't seen."""
+    text = strip_heredocs(command)
+    if re.search(r"\bsed\b[^|;&]*\s(?:-i|--in-place|-[a-zA-Z]*i)\b", text) or re.search(r"\bperl\b[^|;&]*\s-[a-zA-Z]*i", text):
+        return True
+    if re.search(r"\bgit\s+apply\b|(?:^|[\s;&|])patch\s+-", text):
+        return True
+    targets = [m.group(1) for m in REDIRECT.finditer(text)]
+    for m in re.finditer(r"\btee\s+((?:-\S+\s+)*)([^\s;&|<>()]+)", text):
+        targets.append(m.group(2))
+    for target in targets:
+        if target.startswith(("&", "/dev/")) or {"$", "`"} & set(target):
+            continue
+        rel = repo_rel(_resolve(cwd, target), root)
+        if rel is not None and not rel.startswith("target/"):
+            return True
+    return False
+
+
+def is_cargo_test(command: str) -> bool:
+    return bool(CARGO_TEST.search(command))
+
+
+def cargo_outcome(output: str, is_error: bool) -> str:
+    """"fail" (a failing test or a compile error in cargo's output, or a non-zero exit with nothing else to go on),
+    "pass" (cargo's test result line, and nothing failing), or "unknown" (neither shows, as when the output was too
+    long to return and the command exited zero)."""
+    if "test result: FAILED" in output or re.search(r"(?m)^error(?:\[E\d+\])?: ", output):
+        return "fail"
+    if "test result: ok" in output:
+        return "pass"
+    return "fail" if is_error else "unknown"
+
+
 # --- Streams ----------------------------------------------------------------------------------------------------
 
 
@@ -443,6 +493,7 @@ def new_turn(root: str) -> dict:
         "bash_read_chars_by_class": Counter(), "bash_read_chars_split": 0, "bash_reads": [], "bash_unresolved": 0,
         "bash_persisted": 0,
         "bash_persisted_bytes": 0, "skill_calls": 0, "skill_chars": 0,
+        "timeline": [],  # in order: API calls, reads (with what they returned), edits, cargo test runs
     }
 
 
@@ -473,7 +524,10 @@ def parse_stream(source, root: str | None = None) -> dict:
             ids = seen.setdefault(thread, set())
             if mid not in ids:
                 ids.add(mid)
-                size = context_size(msg.get("usage") or {})
+                u = msg.get("usage") or {}
+                t["timeline"].append({"kind": "call", "thread": thread, **{k: int(u.get(k) or 0) for k in (
+                    "input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens", "output_tokens")}})
+                size = context_size(u)
                 if thread is None:
                     t["api_calls"] += 1
                     t["contexts"].append(size)
@@ -488,6 +542,9 @@ def parse_stream(source, root: str | None = None) -> dict:
                     continue
                 name, inp = b.get("name"), b.get("input") or {}
                 t["tool_calls"][name] += 1
+                if name in EDIT_TOOLS:
+                    t["timeline"].append({"kind": "edit", "tool": name, "thread": thread,
+                                          "path": inp.get("file_path") or inp.get("notebook_path")})
                 if name == "Read":
                     t["read_calls"] += 1
                     pending[b["id"]] = ("Read", inp)
@@ -498,7 +555,11 @@ def parse_stream(source, root: str | None = None) -> dict:
                 elif name == "Skill":
                     t["skill_calls"] += 1
                 elif name == "Bash":
-                    bp = bash_reads(inp.get("command") or "", cwd=cwd.get(thread, t["root"]), root=t["root"])
+                    command = inp.get("command") or ""
+                    here = cwd.get(thread, t["root"])
+                    if bash_writes(command, here, t["root"]):
+                        t["timeline"].append({"kind": "edit", "tool": "Bash", "thread": thread, "path": None})
+                    bp = bash_reads(command, cwd=here, root=t["root"])
                     cwd[thread] = bp.cwd
                     t["bash_calls"] += 1
                     t["bash_search_calls"] += bp.searches > 0
@@ -508,7 +569,7 @@ def parse_stream(source, root: str | None = None) -> dict:
                     if bp.read_segments:
                         t["bash_read_calls"] += 1
                         t["bash_reads"].extend(reads)
-                    pending[b["id"]] = ("Bash", (bp, reads))
+                    pending[b["id"]] = ("Bash", (bp, reads, is_cargo_test(command)))
         elif typ == "user":
             content = (e.get("message") or {}).get("content")
             if not isinstance(content, list):
@@ -524,10 +585,11 @@ def parse_stream(source, root: str | None = None) -> dict:
                     continue
                 name, payload = pending.pop(b["tool_use_id"])
                 text = _text(b.get("content"))
+                thread = e.get("parent_tool_use_id")
                 if name == "Read":
-                    _read_result(t, payload, text, extra, bool(b.get("is_error")))
+                    _read_result(t, payload, text, extra, bool(b.get("is_error")), thread)
                 elif name == "Bash":
-                    _bash_result(t, payload, text, extra)
+                    _bash_result(t, payload, text, extra, bool(b.get("is_error")), thread)
     c = t["contexts"]
     t["peak_context"] = max(c, default=0)
     t["first_context"] = c[0] if c else None
@@ -536,7 +598,7 @@ def parse_stream(source, root: str | None = None) -> dict:
     return t
 
 
-def _read_result(t: dict, inp: dict, text: str, extra, is_error: bool) -> None:
+def _read_result(t: dict, inp: dict, text: str, extra, is_error: bool, thread=None) -> None:
     f = extra.get("file") if isinstance(extra, dict) and isinstance(extra.get("file"), dict) else None
     path = posixpath.normpath((f or {}).get("filePath") or inp.get("file_path") or "?")
     t["read_chars"] += len(text)
@@ -546,20 +608,32 @@ def _read_result(t: dict, inp: dict, text: str, extra, is_error: bool) -> None:
         return
     t["read_files"].add(path)
     lines = t["read_lines"].setdefault(path, {})
+    seen: set[int] = set()
     if f is not None and isinstance(f.get("content"), str):
         start = int(f.get("startLine") or 1)
         for k, line in enumerate(f["content"].split("\n")):
             lines[start + k] = max(lines.get(start + k, 0), len(line.encode()) + 1)
+            seen.add(start + k)
+        shown = f["content"]
     else:
         for line in text.split("\n"):
             m = NUMBERED.match(line)
             if m:
                 n = int(m.group(1))
                 lines[n] = max(lines.get(n, 0), len(m.group(2).encode()) + 1)
+                seen.add(n)
+        shown = text
+    t["timeline"].append({"kind": "read", "via": "Read", "thread": thread, "path": path, "lines": seen or None,
+                          "whole": False, "text": shown})
 
 
-def _bash_result(t: dict, payload, text: str, extra) -> None:
-    bp, reads = payload
+def _bash_result(t: dict, payload, text: str, extra, is_error: bool = False, thread=None) -> None:
+    bp, reads, cargo = payload
+    out = text
+    if isinstance(extra, dict) and isinstance(extra.get("stdout"), str):
+        out = extra["stdout"] + ("\n" + extra["stderr"] if extra.get("stderr") else "")
+    if cargo:
+        t["timeline"].append({"kind": "cargo_test", "thread": thread, "outcome": cargo_outcome(out, is_error)})
     persisted = None
     if isinstance(extra, dict) and extra.get("persistedOutputPath"):
         persisted = extra["persistedOutputPath"]
@@ -571,6 +645,9 @@ def _bash_result(t: dict, payload, text: str, extra) -> None:
         t["bash_persisted"] += 1
         for r in reads:
             r["persisted"] = persisted
+    for r in reads:
+        t["timeline"].append({"kind": "read", "via": "Bash", "thread": thread, "path": posixpath.normpath(r["path"]),
+                              "lines": None, "whole": r["mode"] == "full" and not persisted, "text": out})
     if not bp.read_segments:
         return
     t["bash_read_chars"] += len(text)
@@ -721,6 +798,8 @@ def rollup_change(turns: list[dict], entries, window: int, root: str | None = No
                 bash_files[rel] = "full" if seen_whole else bash_files.get(rel, "partial")
     out["files_read_any"] = len(any_files)
     out["bash_read_files"] = sorted(bash_files)
+    out["first_edit"] = first_edit(turns, root)
+    out["cost_to_green"] = cost_to_green(turns)
     if entries is None:
         out["repo"] = None
         out["coverage"] = None
@@ -754,6 +833,142 @@ def rollup_change(turns: list[dict], entries, window: int, root: str | None = No
     return out
 
 
+# --- Intent reach and cost to green -----------------------------------------------------------------------------
+
+
+def parse_reach_items(data: dict) -> dict[str, list[dict]]:
+    """Where each graded item is stated: {"items": {item: [location, ...]}} (or the mapping alone). A location is a
+    repository path, or {"path", "lines": [first, last] or a list of such ranges, "search": a string the read text
+    must contain}. With neither lines nor search, any read of the path counts."""
+    items = data.get("items", data) if isinstance(data, dict) else None
+    if not isinstance(items, dict):
+        raise ValueError("intent reach: expected an object of items")
+    out = {}
+    for item, locs in items.items():
+        if not isinstance(locs, list):
+            raise ValueError(f"intent reach: {item}'s locations aren't a list")
+        norm = []
+        for loc in locs:
+            loc = {"path": loc} if isinstance(loc, str) else dict(loc)
+            if not isinstance(loc.get("path"), str) or not loc["path"]:
+                raise ValueError(f"intent reach: {item} has a location without a path")
+            lines = loc.get("lines")
+            if lines is not None:
+                ranges = [lines] if lines and isinstance(lines[0], int) else lines
+                if not all(isinstance(r, list) and len(r) == 2 and r[0] <= r[1] for r in ranges):
+                    raise ValueError(f"intent reach: {item}: lines must be [first, last] or a list of them")
+                lines = [tuple(r) for r in ranges]
+            search = loc.get("search")
+            if search is not None and not isinstance(search, str):
+                raise ValueError(f"intent reach: {item}: search must be a string")
+            norm.append({"path": loc["path"].removeprefix("./"), "lines": lines, "search": search})
+        out[item] = norm
+    return out
+
+
+def load_reach_items(path) -> dict[str, list[dict]]:
+    return parse_reach_items(json.loads(Path(path).read_text(encoding="utf-8")))
+
+
+def _events_in_order(turns: list[dict]):
+    for k, t in enumerate(turns):
+        for ev in t.get("timeline", []):
+            yield k, ev
+
+
+def _repo_edit(ev: dict, root: str) -> str | None:
+    """A repository-relative path for an edit inside the repository, "" for a shell write (inside it by
+    construction), None for an edit elsewhere."""
+    if ev["path"] is None:
+        return ""
+    return repo_rel(posixpath.normpath(ev["path"]), root)
+
+
+def first_edit(turns: list[dict], root: str) -> dict | None:
+    """The change's first edit to the repository: an edit tool's, or a shell command's that writes into it."""
+    for k, ev in _events_in_order(turns):
+        if ev["kind"] == "edit" and (rel := _repo_edit(ev, root)) is not None:
+            return {"turn": k, "tool": ev["tool"], "path": rel or None}
+    return None
+
+
+def _covers(loc: dict, ev: dict) -> bool:
+    if loc["lines"] is None and loc["search"] is None:
+        return True
+    if loc["search"] is not None and loc["search"] in (ev.get("text") or ""):
+        return True
+    if loc["lines"] is not None:
+        if ev.get("whole"):
+            return True
+        seen = ev.get("lines") or set()
+        return any(a <= n <= b for a, b in loc["lines"] for n in seen)
+    return False
+
+
+def intent_reach(turns: list[dict], items: dict[str, list[dict]], root: str) -> dict:
+    """For each graded item, whether the agent read where it is stated: before the change's first edit, and at all.
+    A read counts when it covers a location (its lines, by the Read tool's exact lines or a whole-file shell read; or
+    its search string, in what the read returned); `touched` is any read of a location's file, whether or not it
+    covered the location. Reads by subagents count too."""
+    out = {item: {"read_before_first_edit": False, "read_at_all": False, "touched": False, "first_read": None}
+           for item in items}
+    edited = False
+    for k, ev in _events_in_order(turns):
+        if ev["kind"] == "edit" and _repo_edit(ev, root) is not None:
+            edited = True
+            continue
+        if ev["kind"] != "read":
+            continue
+        rel = repo_rel(ev["path"], root)
+        if rel is None:
+            continue
+        for item, locs in items.items():
+            for loc in locs:
+                if loc["path"] != rel:
+                    continue
+                r = out[item]
+                r["touched"] = True
+                if _covers(loc, ev):
+                    r["read_at_all"] = True
+                    r["read_before_first_edit"] = r["read_before_first_edit"] or not edited
+                    if r["first_read"] is None:
+                        r["first_read"] = {"turn": k, "via": ev["via"], "path": rel}
+    return {"items": out, "summary": {"items": len(out),
+                                      "read_before_first_edit": sum(r["read_before_first_edit"] for r in out.values()),
+                                      "read_at_all": sum(r["read_at_all"] for r in out.values())}}
+
+
+TOKEN_KEYS = (("input_tokens", "input_tokens"), ("cache_read_tokens", "cache_read_input_tokens"),
+              ("cache_write_tokens", "cache_creation_input_tokens"), ("output_tokens", "output_tokens"))
+
+
+def cost_to_green(turns: list[dict]) -> dict:
+    """What the change spent from its first failing cargo test run to its last passing one: the API calls (and their
+    tokens) between the failing run's result and the passing run's, and the session turns that span. With no failing
+    run, nothing; with no passing run after the first failure, what was spent from it to the end."""
+    events = list(_events_in_order(turns))
+    runs = [(i, k, ev["outcome"]) for i, (k, ev) in enumerate(events) if ev["kind"] == "cargo_test"]
+    out = {"red": False, "green_again": None, "runs": sum(o != "unknown" for *_, o in runs),
+           "failing_runs": sum(o == "fail" for *_, o in runs), "unknown_runs": sum(o == "unknown" for *_, o in runs),
+           "api_calls": 0, "subagent_api_calls": 0, "turns": 0, **{k: 0 for k, _ in TOKEN_KEYS}}
+    fails = [(i, k) for i, k, o in runs if o == "fail"]
+    if not fails:
+        return out
+    start, start_turn = fails[0]
+    passes = [(i, k) for i, k, o in runs if o == "pass" and i > start]
+    end, end_turn = passes[-1] if passes else (len(events), len(turns) - 1)
+    out.update(red=True, green_again=bool(passes))
+    for i in range(start + 1, end):
+        k, ev = events[i]
+        if ev["kind"] != "call":
+            continue
+        out["api_calls" if ev["thread"] is None else "subagent_api_calls"] += 1
+        for key, src in TOKEN_KEYS:
+            out[key] += ev[src]
+    out["turns"] = end_turn - start_turn + 1
+    return out
+
+
 # --- Trajectories -----------------------------------------------------------------------------------------------
 
 
@@ -773,7 +988,7 @@ def recorded_window(tj: dict) -> int | None:
 
 
 def trajectory_telemetry(run: Path, window: int | None = DEFAULT_WINDOW, fetch=fetch_listings, image: str | None = None,
-                         log=lambda msg: print(msg, file=sys.stderr)) -> dict:
+                         log=lambda msg: print(msg, file=sys.stderr), reach_items: dict | None = None) -> dict:
     """Every change of one trajectory (or fork). fetch(volume, commits, image) lists the repository; None skips it.
     window None: the window the run records, else the largest its sessions reported, else DEFAULT_WINDOW."""
     run = Path(run)
@@ -813,6 +1028,8 @@ def trajectory_telemetry(run: Path, window: int | None = DEFAULT_WINDOW, fetch=f
         commit = ch.get("commit")
         entries = parse_ls_tree(listings[commit]) if commit in listings else None
         c = rollup_change(turns, entries, window, turns[0]["root"])
+        if reach_items:
+            c["intent_reach"] = intent_reach(turns, reach_items, turns[0]["root"])
         start = before[n]
         c = {"change": n, "title": ch.get("title"), "commit": commit, "start_commit": start, **c,
              "repo_start": repo_size(parse_ls_tree(listings[start])) if start in listings else None}
@@ -949,14 +1166,17 @@ def main(argv=None) -> int:
     ap.add_argument("--summary", action="store_true", help="print per-arm means across the trajectories")
     ap.add_argument("--runs", type=Path, default=RUNS)
     ap.add_argument("--image", help="executor image (default: the trajectory's own)")
+    ap.add_argument("--reach-items", type=Path, help="a JSON file of where each graded item is stated, for intent reach")
     args = ap.parse_args(argv)
+    reach = load_reach_items(args.reach_items) if args.reach_items else None
     done = []
     for tid in args.ids:
         run = args.runs / tid
         if not (run / "trajectory.json").exists():
             print(f"{tid}: no trajectory.json under {args.runs}", file=sys.stderr)
             return 2
-        t = trajectory_telemetry(run, args.window, fetch=None if args.no_repo else fetch_listings, image=args.image)
+        t = trajectory_telemetry(run, args.window, fetch=None if args.no_repo else fetch_listings, image=args.image,
+                                 reach_items=reach)
         (run / OUTPUT_NAME).write_text(json.dumps(t, indent=1) + "\n")
         print(format_trajectory(t))
         print()

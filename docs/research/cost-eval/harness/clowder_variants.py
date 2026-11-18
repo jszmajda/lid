@@ -11,7 +11,8 @@ Each variant is a single-commit git repository with fresh history, so no arm can
   directory's `main.rs`, so the build stays green.
 - **full**: everything else, docs and agent instruction files included.
 - **lid**: the same files as full. The LID arm's plugin is installed by the arm's own setup, as for other seeds; the
-  repository's AGENTS.md already carries its LID directives.
+  repository's AGENTS.md already carries its LID directives. Full and lid are loaded as colocated jj repositories,
+  since the project's instructions ask for jj; stripped stays plain git.
 - **stripped**: no docs/, no agent instruction files (AGENTS.md, CLAUDE.md, GEMINI.md, .claude/), no LID tooling
   (a script outside crates/ that reads `@spec` annotations or docs/intent), no README paragraph about LID or linking
   into docs/, no `@spec` annotations and no other citation of a spec ID (the IDs' prefixes are read from the specs),
@@ -65,6 +66,7 @@ class Variant:
     symlinks: dict[str, str]
     executables: set[str]
     report: dict = field(default_factory=dict)
+    vcs: str = "git"  # "jj": loaded as a colocated jj repository, as the project's own instructions expect
 
 
 def _git(repo: Path, *args: str, stdin: bytes | None = None) -> bytes:
@@ -421,8 +423,8 @@ def plan_variants(tree: Tree, *, held_out: list[str], seed: str, ratio: float = 
     base = {p: d for p, d in tree.files.items() if p not in held_out}
     _drop_modules(base, held_out)
     full = Variant("full", dict(base), dict(tree.symlinks), set(tree.executables) - set(held_out),
-                   {"held_out": sorted(held_out)})
-    lid = Variant("lid", dict(base), dict(tree.symlinks), set(full.executables), dict(full.report))
+                   {"held_out": sorted(held_out)}, vcs="jj")
+    lid = Variant("lid", dict(base), dict(tree.symlinks), set(full.executables), dict(full.report), vcs="jj")
 
     files = dict(base)
     gone = {"docs": [], "agent files": [], "lid tooling": []}
@@ -539,11 +541,15 @@ def held_out_helpers(tree: Tree, held_out: list[str]) -> dict[str, bytes]:
 # -------------------------------------------------------------------------------------------- docker and cargo
 
 
-def load_volume(repo_dir: Path, volume: str, image: str = IMAGE, runner=subprocess.run) -> None:
-    """Replace the volume's contents with the repository (its working tree and .git), owned by the image's user."""
+def load_volume(repo_dir: Path, volume: str, image: str = IMAGE, *, jj: bool = False, runner=subprocess.run) -> None:
+    """Replace the volume's contents with the repository (its working tree and .git), owned by the image's user. With
+    jj, the repository becomes a colocated jj repository, made by the image's own jj."""
     tar = subprocess.run(["tar", "-C", str(repo_dir), "-cf", "-", "."], check=True, capture_output=True).stdout
-    runner(["docker", "run", "--rm", "-i", "-v", f"{volume}:/work", image, "sh", "-c",
-            "find /work -mindepth 1 -delete && tar -x -C /work"], input=tar, check=True, capture_output=True)
+    script = "find /work -mindepth 1 -delete && tar -x -C /work"
+    if jj:
+        script += " && cd /work && jj git init --colocate >/dev/null 2>&1"
+    runner(["docker", "run", "--rm", "-i", "-v", f"{volume}:/work", image, "sh", "-c", script],
+           input=tar, check=True, capture_output=True)
 
 
 TEST_RESULT = re.compile(r"test result: (\w+)\. (\d+) passed; (\d+) failed; (\d+) ignored")
@@ -606,10 +612,10 @@ def main(argv=None) -> int:
                 "held_out": held, "variants": {}}
     for name, v in variants.items():
         head = write_repo(v, args.out / name)
-        entry = {"commit": head, "report": v.report, "sizes": variant_sizes(v), "files": len(v.files)}
+        entry = {"commit": head, "vcs": v.vcs, "report": v.report, "sizes": variant_sizes(v), "files": len(v.files)}
         if args.volumes or args.cargo_test:
             entry["volume"] = f"ce-cv-{args.seed}-{name}"
-            load_volume(args.out / name, entry["volume"], args.image)
+            load_volume(args.out / name, entry["volume"], args.image, jj=v.vcs == "jj")
         if args.cargo_test:
             result, log = cargo_test(entry["volume"], image=args.image)
             (args.out / f"cargo-test-{name}.log").write_text(log)
