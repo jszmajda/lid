@@ -35,6 +35,7 @@ PROMPTS = HERE / "prompts"
 TOOLS = HERE / "grading"
 VERDICTS = ("met", "not met", "couldn't exercise")
 MISSING = "missing"  # a probe the grader couldn't exercise even on a rerun: no verdict on the build, either way
+CONFLICT = "missing (conflict)"  # a "met" on an item the extraction found absent: out of the share, for a spot-check
 DEFERRED_NEEDS = ("prior-data", "prior-observations")
 MAX_JUDGE_BODY = 20000  # characters of one response body the judge sees; the full log stays on disk  # not implemented yet; such probes are reported as not run
 
@@ -174,6 +175,8 @@ def item_verdicts(probe_verdicts: dict[str, str], probes: list[Probe]) -> dict[s
             v = "not met"
         elif "couldn't exercise" in given:
             v = "couldn't exercise"
+        elif CONFLICT in given:
+            v = CONFLICT
         elif MISSING in given:
             v = MISSING
         elif not given or len(given) < len(vs):

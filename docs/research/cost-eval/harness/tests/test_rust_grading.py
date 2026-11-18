@@ -276,6 +276,16 @@ class GradeProbesTest(unittest.TestCase):
         self.assertTrue(problems("not met", "none", "compile"))
         self.assertEqual(problems("not met", "none", "none"), [])
 
+    def test_every_step_a_probe_is_about_is_the_builds_never_the_tests_own(self):
+        execute = rg.execution_prompt("b01")
+        self.assertIn("by calling the library's own API", execute)
+        self.assertIn("never reproduce or simulate", execute)
+        self.assertIn("print `CANNOT", execute)
+        batch = [p for p in grading.parse_probes(PROBES).probes if p.id == "P-NEW01-a"]
+        judge = rg.judge_prompt(batch, rg.probe_log_lines({"P-NEW01-a": {"source": "x", "output": "y"}}))
+        self.assertIn("with its own logic", judge)
+        self.assertIn("never \"met\" or \"not met\"", judge)
+
     def test_the_prompts_exist_and_fill(self):
         for name in ("extraction-rust.md", "grade-execute-rust.md", "grade-judge-rust.md"):
             self.assertTrue((grading.PROMPTS / name).exists(), name)
@@ -351,9 +361,11 @@ class KeptBehaviourTest(unittest.TestCase):
 
     def test_items_met_leaves_missing_items_out(self):
         self.assertEqual(rg.items_met({"A": "met", "B": "not met", "C": "missing", "D": None}),
-                         {"met": 1, "of": 2, "missing": 1, "interface_faults": {"not met (absent)": 0, "missing": 0}})
+                         {"met": 1, "of": 2, "missing": 1, "conflicts": 0,
+                          "interface_faults": {"not met (absent)": 0, "missing": 0}})
         self.assertEqual(rg.items_met({"B": "not met", "C": "missing"}, {"not met (absent)": ["B"], "missing": ["C", "Z"]}),
-                         {"met": 0, "of": 1, "missing": 1, "interface_faults": {"not met (absent)": 1, "missing": 1}})
+                         {"met": 0, "of": 1, "missing": 1, "conflicts": 0,
+                          "interface_faults": {"not met (absent)": 1, "missing": 1}})
 
 
 SOCIETY_BASE = """use crate::common::*;
@@ -631,6 +643,55 @@ class GradedItemsTest(unittest.TestCase):
         self.assertEqual(grade_rust.graded_items(Path(tempfile.mkdtemp()), 3, {}, probes), [])
 
 
+class ConflictTest(unittest.TestCase):
+    """A "met" on an item the extraction found absent from the diff is a conflict: missing, flagged with both rulings."""
+
+    def test_a_met_on_an_absent_item_is_a_conflict_out_of_the_share_with_both_rulings(self):
+        import re
+        probeset = grading.parse_probes(PROBES)
+        applicable = [p for p in probeset.probes if p.applies(7)]
+        ck = FakeCk()
+        usage = SimpleNamespace(reported_cost_usd=0.1, models={})
+        record = {"items": [
+            {"item": "NEW-01", "status": "implemented", "evidence": [{"file": "crates/core/src/lib.rs", "symbols": ["rename"]}], "note": "rename"},
+            {"item": "NEW-02", "status": "absent", "evidence": [{"file": "crates/core/src/lib.rs", "symbols": []}], "note": "nothing new"}]}
+
+        def run_role(role, prompt, json_schema=None):
+            if json_schema:
+                ids = sorted(set(re.findall(r"## (P-NEW\d+-[a-z])", prompt)))
+                return SimpleNamespace(structured={"verdicts": [
+                    {"probe": pid, "verdict": "met", "evidence": [2], "reason": "The output shows what this probe needed.",
+                     "cause": "none", "fault": "none"} for pid in ids]}, text="", usage=usage, duration_s=1.0)
+            if "probes-" not in prompt:
+                ck.files["/work/out/reference.md"] = "use core::State;"
+                ck.files["/work/out/implementation.json"] = json.dumps(record)
+            else:
+                bid = re.search(r"probes-(\w+)\.md", prompt).group(1)
+                for pid in re.findall(r"(?m)^## (P-\S+)", ck.files[f"/work/out/probes-{bid}.md"]):
+                    ck.files[f"/work/out/probes/{rg.probe_target(pid)}.log"] = "observed"
+            return SimpleNamespace(structured=None, text="done", usage=usage, duration_s=1.0)
+
+        g = rg.RustGraders(image="img", roles_volume="roles", claude_code="v")
+        result = rg.grade_probes(ck, g, probeset, applicable, base="b0", out=Path(tempfile.mkdtemp()), volume="ckpt",
+                                 run_role=run_role, items=IMPLEMENTATION_ITEMS)
+        self.assertEqual(result["probes"], {"P-NEW01-a": "met", "P-NEW01-b": "met", "P-NEW02-a": "missing (conflict)"})
+        self.assertEqual(result["items"]["NEW-02 Something later"]["verdict"], "missing (conflict)")
+        self.assertEqual(result["items"]["NEW-01 Kittens can be renamed"]["verdict"], "met")
+        c = result["conflicts"]["NEW-02 Something later"]
+        self.assertEqual(c["probes"]["P-NEW02-a"]["verdict"], "met")
+        self.assertEqual(c["probes"]["P-NEW02-a"]["batch"], "b01")  # where to spot-check the judgment
+        self.assertEqual((c["extraction"]["status"], c["extraction"]["note"]), ("absent", "nothing new"))
+        met = rg.items_met({i: v["verdict"] for i, v in result["items"].items()}, result["interface_faults"])
+        self.assertEqual((met["met"], met["of"], met["missing"], met["conflicts"]), (1, 1, 0, 1))
+
+    def test_a_conflict_ranks_with_missing_below_a_decided_verdict(self):
+        ps = [p for p in grading.parse_probes(PROBES).probes if p.item.startswith("NEW-01")]
+        v = lambda a, b: grading.item_verdicts({"P-NEW01-a": a, "P-NEW01-b": b}, ps)["NEW-01 Kittens can be renamed"]["verdict"]
+        self.assertEqual(v("met", grading.CONFLICT), grading.CONFLICT)
+        self.assertEqual(v("not met", grading.CONFLICT), "not met")
+        self.assertEqual(v("missing", grading.CONFLICT), grading.CONFLICT)
+
+
 class GradeRustMainTest(unittest.TestCase):
     def test_a_fork_is_graded_for_keeping_test_edits_and_probes(self):
         import grade_rust
@@ -704,8 +765,9 @@ class GradeRustMainTest(unittest.TestCase):
         self.assertNotIn("keeping", summary)
         # still couldn't exercise on the rerun: missing, out of the items-met share
         self.assertEqual(summary["items"], {"NEW-01 Kittens can be renamed": "missing"})
-        self.assertEqual(summary["items_met"], {"met": 0, "of": 0, "missing": 1,
+        self.assertEqual(summary["items_met"], {"met": 0, "of": 0, "missing": 1, "conflicts": 0,
                                                 "interface_faults": {"not met (absent)": 0, "missing": 0}})
+        self.assertEqual(summary["conflicts"], {})
         self.assertEqual(summary["doc_changes"]["files"], 0)  # the fake diff touches source and tests only
         self.assertTrue(any(".git" in s and s.startswith("cd /work/app && rm -rf") for s in ck.scripts))
         self.assertEqual(summary["missing_by_fault"], {"observation": 2})

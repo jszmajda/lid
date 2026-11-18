@@ -76,7 +76,7 @@ def interface_faults(gdir: Path, verdicts: str) -> dict[str, int]:
 
 
 def share_met(verdicts: dict[str, str], keep=lambda i: True) -> tuple[int, int] | None:
-    vs = [v for i, v in verdicts.items() if keep(i) and v != grading.MISSING]
+    vs = [v for i, v in verdicts.items() if keep(i) and v not in (grading.MISSING, grading.CONFLICT)]
     return (sum(v == "met" for v in vs), len(vs)) if vs else None
 
 
@@ -157,6 +157,7 @@ def build(runs: Path, seed_dir: Path, prefix: str, arms: dict[str, list[str]], v
                      "couldn't exercise": sum(x == "couldn't exercise" for x in v.values()),
                      "missing": sum(x == grading.MISSING for x in v.values()), "missing by cause": missing_causes(gdir, verdicts),
                      "interface faults": interface_faults(gdir, verdicts),
+                     "conflicts": sum(x == grading.CONFLICT for x in v.values()),
                      "by kind": {kd: share_met(v, lambda i, kd=kd: kinds.get(i) == kd) for kd in KINDS},
                      "by band": {b: share_met(v, lambda i, b=b: bands.get(i) == b) for b in ("low", "medium", "high")} if bands else {},
                      "latent items": {i: v.get(i) for i in bands}}
@@ -224,16 +225,17 @@ def render(r: dict) -> str:
             lines += ["", "Each latent item at the last graded change (met ✓ / not met ✗ / couldn't exercise ? / missing ○, per trajectory):", ""]
             items = sorted({i for ts in arms.values() for t in ts for f in t["fidelity"].values() for i in f["latent items"]})
             lines += ["| Arm | " + " | ".join(items) + " |", "|---|" + "---|" * len(items)]
-            short = {"met": "✓", "not met": "✗", "couldn't exercise": "?", grading.MISSING: "○", None: "·"}
+            short = {"met": "✓", "not met": "✗", "couldn't exercise": "?", grading.MISSING: "○", grading.CONFLICT: "!",
+                     None: "·"}
             for a, ts in arms.items():
                 fs = [t["fidelity"][last] for t in ts if last in t["fidelity"]]
                 lines.append(f"| {a} | " + " | ".join("".join(short[f["latent items"].get(i)] for f in fs) for i in items) + " |")
 
-    if any(f.get("missing") for ts in arms.values() for t in ts for f in t["fidelity"].values()):
+    if any(f.get("missing") or f.get("conflicts") for ts in arms.values() for t in ts for f in t["fidelity"].values()):
         lines += ["", "## Missing items", "",
                   "Items the grader couldn't exercise even on a rerun blind to the arm: left out of items met. "
                   "Totals over trajectories and graded changes; causes count probes.", "",
-                  "| Arm | Missing items | Probes by cause |", "|---|---|---|"]
+                  "| Arm | Missing items | Probes by cause | Conflicts (met on an item found absent) |", "|---|---|---|---|"]
         for a, ts in arms.items():
             fs = [f for t in ts for f in t["fidelity"].values()]
             causes: dict[str, int] = {}
@@ -241,7 +243,8 @@ def render(r: dict) -> str:
                 for c, k in f.get("missing by cause", {}).items():
                     causes[c] = causes.get(c, 0) + k
             lines.append(f"| {a} | {sum(f.get('missing', 0) for f in fs)} | "
-                         + (", ".join(f"{c} {k}" for c, k in sorted(causes.items())) or "–") + " |")
+                         + (", ".join(f"{c} {k}" for c, k in sorted(causes.items())) or "–")
+                         + f" | {sum(f.get('conflicts', 0) for f in fs)} |")
 
     # cost and attention
     lines += ["", "## Cost and attention, build plus every change", "",

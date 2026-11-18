@@ -223,6 +223,7 @@ def main(argv=None, *, checkpoint=None, run_role=executor.run_role) -> int:
                 summary["items_met"] = rg.items_met(summary["items"], result["interface_faults"])
                 summary["kept_behaviour_met"] = rg.items_met(summary["kept_behaviour_checks"], result["interface_faults"])
                 summary["implementation"] = result["implementation"]
+                summary["conflicts"] = result["conflicts"]  # both rulings, for a spot-check
                 summary["missing_by_fault"] = result["missing_by_fault"]
                 summary["execution_faults"] = result["execution_faults"]
     finally:

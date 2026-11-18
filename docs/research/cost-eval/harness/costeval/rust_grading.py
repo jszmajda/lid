@@ -30,7 +30,10 @@ Design: "Later seeds and variants" (the falsification test's grading) and "Grade
      exercise", cause execution, with that fault): the probe runs once more, in a batch of its own, from no test and
      with the same instructions; if it is still unresolved its verdict is "missing", which leaves its item out of
      the items-met share and is reported by fault and arm, except that an interface fault on an item the extraction
-     found absent is a confirmed absence: "not met". Interface faults are reported beside the share either way.
+     found absent is a confirmed absence: "not met". Interface faults are reported beside the share either way. A
+     step the test did with its own logic rather than the library's is an interface fault too, and a "met" on an
+     item the extraction found absent is a conflict: "missing (conflict)", out of the share, flagged with both
+     rulings for a spot-check.
 """
 
 from __future__ import annotations
@@ -435,7 +438,8 @@ def _judge_batch(ck, g: RustGraders, batch: list, bid: str, out: Path, *, volume
         tries.append({"structured": rec.structured, "problems": problems, "usage": _usage(rec)})
         if not problems:
             break
-    final = {v["probe"]: v for v in (tries[-1]["structured"] or {}).get("verdicts", [])} if not tries[-1]["problems"] else {}
+    final = ({v["probe"]: {**v, "batch": bid} for v in (tries[-1]["structured"] or {}).get("verdicts", [])}
+             if not tries[-1]["problems"] else {})
     (bdir / "judgment.json").write_text(json.dumps({"tries": tries, "verdicts": final, "lines": lines}, indent=1),
                                        encoding="utf-8")
     return final
@@ -457,6 +461,7 @@ def grade_probes(ck, g: RustGraders, probeset: grading.ProbeSet, probes: list, *
     (out / "reference.md").write_text(reference, encoding="utf-8")
     sessions = {"extraction": {"usage": _usage(rec), "problems": [] if reference.strip() else ["no reference"]}}
     statuses: dict[str, str] = {}
+    records: dict[str, dict] = {}
     if items:
         raw = ck.get("/work/out/implementation.json")
         try:
@@ -464,6 +469,7 @@ def grade_probes(ck, g: RustGraders, probeset: grading.ProbeSet, probes: list, *
         except ValueError:
             data = None
         statuses, problems = check_implementation(data, [i for i, _ in items])
+        records = {e.get("item"): e for e in (data or {}).get("items") or [] if isinstance(e, dict)} if isinstance(data, dict) else {}
         (out / "implementation.json").write_text(json.dumps({"statuses": statuses, "problems": problems, "record": data},
                                                             indent=1), encoding="utf-8")
         ck.sh("rm -f /work/out/implementation.json", check=False)  # the executors never read the items
@@ -494,6 +500,14 @@ def grade_probes(ck, g: RustGraders, probeset: grading.ProbeSet, probes: list, *
                             "first": {"fault": first.get("fault"), "reason": first.get("reason")}}
         else:
             verdicts[pid] = second
+    # a "met" on an item the extraction found nothing addressing is a conflict between the two: neither counts
+    conflicts: dict[str, dict] = {}
+    for pid, v in verdicts.items():
+        if v.get("verdict") == "met" and statuses.get(by_id[pid].item.split()[0]) == "absent":
+            verdicts[pid] = {**v, "verdict": grading.CONFLICT}
+            c = conflicts.setdefault(by_id[pid].item, {"probes": {}, "extraction": records.get(by_id[pid].item.split()[0])})
+            c["probes"][pid] = {"verdict": "met", "reason": v.get("reason"), "evidence": v.get("evidence"),
+                                "batch": v.get("batch")}
     probe_verdicts = {pid: v["verdict"] for pid, v in verdicts.items()}
     verdict_items = grading.item_verdicts(probe_verdicts, probes)
     by_fault: dict[str, int] = {}
@@ -504,7 +518,8 @@ def grade_probes(ck, g: RustGraders, probeset: grading.ProbeSet, probes: list, *
                  "missing": sorted({item_of[pid] for pid, m in missing.items() if m["fault"] == "interface"})}
     result = {"probes": probe_verdicts, "items": verdict_items, "details": verdicts, "sessions": sessions,
               "execution_faults": faults, "reruns": reruns, "missing": missing, "missing_by_fault": by_fault,
-              "absent": absent, "interface_faults": interface, "implementation": statuses, "helpers": helpers or {}}
+              "absent": absent, "interface_faults": interface, "implementation": statuses, "conflicts": conflicts,
+              "helpers": helpers or {}}
     (out / "verdicts.json").write_text(json.dumps(result, indent=1), encoding="utf-8")
     return result
 
@@ -735,9 +750,10 @@ def items_met(items: dict[str, str | None], interface: dict[str, list[str]] | No
     """Items met, of the items with a verdict on the build: "missing" (a grader error a rerun didn't resolve) and
     items with no verdict are left out, and missing ones counted apart. Beside it, the items an interface fault left
     after the rerun: "not met (absent)" where the extraction found nothing addressing them, else missing."""
-    decided = [v for v in items.values() if v and v != grading.MISSING]
+    decided = [v for v in items.values() if v and v not in (grading.MISSING, grading.CONFLICT)]
     return {"met": sum(v == "met" for v in decided), "of": len(decided),
             "missing": sum(v == grading.MISSING for v in items.values()),
+            "conflicts": sum(v == grading.CONFLICT for v in items.values()),
             "interface_faults": {k: sum(i in items for i in (interface or {}).get(k, []))
                                  for k in ("not met (absent)", "missing")}}
 

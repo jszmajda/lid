@@ -67,7 +67,16 @@ class ReportTest(unittest.TestCase):
         self.assertEqual((f["missing"], f["missing by cause"]), (1, {"interface": 1}))
         text = report.render(r)
         self.assertIn("## Missing items", text)
-        self.assertIn("| bare | 1 | interface 1 |", text)
+        self.assertIn("| bare | 1 | interface 1 | 0 |", text)
+
+    def test_a_conflict_is_left_out_of_items_met_and_counted(self):
+        g = self.runs / "s9-bare-1" / "grading" / "change-01"
+        write(g / "verdicts-c.json", {"probes": {"P-BK01-a": "met", "P-BK01-b": "missing (conflict)", "P-BK02-a": "met"},
+                                      "conflicts": {"BK-01 x": {"probes": {"P-BK01-b": {"verdict": "met"}}}}})
+        r = self.build("verdicts-c")
+        f = r["arms"]["bare"][0]["fidelity"][1]
+        self.assertEqual((f["all"], f["conflicts"]), ((1, 1), 1))
+        self.assertIn("| bare | 0 | – | 1 |", report.render(r))
 
     def test_interface_faults_are_reported_next_to_the_share_whether_absent_or_missing(self):
         g = self.runs / "s9-bare-1" / "grading" / "change-01"

@@ -184,6 +184,12 @@ class SetupTest(unittest.TestCase):
                                   ps.setup_notes, setups=ps.setups)
         self.assertIn("deliveries are off", put["/work/probes-b01.md"])
 
+    def test_the_service_does_every_step_a_probe_is_about(self):
+        execute = grading._template("grade-execute.md")
+        self.assertIn("never work out or stand in for", execute)
+        judge = (grading.PROMPTS / "grade-judge.md").read_text()
+        self.assertIn("worked out itself", judge)
+
     def test_setup_problems_are_missing_snapshots_and_cannot_marks(self):
         lines = [{"op": "mark", "request": {"text": "CANNOT S0: no token"}}, {"op": "http", "request": {}}]
         self.assertEqual(grading.setup_problems(lines, ["S0", "S1"], {"S0"}), ["no snapshot for S1", "CANNOT S0: no token"])
