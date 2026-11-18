@@ -68,6 +68,23 @@ Alongside the stages:
 - `[ ]` Two people label about 100 requests to check the touchpoint rubric (target kappa 0.7 or better).
 - `[ ]` A small cross-family grader sample (GPT-6.1 Terra) measures self-preference.
 
+## M2c: Clowder, the falsification test at scale `[ ]`
+
+See design.md, "Later seeds and variants". Feasibility is checked:
+- Rust 1.89 plus `procps` builds and passes all 1,753 tests on the 2-CPU VM, in about 45 seconds for an edit-rebuild-test cycle;
+- a hosts block stops GitHub while the model API stays reachable;
+- `CLAUDE_CODE_DISABLE_1M_CONTEXT=1` gives a 200k window.
+
+- `[ ]` An executor image with Rust 1.89 and `procps`; GitHub blocked and web tools denied for Clowder runs; a window setting per run.
+- `[ ]` The three repository variants from the final snapshot: stripped (tests thinned to a 0.6 test-to-source ratio, at random across modules), full, and LID. A held-out slice of tests is removed from all three.
+- `[ ]` Twelve changes in the owner's voice, drafted by GPT-6.1 Sol and reviewed by Claude Fable, each with new intent written outside the existing specs, its predicted direction, and its dispersion class.
+- `[ ]` A fork runner that starts each change from a variant snapshot, and grading for a Rust library:
+  - held-out tests for keeping;
+  - probes for new intent, written against each arm's own API after interface extraction;
+  - the existing tests each arm edited or deleted;
+  - intent reach and context telemetry.
+- `[ ]` The pilot: bare stripped first as a ceiling check, then all three arms at both windows.
+
 ## M2b: Check against SlopCodeBench `[ ]`
 
 - `[ ]` Find out whether SlopCodeBench can run Claude Code with a plugin or a project instruction file.

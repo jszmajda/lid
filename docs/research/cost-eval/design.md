@@ -138,6 +138,12 @@ The first against the third is the falsification test. The second against the th
 - intent reach: whether the agent opened any file that states a graded item, so a failure reads as "never saw it" or "saw it and broke it";
 - context occupancy and compaction.
 
+**The context window is the dose.** The same model runs with its full 1M-token window, and held to 200k (`CLAUDE_CODE_DISABLE_1M_CONTEXT=1`; the session then reports a 200,000-token window). At 1M, Clowder's source fits in the window, and at 200k it doesn't, while the snapshot, the changes, and the arms stay fixed. The hypothesis predicts LID's lead over bare grows at 200k. A smaller window also makes an arm that reads more compact sooner. LID read about four times what bare did per change on the first seed, mostly its own docs, so the dose can cut against LID as well as for it.
+
+**Isolation:** GitHub's domains are blocked in the containers, and web search and fetch are denied to every arm, so no arm can fetch the public repository's docs. Cargo still reaches crates.io.
+
+**The pilot size:** 12 changes × 3 arms × 2 windows, one repeat each, before any expansion. The changes are written fresh in the owner's voice, each with its predicted direction and how far its relevant intent sits from the code it edits (same module, another module, another crate), recorded before any run.
+
 ## The change script
 
 Each seed has a scripted sequence of changes, written in plain product language. Every change has a type, and before any run we record whether that type should favour LID, disfavour it, or neither:
