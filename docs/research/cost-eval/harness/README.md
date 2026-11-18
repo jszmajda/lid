@@ -21,6 +21,7 @@ python3.12 -m unittest discover -s tests
 | `audit_owner.py` | Runs the leak judge over a real trajectory's owner replies |
 | `run_probe.py` | Runs the seed's probe request on a disposable fork of a trajectory's checkpoint |
 | `rejudge.py` | Judges a graded checkpoint's logs again, with the same or another model, for test-retest and judge comparisons; `--probes` judges against the probe version the logs were executed under |
+| `context_telemetry.py` | Per change, from transcripts: peak context against the session's window, compaction, files and characters read (by the Read tool and by shell reads), and the share of the repository read |
 | `report.py` | Summarizes a stage's trajectories per arm: items met (by disclosure kind, and by guessability band where the seed has one), agent and owner cost, owner replies, words shown, touchpoint kinds, leak flags, cost by change, and the probe-request forks |
 | `sample_verdicts.py` | Builds spot-check packets of sampled verdicts for whoever checks the graders in the maintainer's place |
 | `classify_touchpoints.py`, `prompts/touchpoints.md` | Sorts each request the agent made of the owner into the kinds in "Human cost", from what the owner saw, never from its reply |
