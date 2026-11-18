@@ -394,3 +394,57 @@ describe("home page", () => {
     assert.match(section("hero"), /href="#quickstart"/);
   });
 });
+
+describe("link previews", () => {
+  const meta = (page, key) => {
+    const m = page.match(new RegExp(`<meta (?:property|name)="${key}" content="([^"]*)"`));
+    return m ? m[1].replace(/&amp;/g, "&").replace(/&#39;/g, "'").replace(/&quot;/g, '"') : null;
+  };
+  const urls = { Home: "/", Start: "/start/", Examples: "/examples/", "Anti-patterns": "/anti-patterns/", Tour: "/tour/" };
+
+  // @spec ONB-SITE-135
+  it("names the page and the site on every page", () => {
+    for (const [name, page] of Object.entries(html)) {
+      const title = page.match(/<title>([^<]*)<\/title>/)[1].replace(/&amp;/g, "&");
+      assert.equal(meta(page, "og:title"), title, name);
+      const desc = meta(page, "description");
+      assert.ok(desc, name);
+      assert.equal(meta(page, "og:description"), desc, name);
+      assert.equal(meta(page, "og:site_name"), "Linked-Intent Development", name);
+      assert.ok(meta(page, "og:type"), name);
+    }
+  });
+
+  // @spec ONB-SITE-136
+  it("gives every page its canonical address", () => {
+    for (const [name, page] of Object.entries(html)) {
+      const url = `https://linked-intent.dev${urls[name]}`;
+      assert.ok(page.includes(`<link rel="canonical" href="${url}"`), name);
+      assert.equal(meta(page, "og:url"), url, name);
+    }
+  });
+
+  // @spec ONB-SITE-137, ONB-SITE-138
+  it("gives every page a large picture, the default card where it names none", () => {
+    for (const [name, page] of Object.entries(html)) {
+      assert.equal(meta(page, "og:image"), "https://linked-intent.dev/assets/social-card.png", name);
+      assert.ok(meta(page, "og:image:alt"), name);
+      assert.equal(meta(page, "og:image:width"), "1200", name);
+      assert.equal(meta(page, "og:image:height"), "630", name);
+      assert.equal(meta(page, "twitter:card"), "summary_large_image", name);
+    }
+    const png = readFileSync(join(out, "assets/social-card.png"));
+    assert.equal(png.subarray(1, 4).toString(), "PNG");
+    assert.equal(png.readUInt32BE(16), 1200);
+    assert.equal(png.readUInt32BE(20), 630);
+  });
+
+  // @spec ONB-SITE-139
+  it("keeps the default card's source beside the brand files", () => {
+    const source = readFileSync(join(siteDir, "brand", "social", "social-card.html"), "utf8");
+    assert.match(source, /How do you know your agent built what you meant\?/);
+    assert.match(source, /linked-intent\.dev/);
+    assert.match(source, /class="rings-svg"/);
+    assert.match(source, /<svg[^>]*wordmark|class="wordmark"/);
+  });
+});

@@ -9,6 +9,7 @@
 - site/src/assets/css/main.css (the showcase's section)
 - site/scripts/intent-tree.js (the tree counter)
 - site/scripts/tree-svg.js (the tree drawing)
+- site/scripts/previews.js (link-preview tags and picture sizes)
 - .github/PULL_REQUEST_TEMPLATE/example.md
 - site/tests/showcase.test.js, site/tests/intent-tree.test.js
 
@@ -49,10 +50,15 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 ## Hosted Stories
 
 - `[x]` **ONB-SHOWCASE-024**: When an entry's `story.file` is `story.md`, the site SHALL render it at `/examples/<slug>/story/` in the site's own style, under links back to the index and to the project's page, with the story's title, byline, and the entry's date.
-- `[x]` **ONB-SHOWCASE-025**: When an entry's `story.file` is `story.html`, the site SHALL serve it at `/examples/<slug>/story/` exactly as written except for one inserted element, a bar placed as the first child of its `<body>`.
+- `[x]` **ONB-SHOWCASE-025**: When an entry's `story.file` is `story.html`, the site SHALL serve it at `/examples/<slug>/story/` exactly as written except for the bar of ONB-SHOWCASE-026, placed as the first child of its `<body>`, and the link-preview tags of ONB-SHOWCASE-095, placed in its `<head>`.
 - `[x]` **ONB-SHOWCASE-026**: The bar inserted into a hosted `story.html` SHALL link back to the project's page and name whose project it is and who wrote the story, using inline styles only.
 - `[x]` **ONB-SHOWCASE-027**: When an entry's `story.file` is `story.html`, the site SHALL serve the entry folder's files other than `index.md`, `tree.yaml`, and the story file beside the hosted story at `/examples/<slug>/story/`, so the story's relative links resolve.
 - `[x]` **ONB-SHOWCASE-028**: The site SHALL NOT edit the words of a hosted story.
+
+## Link Previews
+
+- `[x]` **ONB-SHOWCASE-094**: A project's page and its hosted `story.md` page SHALL use the entry's first picture as their link-preview image, with its alt text and pixel size, and an entry without pictures SHALL use the site's default card.
+- `[x]` **ONB-SHOWCASE-095**: For a hosted `story.html`, the build SHALL insert into its `<head>` each of the canonical link, `og:title` (the story's title), `og:description` (the tagline), `og:image` with its alt and size (the entry's first picture, or the default card), `og:url`, `og:site_name`, `og:type`, and `twitter:card` that the page does not already carry, and SHALL leave every tag the page carries unchanged.
 
 ## Pictures
 
@@ -104,7 +110,7 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 - `[x]` **ONB-SHOWCASE-062**: An entry's `story` SHALL hold a `title`, MAY hold `author` and `byline`, SHALL hold at most one of `file` and `url`, and SHALL hold no other fields; a `file` SHALL be `story.md` or `story.html` and SHALL exist, and a `url` SHALL be an `https` URL.
 - `[x]` **ONB-SHOWCASE-063**: An entry's folder SHALL hold no `story.md` or `story.html` that its `story.file` does not name.
 - `[x]` **ONB-SHOWCASE-064**: A hosted `story.md` SHALL have no front matter.
-- `[x]` **ONB-SHOWCASE-065**: A hosted `story.html` SHALL contain a `<body>` element.
+- `[x]` **ONB-SHOWCASE-065**: A hosted `story.html` SHALL contain a `<head>` element and a `<body>` element.
 - `[x]` **ONB-SHOWCASE-090**: A hosted `story.html` SHALL contain no `<script>` element and SHALL load no resource (image, style sheet, font, or frame) from outside its entry folder; ordinary links to other sites are allowed.
 - `[x]` **ONB-SHOWCASE-066**: The build SHALL NOT publish `site/src/examples/_template/`, which holds a filled-in sample entry with every field commented.
 

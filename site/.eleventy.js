@@ -3,6 +3,7 @@ import { cpSync, mkdirSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import markdownIt from "markdown-it";
 import { loadEntries } from "./scripts/entries.js";
+import { renderPreviewTags } from "./scripts/previews.js";
 
 // Light syntax coloring for the Tour page's fenced code: diff lines in red and
 // green, and comments, strings, keywords, and numbers in TypeScript. Returning
@@ -84,6 +85,7 @@ export default function (eleventyConfig) {
 
   // Showcase helpers: a readable date, thousands separators, and a URL's host name.
   eleventyConfig.addFilter("showcaseDate", (iso) => new Date(iso + "T00:00:00Z").toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }));
+  eleventyConfig.addFilter("previewTags", renderPreviewTags);
   eleventyConfig.addFilter("commas", (n) => Number(n).toLocaleString("en-US"));
   eleventyConfig.addFilter("host", (url) => new URL(url).host);
 

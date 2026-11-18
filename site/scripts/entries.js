@@ -4,6 +4,7 @@
 import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import matter from "gray-matter";
+import { imageSize } from "./previews.js";
 import { drawTree, sizeName } from "./tree-svg.js";
 
 const FIELDS = ["project", "owner", "tagline", "date", "open_source", "pictures", "stats", "stats_source", "spec_count", "story", "links"];
@@ -119,6 +120,10 @@ function readEntry(dir, slug) {
     if (!existsSync(join(folder, p.file))) fail(slug, `picture ${p.file} is missing`);
     if (statSync(join(folder, p.file)).size > MAX_PICTURE) fail(slug, `picture ${p.file} is larger than 2,000,000 bytes`);
     if (typeof p.alt !== "string" || !p.alt.trim()) fail(slug, `picture ${p.file} needs non-empty \`alt\` text`);
+    const size = imageSize(readFileSync(join(folder, p.file)));
+    if (!size) fail(slug, `picture ${p.file} is not a readable PNG or JPEG`);
+    p.width = size.width;
+    p.height = size.height;
   }
 
   // @spec ONB-SHOWCASE-059
