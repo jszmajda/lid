@@ -41,6 +41,11 @@ def probe_replicate(base: dict, at: int, fork: int, given: str | None) -> str:
     return f"{base['replicate']}-probe-{at}-fork-{fork}"
 
 
+def probe_only_change(base: dict) -> bool:
+    """Whether the base run's owner held the start and its own change only (a fork), which the probe's owner keeps."""
+    return base.get("owner_scope") == simulator.FORK_SCOPE
+
+
 def probe_owner_model(base: dict) -> tuple[simulator.OwnerModel, bool]:
     """The base trajectory's owner model, and whether it had to be assumed (a trajectory that predates one)."""
     if "owner_model_config" not in base:
@@ -112,7 +117,7 @@ def main(argv=None) -> int:
     owner = simulator.Owner(oracle=oracle, brief=brief, policy=base["policy"], replicate=replicate,
                             ask=call(simulator.schema_json()), touch=call(simulator.touch_schema_json()),
                             trim=call(simulator.trim_schema_json()),
-                            model=owner_model, owner_items=owner_items)
+                            model=owner_model, owner_items=owner_items, only_change=probe_only_change(base))
     trajectory.restore_owner_state(owner, json.loads(state_path.read_text()))
     session = executor.ContainerSession(image=IMAGE, workspace_volume=ws_vol, config_volume=cfg_vol, model=base["model"],
                                         claude_code_version=CLAUDE_CODE, expected_plugins=frozenset(arm.plugins),
@@ -121,6 +126,7 @@ def main(argv=None) -> int:
             "model": base["model"], "effort": base["effort"], "policy": base["policy"], "owner_model": base["owner_model"],
             "replicate": replicate, "owner_model_config": asdict(owner_model), "owner_model_assumed": assumed,
             "lid_release": arm.lid_release, "started": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            **({"owner_scope": base["owner_scope"]} if "owner_scope" in base else {}),
             "hashes": {**base["hashes"], "change_script_now": sha256(script_path), "owner_items_now": sha256(items_path),
                        "oracle_now": sha256(seed_dir / "hidden" / "oracle.md"),
                        "simulator_template_now": sha256(simulator.TEMPLATE_PATH),

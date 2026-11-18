@@ -18,7 +18,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from costeval import simulator as sm  # noqa: E402
-from test_simulator import BRIEF, CHANGES, OWNER_ITEMS, FakeAsk, ans, cor, oracle, out, owner, script  # noqa: E402
+from test_simulator import BRIEF, CHANGES, ORACLE, OWNER_ITEMS, FakeAsk, ans, cor, oracle, out, owner, script  # noqa: E402
 
 M = sm.OwnerModel()
 LOW_ADJ = sm.recall_rate(M, "low", direct=False)
@@ -966,3 +966,82 @@ class TouchCallTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# ------------------------------------------------------------------------------------------- forks hold only their change
+
+ORACLE10 = ORACLE.replace("""### Learned at change 5: refunds
+
+Refunds have to go back to the original card.
+""", """### Learned at change 5: refunds
+
+Refunds have to go back to the original card.
+
+### Learned at change 7: gift cards
+
+Gift cards never expire.
+
+### Learned at change 9: wholesale
+
+Cafes order by the tray.
+
+### Learned at change 10: allergens
+
+Every cake lists its allergens.
+""").replace("| BK-10 | Moving an order from change 3 onward keeps its number. | Stated in change 3 | Change 3 | — | Grader-only sketch. |",
+             "| BK-10 | Moving an order from change 3 onward keeps its number. | Stated in change 3 | Change 3 | — | Grader-only sketch. |\n"
+             "| BK-11 | Wholesale orders come by the tray. | Stated in change 9 | Change 9 | — | Grader-only sketch. |\n"
+             "| BK-12 | A gift card never expires. | Askable | Change 7 | — | Grader-only sketch. |\n"
+             "| BK-13 | Every cake lists its allergens. | Stated in change 10 | Change 10 | — | Grader-only sketch. |\n"
+             "| BK-14 | Nuts are flagged on the label. | Askable | Change 10 | — | Grader-only sketch. |")
+CHANGES10 = CHANGES.replace("## Probe request", """## Change 10 — Allergens
+
+### Owner request
+
+> Show each cake's allergens.
+
+**Introduces:** BK-13, BK-14.
+
+## Probe request""")
+
+
+class ForkReleaseTest(unittest.TestCase):
+    """A fork runs one change from the project's final snapshot: the changes before it never happened there, so its
+    owner holds the start and that change, and nothing else."""
+
+    def setUp(self):
+        self.o = sm.parse_oracle(ORACLE10)
+        self.c10 = sm.parse_change_script(CHANGES10)[10]
+
+    def test_a_fork_of_change_10_holds_the_start_and_change_10_only(self):
+        ids = [i.id for i in sm.released_items(self.o, 10, only_change=True)]
+        self.assertEqual(ids, ["BK-01", "BK-02", "BK-03", "BK-04", "BK-09", "BK-13", "BK-14"])
+        # BK-04 is retired by change 2, which never happened in this fork; nothing from changes 1-9 is held
+        self.assertTrue({"BK-05", "BK-06", "BK-07", "BK-10", "BK-11", "BK-12"}.isdisjoint(ids))
+        text = sm.released_narrative(self.o, 10, only_change=True)
+        self.assertIn("small bakery", text)
+        self.assertIn("lists its allergens", text)
+        for later in ("have a fee", "original card", "never expire", "by the tray"):
+            self.assertNotIn(later, text)
+        # a trajectory's owner still holds everything in force by then
+        self.assertIn("BK-11", [i.id for i in sm.released_items(self.o, 10)])
+
+    def test_a_fork_owner_is_shown_and_asked_about_only_its_change(self):
+        ask = FakeAsk(out("questions", [ans("Gift cards?", "They never expire.", ["BK-12"])]),
+                      out("questions", [ans("Gift cards?", "x", no_view=True)]),
+                      out("approval", touches=[touch("BK-14", 1)]))
+        w = sm.Owner(oracle=self.o, brief=BRIEF, policy="diligent", replicate="r", ask=ask, touch=ask.touch,
+                     default_owner_item=sm.OwnerItem("medium", "Something."), owner_items={}, only_change=True)
+        w.start_change(self.c10)
+        r = w.respond("Do gift cards expire?", code_written=False)
+        self.assertTrue(r.calls[0]["problems"])  # BK-12 isn't the fork owner's to share
+        prompt = ask.prompts[0]
+        for absent in ("[BK-05]", "[BK-06]", "[BK-07]", "[BK-10]", "[BK-11]", "[BK-12]", "have a fee", "original card",
+                       "never expire", "by the tray"):
+            self.assertNotIn(absent, prompt)
+        for present in ("[BK-13]", "[BK-14]", "[BK-04]", "lists its allergens"):
+            self.assertIn(present, prompt)
+        w.respond("Plan: labels show allergens.", code_written=False)
+        self.assertIn("[BK-14]", ask.touch_prompts[-1])
+        self.assertNotIn("[BK-12]", ask.touch_prompts[-1])
+        self.assertNotIn("never expire", ask.touch_prompts[-1])

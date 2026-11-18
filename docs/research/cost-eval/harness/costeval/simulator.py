@@ -234,13 +234,24 @@ def parse_oracle(text: str) -> Oracle:
     return Oracle(narrative=narrative, items=items)
 
 
-def released_narrative(oracle: Oracle, change: int, *, withhold_section: int | None = None) -> str:
+FORK_SCOPE = "the start and this change only"  # what a fork's owner holds, as its record says
+
+
+def released_narrative(oracle: Oracle, change: int, *, withhold_section: int | None = None,
+                       only_change: bool = False) -> str:
+    """The owner's own words by this change. only_change: a fork's owner, for whom no other change has happened, so
+    the start's section and this change's only."""
     return "\n\n".join(body for n, body in sorted(oracle.narrative.items())
-                       if n <= change and n != withhold_section)
+                       if (n in (0, change) if only_change else n <= change) and n != withhold_section)
 
 
-def released_items(oracle: Oracle, change: int, *, withhold: Iterable[str] = ()) -> list[Item]:
+def released_items(oracle: Oracle, change: int, *, withhold: Iterable[str] = (), only_change: bool = False) -> list[Item]:
+    """The items the owner holds at this change. only_change: a fork's owner, for whom no other change has happened:
+    the start's items and this change's own, retired only by this change."""
     held = set(withhold)
+    if only_change:
+        return [i for i in oracle.items
+                if i.kind != "Dropped" and i.in_force in (0, change) and i.retired != change and i.id not in held]
     return [
         i for i in oracle.items
         if i.kind != "Dropped" and i.in_force is not None and i.in_force <= change
@@ -857,8 +868,9 @@ def _fill(template: str, fills: dict[str, str]) -> str:
 def build_prompt(*, oracle: Oracle, change: Change, brief: str, message: str,
                  documents: Sequence[Document] = (), earlier_requests: Sequence[tuple[int, str]] = (),
                  record: Sequence[Said] = (), turns: Sequence[Turn] = (), redirect_state: str | None = None,
-                 template: str | None = None) -> str:
+                 template: str | None = None, only_change: bool = False) -> str:
     """The owner's prompt for one stop. The message and documents are shown with their passages numbered.
+    only_change: a fork's owner, who holds the start and this change only.
 
     redirect_state: None (no redirect), "pending", "firing" (a change of mind being delivered with this reply),
     "delivered", or "settled".
@@ -868,7 +880,7 @@ def build_prompt(*, oracle: Oracle, change: Change, brief: str, message: str,
     if (r is None) != (redirect_state is None):
         raise ValueError("redirect_state must be given exactly when the change has a redirect")
     withholding = r is not None and r.kind == "change of mind" and redirect_state == "pending"
-    items = released_items(oracle, change.number, withhold=r.introduces if withholding else ())
+    items = released_items(oracle, change.number, withhold=r.introduces if withholding else (), only_change=only_change)
 
     if change.number == 0 and not change.probe:
         request = "This is the first build. Your request to the agent was your brief:\n\n<brief>\n" + brief.strip() + "\n</brief>"
@@ -922,7 +934,8 @@ def build_prompt(*, oracle: Oracle, change: Change, brief: str, message: str,
             f'<document name="{name}">\n{text}\n</document>' for name, text in stop.documents)
 
     return _fill(template, {
-        "NARRATIVE": released_narrative(oracle, change.number, withhold_section=change.number if withholding else None),
+        "NARRATIVE": released_narrative(oracle, change.number, withhold_section=change.number if withholding else None,
+                                        only_change=only_change),
         "ITEMS": render_items(items, change.in_play, ids=id_pattern(oracle.ids())),
         "REQUEST": request,
         "GUIDANCE": guidance,
@@ -950,20 +963,23 @@ def _withholding(change: Change, redirect_state: str | None) -> bool:
     return r is not None and r.kind == "change of mind" and redirect_state == "pending"
 
 
-def touch_items(oracle: Oracle, change: Change, *, disclosed: Iterable[str] = (), redirect_state: str | None = None) -> list[str]:
+def touch_items(oracle: Oracle, change: Change, *, disclosed: Iterable[str] = (), redirect_state: str | None = None,
+                only_change: bool = False) -> list[str]:
     """The items the touch call asks about: askable items the owner holds at this state and hasn't disclosed."""
     r, told = change.redirect, set(disclosed)
-    held = released_items(oracle, change.number, withhold=r.introduces if _withholding(change, redirect_state) else ())
+    held = released_items(oracle, change.number, withhold=r.introduces if _withholding(change, redirect_state) else (),
+                          only_change=only_change)
     return [i.id for i in held if i.share == "Askable" and i.id not in told]
 
 
 def touch_prompt(*, oracle: Oracle, change: Change, message: str, documents: Sequence[Document] = (),
-                 disclosed: Iterable[str] = (), redirect_state: str | None = None, template: str | None = None) -> str:
+                 disclosed: Iterable[str] = (), redirect_state: str | None = None, template: str | None = None,
+                 only_change: bool = False) -> str:
     """The touch call's prompt: the owner's own words (for meaning), the askable rules it hasn't told the agent, and
     the stop's numbered text. It asks for nothing but touches."""
     template = template if template is not None else TOUCH_TEMPLATE_PATH.read_text(encoding="utf-8")
     ids = id_pattern(oracle.ids())
-    wanted = set(touch_items(oracle, change, disclosed=disclosed, redirect_state=redirect_state))
+    wanted = set(touch_items(oracle, change, disclosed=disclosed, redirect_state=redirect_state, only_change=only_change))
     rules = "\n".join(f"- [{i.id}] {owner_text(i.behavior, ids)}" for i in oracle.items if i.id in wanted)
     stop = split_stop(message, documents)
     docs = ""
@@ -972,7 +988,8 @@ def touch_prompt(*, oracle: Oracle, change: Change, message: str, documents: Seq
             f'<document name="{name}">\n{text}\n</document>' for name, text in stop.documents)
     return _fill(template, {
         "NARRATIVE": released_narrative(oracle, change.number,
-                                        withhold_section=change.number if _withholding(change, redirect_state) else None),
+                                        withhold_section=change.number if _withholding(change, redirect_state) else None,
+                                        only_change=only_change),
         "ITEMS": rules,
         "MESSAGE": stop.message or "(The agent's message was empty.)",
         "DOCUMENTS_SECTION": docs,
@@ -1276,13 +1293,14 @@ class Owner:
                  trim: Callable[[str], dict] | None = None, template: str | None = None, max_attempts: int = 3,
                  model: OwnerModel | None = None, owner_items: Mapping[str, OwnerItem] | None = None,
                  default_owner_item: OwnerItem | None = None, touch: Callable[[str], dict] | None = None,
-                 touch_template: str | None = None):
+                 touch_template: str | None = None, only_change: bool = False):
         if policy not in POLICIES:
             raise ValueError(f"policy must be one of {POLICIES}, not {policy!r}")
         if owner_items is None and default_owner_item is None:
             raise ValueError("the owner needs every askable item's tier and recall line (the seed's owner-items.json)")
         self.oracle, self.brief, self.policy, self.replicate, self.ask, self.trim = oracle, brief, policy, replicate, ask, trim
         self.touch = touch
+        self.only_change = only_change  # a fork's owner: the start and the change being run, and nothing else
         self.touch_template = touch_template if touch_template is not None else TOUCH_TEMPLATE_PATH.read_text(encoding="utf-8")
         self.model = model if model is not None else OwnerModel()
         self.owner_items = complete_owner_items(oracle, owner_items or {}, default_owner_item)
@@ -1331,12 +1349,12 @@ class Owner:
     def _prompt(self, message: str, documents: Sequence[Document], state: str | None) -> str:
         return build_prompt(oracle=self.oracle, change=self.change, brief=self.brief, message=message,
                             documents=documents, earlier_requests=self.requests, record=self.record,
-                            turns=self.turns, redirect_state=state, template=self.template)
+                            turns=self.turns, redirect_state=state, template=self.template, only_change=self.only_change)
 
     def _call(self, prompt: str, state: str | None, calls: list[dict], passages: int, message: str) -> dict:
         r = self.change.redirect
         withheld = r.introduces if (r and r.kind == "change of mind" and state == "pending") else ()
-        items = released_items(self.oracle, self.change.number, withhold=withheld)
+        items = released_items(self.oracle, self.change.number, withhold=withheld, only_change=self.only_change)
         pending_cl = bool(r and r.kind == "clarification" and state == "pending")
         for _ in range(self.max_attempts):
             raw, cost = _result(self.ask(prompt))
@@ -1352,11 +1370,13 @@ class Owner:
                  disclosed: set[str], contradicted: set, calls: list[dict]) -> list[dict]:
         """The touch call, on the stop as the last main call saw it: which passages touch each askable item the owner
         holds and hasn't disclosed. Made only when there is such an item and a passage to touch it."""
-        eligible = touch_items(self.oracle, self.change, disclosed=disclosed, redirect_state=state)
+        eligible = touch_items(self.oracle, self.change, disclosed=disclosed, redirect_state=state,
+                               only_change=self.only_change)
         if not eligible or not passages:
             return []
         prompt = touch_prompt(oracle=self.oracle, change=self.change, message=message, documents=documents,
-                              disclosed=disclosed, redirect_state=state, template=self.touch_template)
+                              disclosed=disclosed, redirect_state=state, template=self.touch_template,
+                              only_change=self.only_change)
         for _ in range(self.max_attempts):
             raw, cost = _result(self.touch(prompt))
             touches, problems, repairs = check_touches(raw, eligible, passages=passages, contradicted=contradicted)

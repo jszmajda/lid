@@ -6,7 +6,11 @@ Reads the run's trajectory.json for the change's commit and starting commit, and
 from for the held-out slice. Writes under ../runs/<id>/grading/change-NN/:
 
 - keeping.json: each held-out test file run as a test target of its own against the arm's code, results per test,
-  and compile failures apart (keeping/<target>.log holds cargo's output). Compare it with the variant's
+  and compile failures apart (keeping/<target>.log holds cargo's output). A target that fails to build only because
+  a struct literal lacks fields the arm added (E0063) or a match lacks variants it added (E0004) is adapted first,
+  by the pre-registered rule in costeval/rust_adapt.py: each edit is recorded under the target's "adaptation", and
+  the edited files are kept in keeping/adapted/. A target that still doesn't build is a compile failure, not
+  adapted, with its reason; tests that reached an adapted wildcard arm are named. Compare it with the variant's
   keeping-baseline-<variant>.json, the same run on the untouched variant, for tests that never run (ignored, or
   gated off) and so never count;
 - test_edits.json: test files that existed at the start and that the arm edited, deleted, or renamed, with lines and
@@ -31,7 +35,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
-from costeval import executor, grading, rust_grading as rg  # noqa: E402
+from costeval import executor, grading, rust_adapt as ra, rust_grading as rg  # noqa: E402
 from run_trajectory import CLAUDE_CODE, ROLES_VOLUME  # noqa: E402
 
 
@@ -41,17 +45,36 @@ def _held_out_test_counts(held_dir: Path, held: list[str]) -> dict[str, int]:
 
 
 def keeping(ck, held_dir: Path, held: list[str], out: Path | None = None) -> dict:
-    for path, text in rg.held_out_targets(held_dir, held).items():
+    """Each held-out file as a target of its own against the arm's code, after the compile-only adaptation
+    (costeval/rust_adapt.py) where the target fails to build only on what the rule covers."""
+    files = rg.held_out_targets(held_dir, held)
+    for path, text in files.items():
         ck.put(f"/work/app/{path}", text)
-    runs = []
+    sources: dict[str, str] = {}
+
+    def arm_sources() -> dict[str, str]:
+        if not sources:
+            sources.update(ra.arm_sources(ck))
+        return sources
+    runs, adaptations = [], {}
     for crate, target in rg.held_out_target_names(held):
-        log = ck.sh(f"cd /work/app && CARGO_TARGET_DIR=/work/target timeout 1800 cargo test --offline "
-                    f"--manifest-path crates/{crate}/Cargo.toml --test {target} --no-fail-fast 2>&1; echo EXIT=$?", check=False)
+        own = {p: t for p, t in files.items()
+               if p.startswith(f"crates/{crate}/tests/{target}/") or p == f"crates/{crate}/tests/{target}.rs"}
+        cargo = (f"cd /work/app && CARGO_TARGET_DIR=/work/target timeout 1800 cargo test --offline "
+                 f"--manifest-path crates/{crate}/Cargo.toml --test {target}")
+        record, adapted = ra.adapt_target(lambda: ck.sh(f"{cargo} --no-run --message-format=json 2>&1", check=False),
+                                          own, arm_sources, lambda p, t: ck.put(f"/work/app/{p}", t))
+        adaptations[target] = record
+        log = ck.sh(f"{cargo} --no-fail-fast 2>&1; echo EXIT=$?", check=False)
         runs.append((crate, target, log))
         if out is not None:
             out.mkdir(parents=True, exist_ok=True)
             (out / f"{target}.log").write_text(log)
-    return rg.keeping_result(runs, _held_out_test_counts(held_dir, held))
+            for path in sorted({e["file"] for e in record["edits"]}):
+                dest = out / "adapted" / path
+                dest.parent.mkdir(parents=True, exist_ok=True)
+                dest.write_text(adapted[path])
+    return rg.keeping_result(runs, _held_out_test_counts(held_dir, held), adaptations)
 
 
 def test_edits(ck, base: str, commit: str) -> dict:
@@ -104,8 +127,9 @@ def main(argv=None, *, checkpoint=None, run_role=executor.run_role) -> int:
             held = json.loads((variants / "manifest.json").read_text()).get("held_out") or []
             keep = keeping(ck, variants / "held-out", held, out / "keeping")
             (out / "keeping.json").write_text(json.dumps(keep, indent=1))
-            summary["keeping"] = {k: keep[k] for k in ("passed", "failed", "compile_failed", "share_passed",
-                                                        "share_of_held_out_passed")}
+            summary["keeping"] = {k: keep[k] for k in ("passed", "failed", "compile_failed", "compile_failed_not_adapted",
+                                                        "tests_not_built", "adapted", "reached_adaptation",
+                                                        "share_passed", "share_of_held_out_passed")}
         probes_path = args.probes or args.seed_dir / "hidden" / "probes.md"
         if not args.no_probes and probes_path.exists():
             probeset = grading.parse_probes(probes_path.read_text(encoding="utf-8"))

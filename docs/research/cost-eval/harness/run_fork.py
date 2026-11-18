@@ -6,7 +6,9 @@ variants": each change is forked from the same final snapshot and discarded).
 
 The fork gets a fresh workspace volume copied from the variant's volume (built by clowder_variants.py), a fresh
 configuration volume with the arm's own setup (the LID plugin for lid-full), and an owner with no history: the seed's
-oracle, change script, owner items, and brief, from --seed-dir unless named one by one. If the change has a planted
+oracle, change script, owner items, and brief, from --seed-dir unless named one by one. Since no other change
+happened in the fork, the owner holds the start's narrative and items and the forked change's own, and nothing of
+any other change. If the change has a planted
 bug (--patch, the change-script entry's **Planted bug:** path, or a sidecar hidden/patches/change-NN.diff), it is
 applied to the variant and folded into the snapshot's one commit before the arm starts, so neither `git log` nor
 `git show` shows it; a patch that doesn't apply cleanly stops the fork. The agent runs in the Rust executor image
@@ -228,6 +230,7 @@ def main(argv=None, *, deps: Deps | None = None) -> int:
         "effort": args.effort, "claude_code": CLAUDE_CODE, "image": args.image, "policy": args.policy,
         "owner_model": args.owner_model, "replicate": args.replicate, "owner_model_config": asdict(owner_model),
         "isolation": isolation.record(), "window": args.window, "lid_release": arm.lid_release,
+        "owner_scope": simulator.FORK_SCOPE,
         "round_cap": args.round_cap, "neutral_sentence": trajectory.NEUTRAL_SENTENCE,
         "planted_bug": ({"path": str(patch_path), "sha256": hashlib.sha256(patch.encode()).hexdigest()}
                         if patch is not None else None),
@@ -244,8 +247,10 @@ def main(argv=None, *, deps: Deps | None = None) -> int:
     ask, touch, trim = deps.ask, deps.touch, deps.trim
     if ask is None:
         ask, touch, trim = _role_calls(args.owner_model, costs)
+    # Each change forks from the final snapshot, so no earlier change happened: the owner holds the start's narrative
+    # and items and this change's own, never another change's.
     owner = simulator.Owner(oracle=oracle, brief=brief, policy=args.policy, replicate=args.replicate, ask=ask,
-                            touch=touch, trim=trim, model=owner_model, owner_items=owner_items)
+                            touch=touch, trim=trim, model=owner_model, owner_items=owner_items, only_change=True)
     session = executor.ContainerSession(image=args.image, workspace_volume=ws_vol, config_volume=cfg_vol,
                                         model=args.model, claude_code_version=CLAUDE_CODE,
                                         expected_plugins=frozenset(arm.plugins), effort=args.effort,

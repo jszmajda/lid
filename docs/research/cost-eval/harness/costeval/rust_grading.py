@@ -28,7 +28,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Callable
 
-from . import executor, grading
+from . import executor, grading, rust_adapt
 
 MAX_OUTPUT = 20000  # characters of one probe's output the judge sees; the whole output stays on disk
 TEST_LINE = re.compile(r"(?m)^test (\S+) \.\.\. (ok|FAILED|ignored)\b")  # "ignored" may carry a reason
@@ -88,9 +88,16 @@ def _target_result(output: str) -> dict:
             "errors": re.findall(r"(?m)^error(?:\[E\d+\])?: .*$", output)[:20] if compile_failed else []}
 
 
-def keeping_result(runs: list[tuple[str, str, str]], expected: dict[str, int] | None = None) -> dict:
-    """Per target and in total, from each (crate, target, cargo output). expected: #[test] count per target."""
-    targets = {t: {"crate": c, **_target_result(out)} for c, t, out in runs}
+def keeping_result(runs: list[tuple[str, str, str]], expected: dict[str, int] | None = None,
+                   adaptations: dict[str, dict] | None = None) -> dict:
+    """Per target and in total, from each (crate, target, cargo output). expected: #[test] count per target.
+    adaptations: each target's record from the compile-only adaptation (rust_adapt). Keeping failures are tests that
+    ran and failed; a target that didn't build, adapted or not, is a compile failure, kept apart with its reason."""
+    targets = {t: {"crate": c, **_target_result(out), "reached_adaptation": rust_adapt.reached_adaptation(out)}
+               for c, t, out in runs}
+    for t, rec in (adaptations or {}).items():
+        if t in targets:
+            targets[t]["adaptation"] = rec
     if expected:
         for t, n in expected.items():
             if t in targets:
@@ -98,8 +105,15 @@ def keeping_result(runs: list[tuple[str, str, str]], expected: dict[str, int] | 
     passed = sum(s == "ok" for r in targets.values() for s in r["tests"].values())
     failed = sum(s == "FAILED" for r in targets.values() for s in r["tests"].values())
     total_expected = sum(r.get("tests_expected", 0) for r in targets.values())
+    broken = {t: r for t, r in targets.items() if r["compile_failed"]}
     return {"targets": targets, "passed": passed, "failed": failed,
-            "compile_failed": sorted(t for t, r in targets.items() if r["compile_failed"]),
+            "compile_failed": sorted(broken),
+            "compile_failed_not_adapted": {t: (r.get("adaptation") or {}).get("reason") or (r["errors"] or ["?"])[0]
+                                           for t, r in sorted(broken.items())},
+            "tests_not_built": sum(r.get("tests_expected", 0) for r in broken.values()),
+            "adapted": sorted(t for t, r in targets.items()
+                              if (r.get("adaptation") or {}).get("status") == "adapted" and not r["compile_failed"]),
+            "reached_adaptation": sum(len(r["reached_adaptation"]) for r in targets.values()),
             "share_passed": passed / (passed + failed) if passed + failed else None,
             "share_of_held_out_passed": passed / total_expected if total_expected else None}
 

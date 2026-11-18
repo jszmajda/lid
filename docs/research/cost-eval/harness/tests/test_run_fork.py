@@ -120,6 +120,19 @@ class ForkTest(unittest.TestCase):
         self.assertEqual(f.sessions[0].plugin_dirs, ("/cfg/lid/plugins/linked-intent-dev",))
         self.assertEqual(rf.main(f.argv(variant="lid", arm="lid-full"), deps=f.deps()), 2)
 
+    def test_a_forks_owner_holds_only_the_start_and_its_own_change(self):
+        f = Fixture()
+        argv = f.argv()
+        argv[argv.index("--change") + 1] = "4"
+        self.assertEqual(rf.main(argv, deps=f.deps()), 0)
+        prompt = f.ask.prompts[0]
+        for absent in ("[BK-05]", "[BK-10]", "have a fee"):  # changes 2 and 3 never happened in this fork
+            self.assertNotIn(absent, prompt)
+        for present in ("[BK-06]", "[BK-04]", "small bakery"):
+            self.assertIn(present, prompt)
+        meta = json.loads((f.runs / "cf-stripped-bare-200k-c04-r2" / "trajectory.json").read_text())
+        self.assertEqual(meta["owner_scope"], sm.FORK_SCOPE)
+
     def test_telemetry_reads_a_fork_and_takes_its_window_from_the_record(self):
         f = Fixture()
         rf.main(f.argv(), deps=f.deps())

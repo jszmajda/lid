@@ -250,6 +250,8 @@ class GradeRustMainTest(unittest.TestCase):
                     return NUMSTAT
                 if "git show" in script:
                     return "2\n"
+                if "--no-run" in script:
+                    return '{"reason":"build-finished","success":true}\n'
                 if "--test heldout_beta" in script:
                     return KEEP_OK
                 return ""

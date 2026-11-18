@@ -307,6 +307,10 @@ class ProbeOptionsTest(unittest.TestCase):
         self.assertEqual(rp.probe_owner_model({"owner_model_config": asdict(sm.OwnerModel.pilot())}), (sm.OwnerModel.pilot(), False))
         self.assertEqual(rp.probe_owner_model({}), (sm.OwnerModel(), True))
 
+    def test_a_probe_of_a_fork_keeps_the_fork_owners_scope(self):
+        self.assertTrue(rp.probe_only_change({"owner_scope": sm.FORK_SCOPE}))
+        self.assertFalse(rp.probe_only_change({}))  # a trajectory's owner holds every change so far
+
 
 class AuditTest(unittest.TestCase):
     def test_the_audit_counts_repairs_in_every_owner_call(self):
