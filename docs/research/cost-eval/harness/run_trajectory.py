@@ -108,7 +108,17 @@ def build_parser() -> argparse.ArgumentParser:
                     help="the seed the owner's draws are keyed on, the same for every trajectory being compared")
     ap.add_argument("--owner-model-config", default=None,
                     help="the owner's attention and recall constants: a preset (central, pilot), a JSON object, or a JSON file")
+    ap.add_argument("--window", choices=sorted(executor.WINDOWS), default="1m",
+                    help="the agent's context window: 1m (the model's own) or 200k (CLAUDE_CODE_DISABLE_1M_CONTEXT=1)")
+    ap.add_argument("--isolate", action="store_true",
+                    help="block GitHub's hosts and deny web search and fetch, for a seed whose repository is public")
     return ap
+
+
+def isolation_from_args(args) -> executor.Isolation:
+    if args.isolate:
+        return executor.Isolation.for_public_seed(window=args.window)
+    return executor.Isolation(window=args.window)
 
 
 def main(argv=None) -> int:
@@ -138,7 +148,7 @@ def main(argv=None) -> int:
     meta = {
         "id": args.id, "arm": arm.name, "seed": args.seed, "model": args.model, "effort": args.effort,
         "claude_code": CLAUDE_CODE, "image": IMAGE, "policy": args.policy, "owner_model": args.owner_model,
-        "replicate": replicate, "owner_model_config": asdict(owner_model),
+        "replicate": replicate, "owner_model_config": asdict(owner_model), "isolation": isolation_from_args(args).record(),
         "lid_release": arm.lid_release, "round_cap": args.round_cap, "neutral_sentence": trajectory.NEUTRAL_SENTENCE,
         "hashes": {"brief": sha256(brief_path), "oracle": sha256(oracle_path), "change_script": sha256(script_path),
                    "owner_items": sha256(items_path), "simulator_template": sha256(simulator.TEMPLATE_PATH),
@@ -148,7 +158,7 @@ def main(argv=None) -> int:
     workspace = trajectory.DockerWorkspace(IMAGE, ws_vol)
     if meta_path.exists():
         old = json.loads(meta_path.read_text())
-        for k in ("arm", "seed", "model", "effort", "policy", "replicate", "owner_model_config", "hashes"):
+        for k in ("arm", "seed", "model", "effort", "policy", "replicate", "owner_model_config", "isolation", "hashes"):
             if old.get(k) != meta.get(k):
                 ap.error(f"trajectory {args.id} exists with a different {k}: {old.get(k)!r}")
         meta = old
@@ -165,7 +175,8 @@ def main(argv=None) -> int:
 
     session = executor.ContainerSession(image=IMAGE, workspace_volume=ws_vol, config_volume=cfg_vol, model=args.model,
                                         claude_code_version=CLAUDE_CODE, expected_plugins=frozenset(arm.plugins),
-                                        effort=args.effort, plugin_dirs=arm.plugin_dirs, timeout_s=args.turn_timeout)
+                                        effort=args.effort, plugin_dirs=arm.plugin_dirs, timeout_s=args.turn_timeout,
+                                        isolation=isolation_from_args(args))
     role = executor.RoleSession(image=IMAGE, config_volume=ROLES_VOLUME, model=args.owner_model,
                                 claude_code_version=CLAUDE_CODE, effort="medium")
     owner_costs: list[float] = []

@@ -505,6 +505,7 @@ class Change:
     introduces: tuple[str, ...] = ()
     relies_on: tuple[str, ...] | str = ()
     probe: bool = False
+    planted_bug: str | None = None  # a patch applied to the change's starting snapshot, relative to the change script
 
     @property
     def owner_request(self) -> str:
@@ -600,6 +601,7 @@ def parse_change_script(text: str) -> dict[int, Change]:
             diagnostic=diag.strip() if diag else None,
             introduces=parse_ids(_field(body, "Introduces") or "") or (),
             relies_on=parse_ids(_field(body, "Relies on") or ""),
+            planted_bug=(_field(body, "Planted bug") or "").strip("` ") or None,
         )
         ch.owner_request  # raises if the change has neither a request nor a symptom report
         changes[n] = ch

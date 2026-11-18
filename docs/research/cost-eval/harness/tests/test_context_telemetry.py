@@ -378,3 +378,27 @@ class Summary(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class WindowTest(unittest.TestCase):
+    """With no --window, a run's window comes from its record (a fork or trajectory run at a set window), else from
+    the window its sessions reported, else the default."""
+
+    def run_dir(self, meta_extra=None):
+        run = Path(tempfile.mkdtemp())
+        meta = {"id": "cf-x", "arm": "bare", "start_commit": "a", "changes": {"3": {"title": "t", "commit": "b"}}}
+        meta.update(meta_extra or {})
+        (run / "trajectory.json").write_text(json.dumps(meta))
+        (run / "change-03").mkdir()
+        (run / "change-03" / "turn-00.stream.jsonl").write_text("\n".join(json.dumps(e) for e in synthetic_turn()))
+        return run
+
+    def test_the_record_then_the_session_then_the_default(self):
+        recorded = ct.trajectory_telemetry(self.run_dir({"isolation": {"window": "200k", "window_tokens": 200000}}),
+                                           window=None, fetch=None)
+        self.assertEqual(recorded["window"], 200000)
+        self.assertAlmostEqual(recorded["changes"][0]["peak_share"], recorded["changes"][0]["peak_context"] / 200000)
+        reported = ct.trajectory_telemetry(self.run_dir(), window=None, fetch=None)
+        self.assertEqual(reported["window"], 1000000)  # the synthetic session reports a 1M window
+        self.assertEqual(ct.trajectory_telemetry(self.run_dir(), window=123456, fetch=None)["window"], 123456)
+        self.assertEqual([c["change"] for c in reported["changes"]], [3])

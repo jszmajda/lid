@@ -257,6 +257,16 @@ class RunOptionsTest(unittest.TestCase):
         self.assertEqual(parser.parse_args(["--arm", "bare", "--id", "t-bare-1", "--replicate", "r7"]).replicate, "r7")
         self.assertNotIn("defaults to the trajectory ID", rt.__doc__)
 
+    def test_the_window_and_isolation_are_options(self):
+        parser = rt.build_parser()
+        base = ["--arm", "bare", "--id", "t", "--replicate", "r"]
+        plain = rt.isolation_from_args(parser.parse_args(base))
+        self.assertEqual(plain, executor.Isolation())
+        iso = rt.isolation_from_args(parser.parse_args(base + ["--window", "200k", "--isolate"]))
+        self.assertEqual(iso, executor.Isolation.for_public_seed(window="200k"))
+        with self.assertRaises(SystemExit), contextlib.redirect_stderr(io.StringIO()):
+            parser.parse_args(base + ["--window", "2m"])
+
 
 class OwnerBeforeChangeTest(unittest.TestCase):
     def setUp(self):

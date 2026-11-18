@@ -767,9 +767,15 @@ def _turn_paths(cdir: Path) -> list[Path]:
     return sorted(cdir.glob("turn-*.stream.jsonl"))
 
 
-def trajectory_telemetry(run: Path, window: int = DEFAULT_WINDOW, fetch=fetch_listings, image: str | None = None,
+def recorded_window(tj: dict) -> int | None:
+    """The context window a run was set to (trajectory.json's isolation record), if it records one."""
+    return (tj.get("isolation") or {}).get("window_tokens") or tj.get("window_tokens")
+
+
+def trajectory_telemetry(run: Path, window: int | None = DEFAULT_WINDOW, fetch=fetch_listings, image: str | None = None,
                          log=lambda msg: print(msg, file=sys.stderr)) -> dict:
-    """Every change of one trajectory. fetch(volume, commits, image) lists the repository; None skips it."""
+    """Every change of one trajectory (or fork). fetch(volume, commits, image) lists the repository; None skips it.
+    window None: the window the run records, else the largest its sessions reported, else DEFAULT_WINDOW."""
     run = Path(run)
     tj = json.loads((run / "trajectory.json").read_text())
     changes = sorted(((int(k), v) for k, v in tj.get("changes", {}).items()), key=lambda kv: kv[0])
@@ -791,7 +797,7 @@ def trajectory_telemetry(run: Path, window: int = DEFAULT_WINDOW, fetch=fetch_li
             except (RepoUnavailable, OSError, subprocess.SubprocessError) as exc:
                 repo_note = f"unavailable: {exc}"
                 log(f"{tj.get('id', run.name)}: repository {repo_note}")
-    out_changes, skipped = [], []
+    out_changes, skipped, parsed = [], [], []
     for n, ch in changes:
         cdir = run / f"change-{n:02d}"
         paths = _turn_paths(cdir) if cdir.is_dir() else []
@@ -799,7 +805,11 @@ def trajectory_telemetry(run: Path, window: int = DEFAULT_WINDOW, fetch=fetch_li
             skipped.append({"change": n, "title": ch.get("title"),
                             "reason": ch.get("symptom") or ch.get("error") or "no transcripts"})
             continue
-        turns = [parse_stream(p) for p in paths]
+        parsed.append((n, ch, paths, [parse_stream(p) for p in paths]))
+    if window is None:
+        reported = [t["reported_context_window"] for *_, turns in parsed for t in turns if t["reported_context_window"]]
+        window = recorded_window(tj) or (max(reported) if reported else None) or DEFAULT_WINDOW
+    for n, ch, paths, turns in parsed:
         commit = ch.get("commit")
         entries = parse_ls_tree(listings[commit]) if commit in listings else None
         c = rollup_change(turns, entries, window, turns[0]["root"])
@@ -932,7 +942,9 @@ def _table(cols, rows) -> str:
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--ids", nargs="+", required=True, help="trajectory ids under the runs folder")
-    ap.add_argument("--window", type=int, default=DEFAULT_WINDOW, help="context window for shares (default %(default)s)")
+    ap.add_argument("--window", type=int, default=None,
+                    help="context window for shares (default: each run's recorded window, else the one its sessions "
+                         f"reported, else {DEFAULT_WINDOW:,})")
     ap.add_argument("--no-repo", action="store_true", help="skip listing the repository in the workspace volumes")
     ap.add_argument("--summary", action="store_true", help="print per-arm means across the trajectories")
     ap.add_argument("--runs", type=Path, default=RUNS)
@@ -950,9 +962,10 @@ def main(argv=None) -> int:
         print()
         done.append(t)
     if args.summary:
-        print(f"Per-arm means (window {args.window:,}; peak = per-change peak, averaged over changes then trajectories; "
+        window = args.window or (done[0]["window"] if done else DEFAULT_WINDOW)
+        print(f"Per-arm means (window {window:,}; peak = per-change peak, averaged over changes then trajectories; "
               "peak max = each trajectory's largest change, averaged)")
-        print(format_summary(summarize(done), args.window))
+        print(format_summary(summarize(done), window))
     return 0
 
 

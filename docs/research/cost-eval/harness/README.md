@@ -20,8 +20,12 @@ python3.12 -m unittest discover -s tests
 | `grade_checkpoint.py` | Grades one checkpoint of a trajectory with parallel workers; also runs a symptom change's diagnostic |
 | `audit_owner.py` | Runs the leak judge over a real trajectory's owner replies |
 | `run_probe.py` | Runs the seed's probe request on a disposable fork of a trajectory's checkpoint |
+| `clowder_variants.py` | Builds the falsification test's repository variants from one Clowder commit: a held-out slice of tests removed from all three, then full, lid, and stripped (no docs, agent files, or spec-ID citations, and tests thinned to a 0.6 test-to-source ratio), each a one-commit repository, loaded into a Docker volume and checked with `cargo test` |
+| `run_fork.py` | Runs one change from a variant's snapshot on a disposable fork, with any planted bug folded into the snapshot, the window and isolation set, and records like a trajectory's |
+| `grade_rust.py`, `costeval/rust_grading.py` | Grades a Rust-seed checkpoint: held-out tests for keeping (each its own test target), the arm's edits to existing tests, and probes written as Rust tests against the arm's own API and judged from their output |
+| `images/` | The Rust executor image (`executor-rust.Dockerfile`) and its build script, which fetches the seed's locked crates into the image |
 | `rejudge.py` | Judges a graded checkpoint's logs again, with the same or another model, for test-retest and judge comparisons; `--probes` judges against the probe version the logs were executed under |
-| `context_telemetry.py` | Per change, from transcripts: peak context against the session's window, compaction, files and characters read (by the Read tool and by shell reads), and the share of the repository read |
+| `context_telemetry.py` | Per change, from transcripts (of trajectories and forks): peak context against the run's recorded window (or the session's own), compaction, files and characters read (by the Read tool and by shell reads), and the share of the repository read |
 | `report.py` | Summarizes a stage's trajectories per arm: items met (by disclosure kind, and by guessability band where the seed has one), agent and owner cost, owner replies, words shown, touchpoint kinds, leak flags, cost by change, and the probe-request forks |
 | `sample_verdicts.py` | Builds spot-check packets of sampled verdicts for whoever checks the graders in the maintainer's place |
 | `classify_touchpoints.py`, `prompts/touchpoints.md` | Sorts each request the agent made of the owner into the kinds in "Human cost", from what the owner saw, never from its reply |
@@ -32,6 +36,7 @@ python3.12 -m unittest discover -s tests
 | `prompts/extraction.md`, `prompts/extraction-template.md` | The interface-extraction session and its fixed reference template |
 | `prompts/grade-setup.md`, `prompts/grade-execute.md`, `prompts/grade-judge.md` | The graders' three sessions: loading setups, running probes, judging logs |
 | `prompts/simulator.md` | The owner's prompt template. The oracle content is filled in at run time, so the template itself holds nothing hidden |
+| `prompts/extraction-rust.md`, `prompts/grade-execute-rust.md`, `prompts/grade-judge-rust.md` | The Rust graders' sessions: a reference from the arm's diff, one test per probe, and judgment from each test's output |
 | `prompts/leak-judge.md` | The leak judge's prompt: given everything the owner was given and the reply it sent, it lists what the reply shared without licence |
 
 Executor sessions need the maintainer's subscription token in `CLAUDE_CODE_OAUTH_TOKEN`. [../plumbing/with-token.sh](../plumbing/with-token.sh) sets it without printing it.

@@ -40,6 +40,41 @@ class InitProblem(ValueError):
     """The session's start-up record doesn't match its arm and pins."""
 
 
+# A public seed's own repository must stay out of reach: its hosts resolve to nowhere inside the container (the model
+# API stays reachable), and web search and fetch are denied, the same for every arm. Cargo still reaches crates.io.
+GITHUB_HOSTS = ("github.com", "codeload.github.com", "raw.githubusercontent.com", "api.github.com",
+                "objects.githubusercontent.com")
+WEB_TOOLS = ("WebFetch", "WebSearch")
+WINDOWS = {"1m": 1_000_000, "200k": 200_000}  # "200k" holds a 1M-window model to 200k tokens
+
+
+@dataclass(frozen=True)
+class Isolation:
+    """What a session can't reach, and its context window. The defaults block nothing and leave the model its own
+    window; "200k" sets CLAUDE_CODE_DISABLE_1M_CONTEXT=1, under which the session reports a 200,000-token window."""
+    blocked_hosts: tuple[str, ...] = ()
+    denied_tools: tuple[str, ...] = ()
+    window: str = "1m"
+
+    def __post_init__(self):
+        if self.window not in WINDOWS:
+            raise ValueError(f"window must be one of {sorted(WINDOWS)}, not {self.window!r}")
+
+    @classmethod
+    def for_public_seed(cls, window: str = "1m") -> "Isolation":
+        return cls(blocked_hosts=GITHUB_HOSTS, denied_tools=WEB_TOOLS, window=window)
+
+    def docker_args(self) -> list[str]:
+        args = [a for h in self.blocked_hosts for a in ("--add-host", f"{h}:0.0.0.0")]
+        if self.window == "200k":
+            args += ["-e", "CLAUDE_CODE_DISABLE_1M_CONTEXT=1"]
+        return args
+
+    def record(self) -> dict:
+        return {"blocked_hosts": sorted(self.blocked_hosts), "denied_tools": sorted(self.denied_tools),
+                "window": self.window, "window_tokens": WINDOWS[self.window]}
+
+
 @dataclass(frozen=True)
 class ContainerSession:
     image: str
@@ -52,6 +87,7 @@ class ContainerSession:
     plugin_dirs: tuple[str, ...] | list[str] = ()
     extra_settings: dict = field(default_factory=dict)
     timeout_s: int = 3600
+    isolation: Isolation = field(default_factory=Isolation)
 
 
 @dataclass(frozen=True)
@@ -87,6 +123,7 @@ def claude_command(s: ContainerSession, prompt: str, *, container_name: str, res
         "-e", TOKEN_ENV,
         "-v", f"{_volume(s.workspace_volume)}:/work",
         "-v", f"{_volume(s.config_volume)}:/cfg",
+        *s.isolation.docker_args(),
         "-w", "/work",
         s.image,
         "claude", "-p", prompt,
@@ -95,7 +132,7 @@ def claude_command(s: ContainerSession, prompt: str, *, container_name: str, res
         "--permission-mode", permission_mode,
         "--settings", settings_json(s),
         "--output-format", "stream-json", "--verbose",
-        "--disallowedTools", ",".join(HEADLESS_DENIED_TOOLS),
+        "--disallowedTools", ",".join(HEADLESS_DENIED_TOOLS + tuple(s.isolation.denied_tools)),
     ]
     for d in s.plugin_dirs:
         cmd += ["--plugin-dir", d]
@@ -196,6 +233,7 @@ class RoleSession:
     timeout_s: int = 900
     network: str | None = None  # a Docker network to join, e.g. to reach an app container while grading
     env: tuple[tuple[str, str], ...] = ()
+    isolation: Isolation = field(default_factory=Isolation)
 
 
 @dataclass(frozen=True)
@@ -218,6 +256,7 @@ def role_command(r: RoleSession, *, container_name: str, json_schema: str | None
         cmd += ["--network", r.network]
     for k, v in r.env:
         cmd += ["-e", f"{k}={v}"]
+    cmd += r.isolation.docker_args()
     cmd += ["-w", "/work", r.image, "claude", "-p",
             "--model", r.model, "--effort", r.effort,
             "--tools", ",".join(r.tools),
@@ -225,6 +264,8 @@ def role_command(r: RoleSession, *, container_name: str, json_schema: str | None
             "--output-format", "json"]
     if r.tools:
         cmd += ["--permission-mode", "bypassPermissions"]
+    if r.isolation.denied_tools:
+        cmd += ["--disallowedTools", ",".join(r.isolation.denied_tools)]
     if json_schema is not None:
         cmd += ["--json-schema", json_schema]
     return cmd

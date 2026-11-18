@@ -97,6 +97,46 @@ class CommandTest(unittest.TestCase):
             executor.claude_command(session(workspace_volume="/Users/someone/work"), "x", container_name="c1")
 
 
+class IsolationTest(unittest.TestCase):
+    def test_by_default_nothing_is_blocked_and_the_window_is_the_models_own(self):
+        cmd = executor.claude_command(session(), "x", container_name="c1")
+        self.assertNotIn("--add-host", cmd)
+        self.assertNotIn("CLAUDE_CODE_DISABLE_1M_CONTEXT=1", cmd)
+        self.assertNotIn("WebFetch", cmd[cmd.index("--disallowedTools") + 1])
+        self.assertEqual(executor.Isolation().record(),
+                         {"blocked_hosts": [], "denied_tools": [], "window": "1m", "window_tokens": 1_000_000})
+
+    def test_a_clowder_run_blocks_github_denies_web_tools_and_sets_the_window(self):
+        iso = executor.Isolation.for_public_seed(window="200k")
+        cmd = executor.claude_command(session(isolation=iso), "x", container_name="c1")
+        image = cmd.index("lid-cost-eval-executor:2.1.323")
+        hosts = [cmd[i + 1] for i, a in enumerate(cmd[:image]) if a == "--add-host"]
+        self.assertEqual(sorted(hosts), sorted(f"{h}:0.0.0.0" for h in (
+            "github.com", "codeload.github.com", "raw.githubusercontent.com", "api.github.com", "objects.githubusercontent.com")))
+        self.assertNotIn("api.anthropic.com", " ".join(hosts))
+        env = [cmd[i + 1] for i, a in enumerate(cmd[:image]) if a == "-e"]
+        self.assertIn("CLAUDE_CODE_DISABLE_1M_CONTEXT=1", env)
+        denied = cmd[cmd.index("--disallowedTools") + 1].split(",")
+        self.assertTrue({"WebSearch", "WebFetch", "ScheduleWakeup"} <= set(denied))
+        rec = iso.record()
+        self.assertEqual((rec["window"], rec["window_tokens"], rec["denied_tools"]), ("200k", 200_000, ["WebFetch", "WebSearch"]))
+        full = executor.claude_command(session(isolation=executor.Isolation.for_public_seed(window="1m")), "x", container_name="c1")
+        self.assertNotIn("CLAUDE_CODE_DISABLE_1M_CONTEXT=1", full)
+        self.assertIn("--add-host", full)
+
+    def test_an_unknown_window_is_refused(self):
+        with self.assertRaises(ValueError):
+            executor.Isolation(window="500k")
+
+    def test_a_role_can_be_isolated_the_same_way(self):
+        role = executor.RoleSession(image="img", config_volume="roles", model="m", claude_code_version="v",
+                                    tools=("Bash",), isolation=executor.Isolation.for_public_seed(window="1m"))
+        cmd = executor.role_command(role, container_name="r1")
+        self.assertIn("github.com:0.0.0.0", cmd)
+        self.assertIn("WebFetch", cmd[cmd.index("--disallowedTools") + 1])
+        self.assertLess(cmd.index("--add-host"), cmd.index("img"))
+
+
 class CheckInitTest(unittest.TestCase):
     def test_accepts_exactly_the_expected_plugins(self):
         executor.check_init(session(), init_record(["cc-plugin-agents-md", "cc-plugin-telemetry"], ["debug", "simplify"]))
