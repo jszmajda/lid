@@ -56,6 +56,19 @@ class ReportTest(unittest.TestCase):
         self.assertEqual(f["by band"]["low"], (1, 1))
         self.assertIsNone(f["by band"]["high"])            # BK-03 not graded here
 
+    def test_a_missing_item_is_left_out_of_items_met_and_counted_by_cause(self):
+        g = self.runs / "s9-bare-1" / "grading" / "change-01"
+        # a Rust grading writes each probe's verdict as text, and the unresolved grader errors apart
+        write(g / "verdicts-m.json", {"probes": {"P-BK01-a": "met", "P-BK01-b": "missing", "P-BK02-a": "met"},
+                                      "missing": {"P-BK01-b": {"fault": "interface", "cause": "execution"}}})
+        r = self.build("verdicts-m")
+        f = r["arms"]["bare"][0]["fidelity"][1]
+        self.assertEqual(f["all"], (1, 1))  # BK-01 is missing: neither met nor counted against
+        self.assertEqual((f["missing"], f["missing by cause"]), (1, {"interface": 1}))
+        text = report.render(r)
+        self.assertIn("## Missing items", text)
+        self.assertIn("| bare | 1 | interface 1 |", text)
+
     def test_a_rejudgment_uses_the_new_verdicts(self):
         f = self.build("rejudge-x")["arms"]["bare"][0]["fidelity"][1]
         self.assertEqual(f["all"], (1, 2))

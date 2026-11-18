@@ -13,7 +13,8 @@ Design: "Graders", "Grading protocol", and "The harness" in the notebook's desig
    without the source. The control server writes the execution log.
 6. **Judgment.** A separate session per batch compares each probe's expected observation with its log.
 
-An item is met when every one of its probes is met; "not met" wins over "couldn't exercise".
+An item is met when every one of its probes is met; "not met" wins over "couldn't exercise", which wins over
+"missing": a grader error a rerun didn't resolve (Rust grading), which leaves the item out of the items-met share.
 """
 
 from __future__ import annotations
@@ -33,6 +34,7 @@ HERE = Path(__file__).resolve().parent.parent
 PROMPTS = HERE / "prompts"
 TOOLS = HERE / "grading"
 VERDICTS = ("met", "not met", "couldn't exercise")
+MISSING = "missing"  # a probe the grader couldn't exercise even on a rerun: no verdict on the build, either way
 DEFERRED_NEEDS = ("prior-data", "prior-observations")
 MAX_JUDGE_BODY = 20000  # characters of one response body the judge sees; the full log stays on disk  # not implemented yet; such probes are reported as not run
 
@@ -142,8 +144,9 @@ def render_for_judgment(batch: list[Probe], conventions: str = "") -> str:
 
 
 def item_verdicts(probe_verdicts: dict[str, str], probes: list[Probe]) -> dict[str, dict]:
-    """met only if every probe is met; any "not met" makes it not met; otherwise couldn't exercise. Probes with no
-    verdict (not run) leave the item without one unless another probe decided it."""
+    """met only if every probe is met; any "not met" makes it not met; otherwise couldn't exercise, and otherwise
+    missing (a probe left unresolved by a grader error). Probes with no verdict (not run) leave the item without one
+    unless another probe decided it."""
     by_item: dict[str, list[Probe]] = {}
     for p in probes:
         by_item.setdefault(p.item, []).append(p)
@@ -153,12 +156,14 @@ def item_verdicts(probe_verdicts: dict[str, str], probes: list[Probe]) -> dict[s
         given = [v for v in vs if v]
         if "not met" in given:
             v = "not met"
-        elif not given or len(given) < len(vs):
-            v = "couldn't exercise" if "couldn't exercise" in given else None
-        elif all(x == "met" for x in given):
-            v = "met"
-        else:
+        elif "couldn't exercise" in given:
             v = "couldn't exercise"
+        elif MISSING in given:
+            v = MISSING
+        elif not given or len(given) < len(vs):
+            v = None
+        else:
+            v = "met"
         out[item] = {"verdict": v, "probes": {p.id: probe_verdicts.get(p.id) for p in ps},
                      "share_met": sum(x == "met" for x in given) / len(ps)}
     return out

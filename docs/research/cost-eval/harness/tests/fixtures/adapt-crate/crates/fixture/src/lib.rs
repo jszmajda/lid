@@ -60,3 +60,12 @@ pub fn arrive(name: &str) -> Vec<Event> {
 pub fn calm() -> Mood {
     Mood::Calm
 }
+
+/// A kitten's saved form, as JSON.
+pub fn save(k: &Kitten) -> String {
+    let nickname = match &k.nickname {
+        Some(n) => format!("\"{n}\""),
+        None => "null".to_string(),
+    };
+    format!("{{\"name\":\"{}\",\"age\":{},\"nickname\":{}}}", k.name, k.age, nickname)
+}

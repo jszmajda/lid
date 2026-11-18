@@ -146,13 +146,19 @@ class AdaptTest(unittest.TestCase):
         self.assertEqual((record["edits"], put), ([], {}))
         self.assertEqual(files, target_files("heldout_litters"))
 
+    def test_a_struct_pattern_missing_fields_gets_a_rest_pattern(self):
+        record, files, _ = run("heldout_patterns", diagnostics("heldout_patterns"))
+        self.assertEqual(record["status"], "adapted")
+        self.assertIn("        Some(Event::Moved { to, .. }) => to,\n", files["crates/fixture/tests/heldout_patterns/patterns.rs"])
+        edit = next(e for e in record["edits"] if e["code"] == "E0027")
+        self.assertEqual((edit["edit"], edit["fields"], edit["line"]), ("rest pattern", ["by"], 6))
+
     def test_any_error_the_rule_doesnt_cover_means_no_adaptation(self):
-        for target, code in (("heldout_patterns", "E0027"), ("heldout_waves", "E0425")):
-            record, _, put = run(target, diagnostics(target))
-            self.assertEqual(record["status"], "not adapted")
-            self.assertIn(code, record["reason"])
-            self.assertEqual(put, {})
-            self.assertIn(code, [e["code"] for e in record["errors"]])
+        record, _, put = run("heldout_waves", diagnostics("heldout_waves"))
+        self.assertEqual(record["status"], "not adapted")
+        self.assertIn("E0425", record["reason"])
+        self.assertEqual(put, {})
+        self.assertIn("E0425", [e["code"] for e in record["errors"]])
 
     def test_an_error_outside_the_held_out_files_is_not_adapted(self):
         lib = diagnostics("heldout_events").replace("crates/fixture/tests/heldout_events/events.rs", "crates/fixture/src/lib.rs")
@@ -215,18 +221,23 @@ class KeepingAdaptsTest(unittest.TestCase):
         import grade_rust
         cats_log = (FIX / "diagnostics" / "heldout_cats.test.log").read_text()
         events_log = "running 1 test\ntest events::a_move_has_a_destination ... ok\n\ntest result: ok. 1 passed; 0 failed\nEXIT=0\n"
-        ck = FakeCk({"heldout_cats": cats_log, "heldout_events": events_log})
+        patterns_log = "running 1 test\ntest patterns::a_move_is_read_back ... ok\n\ntest result: ok. 1 passed; 0 failed\nEXIT=0\n"
+        saves_log = (FIX / "diagnostics" / "heldout_saves.test.log").read_text()
+        ck = FakeCk({"heldout_cats": cats_log, "heldout_events": events_log, "heldout_patterns": patterns_log,
+                     "heldout_saves": saves_log})
         out = Path(tempfile.mkdtemp()) / "keeping"
         r = grade_rust.keeping(ck, FIX / "held-out", HELD, out)
         self.assertEqual(r["targets"]["heldout_cats"]["adaptation"]["status"], "adapted")
         self.assertEqual(len(r["targets"]["heldout_cats"]["adaptation"]["edits"]), 4)
         self.assertEqual(r["targets"]["heldout_cats"]["reached_adaptation"], ["cats::every_arrival_is_described"])
-        self.assertEqual(r["adapted"], ["heldout_cats", "heldout_events"])
-        self.assertEqual(sorted(r["compile_failed_not_adapted"]), ["heldout_litters", "heldout_patterns", "heldout_waves"])
-        self.assertIn("E0027", r["compile_failed_not_adapted"]["heldout_patterns"])
-        self.assertEqual(r["tests_not_built"], 3)
-        self.assertEqual((r["passed"], r["failed"]), (3, 1))  # keeping failures: tests that ran and failed
+        self.assertEqual(r["adapted"], ["heldout_cats", "heldout_events", "heldout_patterns", "heldout_saves"])
+        self.assertEqual(sorted(r["compile_failed_not_adapted"]), ["heldout_litters", "heldout_waves"])
+        self.assertIn("E0425", r["compile_failed_not_adapted"]["heldout_waves"])
+        self.assertEqual(r["tests_not_built"], 2)
+        self.assertEqual((r["passed"], r["failed"]), (4, 3))  # tests that ran and failed, apart from those not built
         self.assertEqual(r["reached_adaptation"], 1)
+        self.assertEqual(r["reached_adaptation_tests"], ["heldout_cats/cats::every_arrival_is_described"])
+        self.assertEqual(r["adaptations_by_code"], {"E0004": 2, "E0027": 1, "E0063": 6})
         self.assertIn(KITTEN, ck.files["/work/app/crates/fixture/tests/heldout_cats/cats.rs"])
         self.assertIn(KITTEN, (out / "adapted" / "crates/fixture/tests/heldout_cats/cats.rs").read_text())
         self.assertFalse((out / "adapted" / "crates/fixture/tests/heldout_litters").exists())
@@ -259,20 +270,36 @@ class LiveFixtureCrateTest(unittest.TestCase):
         r = self.keep((FIX / "original-lib.rs").read_text())
         self.assertEqual({t: v["adaptation"]["status"] for t, v in r["targets"].items()},
                          {t: "built" for t in r["targets"]})
-        self.assertEqual((r["passed"], r["failed"], r["compile_failed"]), (7, 0, []))
+        self.assertEqual((r["passed"], r["failed"], r["compile_failed"]), (9, 0, []))
 
     def test_the_arms_crate_is_adapted_where_the_rule_covers_it(self):
         r = self.keep(ARM_LIB)
         status = {t: v["adaptation"]["status"] for t, v in r["targets"].items()}
         self.assertEqual(status, {"heldout_cats": "adapted", "heldout_events": "adapted", "heldout_litters": "not adapted",
-                                  "heldout_patterns": "not adapted", "heldout_waves": "not adapted"})
+                                  "heldout_patterns": "adapted", "heldout_saves": "adapted", "heldout_waves": "not adapted"})
         self.assertEqual(r["targets"]["heldout_cats"]["tests"], {"cats::a_helper_kitten_is_two": "ok",
                                                                  "cats::a_kitten_is_greeted": "ok",
                                                                  "cats::every_arrival_is_described": "FAILED"})
         self.assertEqual(r["targets"]["heldout_cats"]["reached_adaptation"], ["cats::every_arrival_is_described"])
         self.assertEqual(r["targets"]["heldout_events"]["tests"], {"events::a_move_has_a_destination": "ok"})
-        self.assertEqual(r["compile_failed"], ["heldout_litters", "heldout_patterns", "heldout_waves"])
+        self.assertEqual(r["targets"]["heldout_patterns"]["tests"], {"patterns::a_move_is_read_back": "ok"})
+        self.assertEqual(r["targets"]["heldout_saves"]["tests"], {"saves::a_resaved_kitten_keeps_its_shape": "FAILED",
+                                                                  "saves::a_saved_kitten_is_exact": "FAILED"})
+        self.assertEqual(r["compile_failed"], ["heldout_litters", "heldout_waves"])
         print(json.dumps(r["targets"]["heldout_cats"]["adaptation"], indent=1))
+
+    def test_the_snapshots_helpers_are_built_against_the_arms_crate_before_an_executor_gets_them(self):
+        import subprocess
+        ck = rg.RustCheckpoint(name="adapt-helpers", commit="-", image=self.IMAGE)
+        self.addCleanup(subprocess.run, ["docker", "volume", "rm", "-f", ck.volume], capture_output=True)
+        ck.sh("rm -rf /work/app /work/target && mkdir -p /work/app")
+        for p in ("Cargo.toml", "crates/fixture/Cargo.toml"):
+            ck.put(f"/work/app/{p}", (FIX / p).read_text())
+        ck.put("/work/app/crates/fixture/src/lib.rs", ARM_LIB)
+        rec = rg.place_probe_helpers(ck, rg.snapshot_helpers(FIX / "held-out"), sources=lambda: ra.arm_sources(ck))
+        self.assertEqual(rec["fixture"]["status"], "adapted")  # common builds a Kitten, which gained fields
+        self.assertIn("nickname: None", ck.get("/work/app/crates/fixture/tests/probe_helpers/common/mod.rs"))
+        self.assertIsNone(ck.get("/work/app/crates/fixture/tests/probe_helpers_check.rs"))
 
 
 if __name__ == "__main__":

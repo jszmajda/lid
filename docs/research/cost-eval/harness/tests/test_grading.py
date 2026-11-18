@@ -106,6 +106,16 @@ class ItemVerdictTest(unittest.TestCase):
         self.assertEqual(v("met", None), None)
         self.assertEqual(grading.item_verdicts({"P-BK01-a": "met"}, ps)["BK-01"]["share_met"], 0.5)
 
+    def test_a_grader_error_left_unresolved_makes_the_item_missing_unless_a_probe_decides_it(self):
+        ps = grading.parse_probes(PROBES).probes[:2]
+        v = lambda a, b: grading.item_verdicts({"P-BK01-a": a, "P-BK01-b": b}, ps)["BK-01"]["verdict"]
+        self.assertEqual(v("met", "missing"), "missing")
+        self.assertEqual(v("missing", "missing"), "missing")
+        self.assertEqual(v("not met", "missing"), "not met")  # a confirmed absence decides it
+        self.assertEqual(v("couldn't exercise", "missing"), "couldn't exercise")
+        self.assertEqual(v("missing", None), "missing")
+        self.assertEqual(grading.MISSING, "missing")
+
 
 class SpecTest(unittest.TestCase):
     SPEC = {"workdir": "/work/app", "command": "uv run app --data {DATA}", "env": {"APP_DIR": "{DATA}/x"},

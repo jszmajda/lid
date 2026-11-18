@@ -9,7 +9,8 @@ owner-audit.json where they exist, the verdicts of each graded checkpoint, and i
 (`<id>-probeNN-1`). Writes a Markdown report and the same numbers as JSON beside it.
 
 Items met is the share of items with a verdict that are met; "couldn't exercise" counts against it, and probes not
-run (deferred needs) leave their items out. Items are split by how the owner discloses them (stated, askable,
+run (deferred needs) leave their items out. A "missing" item (a grader error a rerun didn't resolve) is neither met
+nor counted against: it is left out of the share and reported by cause and arm. Items are split by how the owner discloses them (stated, askable,
 recognized on sight, emerging) and, where the seed has `hidden/bands.json`, latent items by guessability band.
 """
 
@@ -46,14 +47,25 @@ def checkpoint_items(gdir: Path, verdicts: str, probes: list[grading.Probe]) -> 
     data = json.loads(f.read_text())
     if "rows" in data:  # a re-judgment: each probe's new verdict
         pv = {p: r["new"] for p, r in data["rows"].items() if r.get("new")}
-    else:
-        pv = {p: v["verdict"] for p, v in data.get("probes", {}).items() if v.get("verdict")}
+    else:  # a Rust grading writes each verdict as text
+        pv = {p: (v if isinstance(v, str) else v.get("verdict")) for p, v in data.get("probes", {}).items()}
+        pv = {p: v for p, v in pv.items() if v}
     items = grading.item_verdicts(pv, [p for p in probes if p.id in pv])
     return {i: v["verdict"] for i, v in items.items() if v["verdict"]}
 
 
+def missing_causes(gdir: Path, verdicts: str) -> dict[str, int]:
+    """Probes left missing in one graded checkpoint, counted by the grader error that left them so."""
+    f = gdir / f"{verdicts}.json"
+    data = json.loads(f.read_text()) if f.exists() else {}
+    out: dict[str, int] = {}
+    for m in (data.get("missing") or {}).values():
+        out[m.get("fault") or m.get("cause") or "unknown"] = out.get(m.get("fault") or m.get("cause") or "unknown", 0) + 1
+    return out
+
+
 def share_met(verdicts: dict[str, str], keep=lambda i: True) -> tuple[int, int] | None:
-    vs = [v for i, v in verdicts.items() if keep(i)]
+    vs = [v for i, v in verdicts.items() if keep(i) and v != grading.MISSING]
     return (sum(v == "met" for v in vs), len(vs)) if vs else None
 
 
@@ -132,6 +144,7 @@ def build(runs: Path, seed_dir: Path, prefix: str, arms: dict[str, list[str]], v
                 v = {i: x for i, x in v.items() if (f"{arm}-{k}", n, i) not in left_out}
                 f = {"all": share_met(v), "not met": sum(x == "not met" for x in v.values()),
                      "couldn't exercise": sum(x == "couldn't exercise" for x in v.values()),
+                     "missing": sum(x == grading.MISSING for x in v.values()), "missing by cause": missing_causes(gdir, verdicts),
                      "by kind": {kd: share_met(v, lambda i, kd=kd: kinds.get(i) == kd) for kd in KINDS},
                      "by band": {b: share_met(v, lambda i, b=b: bands.get(i) == b) for b in ("low", "medium", "high")} if bands else {},
                      "latent items": {i: v.get(i) for i in bands}}
@@ -191,13 +204,27 @@ def render(r: dict) -> str:
                 xs = [f["by kind"]["stated"] for f in fs if f["by kind"]["stated"]]
                 cells.append(pct(mean([m / d for m, d in xs])) if xs else "–")
                 lines.append(f"| {a} | " + " | ".join(cells) + " |")
-            lines += ["", "Each latent item at the last graded change (met / not met / couldn't exercise, per trajectory):", ""]
+            lines += ["", "Each latent item at the last graded change (met ✓ / not met ✗ / couldn't exercise ? / missing ○, per trajectory):", ""]
             items = sorted({i for ts in arms.values() for t in ts for f in t["fidelity"].values() for i in f["latent items"]})
             lines += ["| Arm | " + " | ".join(items) + " |", "|---|" + "---|" * len(items)]
-            short = {"met": "✓", "not met": "✗", "couldn't exercise": "?", None: "·"}
+            short = {"met": "✓", "not met": "✗", "couldn't exercise": "?", grading.MISSING: "○", None: "·"}
             for a, ts in arms.items():
                 fs = [t["fidelity"][last] for t in ts if last in t["fidelity"]]
                 lines.append(f"| {a} | " + " | ".join("".join(short[f["latent items"].get(i)] for f in fs) for i in items) + " |")
+
+    if any(f.get("missing") for ts in arms.values() for t in ts for f in t["fidelity"].values()):
+        lines += ["", "## Missing items", "",
+                  "Items the grader couldn't exercise even on a rerun blind to the arm: left out of items met. "
+                  "Totals over trajectories and graded changes; causes count probes.", "",
+                  "| Arm | Missing items | Probes by cause |", "|---|---|---|"]
+        for a, ts in arms.items():
+            fs = [f for t in ts for f in t["fidelity"].values()]
+            causes: dict[str, int] = {}
+            for f in fs:
+                for c, k in f.get("missing by cause", {}).items():
+                    causes[c] = causes.get(c, 0) + k
+            lines.append(f"| {a} | {sum(f.get('missing', 0) for f in fs)} | "
+                         + (", ".join(f"{c} {k}" for c, k in sorted(causes.items())) or "–") + " |")
 
     # cost and attention
     lines += ["", "## Cost and attention, build plus every change", "",

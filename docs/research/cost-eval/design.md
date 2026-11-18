@@ -142,7 +142,7 @@ The first against the third is the falsification test. The second against the th
 
 **Isolation:** GitHub's domains are blocked in the containers, and web search and fetch are denied to every arm, so no arm can fetch the public repository's docs. Cargo still reaches crates.io.
 
-**The pilot size:** 12 changes × 3 arms × 2 windows, one repeat each, before any expansion. The changes are written fresh in the owner's voice, each with its predicted direction and how far its relevant intent sits from the code it edits (same module, another module, another crate), recorded before any run.
+**The pilot size:** 12 changes × 3 arms × 2 windows, one repeat each, before any expansion. The pilot's changes keep their relevant intent within one crate. Cross-crate changes are added if the pilot shows a gap or room, with keeping graded through the terminal UI's held-out tests. Cross-crate intent is where the hypothesis says LID should help most. The changes are written fresh in the owner's voice, each with its predicted direction and how far its relevant intent sits from the code it edits (same module, another module, another crate), recorded before any run.
 
 ## The change script
 

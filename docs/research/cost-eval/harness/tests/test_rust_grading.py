@@ -210,6 +210,71 @@ class GradeProbesTest(unittest.TestCase):
             self.assertEqual(c["role"].isolation, executor.Isolation.for_public_seed(window="1m"))
         self.assertTrue((out / "verdicts.json").exists())
 
+    def test_a_grader_error_runs_once_more_blind_and_stays_missing_if_unresolved(self):
+        import re
+        probeset = grading.parse_probes(PROBES)
+        applicable = [p for p in probeset.probes if p.applies(3)]
+        ck, calls, state = FakeCk(), [], {}
+        rulings = {  # batch -> probe -> (verdict, cause, fault)
+            "b01": {"P-NEW01-a": ("couldn't exercise", "execution", "compile"),
+                    "P-NEW01-b": ("couldn't exercise", "execution", "observation")},
+            "x01": {"P-NEW01-a": ("couldn't exercise", "execution", "interface")},
+            "x02": {"P-NEW01-b": ("met", "none", "none")}}
+        usage = SimpleNamespace(reported_cost_usd=0.1, models={})
+
+        def run_role(role, prompt, json_schema=None):
+            calls.append({"role": role, "prompt": prompt, "schema": json_schema})
+            if json_schema:
+                return SimpleNamespace(structured={"verdicts": [
+                    {"probe": pid, "verdict": v, "evidence": [] if v == "couldn't exercise" else [2],
+                     "reason": "The output shows what this probe needed.", "cause": c, "fault": f}
+                    for pid, (v, c, f) in rulings[state["bid"]].items()]}, text="", usage=usage, duration_s=1.0)
+            m = re.search(r"probes-(\w+)\.md", prompt)
+            if m:  # an execution batch writes each of its probes' test and output
+                state["bid"] = m.group(1)
+                for pid in re.findall(r"(?m)^## (P-\S+)", ck.files[f"/work/out/probes-{m.group(1)}.md"]):
+                    t = rg.probe_target(pid)
+                    ck.files[f"/work/out/probes/{t}.rs"] = f"// {pid}\nfn t() {{}}"
+                    ck.files[f"/work/out/probes/{t}.log"] = f"{pid} observed in {m.group(1)}"
+            else:
+                ck.files["/work/out/reference.md"] = "use clowder_core::State;"
+            return SimpleNamespace(structured=None, text="done", usage=usage, duration_s=1.0)
+
+        g = rg.RustGraders(image="img", roles_volume="roles", claude_code="v")
+        result = rg.grade_probes(ck, g, probeset, applicable, base="b0", out=Path(tempfile.mkdtemp()), volume="ckpt",
+                                 run_role=run_role)
+        executions = [re.search(r"probes-(\w+)\.md", c["prompt"]).group(1) for c in calls
+                      if not c["schema"] and "probes-" in c["prompt"]]
+        self.assertEqual(executions, ["b01", "x01", "x02"])  # each grader error once more, in a batch of its own
+        self.assertNotIn("P-NEW01-b", ck.files["/work/out/probes-x01.md"])
+        rerun = next(c for c in calls if "probes-x01.md" in c["prompt"])
+        self.assertEqual(rerun["prompt"], rg.execution_prompt("x01"))  # the same instructions, nothing about the arm
+        rm = [s for s in ck.scripts if s.startswith("rm -f") and "probe_p_new01_a" in s]
+        self.assertEqual(len(rm), 1)  # the rerun starts from no test
+        self.assertEqual(result["probes"], {"P-NEW01-a": "missing", "P-NEW01-b": "met"})
+        self.assertEqual(result["missing"]["P-NEW01-a"]["fault"], "interface")
+        self.assertEqual(result["missing"]["P-NEW01-a"]["first"]["fault"], "compile")
+        self.assertEqual(result["reruns"]["P-NEW01-b"]["second"]["verdict"], "met")
+        self.assertEqual(result["missing_by_fault"], {"interface": 1})
+        self.assertEqual(result["items"]["NEW-01 Kittens can be renamed"]["verdict"], "missing")
+        schema = json.loads(next(c["schema"] for c in calls if c["schema"]))
+        fault = schema["properties"]["verdicts"]["items"]["properties"]["fault"]["enum"]
+        self.assertEqual(fault, ["compile", "fixture", "interface", "observation", "none"])
+        self.assertIn("confirmed", next(c["prompt"] for c in calls if c["schema"]))
+
+    def test_a_ruling_must_name_the_grader_error_and_only_for_couldnt_exercise(self):
+        batch = [p for p in grading.parse_probes(PROBES).probes if p.id == "P-NEW01-a"]
+        lines = rg.probe_log_lines({"P-NEW01-a": {"source": "x", "output": "y"}})
+
+        def problems(verdict, cause, fault, evidence=(2,)):
+            return rg.check_verdicts({"verdicts": [{"probe": "P-NEW01-a", "verdict": verdict, "evidence": list(evidence),
+                                                    "reason": "The output shows what this probe needed.", "cause": cause,
+                                                    "fault": fault}]}, batch, lines)
+        self.assertEqual(problems("couldn't exercise", "execution", "fixture", ()), [])
+        self.assertTrue(problems("couldn't exercise", "execution", "none", ()))
+        self.assertTrue(problems("not met", "none", "compile"))
+        self.assertEqual(problems("not met", "none", "none"), [])
+
     def test_the_prompts_exist_and_fill(self):
         for name in ("extraction-rust.md", "grade-execute-rust.md", "grade-judge-rust.md"):
             self.assertTrue((grading.PROMPTS / name).exists(), name)
@@ -220,6 +285,163 @@ class GradeProbesTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+BUILD_OK = '{"reason":"build-finished","success":true}\n'
+
+
+class ProbeHelpersTest(unittest.TestCase):
+    """Every executor gets the same tested fixture helpers: the snapshot's own test helper modules, placed beside the
+    probe tests, built against the arm's code (with the compile-only adaptation) before they are offered."""
+
+    def test_the_snapshots_own_helper_modules_are_found(self):
+        self.assertEqual(rg.snapshot_helpers(held_dir()), {"core": {"common/mod.rs": "pub fn ok() -> bool { true }\n"}})
+
+    def test_helpers_that_build_are_placed_and_offered_in_every_execution_prompt(self):
+        class Ck(FakeCk):
+            def sh(self, script, stdin=None, check=True):
+                self.scripts.append(script)
+                return BUILD_OK if "--no-run" in script else ""
+        ck = Ck()
+        rec = rg.place_probe_helpers(ck, rg.snapshot_helpers(held_dir()), sources=lambda: {})
+        self.assertEqual(rec["core"]["status"], "built")
+        self.assertEqual(ck.files["/work/app/crates/core/tests/probe_helpers/common/mod.rs"], "pub fn ok() -> bool { true }\n")
+        self.assertIn("--test probe_helpers_check", next(s for s in ck.scripts if "--no-run" in s))
+        self.assertTrue(any("rm -f" in s and "probe_helpers_check.rs" in s for s in ck.scripts))  # no stray target
+        p = rg.execution_prompt("b01", rec)
+        self.assertIn("crates/core/tests/probe_helpers/", p)
+        self.assertIn('#[path = "probe_helpers/common/mod.rs"] mod common;', p)
+        self.assertNotIn("probe_helpers", rg.execution_prompt("b01"))
+
+    def test_helpers_that_dont_build_against_the_arms_code_are_withdrawn(self):
+        broken = json.dumps({"reason": "compiler-message", "message": {
+            "level": "error", "message": "cannot find function `wave`", "code": {"code": "E0425"}, "children": [],
+            "spans": [{"is_primary": True, "file_name": "crates/core/tests/probe_helpers/common/mod.rs", "byte_start": 0,
+                       "byte_end": 4, "line_start": 1, "expansion": None}]}}) + "\n"
+
+        class Ck(FakeCk):
+            def sh(self, script, stdin=None, check=True):
+                self.scripts.append(script)
+                return broken if "--no-run" in script else ""
+        ck = Ck()
+        rec = rg.place_probe_helpers(ck, rg.snapshot_helpers(held_dir()), sources=lambda: {})
+        self.assertEqual(rec["core"]["status"], "not adapted")
+        self.assertIn("E0425", rec["core"]["reason"])
+        self.assertTrue(any("rm -rf" in s and "crates/core/tests/probe_helpers" in s for s in ck.scripts))
+        self.assertNotIn("probe_helpers", rg.execution_prompt("b01", rec))
+
+
+SCRIPT_KEPT = """## Change 3 — Reconsider a house rule
+
+**Kept behaviour:** CLK-301, CLK-302.
+
+## Change 4 — Let the party finish early
+
+**Kept behaviour:** CLK-405.
+"""
+
+
+class KeptBehaviourTest(unittest.TestCase):
+    def test_kept_behaviour_checks_are_reported_apart_from_new_intent(self):
+        kept = rg.kept_behaviour_ids(SCRIPT_KEPT)
+        self.assertEqual(kept, {"CLK-301", "CLK-302", "CLK-405"})
+        new, checks = rg.split_items({"CLW-301 Switch rules": "met", "CLK-302 Charm is all or nothing": "not met"}, kept)
+        self.assertEqual((new, checks), ({"CLW-301 Switch rules": "met"}, {"CLK-302 Charm is all or nothing": "not met"}))
+
+    def test_items_met_leaves_missing_items_out(self):
+        self.assertEqual(rg.items_met({"A": "met", "B": "not met", "C": "missing", "D": None}),
+                         {"met": 1, "of": 2, "missing": 1})
+
+
+SOCIETY_BASE = """use crate::common::*;
+
+#[test]
+fn adopt_rule_spends_charm() {
+    let mut s = setup();
+    assert_eq!(s.charm(), 0.0, "the price is paid");
+    assert!(s.is_adopted(Rule::A));
+    assert!(!s.is_adopted(Rule::B), "siblings exclude each other");
+    assert_eq!(saved(&s).rules, vec![Rule::A]);
+}
+
+#[test]
+fn rules_survive_save() {
+    assert_eq!(load(save(&state())).rules, state().rules);
+}
+
+#[test]
+fn a_gone_test() {
+    assert_eq!(count(), 1);
+}
+"""
+SOCIETY_HEAD = """use crate::common::*;
+
+#[test]
+fn adopt_rule_spends_charm() {
+    let mut s = setup();
+    assert_eq!(
+        s.charm(),
+        0.0,
+        "the price is still paid"
+    );
+    assert!(s.is_adopted(Rule::A));
+    // assert!(!s.is_adopted(Rule::B), "siblings exclude each other");
+    assert!(saved(&s).rules.len() >= 1);
+}
+
+#[test]
+#[ignore]
+fn rules_survive_save() {
+    assert_eq!(load(save(&state())).rules, state().rules);
+}
+"""
+SOC = "crates/core/tests/integration/society.rs"
+KEPT_ASSERTIONS = {"changes": {"3": [
+    {"keeps": "CLK-302", "file": SOC, "test": "adopt_rule_spends_charm", "assert": 'assert_eq!(s.charm(), 0.0, "the price is paid");'},
+    {"keeps": "CLK-301", "file": SOC, "test": "adopt_rule_spends_charm", "assert": "assert!(s.is_adopted(Rule::A))"},
+    {"keeps": "CLK-301", "file": SOC, "test": "adopt_rule_spends_charm", "assert": 'assert!(!s.is_adopted(Rule::B), "siblings exclude each other")'},
+    {"keeps": "CLK-305", "file": SOC, "test": "adopt_rule_spends_charm", "assert": "assert_eq!(saved(&s).rules, vec![Rule::A])"},
+    {"keeps": "CLK-305", "file": SOC, "test": "rules_survive_save", "assert": "assert_eq!(load(save(&state())).rules, state().rules)"},
+    {"keeps": "CLK-303", "file": SOC, "test": "a_gone_test", "assert": "assert_eq!(count(), 1)"},
+    {"keeps": "CLK-303", "file": SOC, "test": "adopt_rule_spends_charm", "assert": "assert_eq!(s.pep(), 3)"},
+    {"keeps": "CLK-304", "file": "crates/core/tests/integration/old.rs", "test": "rules_survive_save",
+     "assert": "assert_eq!(load(save(&state())).rules, state().rules)"}]}}
+
+
+class VisibleAssertionsTest(unittest.TestCase):
+    """Still-valid assertions in tests the arm can see: each one kept, deleted, or weakened at the change's end."""
+
+    def audit(self):
+        texts = {("b0", SOC): SOCIETY_BASE, ("c1", SOC): SOCIETY_HEAD,
+                 ("b0", "crates/core/tests/integration/old.rs"): SOCIETY_BASE,
+                 ("c1", "crates/core/tests/integration/new.rs"): SOCIETY_BASE}
+        d = Path(tempfile.mkdtemp())
+        (d / "kept-assertions.json").write_text(json.dumps(KEPT_ASSERTIONS))
+        entries = rg.load_kept_assertions(d / "kept-assertions.json")[3]
+        return rg.audit_visible_assertions(entries, lambda rev, path: texts.get((rev, path)), base="b0", head="c1",
+                                           renamed={"crates/core/tests/integration/old.rs": "crates/core/tests/integration/new.rs"})
+
+    def test_each_assertion_is_kept_deleted_or_weakened(self):
+        a = self.audit()
+        self.assertEqual([(x["status"], x["detail"]) for x in a["assertions"]], [
+            ("kept", "present (layout and message aside)"),
+            ("kept", "present (layout and message aside)"),
+            ("deleted", "the assertion is gone from the test"),
+            ("weakened", "the assertion changed: check what it now asserts"),
+            ("weakened", "the test is now #[ignore]"),
+            ("deleted", "the test is gone"),
+            ("not found at the start", "the assertion isn't in the test at the change's start"),
+            ("kept", "present (layout and message aside)")])
+        self.assertEqual(a["assertions"][3]["now"], ["assert!(saved(&s).rules.len() >= 1);"])
+        self.assertEqual((a["kept"], a["deleted"], a["weakened"], a["not_found_at_start"]), (3, 2, 2, 1))
+        self.assertEqual([(f["keeps"], f["status"]) for f in a["flagged"]],
+                         [("CLK-301", "deleted"), ("CLK-305", "weakened"), ("CLK-305", "weakened"), ("CLK-303", "deleted")])
+
+    def test_the_input_names_each_assertion_in_full(self):
+        d = Path(tempfile.mkdtemp())
+        (d / "k.json").write_text(json.dumps({"changes": {"3": [{"file": SOC, "test": "t"}]}}))
+        with self.assertRaisesRegex(ValueError, "assert"):
+            rg.load_kept_assertions(d / "k.json")
 
 
 class GradeRustMainTest(unittest.TestCase):
@@ -235,6 +457,8 @@ class GradeRustMainTest(unittest.TestCase):
         seed = root / "seed"
         (seed / "hidden").mkdir(parents=True)
         (seed / "hidden" / "probes.md").write_text(PROBES)
+        (seed / "hidden" / "kept-assertions.json").write_text(json.dumps({"changes": {"3": [
+            {"keeps": "CLK-1", "file": "crates/core/tests/integration/beta.rs", "test": "b", "assert": "assert!(common::ok())"}]}}))
         run = root / "runs" / "cf-x"
         run.mkdir(parents=True)
         (run / "trajectory.json").write_text(json.dumps({
@@ -268,10 +492,12 @@ class GradeRustMainTest(unittest.TestCase):
                 judged.append(prompt)
                 return SimpleNamespace(structured={"verdicts": [
                     {"probe": p, "verdict": "couldn't exercise", "evidence": [], "reason": "No test was written for this probe.",
-                     "cause": "execution"} for p in ("P-NEW01-a", "P-NEW01-b")]},
+                     "cause": "execution", "fault": "observation"} for p in ("P-NEW01-a", "P-NEW01-b")]},
                     text="", usage=SimpleNamespace(reported_cost_usd=0.0, models={}), duration_s=0.1)
+            executed.append(prompt)
             return SimpleNamespace(structured=None, text="", usage=SimpleNamespace(reported_cost_usd=0.0, models={}), duration_s=0.1)
 
+        executed = []
         rc = grade_rust.main(["--id", "cf-x", "--runs", str(root / "runs"), "--seed-dir", str(seed)],
                              checkpoint=lambda name, commit, image: ck, run_role=run_role)
         self.assertEqual(rc, 0)
@@ -287,5 +513,15 @@ class GradeRustMainTest(unittest.TestCase):
         verdicts = json.loads((out / "probes" / "verdicts.json").read_text())
         self.assertEqual(set(verdicts["probes"]), {"P-NEW01-a", "P-NEW01-b"})  # only the probes in force at change 3
         summary = json.loads((out / "summary.json").read_text())
-        self.assertEqual(summary["keeping"]["passed"], 1)
-        self.assertEqual(summary["items"], {"NEW-01 Kittens can be renamed": "couldn't exercise"})
+        self.assertEqual(summary["held_out_retention"]["passed"], 1)
+        self.assertNotIn("keeping", summary)
+        # still couldn't exercise on the rerun: missing, out of the items-met share
+        self.assertEqual(summary["items"], {"NEW-01 Kittens can be renamed": "missing"})
+        self.assertEqual(summary["items_met"], {"met": 0, "of": 0, "missing": 1})
+        self.assertEqual(summary["missing_by_fault"], {"observation": 2})
+        self.assertEqual(summary["kept_behaviour_checks"], {})
+        self.assertEqual(summary["arm"], None)
+        self.assertEqual(summary["probe_helpers"], {"core": "built"})  # the snapshot's helpers, offered to the executor
+        self.assertTrue(any('#[path = "probe_helpers/common/mod.rs"] mod common;' in p for p in executed))
+        self.assertTrue((out / "visible_assertions.json").exists())
+        self.assertEqual(summary["visible_assertions"]["not_found_at_start"], 1)  # this fake git shows no source

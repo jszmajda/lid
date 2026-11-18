@@ -1,17 +1,20 @@
 """The pre-registered compile-only adaptation of held-out tests to an arm's code.
 
 A held-out test file was written against the code before the change. An arm may add a field to a struct the file
-builds as a literal, or a variant to an enum the file matches on exhaustively; the file then fails to build, and
-keeping would grade the arm's storage design rather than whether the old behaviour still holds. So, for every change:
+builds as a literal or names in a pattern, or a variant to an enum the file matches on exhaustively; the file then
+fails to build, and keeping would grade the arm's storage design rather than whether the old behaviour still holds.
+So, for every change:
 
 - Where a held-out target fails to build only on errors E0063 (a struct literal, or a struct-like enum variant's
-  literal, lacks fields) and E0004 (a match lacks variants), the grader edits the files it placed for that target,
-  the held-out file and the helper modules copied beside it, and builds again.
+  literal, lacks fields), E0027 (a struct pattern lacks fields), and E0004 (a match lacks variants), the grader
+  edits the files it placed for that target, the held-out file and the helper modules copied beside it, and builds
+  again.
 - E0063: each missing field is added at an empty value, in the order the arm's definition declares them, with its
   name and type taken from that definition. The value is `Default::default()` where the arm's source shows the type
   implements Default (a derive or an impl, or a standard collection), and otherwise a typed empty value where one is
   obvious: `String::new()`, `Vec::new()`, `None`, `0`, `0.0`, `false`, `""`. A type alias is followed to its type.
   Any other field type means no adaptation.
+- E0027: `..` goes last in the pattern, so it ignores the fields the arm added.
 - E0004: a wildcard arm, `_ => unreachable!("grader adaptation: ...")`, goes last in the match. A test that reaches it
   at run time fails, and is named as having reached an adapted arm.
 - The edits come from rustc's JSON diagnostics and the arm's source, never from a model. They add no lines, so a
@@ -29,7 +32,8 @@ import re
 from dataclasses import dataclass
 from typing import Callable, Iterable
 
-ADAPTED = {"E0063": "a struct literal lacks fields", "E0004": "a match lacks variants"}
+ADAPTED = {"E0063": "a struct literal lacks fields", "E0027": "a struct pattern lacks fields",
+           "E0004": "a match lacks variants"}
 MARK = "grader adaptation: a variant the arm added"
 WILDCARD = f'_ => unreachable!("{MARK}")'
 SOURCE_MARK = "@@ce-arm-source@@"
@@ -409,6 +413,15 @@ def edit_for(err: Error, text: str, sources: dict[str, str]) -> Edit | str:
         ins = (", " if comma else " ") + ", ".join(f"{f}: {v}" for f, v in values.items())
         return Edit(err.file, at, ins, {"code": "E0063", "edit": "fields", "type": type_path, "literal": written,
                                         "fields": values})
+    if err.code == "E0027":
+        open_at = masked.find("{", start, end)
+        close = _close(masked, open_at) if open_at >= 0 else None
+        if close is None or close >= end:
+            return f"E0027 at {err.file}:{err.line}: no struct pattern found"
+        at, comma = _insert_at(masked, close)
+        return Edit(err.file, at, (", " if comma else " ") + "..",
+                    {"code": "E0027", "edit": "rest pattern", "pattern": text[start:open_at].strip(),
+                     "fields": re.findall(r"`(\w+)`", err.message)})
     if err.code == "E0004":
         if not re.search(r"(?<!\w)match\s*$", masked[:start]) or open_at is None:
             return f"E0004 at {err.file}:{err.line}: not a match expression"

@@ -6,17 +6,26 @@ Design: "Later seeds and variants" (the falsification test's grading) and "Grade
    at /work/target and grading output at /work/out.
 2. **Keeping.** Each held-out test file goes back in as a test target of its own (`tests/heldout_<name>/`, beside the
    helper modules its directory had, as they were), so a file the arm's code no longer compiles against fails alone.
-   Each target runs with `cargo test`; results are kept per test, and compile failures apart.
+   Each target runs with `cargo test`, after the compile-only adaptation (rust_adapt.py) where it fails to build only
+   on fields or variants the arm added; results are kept per test, compile failures apart, failing tests classified
+   (rust_classify.py), and every test that reached an adapted wildcard arm named. This is held-out retention, reported
+   apart from the kept-behaviour checks among the probes.
 3. **Edits to existing tests.** `git diff` from the fork's starting commit: test files the arm edited, deleted, or
-   renamed, the lines it changed in them, and the `#[test]` functions before and after.
+   renamed, the lines it changed in them, and the `#[test]` functions before and after; and, given the seed's list of
+   still-valid assertions in tests the arm can see, each one kept, deleted, or weakened.
 4. **New intent.** Probes in the probes.md format, as for the other seeds:
    - extraction (Sonnet) reads the arm's diff and writes a reference for calling what it added from a Rust test;
    - execution (Haiku), per batch, writes one test target per probe, `tests/probe_<id>.rs`, that performs the scenario
-     through the arm's own API and prints what it observes; it never sees the expected observations. The harness
-     then runs each probe's test itself, so the judge reads real output;
-   - judgment (Sonnet) compares each probe's expected observation with its test and output, with the verdict schema
-     and checks of the other seeds. A probe the software can't do is "couldn't exercise" with cause "service" (the
-     software under test); one the executor got wrong, cause "execution".
+     through the arm's own API and prints what it observes; it never sees the expected observations. Every executor
+     gets the same tested fixture helpers (the snapshot's own test helper modules, built against the arm's code,
+     beside the probe tests) as well as the arm's interface reference. The harness then runs each probe's test
+     itself, so the judge reads real output;
+   - judgment (Sonnet) compares each probe's expected observation with its test and output. Only a confirmed absence
+     of the required observable behaviour is "not met". A test that doesn't compile, can't build its setup, can't
+     find how to perform a step, or doesn't print the deciding observation is the grader's error ("couldn't
+     exercise", cause execution, with that fault): the probe runs once more, in a batch of its own, from no test and
+     with the same instructions; if it is still unresolved its verdict is "missing", which leaves its item out of
+     the items-met share and is reported by fault and arm.
 """
 
 from __future__ import annotations
@@ -114,8 +123,19 @@ def keeping_result(runs: list[tuple[str, str, str]], expected: dict[str, int] | 
             "adapted": sorted(t for t, r in targets.items()
                               if (r.get("adaptation") or {}).get("status") == "adapted" and not r["compile_failed"]),
             "reached_adaptation": sum(len(r["reached_adaptation"]) for r in targets.values()),
+            # every held-out test that met a wildcard arm the adaptation added, by name: reported, never passed
+            "reached_adaptation_tests": sorted(f"{t}/{n}" for t, r in targets.items() for n in r["reached_adaptation"]),
+            "adaptations_by_code": _count(e["code"] for r in targets.values()
+                                          for e in (r.get("adaptation") or {}).get("edits", [])),
             "share_passed": passed / (passed + failed) if passed + failed else None,
             "share_of_held_out_passed": passed / total_expected if total_expected else None}
+
+
+def _count(xs) -> dict[str, int]:
+    out: dict[str, int] = {}
+    for x in xs:
+        out[x] = out.get(x, 0) + 1
+    return dict(sorted(out.items()))
 
 
 # ------------------------------------------------------------------------------------- edits to existing tests
@@ -219,8 +239,104 @@ def extraction_prompt(base: str) -> str:
     return grading._template("extraction-rust.md", BASE=base)
 
 
-def execution_prompt(bid: str) -> str:
-    return grading._template("grade-execute-rust.md", BATCH=bid)
+HELPERS_DIR = "probe_helpers"
+HELPERS_CHECK = "probe_helpers_check"
+
+
+def _module_lines(mods: list[str]) -> list[str]:
+    return [f'#[path = "{HELPERS_DIR}/{m}"] mod {m.split("/")[0].removesuffix(".rs")};' for m in mods]
+
+
+def snapshot_helpers(held_dir: Path) -> dict[str, dict[str, str]]:
+    """The snapshot's own test helper modules, per crate: what each test directory's main.rs declares that is a
+    directory, or a file with no #[test] in it, as the held-out copy of the snapshot has them (the same for every
+    arm). Paths are relative to the helper's own directory (common/mod.rs)."""
+    out: dict[str, dict[str, str]] = {}
+    for main in sorted(held_dir.glob("crates/*/tests/*/main.rs")):
+        crate, src = main.parts[-4], main.parent
+        for m in re.findall(r"(?m)^\s*(?:pub\s+)?mod\s+(\w+)\s*;", main.read_text(encoding="utf-8")):
+            if (src / m).is_dir():
+                for f in sorted((src / m).rglob("*.rs")):
+                    out.setdefault(crate, {})[f"{m}/{f.relative_to(src / m)}"] = f.read_text(encoding="utf-8")
+            elif (src / f"{m}.rs").exists() and "#[test]" not in (src / f"{m}.rs").read_text(encoding="utf-8"):
+                out.setdefault(crate, {})[f"{m}.rs"] = (src / f"{m}.rs").read_text(encoding="utf-8")
+    return out
+
+
+def _entry_modules(files: dict[str, str]) -> list[str]:
+    """The path each helper module is declared by: a directory's mod.rs, or a file."""
+    return sorted({f.split("/")[0] + "/mod.rs" if "/" in f else f for f in files
+                   if "/" not in f or f.count("/") == 1 and f.endswith("/mod.rs")})
+
+
+def place_probe_helpers(ck, helpers: dict[str, dict[str, str]], *, sources: Callable[[], dict[str, str]]) -> dict:
+    """Put each crate's snapshot helpers beside the probe tests (crates/<crate>/tests/probe_helpers/), and build them
+    against the arm's code through a check target, with the compile-only adaptation; helpers that still don't build
+    are withdrawn. Returns, per crate, the status, the module declarations a probe test uses, and any edits."""
+    out = {}
+    for crate, files in sorted(helpers.items()):
+        base = f"crates/{crate}/tests/{HELPERS_DIR}"
+        placed = {f"{base}/{rel}": text for rel, text in files.items()}
+        for path, text in placed.items():
+            ck.put(f"/work/app/{path}", text)
+        mods = _entry_modules(files)
+        check = f"crates/{crate}/tests/{HELPERS_CHECK}.rs"
+        check_text = "#![allow(dead_code, unused_imports)]\n" + "\n".join(_module_lines(mods)) + "\n\n#[test]\nfn helpers_build() {}\n"
+        ck.put(f"/work/app/{check}", check_text)
+        cargo = (f"cd /work/app && CARGO_TARGET_DIR=/work/target timeout 1800 cargo test --offline "
+                 f"--manifest-path crates/{crate}/Cargo.toml --test {HELPERS_CHECK} --no-run --message-format=json 2>&1")
+        record, _ = rust_adapt.adapt_target(lambda: ck.sh(cargo, check=False), {**placed, check: check_text}, sources,
+                                            lambda p, t: ck.put(f"/work/app/{p}", t))
+        ck.sh(f"rm -f /work/app/{check}", check=False)
+        entry = {"status": record["status"], "modules": mods, "declare": _module_lines(mods), "edits": record["edits"]}
+        if record["status"] == "not adapted":
+            ck.sh(f"rm -rf /work/app/{base}", check=False)
+            entry["reason"] = record.get("reason")
+        out[crate] = entry
+    return out
+
+
+def helpers_note(helpers: dict | None) -> str:
+    offered = {c: h for c, h in (helpers or {}).items() if h["status"] != "not adapted"}
+    if not offered:
+        return ""
+    parts = ["The project's own test helpers, built against this library, are in place for building setups. Use them "
+             "where they fit; the reference still tells you how to call the library. To use a crate's helpers, put "
+             "the lines given for it at the top of your test file:", ""]
+    for crate, h in sorted(offered.items()):
+        parts.append(f"- `crates/{crate}/tests/{HELPERS_DIR}/`:")
+        parts += [f"  `{line}`" for line in h["declare"]]
+    return "\n".join(parts) + "\n\n"
+
+
+def execution_prompt(bid: str, helpers: dict | None = None) -> str:
+    return grading._template("grade-execute-rust.md", BATCH=bid, HELPERS=helpers_note(helpers))
+
+
+FAULTS = ("compile", "fixture", "interface", "observation")
+JUDGE_SCHEMA = {
+    "type": "object", "additionalProperties": False, "required": ["verdicts"],
+    "properties": {"verdicts": {"type": "array", "items": {
+        "type": "object", "additionalProperties": False,
+        "required": ["probe", "verdict", "evidence", "reason", "cause", "fault"],
+        "properties": {"probe": {"type": "string"}, "verdict": {"type": "string", "enum": list(grading.VERDICTS)},
+                       "evidence": {"type": "array", "items": {"type": "integer"}}, "reason": {"type": "string"},
+                       # couldn't exercise is always the grader's error here: which part of the instrument broke
+                       "cause": {"type": "string", "enum": ["execution", "none"]},
+                       "fault": {"type": "string", "enum": [*FAULTS, "none"]}}}}},
+}
+
+
+def check_verdicts(result: dict, batch: list, lines: list[dict]) -> list[str]:
+    """The other seeds' checks, and that a grader error names its fault and nothing else does."""
+    problems = grading.check_verdicts(result, batch, lines)
+    for v in result.get("verdicts", []):
+        fault = v.get("fault") or "none"
+        if v.get("verdict") == "couldn't exercise" and (v.get("cause") != "execution" or fault not in FAULTS):
+            problems.append(f"{v.get('probe')}: \"couldn't exercise\" without naming the grader's fault")
+        elif v.get("verdict") in ("met", "not met") and fault != "none":
+            problems.append(f"{v.get('probe')}: a {v.get('verdict')!r} verdict naming a grader fault")
+    return problems
 
 
 def judge_prompt(batch, lines: list[dict], conventions: str = "") -> str:
@@ -240,9 +356,50 @@ RERUN = ("cd /work/app && mkdir -p /work/out/probes && for f in crates/*/tests/{
          "echo \"EXIT=$?\" >> /work/out/probes/{t}.log; done; true")
 
 
+def _judge_batch(ck, g: RustGraders, batch: list, bid: str, out: Path, *, volume: str, conventions: str,
+                 run_role: Callable, attempts: int, helpers: dict | None, sessions: dict) -> dict[str, dict]:
+    """Execution, the harness's own run of each probe's test, and judgment, for one batch."""
+    bdir = out / bid
+    bdir.mkdir(parents=True, exist_ok=True)
+    rendered = grading.render_for_execution(batch, conventions)
+    ck.put(f"/work/out/probes-{bid}.md", rendered)
+    (bdir / "probes.md").write_text(rendered, encoding="utf-8")
+    try:
+        rec = run_role(g.role(g.execute_model, tools=("Bash", "Read", "Write", "Edit"), workspace_volume=volume,
+                              timeout_s=2400), execution_prompt(bid, helpers))
+        sessions[bid] = {"usage": _usage(rec), "reply": rec.text}
+    except executor.RoleFailed as e:
+        sessions[bid] = {"error": str(e)}
+    results = {}
+    for p in batch:
+        t = probe_target(p.id)
+        ck.sh(RERUN.replace("{t}", t), check=False)
+        results[p.id] = {"source": ck.get(f"/work/out/probes/{t}.rs"), "output": ck.get(f"/work/out/probes/{t}.log")}
+        for kind in ("source", "output"):
+            if results[p.id][kind] is not None:
+                (bdir / f"{t}.{'rs' if kind == 'source' else 'log'}").write_text(results[p.id][kind], encoding="utf-8")
+    lines = probe_log_lines(results)
+    tries = []
+    for _ in range(attempts):
+        rec = run_role(g.role(g.judge_model, timeout_s=1200), judge_prompt(batch, lines, conventions),
+                       json_schema=json.dumps(JUDGE_SCHEMA, separators=(",", ":")))
+        problems = check_verdicts(rec.structured or {}, batch, lines)
+        tries.append({"structured": rec.structured, "problems": problems, "usage": _usage(rec)})
+        if not problems:
+            break
+    final = {v["probe"]: v for v in (tries[-1]["structured"] or {}).get("verdicts", [])} if not tries[-1]["problems"] else {}
+    (bdir / "judgment.json").write_text(json.dumps({"tries": tries, "verdicts": final, "lines": lines}, indent=1),
+                                       encoding="utf-8")
+    return final
+
+
 def grade_probes(ck, g: RustGraders, probeset: grading.ProbeSet, probes: list, *, base: str, out: Path, volume: str,
-                 batch_size: int = 4, run_role: Callable = executor.run_role, attempts: int = 3) -> dict:
-    """Extraction, then for each batch: execution, the harness's own run of each probe's test, and judgment."""
+                 batch_size: int = 4, run_role: Callable = executor.run_role, attempts: int = 3,
+                 helpers: dict | None = None) -> dict:
+    """Extraction, then for each batch: execution, the harness's own run of each probe's test, and judgment. A probe
+    the judge couldn't exercise is a grader error: it runs once more in a batch of its own, from no test, with the
+    same instructions (nothing about the arm), and if it is still unresolved its verdict is "missing", with the fault.
+    helpers: the snapshot's test helpers as placed (place_probe_helpers), offered to every executor."""
     out.mkdir(parents=True, exist_ok=True)
     rec = run_role(g.role(g.extraction_model, tools=("Bash", "Read", "Write", "Edit", "Glob", "Grep"),
                           workspace_volume=volume, timeout_s=2400), extraction_prompt(base))
@@ -250,47 +407,181 @@ def grade_probes(ck, g: RustGraders, probeset: grading.ProbeSet, probes: list, *
     (out / "reference.md").write_text(reference, encoding="utf-8")
     sessions = {"extraction": {"usage": _usage(rec), "problems": [] if reference.strip() else ["no reference"]}}
     conventions = probeset.setup_notes
+    kw = dict(volume=volume, conventions=conventions, run_role=run_role, attempts=attempts, helpers=helpers,
+              sessions=sessions)
     verdicts: dict[str, dict] = {}
     for k, batch in enumerate(grading.batches(probes, batch_size), start=1):
-        bid = f"b{k:02d}"
-        bdir = out / bid
-        bdir.mkdir(parents=True, exist_ok=True)
-        rendered = grading.render_for_execution(batch, conventions)
-        ck.put(f"/work/out/probes-{bid}.md", rendered)
-        (bdir / "probes.md").write_text(rendered, encoding="utf-8")
-        try:
-            rec = run_role(g.role(g.execute_model, tools=("Bash", "Read", "Write", "Edit"), workspace_volume=volume,
-                                  timeout_s=2400), execution_prompt(bid))
-            sessions[bid] = {"usage": _usage(rec), "reply": rec.text}
-        except executor.RoleFailed as e:
-            sessions[bid] = {"error": str(e)}
-        results = {}
-        for p in batch:
-            t = probe_target(p.id)
-            ck.sh(RERUN.replace("{t}", t), check=False)
-            results[p.id] = {"source": ck.get(f"/work/out/probes/{t}.rs"), "output": ck.get(f"/work/out/probes/{t}.log")}
-            for kind in ("source", "output"):
-                if results[p.id][kind] is not None:
-                    (bdir / f"{t}.{'rs' if kind == 'source' else 'log'}").write_text(results[p.id][kind], encoding="utf-8")
-        lines = probe_log_lines(results)
-        tries = []
-        for _ in range(attempts):
-            rec = run_role(g.role(g.judge_model, timeout_s=1200), judge_prompt(batch, lines, conventions),
-                           json_schema=json.dumps(grading.JUDGE_SCHEMA, separators=(",", ":")))
-            problems = grading.check_verdicts(rec.structured or {}, batch, lines)
-            tries.append({"structured": rec.structured, "problems": problems, "usage": _usage(rec)})
-            if not problems:
-                break
-        final = {v["probe"]: v for v in (tries[-1]["structured"] or {}).get("verdicts", [])} if not tries[-1]["problems"] else {}
-        (bdir / "judgment.json").write_text(json.dumps({"tries": tries, "verdicts": final, "lines": lines}, indent=1),
-                                           encoding="utf-8")
-        verdicts.update(final)
+        verdicts.update(_judge_batch(ck, g, batch, f"b{k:02d}", out, **kw))
+    faults = grading.execution_faults(verdicts)
+    by_id = {p.id: p for p in probes}
+    reruns, missing = {}, {}
+    for n, pid in enumerate(faults, start=1):
+        t = probe_target(pid)
+        ck.sh(f"rm -f /work/app/crates/*/tests/{t}.rs /work/out/probes/{t}.rs /work/out/probes/{t}.log", check=False)
+        second = _judge_batch(ck, g, [by_id[pid]], f"x{n:02d}", out, **kw).get(pid)
+        reruns[pid] = {"first": verdicts[pid], "second": second}
+        if second is None or second.get("verdict") == "couldn't exercise":
+            last = second or verdicts[pid]
+            verdicts[pid] = {**last, "verdict": grading.MISSING}
+            first = reruns[pid]["first"]
+            missing[pid] = {"cause": "execution", "fault": last.get("fault"), "reason": last.get("reason"),
+                            "first": {"fault": first.get("fault"), "reason": first.get("reason")}}
+        else:
+            verdicts[pid] = second
     probe_verdicts = {pid: v["verdict"] for pid, v in verdicts.items()}
     items = grading.item_verdicts(probe_verdicts, probes)
+    by_fault: dict[str, int] = {}
+    for m in missing.values():
+        by_fault[m["fault"] or "unknown"] = by_fault.get(m["fault"] or "unknown", 0) + 1
     result = {"probes": probe_verdicts, "items": items, "details": verdicts, "sessions": sessions,
-              "execution_faults": grading.execution_faults(verdicts)}
+              "execution_faults": faults, "reruns": reruns, "missing": missing, "missing_by_fault": by_fault,
+              "helpers": helpers or {}}
     (out / "verdicts.json").write_text(json.dumps(result, indent=1), encoding="utf-8")
     return result
+
+
+# ------------------------------------------------------------------------------- items, and what they count
+
+
+def kept_behaviour_ids(script_text: str) -> set[str]:
+    """The IDs the change script lists as kept behaviour (`**Kept behaviour:** CLK-301, CLK-302.`), any change."""
+    return {i for line in re.findall(r"\*\*Kept behaviour:\*\*([^\n]*)", script_text)
+            for i in re.findall(r"\b[A-Z]+-\d+\b", line)}
+
+
+def split_items(items: dict[str, str | None], kept: set[str]) -> tuple[dict, dict]:
+    """(new-intent items, kept-behaviour checks), by the item's ID (its name's first word)."""
+    new, checks = {}, {}
+    for name, v in items.items():
+        (checks if name.split()[0] in kept else new)[name] = v
+    return new, checks
+
+
+def items_met(items: dict[str, str | None]) -> dict[str, int]:
+    """Items met, of the items with a verdict on the build: "missing" (a grader error a rerun didn't resolve) and
+    items with no verdict are left out, and missing ones counted apart."""
+    decided = [v for v in items.values() if v and v != grading.MISSING]
+    return {"met": sum(v == "met" for v in decided), "of": len(decided),
+            "missing": sum(v == grading.MISSING for v in items.values())}
+
+
+# -------------------------------------------------------------------------- still-valid visible assertions
+
+
+_ASSERT = re.compile(r"(?<![\w!])((?:debug_)?assert(?:_eq|_ne)?)\s*!\s*\(")
+
+
+def load_kept_assertions(path: Path) -> dict[int, list[dict]]:
+    """The still-valid assertions in tests the arm can see, per change: a JSON file
+    {"changes": {"<n>": [{"keeps": "CLK-302", "file": "<path in the repository>", "test": "<fn name>",
+    "assert": "<the assertion as written>"}]}}. An arm may change what a change retires in these tests, but not these."""
+    data = json.loads(path.read_text(encoding="utf-8"))
+    out: dict[int, list[dict]] = {}
+    for n, entries in (data.get("changes") or {}).items():
+        for e in entries:
+            for k in ("file", "test", "assert"):
+                if not e.get(k):
+                    raise ValueError(f"{path}: an entry for change {n} has no {k!r}: {e}")
+            if not _assertions(e["assert"]):
+                raise ValueError(f"{path}: change {n}: not an assertion: {e['assert']!r}")
+        out[int(n)] = entries
+    return out
+
+
+def _strip_comments(text: str) -> str:
+    masked = rust_adapt._mask_cached(text)
+    return "".join(" " if m == " " and not c.isspace() else c for c, m in zip(text, masked))
+
+
+def _norm(text: str) -> str:
+    return re.sub(r",([)\]}])", r"\1", re.sub(r"\s+", "", text)).rstrip(";")
+
+
+def _assertions(code: str) -> list[tuple[str, list[str], str]]:
+    """(macro, arguments, statement) for each assertion in code whose comments are already stripped."""
+    masked = rust_adapt.mask(code)
+    out = []
+    for m in _ASSERT.finditer(masked):
+        depth, k = 0, m.end() - 1
+        for k in range(m.end() - 1, len(masked)):
+            depth += {"(": 1, ")": -1}.get(masked[k], 0)
+            if depth == 0:
+                break
+        args = [code[a:b] for a, b in rust_adapt._split_top(masked, m.end(), k, types=False)]
+        end = k + 1
+        rest = masked[end:].lstrip()
+        stmt = code[m.start():end] + (";" if rest.startswith(";") else "")
+        out.append((m.group(1), args, stmt))
+    return out
+
+
+def _core(macro: str, args: list[str]) -> tuple:
+    return (macro.removeprefix("debug_"), *(_norm(a) for a in args[:2 if macro.endswith(("_eq", "_ne")) else 1]))
+
+
+def _subject(macro: str, args: list[str]) -> str:
+    first = _norm(args[0]) if args else ""
+    if not macro.endswith(("_eq", "_ne")):
+        first = re.split(r"==|!=|>=|<=|<|>", first)[0]
+    return first.lstrip("!&*")
+
+
+def audit_visible_assertions(entries: list[dict], show: Callable[[str, str], str | None], *, base: str, head: str,
+                             renamed: dict[str, str] | None = None) -> dict:
+    """Each still-valid assertion at the change's end: kept (the same assertion, layout and message aside), deleted
+    (the file, the test, or the assertion is gone; one commented out is gone), or weakened (the test is now ignored
+    or expects a panic, or an assertion about the same subject replaced it: flagged with its new text for a reader).
+    An entry not in its test at the change's start is reported apart: the input is wrong, not the arm."""
+    from . import rust_classify
+    rows = []
+    for e in entries:
+        row = {k: e.get(k) for k in ("keeps", "file", "test", "assert")}
+        want = _assertions(e["assert"])[0]
+
+        def fn(rev: str, path: str):
+            text = show(rev, path)
+            if not text:
+                return None
+            span = rust_classify._fn_span(path, text, e["test"])
+            if not span:
+                return "", ""
+            lines = _strip_comments(text).splitlines()[span[0] - 1:span[1]]
+            head_at = next((k for k, l in enumerate(lines) if re.search(rf"\bfn\s+{re.escape(e['test'])}\b", l)), 0)
+            return "\n".join(lines[:head_at]), "\n".join(lines[head_at:])
+        was = fn(base, e["file"])
+        if not was or not was[1] or not any(_core(m, a) == _core(*want[:2]) for m, a, _ in _assertions(was[1])):
+            rows.append({**row, "status": "not found at the start",
+                         "detail": "the assertion isn't in the test at the change's start"})
+            continue
+        now = fn(head, (renamed or {}).get(e["file"], e["file"]))
+        if now is None:
+            rows.append({**row, "status": "deleted", "detail": "the file is gone"})
+            continue
+        if not now[1]:
+            rows.append({**row, "status": "deleted", "detail": "the test is gone"})
+            continue
+        attrs_was, (attrs, body) = was[0], now
+        if "#[ignore" in attrs and "#[ignore" not in attrs_was:
+            rows.append({**row, "status": "weakened", "detail": "the test is now #[ignore]"})
+            continue
+        if "#[should_panic" in attrs and "#[should_panic" not in attrs_was:
+            rows.append({**row, "status": "weakened", "detail": "the test now expects a panic"})
+            continue
+        found = _assertions(body)
+        if any(_core(m, a) == _core(*want[:2]) for m, a, _ in found):
+            rows.append({**row, "status": "kept", "detail": "present (layout and message aside)"})
+            continue
+        subject = _subject(*want[:2])
+        near = [stmt for m, a, stmt in found if subject and subject in _norm(stmt)]
+        if near:
+            rows.append({**row, "status": "weakened", "detail": "the assertion changed: check what it now asserts",
+                         "now": [" ".join(x.split()) for x in near]})
+        else:
+            rows.append({**row, "status": "deleted", "detail": "the assertion is gone from the test"})
+    count = lambda st: sum(r["status"] == st for r in rows)
+    return {"assertions": rows, "kept": count("kept"), "deleted": count("deleted"), "weakened": count("weakened"),
+            "not_found_at_start": count("not found at the start"),
+            "flagged": [r for r in rows if r["status"] in ("deleted", "weakened")]}
 
 
 # ---------------------------------------------------------------------------------------------- the checkpoint
