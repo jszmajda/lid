@@ -4,6 +4,30 @@ Newest entries first. Each entry says what was done, what was decided, and who d
 
 Older entries move to [log-archive/](log-archive/) when this file passes about 2,000 words, and 'Earlier, in brief' at the bottom summarizes them.
 
+## 2026-11-18: Clowder's grading checked on a null arm, and the ceiling check
+
+**The null arm** grades Clowder's untouched snapshot as if an arm had changed nothing, so every new-intent item should come back not met.
+- **The first pass found a false met.** The probe executor wrote the missing feature into its own test, and the judge credited it. Since then:
+  - executors must perform every step under test through the build's own API;
+  - a stand-in reading counts as a grader fault;
+  - a met on an item the extraction recorded as absent is a conflict, counted as missing and flagged.
+- **Over all twelve changes, no new-intent item was met.** The conflict check caught three probes that could pass without the feature (one by coincidence, two from the journal). Those probes were fixed, and a recheck scored them not met.
+- **Held-out retention was 323 of 323** at every change, and the planted bug's repair was not met.
+- **Grading cost about $5 of subscription quota** for twelve changes.
+
+**The ceiling check** (pilot): bare on the stripped repository, 1M window, bounded owner, one fork per change.
+
+| Measure | Result |
+|---|---|
+| New-intent items met | 24 of 30 graded (80%); 2 more missing (grader observation faults) |
+| Planted bug (change 5) | repaired |
+| Held-out tests kept | 99.4% to 100% per change; 5 tests lost across the twelve changes |
+| Agent cost | $4.31 for the twelve changes |
+| Peak context per session | 14k to 98k tokens, under 10% of the window |
+
+- **The room is there:** bare met 80% here, against 95% on BenchTime.
+- **The window may not be a dose.** No bare session came near 200k tokens. Bare agents search and read slices of the code rather than loading it, so a 200k window would not have changed what they saw. If that holds, the window cannot test the hypothesis as stated. The open question becomes whether agents read where the intent lives, which `context_telemetry.py` measures as intent reach. The pilot proper runs both windows as planned and measures whether any arm comes near the window: LID reads about four times as much as bare on BenchTime.
+
 ## 2026-11-17: BenchTime under the rebuilt owner
 
 **What ran:** bare, cheap discipline, and LID Full on Sonnet 5.5, three trajectories each, under the bounded owner at the central constants. The three arms of each replicate share one draw seed. Then probe forks and grading at changes 2, 6, and 10 with probes version 5 (`harness/run_stage3b.sh`; `runs/stage3b/report.md`). Every trajectory completed. Pilot numbers, not evidence.

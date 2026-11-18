@@ -57,7 +57,7 @@ Read this section first when you pick the work up in a new session. Update it at
 
 **Next actions** (milestones M2 and M2c in [plan.md](plan.md)):
 
-1. **Null-arm dry run of Clowder's grading** (the untouched snapshot graded as if an arm changed nothing), then the pilot. Run bare on the stripped repository first, as a ceiling check, then all three arms at both windows.
+1. **The Clowder pilot is running** (`harness/run_clowder_pilot.sh phase2`; logs in `runs/clowder-pilot/`). The null-arm checks and the ceiling check are done (log, 2026-11-18). When it finishes, read the arms' differences and whether any session came near the 200k window. If none did, the window is not a dose, and the next dose to try is cross-crate changes.
 2. **Extend `report.py`** for recalled intent (review and question), contradictions kept against drawn, keeping, the Clowder measures (held-out retention, missing items, intent reach, cost to green, edits to visible tests), and the window dose.
 3. **Finish the owner checks:**
    - labelled judgments on about 100 replayed stops;
