@@ -20,6 +20,8 @@ VARIANTS=${VARIANTS:-$RUNS/clowder-variants/v1}
 LOG=$RUNS/clowder-pilot
 JOBS=${JOBS:-2}
 REPLICATE=cp-r1
+# The bounded owner, the realistic setting BenchTime's latest run used; diligent would favour arms that show the owner more.
+POLICY=${POLICY:-bounded}
 CHANGES="1 2 3 4 5 6 7 8 9 10 11 12"
 
 usage() {
@@ -49,7 +51,7 @@ one() {  # one fork and its grading: <variant> <arm> <window> <change> <repeat>
     fi
   fi
   if [ $fork = yes ]; then
-    if [ "$arm" = null ]; then who="--null"; else who="--arm $arm"; fi
+    if [ "$arm" = null ]; then who="--null"; else who="--arm $arm --policy $POLICY"; fi
     run "$PY run_fork.py --variants $VARIANTS --variant $variant $who --change $n --repeat $repeat --replicate $REPLICATE --window $window --runs $RUNS > $LOG/$fid.fork.log 2>&1" || return 1
   fi
   [ -f "$RUNS/$fid/grading/change-$nn/summary.json" ] && return 0

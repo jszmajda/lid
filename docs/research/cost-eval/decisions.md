@@ -91,3 +91,4 @@ When a decision is replaced, remove its line and add the new one, so this list o
   - **The probe fixes it listed.**
 
   Not adopted: a forced pre-edit checkpoint in every arm, so that change 10's change of mind always arrives before code. The redirect comes at the first plan, approval request or completion report, as in every seed. A bare agent that never checks in builds the first version and pays for the rework, which is a cost the study means to measure.
+- 2026-11-18, main session: the Clowder pilot runs under the bounded owner at the central constants, the realistic setting BenchTime's latest run used. A null-arm recheck after the probe fixes scored every new-intent item not met at changes 1, 10 and 12, with no conflicts and full held-out retention, so the grading is ready for the pilot.
