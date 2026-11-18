@@ -187,6 +187,7 @@ class SetupTest(unittest.TestCase):
     def test_the_service_does_every_step_a_probe_is_about(self):
         execute = grading._template("grade-execute.md")
         self.assertIn("never work out or stand in for", execute)
+        self.assertIn("rather than reading something else in its place", execute)
         judge = (grading.PROMPTS / "grade-judge.md").read_text()
         self.assertIn("worked out itself", judge)
 

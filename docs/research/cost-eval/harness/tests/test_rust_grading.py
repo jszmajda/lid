@@ -286,6 +286,15 @@ class GradeProbesTest(unittest.TestCase):
         self.assertIn("with its own logic", judge)
         self.assertIn("never \"met\" or \"not met\"", judge)
 
+    def test_a_stand_in_for_what_the_build_cannot_show_is_cannot_never_a_reading(self):
+        execute = rg.execution_prompt("b01")
+        self.assertIn("no way to observe", execute)
+        self.assertIn("rather than reading something else in its place", execute)
+        batch = [p for p in grading.parse_probes(PROBES).probes if p.id == "P-NEW01-a"]
+        judge = rg.judge_prompt(batch, rg.probe_log_lines({"P-NEW01-a": {"source": "x", "output": "y"}}))
+        self.assertIn("stand-in", judge)
+        self.assertIn("in place of what the probe asks about", judge)
+
     def test_the_prompts_exist_and_fill(self):
         for name in ("extraction-rust.md", "grade-execute-rust.md", "grade-judge-rust.md"):
             self.assertTrue((grading.PROMPTS / name).exists(), name)

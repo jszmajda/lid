@@ -43,3 +43,5 @@ Clowder is the maintainer's public Rust terminal game ([github.com/jszmajda/clow
 | 1 | 2026-11-18 | `hidden/fixtures/grader-fixtures.md` | `5c691b53b703f4b4a2f9d9756eacf29dc0f8861c8991c2df007b7ff857bd98a2` |
 | 2 | 2026-11-18 | `hidden/probes.md` | `0a6031e5b3d3c02e92cbbe4cf7b2b67093b939d28d8f6cf8abfe4d0da6f46668` |
 | 2 | 2026-11-18 | `hidden/kept-assertions.json` | `0ec0f46e8a365bfb1eeaee8bd371f3a6bf85b6e9061cebbd842085cae62bd348` |
+| 3 | 2026-11-18 | `hidden/probes.md` | `f404d2f7988da87396439d4ce9d0d914cb6dafd154f782d3c656261e500cf555` |
+| 2 | 2026-11-18 | `hidden/fixtures/grader-fixtures.md` | `bfcc6675b7642427e653bd4923761237457b96044c16df823b085d948c94dc4f` |
