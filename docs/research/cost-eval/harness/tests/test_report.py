@@ -69,6 +69,17 @@ class ReportTest(unittest.TestCase):
         self.assertIn("## Missing items", text)
         self.assertIn("| bare | 1 | interface 1 |", text)
 
+    def test_interface_faults_are_reported_next_to_the_share_whether_absent_or_missing(self):
+        g = self.runs / "s9-bare-1" / "grading" / "change-01"
+        write(g / "verdicts-i.json", {"probes": {"P-BK01-a": "not met", "P-BK01-b": "met", "P-BK02-a": "missing"},
+                                      "missing": {"P-BK02-a": {"fault": "interface", "cause": "execution"}},
+                                      "absent": {"P-BK01-a": {"fault": "interface"}},
+                                      "interface_faults": {"not met (absent)": ["BK-01 x"], "missing": ["BK-02 y"]}})
+        r = self.build("verdicts-i")
+        f = r["arms"]["bare"][0]["fidelity"][1]
+        self.assertEqual((f["all"], f["interface faults"]), ((0, 1), {"not met (absent)": 1, "missing": 1}))
+        self.assertIn("0% [0%] · interface: 1 absent, 1 missing", report.render(r))
+
     def test_a_rejudgment_uses_the_new_verdicts(self):
         f = self.build("rejudge-x")["arms"]["bare"][0]["fidelity"][1]
         self.assertEqual(f["all"], (1, 2))

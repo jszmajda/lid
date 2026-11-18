@@ -3,7 +3,9 @@
 Design: "Later seeds and variants" (the falsification test's grading) and "Graders" in the notebook's design.md.
 
 1. **Export.** The fork's commit is cloned out of its workspace into a checkpoint volume (/work/app), with build output
-   at /work/target and grading output at /work/out.
+   at /work/target and grading output at /work/out. After the harness's own git steps (3), graders get a code-only
+   checkout whatever the arm: what the variant builder strips (docs/, .claude/, agent instruction files, LID tooling)
+   is removed, with the history that would show it; the arm's changes to docs are counted apart, as context.
 2. **Keeping.** Each held-out test file goes back in as a test target of its own (`tests/heldout_<name>/`, beside the
    helper modules its directory had, as they were), so a file the arm's code no longer compiles against fails alone.
    Each target runs with `cargo test`, after the compile-only adaptation (rust_adapt.py) where it fails to build only
@@ -14,7 +16,9 @@ Design: "Later seeds and variants" (the falsification test's grading) and "Grade
    renamed, the lines it changed in them, and the `#[test]` functions before and after; and, given the seed's list of
    still-valid assertions in tests the arm can see, each one kept, deleted, or weakened.
 4. **New intent.** Probes in the probes.md format, as for the other seeds:
-   - extraction (Sonnet) reads the arm's diff and writes a reference for calling what it added from a Rust test;
+   - extraction (Sonnet) reads the arm's diff of code and tests and writes a reference for calling what it added from
+     a Rust test; it also records, for each of the change's graded items, whether the diff implements anything
+     addressing it (implemented, absent, or unclear, with files and symbols), which the executors never see;
    - execution (Haiku), per batch, writes one test target per probe, `tests/probe_<id>.rs`, that performs the scenario
      through the arm's own API and prints what it observes; it never sees the expected observations. Every executor
      gets the same tested fixture helpers (the snapshot's own test helper modules, built against the arm's code,
@@ -25,12 +29,14 @@ Design: "Later seeds and variants" (the falsification test's grading) and "Grade
      find how to perform a step, or doesn't print the deciding observation is the grader's error ("couldn't
      exercise", cause execution, with that fault): the probe runs once more, in a batch of its own, from no test and
      with the same instructions; if it is still unresolved its verdict is "missing", which leaves its item out of
-     the items-met share and is reported by fault and arm.
+     the items-met share and is reported by fault and arm, except that an interface fault on an item the extraction
+     found absent is a confirmed absence: "not met". Interface faults are reported beside the share either way.
 """
 
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
 from dataclasses import asdict, dataclass
@@ -235,8 +241,49 @@ class RustGraders:
                                     isolation=executor.Isolation.for_public_seed(window="1m"), **kw)
 
 
-def extraction_prompt(base: str) -> str:
-    return grading._template("extraction-rust.md", BASE=base)
+IMPLEMENTATION = ("implemented", "absent", "unclear")
+
+
+def extraction_prompt(items: list[tuple[str, str]] = ()) -> str:
+    """items: (ID, statement) for each graded item of the change, whose implementation the extraction records."""
+    note = ""
+    if items:
+        note = ("5. For each item below, record whether the change's diff implements anything addressing it, in "
+                "/work/out/implementation.json: `{\"items\": [{\"item\": \"<ID>\", \"status\": \"implemented\" | "
+                "\"absent\" | \"unclear\", \"evidence\": [{\"file\": \"<path>\", \"symbols\": [\"<function, type, "
+                "or variant>\"]}], \"note\": \"<one sentence>\"}]}`, one entry per item.\n"
+                "   - implemented: the diff adds or changes code that does something toward the item; cite the files "
+                "and symbols.\n"
+                "   - absent: nothing in the diff addresses it; cite the files and symbols you checked.\n"
+                "   - unclear: you can't tell.\n\n"
+                "   This record is separate from the reference: don't mention the items in reference.md.\n\n"
+                "   The items:\n" + "\n".join(f"   - {i}: {text}" for i, text in items) + "\n\n")
+    return grading._template("extraction-rust.md", ITEMS=note)
+
+
+def check_implementation(data, graded: list[str]) -> tuple[dict[str, str], list[str]]:
+    """Each graded item's status from the extraction's record; an item with no valid record is "unclear"."""
+    statuses = {i: "unclear" for i in graded}
+    entries = data.get("items") if isinstance(data, dict) else None
+    if not isinstance(entries, list):
+        return statuses, ["no implementation record"]
+    problems, seen = [], set()
+    for e in entries:
+        i = e.get("item") if isinstance(e, dict) else None
+        if i not in statuses:
+            problems.append(f"{i!r} isn't a graded item")
+            continue
+        seen.add(i)
+        st = e.get("status")
+        ev = [x for x in e.get("evidence") or [] if isinstance(x, dict) and x.get("file")]
+        if st not in IMPLEMENTATION:
+            problems.append(f"{i}: status {st!r}")
+        elif st != "unclear" and not ev:
+            problems.append(f"{i}: {st} but cites nothing")
+        else:
+            statuses[i] = st
+    problems += [f"{i}: no record" for i in graded if i not in seen]
+    return statuses, problems
 
 
 HELPERS_DIR = "probe_helpers"
@@ -395,17 +442,31 @@ def _judge_batch(ck, g: RustGraders, batch: list, bid: str, out: Path, *, volume
 
 def grade_probes(ck, g: RustGraders, probeset: grading.ProbeSet, probes: list, *, base: str, out: Path, volume: str,
                  batch_size: int = 4, run_role: Callable = executor.run_role, attempts: int = 3,
-                 helpers: dict | None = None) -> dict:
+                 helpers: dict | None = None, items: list[tuple[str, str]] = ()) -> dict:
     """Extraction, then for each batch: execution, the harness's own run of each probe's test, and judgment. A probe
     the judge couldn't exercise is a grader error: it runs once more in a batch of its own, from no test, with the
     same instructions (nothing about the arm), and if it is still unresolved its verdict is "missing", with the fault.
-    helpers: the snapshot's test helpers as placed (place_probe_helpers), offered to every executor."""
+    helpers: the snapshot's test helpers as placed (place_probe_helpers), offered to every executor. items: the change's
+    graded items, (ID, statement), whose implementation the extraction records from the diff; an interface fault left
+    after the rerun on an item it found absent is a confirmed absence: "not met"."""
     out.mkdir(parents=True, exist_ok=True)
     rec = run_role(g.role(g.extraction_model, tools=("Bash", "Read", "Write", "Edit", "Glob", "Grep"),
-                          workspace_volume=volume, timeout_s=2400), extraction_prompt(base))
+                          workspace_volume=volume, timeout_s=2400), extraction_prompt(items))
     reference = ck.get("/work/out/reference.md") or ""
     (out / "reference.md").write_text(reference, encoding="utf-8")
     sessions = {"extraction": {"usage": _usage(rec), "problems": [] if reference.strip() else ["no reference"]}}
+    statuses: dict[str, str] = {}
+    if items:
+        raw = ck.get("/work/out/implementation.json")
+        try:
+            data = json.loads(raw) if raw else None
+        except ValueError:
+            data = None
+        statuses, problems = check_implementation(data, [i for i, _ in items])
+        (out / "implementation.json").write_text(json.dumps({"statuses": statuses, "problems": problems, "record": data},
+                                                            indent=1), encoding="utf-8")
+        ck.sh("rm -f /work/out/implementation.json", check=False)  # the executors never read the items
+        sessions["extraction"]["implementation_problems"] = problems
     conventions = probeset.setup_notes
     kw = dict(volume=volume, conventions=conventions, run_role=run_role, attempts=attempts, helpers=helpers,
               sessions=sessions)
@@ -414,7 +475,7 @@ def grade_probes(ck, g: RustGraders, probeset: grading.ProbeSet, probes: list, *
         verdicts.update(_judge_batch(ck, g, batch, f"b{k:02d}", out, **kw))
     faults = grading.execution_faults(verdicts)
     by_id = {p.id: p for p in probes}
-    reruns, missing = {}, {}
+    reruns, missing, absent = {}, {}, {}
     for n, pid in enumerate(faults, start=1):
         t = probe_target(pid)
         ck.sh(f"rm -f /work/app/crates/*/tests/{t}.rs /work/out/probes/{t}.rs /work/out/probes/{t}.log", check=False)
@@ -422,6 +483,10 @@ def grade_probes(ck, g: RustGraders, probeset: grading.ProbeSet, probes: list, *
         reruns[pid] = {"first": verdicts[pid], "second": second}
         if second is None or second.get("verdict") == "couldn't exercise":
             last = second or verdicts[pid]
+            if last.get("fault") == "interface" and statuses.get(by_id[pid].item.split()[0]) == "absent":
+                verdicts[pid] = {**last, "verdict": "not met", "absent": True}
+                absent[pid] = {"fault": "interface", "reason": last.get("reason"), "implementation": "absent"}
+                continue
             verdicts[pid] = {**last, "verdict": grading.MISSING}
             first = reruns[pid]["first"]
             missing[pid] = {"cause": "execution", "fault": last.get("fault"), "reason": last.get("reason"),
@@ -429,15 +494,79 @@ def grade_probes(ck, g: RustGraders, probeset: grading.ProbeSet, probes: list, *
         else:
             verdicts[pid] = second
     probe_verdicts = {pid: v["verdict"] for pid, v in verdicts.items()}
-    items = grading.item_verdicts(probe_verdicts, probes)
+    verdict_items = grading.item_verdicts(probe_verdicts, probes)
     by_fault: dict[str, int] = {}
     for m in missing.values():
         by_fault[m["fault"] or "unknown"] = by_fault.get(m["fault"] or "unknown", 0) + 1
-    result = {"probes": probe_verdicts, "items": items, "details": verdicts, "sessions": sessions,
+    item_of = {p.id: p.item for p in probes}
+    interface = {"not met (absent)": sorted({item_of[pid] for pid in absent}),
+                 "missing": sorted({item_of[pid] for pid, m in missing.items() if m["fault"] == "interface"})}
+    result = {"probes": probe_verdicts, "items": verdict_items, "details": verdicts, "sessions": sessions,
               "execution_faults": faults, "reruns": reruns, "missing": missing, "missing_by_fault": by_fault,
-              "helpers": helpers or {}}
+              "absent": absent, "interface_faults": interface, "implementation": statuses, "helpers": helpers or {}}
     (out / "verdicts.json").write_text(json.dumps(result, indent=1), encoding="utf-8")
     return result
+
+
+# -------------------------------------------------------------------------------- a code-only grading checkout
+
+
+AGENT_FILES = ("AGENTS.md", "CLAUDE.md", "GEMINI.md")  # as the variant builder strips them (clowder_variants.py)
+HIDDEN_DIRS = ("docs", ".claude")
+LID_MARKERS = ("@spec", "docs/intent")
+
+
+def hidden_paths(paths: list[str], *, marked: set[str], symlinks: dict[str, str]) -> list[str]:
+    """What graders don't see, whatever the arm: what the variant builder strips (docs/, .claude/, the agent
+    instruction files, and LID tooling: files outside crates/ and not Markdown that carry LID markers, given as
+    marked), agent files at any depth, and symlinks to any of these."""
+    def hide(p: str) -> bool:
+        return (p.split("/", 1)[0] in HIDDEN_DIRS or p.rsplit("/", 1)[-1] in AGENT_FILES
+                or (p in marked and not p.startswith("crates/") and not p.endswith(".md")))
+    out = {p for p in paths if hide(p)}
+    for p, target in symlinks.items():
+        resolved = os.path.normpath(os.path.join(os.path.dirname(p), target))
+        if hide(p) or hide(resolved):
+            out.add(p)
+    return sorted(out)
+
+
+def _is_doc(path: str) -> bool:
+    return path.endswith(".md") or path.split("/", 1)[0] in HIDDEN_DIRS or path.rsplit("/", 1)[-1] in AGENT_FILES
+
+
+def prepare_for_graders(ck, base: str, commit: str) -> dict:
+    """Make the checkpoint a code-only checkout, after the harness's own git steps: count the arm's changes to docs
+    and instruction files (context for cost and attention, never graded); write the diff the extraction reads,
+    /work/out/arm.diff, of code and tests only; then remove what graders don't see, and the history (.git) that
+    would show it."""
+    paths = ck.sh("cd /work/app && git ls-files", check=False).split()
+    links = {}
+    for line in ck.sh("cd /work/app && find . -path ./.git -prune -o -type l -exec sh -c "
+                      "'printf \"%s\\t%s\\n\" \"$1\" \"$(readlink \"$1\")\"' _ {} \\;", check=False).splitlines():
+        if "\t" in line:
+            p, t = line.split("\t", 1)
+            links[p.removeprefix("./")] = t
+    marked = set(ck.sh("cd /work/app && git grep -lI -e '@spec' -e 'docs/intent' -- . ':(exclude)crates' "
+                       "':(exclude,glob)**/*.md' 2>/dev/null", check=False).split())
+    hidden = hidden_paths(paths, marked=marked, symlinks=links)
+    docs = {"files": 0, "lines_added": 0, "lines_removed": 0, "paths": []}
+    for line in ck.sh(f"cd /work/app && git diff --numstat {base} {commit}", check=False).splitlines():
+        parts = line.split("\t")
+        if len(parts) == 3 and _is_doc(parts[2]):
+            docs["files"] += 1
+            docs["lines_added"] += int(parts[0]) if parts[0].isdigit() else 0
+            docs["lines_removed"] += int(parts[1]) if parts[1].isdigit() else 0
+            docs["paths"].append(parts[2])
+    docs["paths"].sort()
+    excludes = [":(exclude)docs", ":(exclude).claude", ":(exclude,glob)**/*.md",
+                *(f":(exclude,glob)**/{f}" for f in AGENT_FILES), *(f":(exclude){p}" for p in sorted(marked))]
+    size = ck.sh(f"mkdir -p /work/out && cd /work/app && git diff {base} {commit} -- . "
+                 + " ".join(f"'{x}'" for x in excludes) + " > /work/out/arm.diff; wc -c < /work/out/arm.diff", check=False)
+    # a clean checkout has no empty directories (git tracks none), so any left now held only hidden files
+    ck.sh("cd /work/app && rm -rf " + " ".join(f"'{p}'" for p in [*hidden, *HIDDEN_DIRS]) + " .git"
+          " && find . -mindepth 1 -type d -empty -delete", check=False)
+    return {"hidden": hidden, "doc_changes": docs, "diff_bytes": int(size.strip() or 0) if size.strip().isdigit() else None}
 
 
 # ------------------------------------------------------------------------------- items, and what they count
@@ -457,12 +586,15 @@ def split_items(items: dict[str, str | None], kept: set[str]) -> tuple[dict, dic
     return new, checks
 
 
-def items_met(items: dict[str, str | None]) -> dict[str, int]:
+def items_met(items: dict[str, str | None], interface: dict[str, list[str]] | None = None) -> dict:
     """Items met, of the items with a verdict on the build: "missing" (a grader error a rerun didn't resolve) and
-    items with no verdict are left out, and missing ones counted apart."""
+    items with no verdict are left out, and missing ones counted apart. Beside it, the items an interface fault left
+    after the rerun: "not met (absent)" where the extraction found nothing addressing them, else missing."""
     decided = [v for v in items.values() if v and v != grading.MISSING]
     return {"met": sum(v == "met" for v in decided), "of": len(decided),
-            "missing": sum(v == grading.MISSING for v in items.values())}
+            "missing": sum(v == grading.MISSING for v in items.values()),
+            "interface_faults": {k: sum(i in items for i in (interface or {}).get(k, []))
+                                 for k in ("not met (absent)", "missing")}}
 
 
 # -------------------------------------------------------------------------- still-valid visible assertions

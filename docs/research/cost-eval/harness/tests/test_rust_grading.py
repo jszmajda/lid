@@ -200,7 +200,7 @@ class GradeProbesTest(unittest.TestCase):
         self.assertEqual(result["items"]["NEW-01 Kittens can be renamed"]["verdict"], "not met")
         self.assertEqual(result["probes"], {"P-NEW01-a": "met", "P-NEW01-b": "not met"})
         extraction, execution, judge = calls[0], calls[1], calls[2]
-        self.assertIn("git diff b0", extraction["prompt"])
+        self.assertIn("/work/out/arm.diff", extraction["prompt"])
         self.assertEqual(extraction["role"].model, g.extraction_model)
         self.assertEqual(execution["role"].model, g.execute_model)
         self.assertNotIn("Expected observation", ck.files["/work/out/probes-b01.md"])  # the executor never sees it
@@ -350,7 +350,9 @@ class KeptBehaviourTest(unittest.TestCase):
 
     def test_items_met_leaves_missing_items_out(self):
         self.assertEqual(rg.items_met({"A": "met", "B": "not met", "C": "missing", "D": None}),
-                         {"met": 1, "of": 2, "missing": 1})
+                         {"met": 1, "of": 2, "missing": 1, "interface_faults": {"not met (absent)": 0, "missing": 0}})
+        self.assertEqual(rg.items_met({"B": "not met", "C": "missing"}, {"not met (absent)": ["B"], "missing": ["C", "Z"]}),
+                         {"met": 0, "of": 1, "missing": 1, "interface_faults": {"not met (absent)": 1, "missing": 1}})
 
 
 SOCIETY_BASE = """use crate::common::*;
@@ -444,6 +446,127 @@ class VisibleAssertionsTest(unittest.TestCase):
             rg.load_kept_assertions(d / "k.json")
 
 
+class CodeOnlyCheckoutTest(unittest.TestCase):
+    """Graders read the same kind of checkout whatever the arm: code and tests, no docs or instruction files, and no
+    history to find them in."""
+
+    def test_what_the_variant_builder_strips_is_hidden_from_graders(self):
+        paths = ["Cargo.toml", "README.md", "AGENTS.md", "CLAUDE.md", "crates/core/AGENTS.md", "docs/intent/a.md",
+                 ".claude/settings.json", "tools/check.py", "tools/build.sh", "crates/core/src/lib.rs", "notes/plan.md"]
+        hidden = rg.hidden_paths(paths, marked={"tools/check.py"}, symlinks={"GEMINI.md": "AGENTS.md", "link": "src"})
+        self.assertEqual(hidden, [".claude/settings.json", "AGENTS.md", "CLAUDE.md", "GEMINI.md", "crates/core/AGENTS.md",
+                                  "docs/intent/a.md", "tools/check.py"])
+
+    def test_the_extraction_reads_a_code_and_tests_diff_and_doc_changes_are_counted_apart(self):
+        class Ck(FakeCk):
+            def sh(self, script, stdin=None, check=True):
+                self.scripts.append(script)
+                if "ls-files" in script:
+                    return "Cargo.toml\nAGENTS.md\ndocs/intent/x.md\ncrates/core/src/lib.rs\nREADME.md\n"
+                if "--numstat" in script:
+                    return "5\t1\tdocs/intent/x.md\n2\t0\tREADME.md\n3\t3\tAGENTS.md\n10\t2\tcrates/core/src/lib.rs\n"
+                if "git grep" in script or "-type l" in script:
+                    return ""
+                if "wc -c" in script:
+                    return "1234\n"
+                return ""
+        ck = Ck()
+        r = rg.prepare_for_graders(ck, "b0", "c1")
+        self.assertEqual(r["doc_changes"], {"files": 3, "lines_added": 10, "lines_removed": 4,
+                                            "paths": ["AGENTS.md", "README.md", "docs/intent/x.md"]})
+        self.assertEqual(r["hidden"], ["AGENTS.md", "docs/intent/x.md"])
+        diff = next(s for s in ck.scripts if "/work/out/arm.diff" in s)
+        self.assertIn("git diff b0 c1", diff)
+        for excluded in (":(exclude,glob)**/*.md", ":(exclude)docs", ":(exclude).claude", ":(exclude,glob)**/AGENTS.md"):
+            self.assertIn(excluded, diff)
+        removal = next(s for s in ck.scripts if s.startswith("cd /work/app && rm -rf"))
+        self.assertIn("'AGENTS.md'", removal)
+        self.assertIn("'docs/intent/x.md'", removal)
+        self.assertIn(".git", removal)  # no history to read docs from
+        self.assertIn("'docs' '.claude'", removal)  # the directories too, not left empty
+        self.assertIn("-type d -empty -delete", removal)
+        self.assertIn("/work/out/arm.diff", rg.extraction_prompt([]))
+        self.assertNotIn("git diff", rg.extraction_prompt([]))
+
+
+IMPLEMENTATION_ITEMS = [("NEW-01", "Kittens can be renamed."), ("NEW-02", "Something later happens.")]
+
+
+class ImplementationTest(unittest.TestCase):
+    """The extraction records, per graded item, whether the arm's diff implements anything addressing it; an
+    interface fault left after the rerun on an item it found absent is a confirmed absence."""
+
+    def test_the_extraction_is_asked_about_each_graded_item(self):
+        p = rg.extraction_prompt(IMPLEMENTATION_ITEMS)
+        self.assertIn("NEW-01: Kittens can be renamed.", p)
+        self.assertIn("/work/out/implementation.json", p)
+        self.assertNotIn("implementation.json", rg.extraction_prompt([]))
+
+    def test_each_items_record_is_checked_and_a_bad_one_is_unclear(self):
+        statuses, problems = rg.check_implementation({"items": [
+            {"item": "NEW-01", "status": "implemented", "evidence": [{"file": "src/a.rs", "symbols": ["rename"]}], "note": "x"},
+            {"item": "NEW-02", "status": "absent", "evidence": [], "note": "nothing"},
+            {"item": "NEW-09", "status": "absent", "evidence": [{"file": "a", "symbols": []}], "note": "x"}]},
+            ["NEW-01", "NEW-02", "NEW-03"])
+        self.assertEqual(statuses, {"NEW-01": "implemented", "NEW-02": "unclear", "NEW-03": "unclear"})
+        self.assertEqual(len(problems), 3)  # NEW-02 cites nothing, NEW-09 isn't graded, NEW-03 has no record
+        self.assertEqual(rg.check_implementation(None, ["NEW-01"])[0], {"NEW-01": "unclear"})
+
+    def test_an_interface_fault_on_an_absent_item_is_not_met_and_on_an_implemented_one_missing(self):
+        import re
+        probeset = grading.parse_probes(PROBES)
+        applicable = [p for p in probeset.probes if p.applies(7)]
+        ck, calls = FakeCk(), []
+        usage = SimpleNamespace(reported_cost_usd=0.1, models={})
+        record = {"items": [
+            {"item": "NEW-01", "status": "implemented", "evidence": [{"file": "crates/core/src/lib.rs", "symbols": ["rename"]}], "note": "rename"},
+            {"item": "NEW-02", "status": "absent", "evidence": [{"file": "crates/core/src/lib.rs", "symbols": []}], "note": "nothing new"}]}
+
+        def run_role(role, prompt, json_schema=None):
+            calls.append({"prompt": prompt, "schema": json_schema})
+            if json_schema:
+                ids = sorted(set(re.findall(r"## (P-NEW\d+-[a-z])", prompt)))
+                return SimpleNamespace(structured={"verdicts": [
+                    {"probe": pid, "verdict": "couldn't exercise", "evidence": [], "reason": "No way to perform the step was found.",
+                     "cause": "execution", "fault": "interface"} for pid in ids]}, text="", usage=usage, duration_s=1.0)
+            if "probes-" not in prompt:
+                ck.files["/work/out/reference.md"] = "use core::State;"
+                ck.files["/work/out/implementation.json"] = json.dumps(record)
+            return SimpleNamespace(structured=None, text="done", usage=usage, duration_s=1.0)
+
+        out = Path(tempfile.mkdtemp())
+        g = rg.RustGraders(image="img", roles_volume="roles", claude_code="v")
+        result = rg.grade_probes(ck, g, probeset, applicable, base="b0", out=out, volume="ckpt", run_role=run_role,
+                                 items=IMPLEMENTATION_ITEMS)
+        self.assertIn("NEW-02: Something later happens.", calls[0]["prompt"])
+        self.assertTrue(any(s.startswith("rm -f /work/out/implementation.json") for s in ck.scripts))  # executors never read it
+        self.assertEqual(json.loads((out / "implementation.json").read_text())["statuses"], {"NEW-01": "implemented", "NEW-02": "absent"})
+        self.assertEqual(result["probes"], {"P-NEW01-a": "missing", "P-NEW01-b": "missing", "P-NEW02-a": "not met"})
+        self.assertIn("P-NEW02-a", result["absent"])
+        self.assertEqual(result["items"]["NEW-02 Something later"]["verdict"], "not met")
+        self.assertEqual(result["items"]["NEW-01 Kittens can be renamed"]["verdict"], "missing")
+        self.assertEqual(result["interface_faults"], {"not met (absent)": ["NEW-02 Something later"],
+                                                      "missing": ["NEW-01 Kittens can be renamed"]})
+
+
+class GradedItemsTest(unittest.TestCase):
+    def test_the_extraction_is_asked_about_live_items_with_probes_and_a_fork_leaves_out_the_start(self):
+        import grade_rust
+        from costeval import simulator
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from test_simulator import ORACLE
+        seed = Path(tempfile.mkdtemp())
+        (seed / "hidden").mkdir()
+        (seed / "hidden" / "oracle.md").write_text(ORACLE)
+        probes = [SimpleNamespace(item="BK-01 Orders"), SimpleNamespace(item="BK-10 Moving keeps the number"),
+                  SimpleNamespace(item="CLK-1 Kept")]
+        fork = grade_rust.graded_items(seed, 3, {"owner_scope": simulator.FORK_SCOPE}, probes)
+        self.assertEqual([i for i, _ in fork], ["BK-10"])
+        self.assertIn("keeps its number", fork[0][1])
+        self.assertEqual([i for i, _ in grade_rust.graded_items(seed, 3, {}, probes)], ["BK-01", "BK-10"])
+        self.assertEqual(grade_rust.graded_items(Path(tempfile.mkdtemp()), 3, {}, probes), [])
+
+
 class GradeRustMainTest(unittest.TestCase):
     def test_a_fork_is_graded_for_keeping_test_edits_and_probes(self):
         import grade_rust
@@ -517,7 +640,10 @@ class GradeRustMainTest(unittest.TestCase):
         self.assertNotIn("keeping", summary)
         # still couldn't exercise on the rerun: missing, out of the items-met share
         self.assertEqual(summary["items"], {"NEW-01 Kittens can be renamed": "missing"})
-        self.assertEqual(summary["items_met"], {"met": 0, "of": 0, "missing": 1})
+        self.assertEqual(summary["items_met"], {"met": 0, "of": 0, "missing": 1,
+                                                "interface_faults": {"not met (absent)": 0, "missing": 0}})
+        self.assertEqual(summary["doc_changes"]["files"], 0)  # the fake diff touches source and tests only
+        self.assertTrue(any(".git" in s and s.startswith("cd /work/app && rm -rf") for s in ck.scripts))
         self.assertEqual(summary["missing_by_fault"], {"observation": 2})
         self.assertEqual(summary["kept_behaviour_checks"], {})
         self.assertEqual(summary["arm"], None)

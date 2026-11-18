@@ -24,11 +24,15 @@ from for the held-out slice. Writes under ../runs/<id>/grading/change-NN/:
   judgments, and verdicts.json (per probe and per item);
 - visible_assertions.json: with the seed's hidden/kept-assertions.json (or --kept-assertions), each still-valid
   assertion listed for the change in a test the arm can see, kept, deleted, or weakened, with what replaced it;
-- summary.json: the arm; held-out retention (held_out_retention: passed, failed, keeping failures and new-state-only
+- probes/implementation.json: the extraction's record, per graded item of the change (the oracle's live items with
+  probes here), of whether the arm's diff implements anything addressing it;
+- summary.json: the arm; the arm's changes to docs and instruction files (doc_changes: context for cost and
+  attention, never graded, since graders see code and tests only); held-out retention (held_out_retention: passed, failed, keeping failures and new-state-only
   failures, compile failures not adapted, adaptations by error code, and the tests that reached a wildcard arm);
   new-intent items and kept-behaviour checks apart (the change script's "Kept behaviour" IDs), each with items met
-  out of those with a verdict, "missing" ones counted apart and by fault; the probe helpers offered; and the
-  visible-assertion audit.
+  out of those with a verdict, "missing" ones counted apart and by fault, and beside them the items an interface
+  fault left after the rerun, "not met (absent)" or missing; the probe helpers offered; and the visible-assertion
+  audit.
 
 The probes are the seed's hidden/probes.md, in the format the other seeds use; those in force at the change run.
 The checkpoint volume's build output is deleted at the end, and the volume too unless --keep.
@@ -110,6 +114,20 @@ def test_edits(ck, base: str, commit: str) -> dict:
     return rg.test_edits(ns, num, count)
 
 
+def graded_items(seed_dir: Path, n: int, meta: dict, probes: list) -> list[tuple[str, str]]:
+    """(ID, statement) for the change's graded items whose implementation the extraction records: the oracle's items
+    live at the change that have probes here. A fork's diff starts from the snapshot, so the start's items, which the
+    snapshot already has, are left out."""
+    oracle_path = seed_dir / "hidden" / "oracle.md"
+    if not oracle_path.exists():
+        return []
+    oracle = simulator.parse_oracle(oracle_path.read_text(encoding="utf-8"))
+    fork = meta.get("owner_scope") == simulator.FORK_SCOPE
+    ids = {p.item.split()[0] for p in probes}
+    return [(i.id, i.behavior) for i in simulator.released_items(oracle, n, only_change=fork)
+            if i.id in ids and not (fork and i.in_force == 0)]
+
+
 def main(argv=None, *, checkpoint=None, run_role=executor.run_role) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--id", required=True)
@@ -169,6 +187,10 @@ def main(argv=None, *, checkpoint=None, run_role=executor.run_role) -> int:
             (out / "visible_assertions.json").write_text(json.dumps(audit, indent=1))
             summary["visible_assertions"] = {k: audit[k] for k in ("kept", "deleted", "weakened", "not_found_at_start",
                                                                    "flagged")}
+        # from here on graders read code and tests only, whatever the arm, and no history
+        prepared = rg.prepare_for_graders(ck, base, commit)
+        summary["doc_changes"] = prepared["doc_changes"]
+        summary["hidden_from_graders"] = len(prepared["hidden"])
         variants = Path((meta.get("fork_of") or {}).get("variants") or "")
         if not args.no_keeping and (variants / "manifest.json").exists():
             held = json.loads((variants / "manifest.json").read_text()).get("held_out") or []
@@ -189,12 +211,14 @@ def main(argv=None, *, checkpoint=None, run_role=executor.run_role) -> int:
                            if held_dir.is_dir() else {})
                 summary["probe_helpers"] = {c: h["status"] for c, h in helpers.items()}
                 result = rg.grade_probes(ck, g, probeset, applicable, base=base, out=out / "probes", volume=ck.volume,
-                                         batch_size=args.batch_size, run_role=run_role, helpers=helpers)
+                                         batch_size=args.batch_size, run_role=run_role, helpers=helpers,
+                                         items=graded_items(args.seed_dir, n, meta, applicable))
                 items = {item: v["verdict"] for item, v in result["items"].items()}
                 kept = rg.kept_behaviour_ids(script_path.read_text(encoding="utf-8")) if script_path.exists() else set()
                 summary["items"], summary["kept_behaviour_checks"] = rg.split_items(items, kept)
-                summary["items_met"] = rg.items_met(summary["items"])
-                summary["kept_behaviour_met"] = rg.items_met(summary["kept_behaviour_checks"])
+                summary["items_met"] = rg.items_met(summary["items"], result["interface_faults"])
+                summary["kept_behaviour_met"] = rg.items_met(summary["kept_behaviour_checks"], result["interface_faults"])
+                summary["implementation"] = result["implementation"]
                 summary["missing_by_fault"] = result["missing_by_fault"]
                 summary["execution_faults"] = result["execution_faults"]
     finally:

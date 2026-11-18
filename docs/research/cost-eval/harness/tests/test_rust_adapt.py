@@ -209,6 +209,8 @@ class FakeCk:
         self.scripts.append(script)
         if ra.SOURCE_MARK in script:
             return f"{ra.SOURCE_MARK} ./crates/fixture/src/lib.rs\n{ARM_LIB}"
+        if "--test " not in script:
+            return ""
         target = script.split("--test ")[1].split()[0]
         if "--no-run" in script:
             self.builds[target] = self.builds.get(target, 0) + 1

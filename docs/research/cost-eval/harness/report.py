@@ -10,7 +10,9 @@ owner-audit.json where they exist, the verdicts of each graded checkpoint, and i
 
 Items met is the share of items with a verdict that are met; "couldn't exercise" counts against it, and probes not
 run (deferred needs) leave their items out. A "missing" item (a grader error a rerun didn't resolve) is neither met
-nor counted against: it is left out of the share and reported by cause and arm. Items are split by how the owner discloses them (stated, askable,
+nor counted against: it is left out of the share and reported by cause and arm. Beside each share, the items an
+interface fault left after the rerun: counted "not met" where the extraction found nothing addressing them in the
+arm's diff (absent), and missing otherwise. Items are split by how the owner discloses them (stated, askable,
 recognized on sight, emerging) and, where the seed has `hidden/bands.json`, latent items by guessability band.
 """
 
@@ -62,6 +64,15 @@ def missing_causes(gdir: Path, verdicts: str) -> dict[str, int]:
     for m in (data.get("missing") or {}).values():
         out[m.get("fault") or m.get("cause") or "unknown"] = out.get(m.get("fault") or m.get("cause") or "unknown", 0) + 1
     return out
+
+
+def interface_faults(gdir: Path, verdicts: str) -> dict[str, int]:
+    """Items an interface fault left after the rerun: "not met (absent)" where the extraction found nothing in the
+    diff addressing them, and "missing" otherwise (Rust grading)."""
+    f = gdir / f"{verdicts}.json"
+    data = json.loads(f.read_text()) if f.exists() else {}
+    got = data.get("interface_faults") or {}
+    return {k: len(got.get(k) or []) for k in ("not met (absent)", "missing")}
 
 
 def share_met(verdicts: dict[str, str], keep=lambda i: True) -> tuple[int, int] | None:
@@ -145,6 +156,7 @@ def build(runs: Path, seed_dir: Path, prefix: str, arms: dict[str, list[str]], v
                 f = {"all": share_met(v), "not met": sum(x == "not met" for x in v.values()),
                      "couldn't exercise": sum(x == "couldn't exercise" for x in v.values()),
                      "missing": sum(x == grading.MISSING for x in v.values()), "missing by cause": missing_causes(gdir, verdicts),
+                     "interface faults": interface_faults(gdir, verdicts),
                      "by kind": {kd: share_met(v, lambda i, kd=kd: kinds.get(i) == kd) for kd in KINDS},
                      "by band": {b: share_met(v, lambda i, b=b: bands.get(i) == b) for b in ("low", "medium", "high")} if bands else {},
                      "latent items": {i: v.get(i) for i in bands}}
@@ -177,7 +189,12 @@ def render(r: dict) -> str:
         for n in graded:
             xs = [t["fidelity"][n]["all"] for t in ts if n in t["fidelity"] and t["fidelity"][n]["all"]]
             vals = [m / d for m, d in xs]
-            cells.append(f"{pct(mean(vals))} [{', '.join(pct(v) for v in vals)}]" if vals else "–")
+            cell = f"{pct(mean(vals))} [{', '.join(pct(v) for v in vals)}]" if vals else "–"
+            iface = [t["fidelity"][n].get("interface faults") or {} for t in ts if n in t["fidelity"]]
+            absent, gone = sum(i.get("not met (absent)", 0) for i in iface), sum(i.get("missing", 0) for i in iface)
+            if absent or gone:  # beside the share, whichever way the interface faults went
+                cell += f" · interface: {absent} absent, {gone} missing"
+            cells.append(cell)
         lines.append(f"| {a} | " + " | ".join(cells) + " |")
     last = graded[-1] if graded else None
     if last is not None:
