@@ -304,7 +304,29 @@ def render(r: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
-def fork_report(runs: Path, pattern: str) -> dict:
+SPOT_RULINGS = (*grading.VERDICTS, grading.MISSING)
+
+
+def load_spot_checks(path: Path) -> list[dict]:
+    """Blind spot-check rulings: [{fork, item, ruling, by, note}], each resolving a conflict or overriding a verdict."""
+    checks = json.loads(path.read_text(encoding="utf-8"))
+    for c in checks:
+        for k in ("fork", "item", "ruling"):
+            if not c.get(k):
+                raise ValueError(f"{path}: a spot-check without {k!r}: {c}")
+        if c["ruling"] not in SPOT_RULINGS:
+            raise ValueError(f"{path}: ruling {c['ruling']!r} for {c['item']} isn't one of {SPOT_RULINGS}")
+    return checks
+
+
+def _recount(items: dict) -> dict:
+    decided = [v for v in items.values() if v and v not in (grading.MISSING, grading.CONFLICT)]
+    return {"met": sum(v == "met" for v in decided), "of": len(decided),
+            "missing": sum(v == grading.MISSING for v in items.values()),
+            "conflicts": sum(v == grading.CONFLICT for v in items.values())}
+
+
+def fork_report(runs: Path, pattern: str, spot_checks: list[dict] = ()) -> dict:
     """The Rust seed's forks by cell (variant, arm, window): per change, items met of those with a verdict, missing,
     conflicts, held-out retention, tests not built by cause, and the probes version graded under; and per cell, the
     totals."""
@@ -328,10 +350,19 @@ def fork_report(runs: Path, pattern: str) -> dict:
                 if t.get("compile_failed"):
                     cause = rust_grading.not_built_cause((t.get("adaptation") or {}).get("reason") or (t.get("errors") or [""])[0])
                     h["tests_not_built_by_cause"][cause] = h["tests_not_built_by_cause"].get(cause, 0) + (t.get("tests_expected") or 0)
+        items = dict(s.get("items") or {})
+        applied = []
+        for c in (c for c in spot_checks if c["fork"] == run.name):
+            applied.append({"item": c["item"], "was": items.get(c["item"]), "now": c["ruling"], "by": c.get("by"),
+                            "note": c.get("note")})
+            items[c["item"]] = c["ruling"]
+        if applied:
+            m = {**m, **_recount(items)}
         row = {"change": n, "met": m.get("met", 0), "of": m.get("of", 0), "missing": m.get("missing", 0),
                "conflicts": m.get("conflicts", 0), "passed": h.get("passed"), "run": (h.get("passed") or 0) + (h.get("failed") or 0),
                "not_built": h.get("tests_not_built_by_cause") or {}, "missing_by_fault": s.get("missing_by_fault") or {},
-               "probes": ((s.get("seed_files") or {}).get("probes_sha256") or "")[:7]}
+               "probes": ((s.get("seed_files") or {}).get("probes_sha256") or "")[:7], "items": items,
+               "spot_checks": applied}
         c = cells.setdefault(cell, {"changes": [], "total": {"met": 0, "of": 0, "missing": 0, "conflicts": 0,
                                                             "tests_not_built_by_cause": {}, "missing_by_fault": {}}})
         c["changes"].append(row)
@@ -355,12 +386,16 @@ def render_forks(r: dict) -> str:
                   + (f" ({', '.join(f'{k} {x}' for k, x in t['missing_by_fault'].items())})" if t["missing_by_fault"] else "")
                   + f", conflicts {t['conflicts']}; tests not built: "
                   + (", ".join(f"{k} {x}" for k, x in t["tests_not_built_by_cause"].items()) or "none"), "",
-                  "| Change | Items met | Missing | Conflicts | Retention | Tests not built | Probes |", "|---|---|---|---|---|---|---|"]
+                  "| Change | Items met | Missing | Conflicts | Retention | Tests not built | Probes | Spot-checked |",
+                  "|---|---|---|---|---|---|---|---|"]
+        notes = []
         for row in c["changes"]:
+            checked = "; ".join(f"{x['item']}: {x['was']} → {x['now']} ({x['by']})" for x in row.get("spot_checks") or [])
+            notes += [f"- Change {row['change']}, {x['item']}: {x['note']}" for x in row.get("spot_checks") or [] if x.get("note")]
             lines.append(f"| {row['change']} | {row['met']}/{row['of']} | {row['missing']} | {row['conflicts']} | "
                          f"{row['passed']}/{row['run']} | {', '.join(f'{k} {x}' for k, x in row['not_built'].items()) or '–'} | "
-                         f"{row['probes'] or '–'} |")
-        lines.append("")
+                         f"{row['probes'] or '–'} | {checked or '–'} |")
+        lines += ["", "Spot-checks:", *notes, ""] if notes else [""]
     return "\n".join(lines)
 
 
@@ -369,9 +404,11 @@ def main(argv=None) -> int:
     if "--forks" in argv:  # the Rust seed's forks: report.py --forks 'cf-*-r1' --out ../runs/clowder-pilot/report.md
         ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
         ap.add_argument("--forks", required=True, help="a glob of fork folders under ../runs")
+        ap.add_argument("--spot-checks", type=Path, help="blind spot-check rulings: [{fork, item, ruling, by, note}]")
         ap.add_argument("--out", required=True)
         args = ap.parse_args(argv)
-        r = fork_report(HERE.parent / "runs", args.forks)
+        r = fork_report(HERE.parent / "runs", args.forks,
+                        spot_checks=load_spot_checks(args.spot_checks) if args.spot_checks else ())
         out = Path(args.out)
         out.write_text(render_forks(r), encoding="utf-8")
         out.with_suffix(".json").write_text(json.dumps(r, indent=1), encoding="utf-8")

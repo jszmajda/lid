@@ -156,3 +156,39 @@ class ForkReportTest(unittest.TestCase):
             "heldout_frame": {"compile_failed": False, "tests_expected": 44}}})
         r = report.fork_report(runs, "cf-*-r1")
         self.assertEqual(r["cells"]["full-lid-full-1m"]["total"]["tests_not_built_by_cause"], {"E0382": 79})
+
+
+class SpotCheckTest(unittest.TestCase):
+    """--spot-checks: a ruling from a blind spot-check resolves a conflict, or overrides a verdict, and the row says so."""
+
+    def test_a_spot_check_resolves_a_conflict_and_the_row_names_its_source(self):
+        runs = Path(tempfile.mkdtemp())
+        ForkReportTest.fork(None, runs, "full", "lid-full", "1m", 11,
+                            items={"CLW-1101": "met", "CLW-1104": "missing (conflict)"},
+                            items_met={"met": 1, "of": 1, "missing": 0, "conflicts": 1}, conflicts={"CLW-1104": {}},
+                            held_out_retention={"passed": 321, "failed": 2})
+        checks = Path(tempfile.mkdtemp()) / "spot-checks.json"
+        checks.write_text(json.dumps([{"fork": "cf-full-lid-full-1m-c11-r1", "item": "CLW-1104", "ruling": "not met",
+                                       "by": "Claude Fable", "note": "read a tally in place of the report"}]))
+        r = report.fork_report(runs, "cf-*-r1", spot_checks=report.load_spot_checks(checks))
+        row = r["cells"]["full-lid-full-1m"]["changes"][0]
+        self.assertEqual((row["met"], row["of"], row["conflicts"]), (1, 2, 0))
+        self.assertEqual(row["spot_checks"], [{"item": "CLW-1104", "was": "missing (conflict)", "now": "not met",
+                                               "by": "Claude Fable", "note": "read a tally in place of the report"}])
+        text = report.render_forks(r)
+        self.assertIn("CLW-1104: missing (conflict) → not met (Claude Fable)", text)
+        self.assertEqual(r["cells"]["full-lid-full-1m"]["total"]["conflicts"], 0)
+
+    def test_a_spot_check_names_a_fork_and_item_that_exist(self):
+        checks = Path(tempfile.mkdtemp()) / "s.json"
+        checks.write_text(json.dumps([{"fork": "cf-x", "item": "CLW-1", "ruling": "sort of"}]))
+        with self.assertRaisesRegex(ValueError, "ruling"):
+            report.load_spot_checks(checks)
+
+    def test_the_seed_holds_the_change_11_ruling(self):
+        seeded = report.load_spot_checks(HERE_SEED / "spot-checks.json")
+        self.assertEqual([(c["fork"], c["item"], c["ruling"], c["by"]) for c in seeded],
+                         [("cf-full-lid-full-1m-c11-r1", "CLW-1104", "not met", "Claude Fable")])
+
+
+HERE_SEED = Path(__file__).resolve().parent.parent.parent / "seeds" / "clowder" / "hidden"
