@@ -286,7 +286,8 @@ def run_change(*, arm: Arm, change: simulator.Change, owner: simulator.Owner, tu
                     "code_written": any(is_code_path(p) for p in changed), "costs": simulator.call_costs(rep)}
             res.owner.append(orec)
             (out_dir / f"owner-{k:02d}.json").write_text(
-                json.dumps({**orec, "calls": rep.calls, "touch_calls": rep.touch_calls}, indent=1), encoding="utf-8")
+                json.dumps({**orec, "calls": rep.calls, "touch_calls": rep.touch_calls, "check_calls": rep.check_calls},
+                           indent=1), encoding="utf-8")
             res.rounds = k + 1
             if rep.finished:
                 res.finished = True

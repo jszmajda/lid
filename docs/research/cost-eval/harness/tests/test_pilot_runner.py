@@ -87,3 +87,32 @@ class PilotRunnerTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class RegradeTest(unittest.TestCase):
+    def test_regrade_moves_old_gradings_aside_and_skips_those_under_the_current_probes(self):
+        import hashlib
+        runs, seed = Path(tempfile.mkdtemp()), Path(tempfile.mkdtemp())
+        (seed / "hidden").mkdir()
+        (seed / "hidden" / "probes.md").write_text("probes v4")
+        now = hashlib.sha256(b"probes v4").hexdigest()
+
+        def graded(fid, n, sha):
+            g = runs / fid / "grading" / f"change-{n:02d}"
+            g.mkdir(parents=True)
+            (runs / fid / "trajectory.json").write_text(json.dumps({"changes": {str(n): {"commit": "c"}}}))
+            (g / "summary.json").write_text(json.dumps({"seed_files": {"probes_sha256": sha}}))
+        graded("cf-full-bare-1m-c02-r1", 2, "old")        # graded under v3: moved aside and regraded
+        graded("cf-stripped-null-200k-c02-r1", 2, now)    # already under v4: skipped
+        env = {**os.environ, "DRY": "1", "RUNS": str(runs), "SEED": str(seed), "PY": sys.executable, "JOBS": "1"}
+        p = subprocess.run(["sh", "run_clowder_pilot.sh", "regrade", "2,3"], cwd=HARNESS, env=env, capture_output=True,
+                           text=True)
+        self.assertEqual(p.returncode, 0, p.stderr)
+        cmds = p.stdout.splitlines()
+        grades = [c for c in cmds if "grade_rust.py" in c]
+        self.assertEqual(len(grades), 2 * 7 - 1)  # six cells and the null arm at two changes, less the one done
+        self.assertFalse(any("run_fork.py" in c for c in cmds))  # a regrade never forks
+        self.assertIn(f"mv {runs}/cf-full-bare-1m-c02-r1/grading/change-02 {runs}/cf-full-bare-1m-c02-r1/grading-v3/change-02",
+                      [c.replace("mkdir -p " + str(runs / 'cf-full-bare-1m-c02-r1' / 'grading-v3') + " && ", "") for c in cmds])
+        self.assertFalse(any("cf-stripped-null-200k-c02-r1" in c for c in grades))
+        self.assertTrue(any("cf-stripped-null-200k-c03-r1" in c for c in grades))

@@ -149,8 +149,23 @@ class ProbeTest(unittest.TestCase):
         text = rg.log_for_judge(lines)
         self.assertIn('"seq": 1', text)
         self.assertIn("name: Moss", text)
-        long = rg.probe_log_lines({"P": {"source": "x", "output": "y" * (rg.MAX_OUTPUT + 50)}})
-        self.assertIn("more characters", long[1]["text"])
+        whole = "tick 1: catnip 3\n" * 8000 + "ALL-CASES: 8 of 8\n"  # 136k characters, as long as a real one
+        self.assertEqual(rg.probe_log_lines({"P": {"source": "x", "output": whole}})[1]["text"], whole)
+
+    def test_a_very_long_output_keeps_its_head_tail_and_every_deciding_line(self):
+        ticks = [f"tick {i}: catnip {i}\n" for i in range(20000)]
+        out = ("setup: 2 kittens\n" + "x" * 50000 + "\n" + "".join(ticks[:10000]) + "seed 3: joined 0, after removal close 2\n"
+               + "CANNOT: no way to clear a nickname\n" + "".join(ticks[10000:]) + "ALL-CASES: no arrival in 8 of 8\n"
+               + "y" * 50000 + "\nend\n")
+        self.assertGreater(len(out), rg.MAX_OUTPUT)
+        text = rg.probe_log_lines({"P": {"source": "x", "output": out}})[1]["text"]
+        self.assertLess(len(text), len(out))
+        self.assertTrue(text.startswith("setup: 2 kittens"))
+        self.assertTrue(text.rstrip().endswith("end"))
+        for line in ("seed 3: joined 0, after removal close 2", "CANNOT: no way to clear a nickname",
+                     "ALL-CASES: no arrival in 8 of 8"):
+            self.assertIn(line, text)
+        self.assertIn("lines cut", text)
 
 
 class FakeCk:
@@ -782,6 +797,9 @@ class GradeRustMainTest(unittest.TestCase):
         self.assertEqual(summary["missing_by_fault"], {"observation": 2})
         self.assertEqual(summary["kept_behaviour_checks"], {})
         self.assertEqual(summary["arm"], None)
+        import hashlib
+        self.assertEqual(summary["seed_files"]["probes_sha256"], hashlib.sha256(PROBES.encode()).hexdigest())
+        self.assertIn("kept_assertions_sha256", summary["seed_files"])
         self.assertEqual(summary["probe_helpers"], {"core": "built"})  # the snapshot's helpers, offered to the executor
         self.assertTrue(any('#[path = "probe_helpers/common/mod.rs"] mod common;' in p for p in executed))
         self.assertTrue((out / "visible_assertions.json").exists())

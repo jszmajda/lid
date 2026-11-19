@@ -48,7 +48,10 @@ from typing import Callable
 
 from . import executor, grading, rust_adapt
 
-MAX_OUTPUT = 20000  # characters of one probe's output the judge sees; the whole output stays on disk
+MAX_OUTPUT = 200_000  # characters of one probe's output the judge sees whole (real outputs run to ~135k)
+KEEP_EDGE = 40_000  # past that, the head and tail kept, and every deciding line between them
+DECIDING = re.compile(r"^\s*(?:ALL-CASES:|CANNOT\b|WITNESS\b|SUMMARY\b|(?:case|seed|branch|control|day)\b[^:\n]{0,60}:"
+                      r"|thread '.*' panicked|error(?:\[|:))", re.I)
 TEST_LINE = re.compile(r"(?m)^test (\S+) \.\.\. (ok|FAILED|ignored)\b")  # "ignored" may carry a reason
 
 
@@ -213,14 +216,34 @@ def probe_log_lines(results: dict[str, dict]) -> list[dict]:
             seq += 1
             lines.append({"seq": seq, "probe": pid, "kind": "missing", "text": "The executor wrote no test for this probe."})
             continue
-        out = r.get("output") or "(no output)"
-        if len(out) > MAX_OUTPUT:
-            out = out[:MAX_OUTPUT] + f" ...[cut: {len(out) - MAX_OUTPUT} more characters]"
+        out = for_judge(r.get("output") or "(no output)")
         seq += 1
         lines.append({"seq": seq, "probe": pid, "kind": "test source", "text": r.get("source") or "(none)"})
         seq += 1
         lines.append({"seq": seq, "probe": pid, "kind": "test output", "text": out})
     return lines
+
+
+def for_judge(out: str) -> str:
+    """A probe's output as the judge reads it: whole up to MAX_OUTPUT; past that, the first and last KEEP_EDGE
+    characters and every deciding line between them (the ALL-CASES line, each case's labelled summary line, CANNOT
+    and WITNESS lines, panics and errors), with the cuts marked. The whole output stays on disk."""
+    if len(out) <= MAX_OUTPUT:
+        return out
+    head_end = out.rfind("\n", 0, KEEP_EDGE) + 1 or KEEP_EDGE
+    tail_start = out.find("\n", len(out) - KEEP_EDGE) + 1 or len(out) - KEEP_EDGE
+    middle, kept, cut = out[head_end:tail_start].splitlines(), [], 0
+    for line in middle:
+        if DECIDING.match(line):
+            if cut:
+                kept.append(f"...[{cut} lines cut]")
+                cut = 0
+            kept.append(line)
+        else:
+            cut += 1
+    if cut:
+        kept.append(f"...[{cut} lines cut]")
+    return out[:head_end] + "\n".join(kept) + "\n" + out[tail_start:]
 
 
 def log_for_judge(lines: list[dict]) -> str:

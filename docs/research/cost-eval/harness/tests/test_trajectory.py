@@ -233,7 +233,8 @@ class ChangeLoopTest(unittest.TestCase):
         self.assertEqual([c["cost_usd"] for c in rec["calls"]], [0.03])
         self.assertEqual([c["cost_usd"] for c in rec["touch_calls"]], [0.01])
         self.assertIn("## What to report", rec["touch_calls"][0]["prompt"])
-        self.assertEqual(rec["costs"], {"main": 0.03, "touch": 0.01, "trim": 0.0})
+        self.assertEqual(rec["costs"], {"main": 0.03, "touch": 0.01, "trim": 0.0, "check": 0.0})
+        self.assertEqual(rec["check_calls"], [])  # no owner check configured here
         self.assertEqual(r.owner[0]["costs"], rec["costs"])
         self.assertNotIn("touch_calls", r.owner[0])  # prompts stay in the per-stop file, as main calls do
 
@@ -322,3 +323,39 @@ class AuditTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CompletionReplayTest(unittest.TestCase):
+    """replay_owner.py --completion-check: the completion check on recorded stops, against what each should be."""
+
+    def stop(self, runs, tid, change, k, message, *, finished=True, kind="completion"):
+        d = runs / tid / f"change-{change:02d}"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / f"owner-{k:02d}.json").write_text(json.dumps({
+            "message_kind": kind, "finished": finished,
+            "calls": [{"prompt": f"rules\n<agent_message>\n[P1] {message}\n</agent_message>\nmore"}]}))
+
+    def test_stops_are_named_or_collected_as_each_runs_finished_last_stop(self):
+        import replay_owner as ro
+        runs = Path(tempfile.mkdtemp())
+        self.stop(runs, "cf-a", 1, 0, "Plan: add it.", finished=False, kind="approval")
+        self.stop(runs, "cf-a", 1, 1, "Done; tests pass.")
+        self.stop(runs, "cf-b", 4, 2, "Phase 6 is next.")
+        self.stop(runs, "cf-c", 2, 0, "Still working.", finished=False, kind="approval")  # capped: no completion
+        jobs = ro.completion_jobs(runs, ["cf-b:change-04/owner-02:=work"], ["cf-*"], exclude=["cf-b"])
+        self.assertEqual([(j["stop"], j["expect"]) for j in jobs],
+                         [("cf-b:change-04/owner-02", "work to do"), ("cf-a:change-01/owner-01", "done")])
+        self.assertEqual(jobs[1]["message"], "Done; tests pass.")  # without the passage marks
+        sample = ro.completion_jobs(runs, [], ["cf-*"], sample=1, seed="s")
+        self.assertEqual(len(sample), 1)
+
+    def test_agreement_is_reported_per_expectation(self):
+        import replay_owner as ro
+        jobs = [{"stop": "a", "expect": "work to do", "message": "Phase 6 is next."},
+                {"stop": "b", "expect": "done", "message": "Done."}, {"stop": "c", "expect": "done", "message": "Done!"}]
+        answers = iter([({"verdict": "work to do", "quote": "Phase 6 is next."}, 0.01),
+                        ({"verdict": "done", "quote": "Done."}, 0.01), ({"verdict": "work to do", "quote": "Done!"}, 0.01)])
+        rows, summary = ro.run_completion_checks(jobs, lambda prompt: next(answers))
+        self.assertEqual([r["verdict"] for r in rows], ["work to do", "done", "work to do"])
+        self.assertEqual(summary, {"work to do": {"agree": 1, "of": 1}, "done": {"agree": 1, "of": 2}, "invalid": 0,
+                                   "cost_usd": 0.03})

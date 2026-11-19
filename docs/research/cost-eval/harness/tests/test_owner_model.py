@@ -935,7 +935,7 @@ class TouchCallTest(unittest.TestCase):
         self.assertEqual(r.touch_calls[0]["output"], {"touches": [touch("BK-02", 1)]})
         self.assertIn("## What to report", r.touch_calls[0]["prompt"])
         self.assertNotIn("## What to report", r.calls[0]["prompt"])
-        self.assertEqual(sm.call_costs(r), {"main": 0.02, "touch": 0.005, "trim": 0.0})
+        self.assertEqual(sm.call_costs(r), {"main": 0.02, "touch": 0.005, "trim": 0.0, "check": 0.0})
 
     def test_a_failing_touch_call_is_retried_then_stops_the_owner(self):
         w, ask = owner("diligent", out("approval"), touch=FakeTouches([touch("BK-02", 7)], [touch("BK-02", 7)], [touch("BK-02", 7)]))
@@ -1045,3 +1045,77 @@ class ForkReleaseTest(unittest.TestCase):
         self.assertIn("[BK-14]", ask.touch_prompts[-1])
         self.assertNotIn("[BK-12]", ask.touch_prompts[-1])
         self.assertNotIn("never expire", ask.touch_prompts[-1])
+
+
+# ------------------------------------------------------------------------------- a completion that announces work
+
+
+class CompletionCheckTest(unittest.TestCase):
+    """A message that says what the agent will do next isn't a completion report. When the main call reads one as a
+    completion, a separate small call checks: done, or work still to do. Work to do makes it an approval request."""
+
+    ANNOUNCE = "Tests are in place. Phase 6 is next. I'll add the core command, error and query. Then I'll run the suite."
+    DONE = "Done: the command, its error and the query are in, and the whole suite passes."
+
+    def make(self, *outputs, check):
+        ask = FakeAsk(*outputs)
+        w = sm.Owner(oracle=oracle(), brief=BRIEF, policy="diligent", replicate="r", ask=ask, touch=ask.touch,
+                     default_owner_item=sm.OwnerItem("medium", "Something."), owner_items={}, check=check)
+        w.start_change(script()[1])
+        return w
+
+    def checker(self, verdict, quote):
+        seen = []
+
+        def check(prompt):
+            seen.append(prompt)
+            return {"verdict": verdict, "quote": quote}, 0.002
+        check.seen = seen
+        return check
+
+    def test_a_completion_that_announces_work_is_an_approval_request_and_goes_ahead(self):
+        check = self.checker("work to do", "Phase 6 is next.")
+        w = self.make(out("completion"), check=check)
+        r = w.respond(self.ANNOUNCE, code_written=False)
+        self.assertFalse(r.finished)
+        self.assertEqual(r.message_kind, "approval")
+        self.assertEqual(r.reply, "That looks fine. Go ahead.")
+        self.assertIn(self.ANNOUNCE, check.seen[0])
+        self.assertEqual(r.check_calls[0]["output"]["verdict"], "work to do")
+        self.assertEqual(r.check_calls[0]["reclassified"], "approval")
+        self.assertAlmostEqual(sm.call_costs(r)["check"], 0.002)
+
+    def test_a_completion_report_still_finishes_the_change(self):
+        w = self.make(out("completion"), check=self.checker("done", "the whole suite passes"))
+        r = w.respond(self.DONE, code_written=True)
+        self.assertTrue(r.finished)
+        self.assertEqual((r.message_kind, r.reply), ("completion", ""))
+
+    def test_the_check_is_made_only_on_a_completion(self):
+        check = self.checker("work to do", "x")
+        w = self.make(out("approval"), check=check)
+        w.respond("Plan: add the command. Shall I go ahead?", code_written=False)
+        self.assertEqual(check.seen, [])
+
+    def test_corrections_still_go_with_the_go_ahead(self):
+        w = self.make(out("completion", corrections=[cor("BK-01", "Orders keep their numbers.")]),
+                      check=self.checker("work to do", "Phase 6 is next."))
+        r = w.respond(self.ANNOUNCE, code_written=False)
+        self.assertFalse(r.finished)
+        self.assertTrue(r.reply.endswith("Otherwise, go ahead."))
+
+    def test_a_check_that_never_answers_validly_leaves_the_main_calls_reading(self):
+        w = self.make(out("completion"), check=self.checker("maybe", "nowhere in the message"))
+        r = w.respond(self.DONE, code_written=True)
+        self.assertTrue(r.finished)
+        self.assertEqual(len(r.check_calls), 3)
+        self.assertTrue(all(c["problems"] for c in r.check_calls))
+
+    def test_the_check_reads_the_message_alone_with_its_two_answers(self):
+        p = sm.completion_check_prompt(self.ANNOUNCE)
+        self.assertIn(self.ANNOUNCE, p)
+        self.assertNotIn("BK-01", p)  # nothing of the owner's knowledge
+        schema = json.loads(sm.completion_schema_json())
+        self.assertEqual(schema["properties"]["verdict"]["enum"], ["done", "work to do"])
+        self.assertEqual(sm.check_completion({"verdict": "done", "quote": "suite passes"}, self.DONE), ("done", []))
+        self.assertTrue(sm.check_completion({"verdict": "done", "quote": "not there"}, self.DONE)[1])

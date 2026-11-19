@@ -53,6 +53,7 @@ class Deps:
     ask: Callable | None = None  # the owner's model calls; default: role sessions
     touch: Callable | None = None
     trim: Callable | None = None
+    check: Callable | None = None  # the owner's completion check
     install_lid: Callable = trajectory.install_lid
 
 
@@ -170,7 +171,8 @@ def _role_calls(owner_model: str, costs: list[float]):
             costs.append(cost)
             return r.structured, cost
         return run
-    return call(simulator.schema_json()), call(simulator.touch_schema_json()), call(simulator.trim_schema_json())
+    return (call(simulator.schema_json()), call(simulator.touch_schema_json()), call(simulator.trim_schema_json()),
+            call(simulator.completion_schema_json()))
 
 
 def main(argv=None, *, deps: Deps | None = None) -> int:
@@ -261,13 +263,14 @@ def main(argv=None, *, deps: Deps | None = None) -> int:
         return 0
 
     costs: list[float] = []
-    ask, touch, trim = deps.ask, deps.touch, deps.trim
+    ask, touch, trim, check = deps.ask, deps.touch, deps.trim, deps.check
     if ask is None:
-        ask, touch, trim = _role_calls(args.owner_model, costs)
+        ask, touch, trim, check = _role_calls(args.owner_model, costs)
     # Each change forks from the final snapshot, so no earlier change happened: the owner holds the start's narrative
     # and items and this change's own, never another change's.
     owner = simulator.Owner(oracle=oracle, brief=brief, policy=args.policy, replicate=args.replicate, ask=ask,
-                            touch=touch, trim=trim, model=owner_model, owner_items=owner_items, only_change=True)
+                            touch=touch, trim=trim, model=owner_model, owner_items=owner_items, only_change=True,
+                            check=check)
     session = executor.ContainerSession(image=args.image, workspace_volume=ws_vol, config_volume=cfg_vol,
                                         model=args.model, claude_code_version=CLAUDE_CODE,
                                         expected_plugins=frozenset(arm.plugins), effort=args.effort,

@@ -41,6 +41,7 @@ The checkpoint volume's build output is deleted at the end, and the volume too u
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import subprocess
@@ -159,6 +160,13 @@ def main(argv=None, *, checkpoint=None, run_role=executor.run_role) -> int:
     ck = make(f"{args.id}-c{n:02d}", commit, image)
     ck.export(meta["volumes"]["workspace"])
     summary: dict = {"id": args.id, "change": n, "arm": meta.get("arm"), "commit": commit, "start_commit": base}
+
+    def sha(path: Path) -> str | None:
+        return hashlib.sha256(path.read_bytes()).hexdigest() if path.is_file() else None
+    probes_file = args.probes or args.seed_dir / "hidden" / "probes.md"
+    summary["seed_files"] = {"probes_sha256": sha(probes_file),
+                             "kept_assertions_sha256": sha(args.kept_assertions or args.seed_dir / "hidden" / "kept-assertions.json"),
+                             "change_script_sha256": sha(args.change_script or args.seed_dir / "hidden" / "change-script.md")}
     g = rg.RustGraders(image=image, roles_volume=ROLES_VOLUME, claude_code=CLAUDE_CODE,
                        execute_model=args.execute_model, judge_model=args.judge_model)
     script_path = args.change_script or args.seed_dir / "hidden" / "change-script.md"

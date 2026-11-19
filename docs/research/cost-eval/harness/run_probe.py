@@ -116,7 +116,7 @@ def main(argv=None) -> int:
 
     owner = simulator.Owner(oracle=oracle, brief=brief, policy=base["policy"], replicate=replicate,
                             ask=call(simulator.schema_json()), touch=call(simulator.touch_schema_json()),
-                            trim=call(simulator.trim_schema_json()),
+                            trim=call(simulator.trim_schema_json()), check=call(simulator.completion_schema_json()),
                             model=owner_model, owner_items=owner_items, only_change=probe_only_change(base))
     trajectory.restore_owner_state(owner, json.loads(state_path.read_text()))
     session = executor.ContainerSession(image=IMAGE, workspace_volume=ws_vol, config_volume=cfg_vol, model=base["model"],

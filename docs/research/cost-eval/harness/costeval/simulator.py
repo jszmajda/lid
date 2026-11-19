@@ -41,6 +41,7 @@ TEMPLATE_PATH = PROMPTS / "simulator.md"
 JUDGE_TEMPLATE_PATH = PROMPTS / "leak-judge.md"
 TRIM_TEMPLATE_PATH = PROMPTS / "owner-trim.md"
 TOUCH_TEMPLATE_PATH = PROMPTS / "owner-touches.md"
+COMPLETION_TEMPLATE_PATH = PROMPTS / "owner-completion.md"
 
 POLICIES = ("diligent", "bounded", "rubber-stamp")
 NO_VIEW = "No preference, use your judgment."
@@ -958,6 +959,34 @@ def touch_schema_json() -> str:
     return json.dumps(TOUCH_SCHEMA, separators=(",", ":"))
 
 
+# A completion that announces work: the main call can read "Phase 6 is next. I'll add the command…" as a completion
+# report. A separate small call, on the message alone, says whether it reports the change done or announces work
+# still to do; work to do makes the stop an approval request, answered with a go-ahead.
+COMPLETION_VERDICTS = ("done", "work to do")
+COMPLETION_SCHEMA = {
+    "type": "object", "additionalProperties": False, "required": ["verdict", "quote"],
+    "properties": {"verdict": {"type": "string", "enum": list(COMPLETION_VERDICTS)}, "quote": {"type": "string"}},
+}
+
+
+def completion_schema_json() -> str:
+    return json.dumps(COMPLETION_SCHEMA, separators=(",", ":"))
+
+
+def completion_check_prompt(message: str, template: str | None = None) -> str:
+    text = template if template is not None else COMPLETION_TEMPLATE_PATH.read_text(encoding="utf-8")
+    return _fill(text, {"MESSAGE": message.strip()})
+
+
+def check_completion(raw, message: str) -> tuple[str | None, list[str]]:
+    """The check's verdict, and its problems: an unknown verdict, or a quote that isn't the message's own words."""
+    if not isinstance(raw, dict) or raw.get("verdict") not in COMPLETION_VERDICTS:
+        return None, [f"verdict {raw.get('verdict') if isinstance(raw, dict) else raw!r}"]
+    if not quoted_in(raw.get("quote") or "", message):
+        return None, [f"the quote isn't the message's own words: {raw.get('quote')!r}"]
+    return raw["verdict"], []
+
+
 def _withholding(change: Change, redirect_state: str | None) -> bool:
     r = change.redirect
     return r is not None and r.kind == "change of mind" and redirect_state == "pending"
@@ -1198,14 +1227,15 @@ class OwnerReply:
     passages: int = 0
     calls: list[dict] = field(default_factory=list)  # each main and trim call: prompt, output, problems, repairs, cost
     touch_calls: list[dict] = field(default_factory=list)  # each touch call, recorded the same way
+    check_calls: list[dict] = field(default_factory=list)  # each completion check, recorded the same way
 
 
 def call_costs(reply: OwnerReply) -> dict[str, float]:
     """What the reply's model calls cost, by role, counting only calls whose cost was reported."""
-    costs = {"main": 0.0, "touch": 0.0, "trim": 0.0}
-    for role, calls in (("call", reply.calls), ("touch", reply.touch_calls)):
+    costs = {"main": 0.0, "touch": 0.0, "trim": 0.0, "check": 0.0}
+    for role, calls in (("call", reply.calls), ("touch", reply.touch_calls), ("check", reply.check_calls)):
         for c in calls:
-            key = "trim" if "trim" in c else ("main" if role == "call" else "touch")
+            key = "check" if role == "check" else "trim" if "trim" in c else ("main" if role == "call" else "touch")
             costs[key] += c.get("cost_usd") or 0.0
     return costs
 
@@ -1293,7 +1323,8 @@ class Owner:
                  trim: Callable[[str], dict] | None = None, template: str | None = None, max_attempts: int = 3,
                  model: OwnerModel | None = None, owner_items: Mapping[str, OwnerItem] | None = None,
                  default_owner_item: OwnerItem | None = None, touch: Callable[[str], dict] | None = None,
-                 touch_template: str | None = None, only_change: bool = False):
+                 touch_template: str | None = None, only_change: bool = False,
+                 check: Callable[[str], dict] | None = None, check_template: str | None = None):
         if policy not in POLICIES:
             raise ValueError(f"policy must be one of {POLICIES}, not {policy!r}")
         if owner_items is None and default_owner_item is None:
@@ -1301,6 +1332,8 @@ class Owner:
         self.oracle, self.brief, self.policy, self.replicate, self.ask, self.trim = oracle, brief, policy, replicate, ask, trim
         self.touch = touch
         self.only_change = only_change  # a fork's owner: the start and the change being run, and nothing else
+        self.check = check  # the completion check: does a "completion" report the change done, or announce work?
+        self.check_template = check_template
         self.touch_template = touch_template if touch_template is not None else TOUCH_TEMPLATE_PATH.read_text(encoding="utf-8")
         self.model = model if model is not None else OwnerModel()
         self.owner_items = complete_owner_items(oracle, owner_items or {}, default_owner_item)
@@ -1385,6 +1418,19 @@ class Owner:
                 return touches
         raise OwnerFailed(f"no valid touches after {self.max_attempts} attempts: {problems}")
 
+    def _announces_work(self, message: str, calls: list[dict]) -> bool:
+        """The completion check on the message alone. A check that never answers validly leaves the main call's
+        reading, as before the check existed."""
+        prompt = completion_check_prompt(message, self.check_template)
+        for _ in range(self.max_attempts):
+            raw, cost = _result(self.check(prompt))
+            verdict, problems = check_completion(raw, message)
+            calls.append({"prompt": prompt, "output": raw, "problems": problems, "cost_usd": cost,
+                          "reclassified": "approval" if verdict == "work to do" else None})
+            if verdict:
+                return verdict == "work to do"
+        return False
+
     def _requested_now(self) -> set[str]:
         """Items this change's own request asks for: those stated in it or emerging with it, and at the first build,
         the brief's. A probe's request names no item."""
@@ -1454,6 +1500,10 @@ class Owner:
                 event = "delivered"
             elif fires:
                 event = "delivered"
+        check_calls: list[dict] = []
+        if out["message_kind"] == "completion" and self.check is not None:
+            if self._announces_work(message, check_calls):
+                out["message_kind"] = "approval"  # what it will do next is a plan to approve, not a report
         if event:
             self.redirect_state = event
             self.redirect_point = f"{out['message_kind']}, code {'written' if code_written else 'not written'}"
@@ -1580,7 +1630,7 @@ class Owner:
         return OwnerReply(reply=reply, finished=finished, message_kind=kind, answers=out["answers"], kept=kept,
                           dropped=dropped, redirect_event=event, words_shown=shown,
                           words_this_change=self.words_this_change, shared=shared, recalled=recalled, draws=draws,
-                          passages=npass, calls=calls, touch_calls=touch_calls)
+                          passages=npass, calls=calls, touch_calls=touch_calls, check_calls=check_calls)
 
     def end_change(self) -> dict:
         """Close the change: what the owner asked for and said joins the record. Returns the change's

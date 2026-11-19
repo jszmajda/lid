@@ -192,7 +192,7 @@ def main(argv=None) -> int:
 
     owner = simulator.Owner(oracle=oracle, brief=brief, policy=args.policy, replicate=meta["replicate"],
                             ask=call(simulator.schema_json()), touch=call(simulator.touch_schema_json()),
-                            trim=call(simulator.trim_schema_json()),
+                            trim=call(simulator.trim_schema_json()), check=call(simulator.completion_schema_json()),
                             model=simulator.OwnerModel.from_config(meta["owner_model_config"]), owner_items=owner_items)
 
     def turn(prompt, stream_path, *, resume=None, permission_mode="bypassPermissions"):

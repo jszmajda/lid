@@ -8,6 +8,9 @@
 #   phase2                     bare on stripped, bare on full, and LID Full on full, at the 1m and 200k windows, all
 #                              twelve changes each (phase 1's forks are among them, and skipped once done)
 #   all                        phase1, then phase2
+#   regrade <changes> [tag]    grade again, under the current probes.md, the changes given for all six cells and the
+#                              null arm (no forking): each earlier grading moves to grading-<tag>/ (default v3); one
+#                              already graded under the current probes.md's hash is skipped
 #
 # Resumable: a fork whose change is recorded isn't run again, nor a grading with a summary; a fork that stopped
 # partway is moved aside (<id>.stopped-<time>) and run again. Concurrency is kept low for a 2-CPU Docker VM (JOBS,
@@ -17,6 +20,7 @@
 PY=${PY:-python3.12}
 RUNS=${RUNS:-../runs}
 VARIANTS=${VARIANTS:-$RUNS/clowder-variants/v1}
+SEED=${SEED:-../seeds/clowder}
 LOG=$RUNS/clowder-pilot
 JOBS=${JOBS:-2}
 REPLICATE=cp-r1
@@ -25,7 +29,7 @@ POLICY=${POLICY:-bounded}
 CHANGES="1 2 3 4 5 6 7 8 9 10 11 12"
 
 usage() {
-  echo "usage: sh run_clowder_pilot.sh phase0 <changes> [repeat] | phase1 | phase2 | all" >&2
+  echo "usage: sh run_clowder_pilot.sh phase0 <changes> [repeat] | phase1 | phase2 | all | regrade <changes> [tag]" >&2
   exit 2
 }
 
@@ -58,6 +62,37 @@ one() {  # one fork and its grading: <variant> <arm> <window> <change> <repeat>
   run "$PY grade_rust.py --id $fid --runs $RUNS > $LOG/$fid.grade.log 2>&1"
 }
 
+regrade_one() {  # one fork graded again under the current probes: <fork id> <change> <tag>
+  fid=$1; n=$2; tag=$3
+  nn=$(printf %02d "$n")
+  g=$RUNS/$fid/grading/change-$nn
+  now=$($PY -c "import hashlib, sys; print(hashlib.sha256(open(sys.argv[1], 'rb').read()).hexdigest())" "$SEED/hidden/probes.md")
+  if [ -f "$g/summary.json" ]; then
+    was=$($PY -c "import json, sys; print((json.load(open(sys.argv[1])).get('seed_files') or {}).get('probes_sha256') or '')" "$g/summary.json")
+    [ "$was" = "$now" ] && return 0
+  fi
+  if [ -d "$g" ] && [ ! -d "$RUNS/$fid/grading-$tag/change-$nn" ]; then
+    run "mkdir -p $RUNS/$fid/grading-$tag && mv $g $RUNS/$fid/grading-$tag/change-$nn"
+  elif [ -d "$g" ]; then  # a regrade that stopped partway: the earlier grading is already kept
+    run "rm -rf $g"
+  fi
+  run "$PY grade_rust.py --id $fid --runs $RUNS > $LOG/$fid.regrade-$tag.log 2>&1"
+}
+
+regrade() {
+  [ -n "$1" ] || usage
+  tag=${2:-v3}
+  for n in $(echo "$1" | tr ',' ' '); do
+    nn=$(printf %02d "$n")
+    for window in 1m 200k; do
+      for pair in stripped:bare full:bare full:lid-full; do
+        echo "sh $0 regrade-one cf-${pair%%:*}-${pair#*:}-$window-c$nn-r1 $n $tag"
+      done
+    done
+    echo "sh $0 regrade-one cf-stripped-null-200k-c$nn-r1 $n $tag"
+  done | run_queue "$JOBS"
+}
+
 phase0() {
   [ -n "$1" ] || usage
   repeat=${2:-2}
@@ -85,6 +120,8 @@ phase2() {
 mkdir -p "$LOG"
 case "$1" in
   one) shift; one "$@" ;;
+  regrade-one) shift; regrade_one "$@" ;;
+  regrade) shift; regrade "$@"; echo "regrade done" ;;
   phase0) shift; phase0 "$@"; echo "phase 0 done" ;;
   phase1) phase1; echo "phase 1 done" ;;
   phase2) phase2; echo "phase 2 done" ;;
