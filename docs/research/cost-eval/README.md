@@ -57,7 +57,7 @@ Read this section first when you pick the work up in a new session. Update it at
 
 **Next actions** (milestones M2 and M2c in [plan.md](plan.md)):
 
-1. **The Clowder pilot is running** (`harness/run_clowder_pilot.sh phase2`; logs in `runs/clowder-pilot/`). The null-arm checks and the ceiling check are done (log, 2026-11-18). When it finishes, read the arms' differences and whether any session came near the 200k window. If none did, the window is not a dose, and the next dose to try is cross-crate changes.
+1. **The Clowder pilot is done** (log, 2026-11-18). One run per cell can't separate the arms or the windows. The maintainer chooses the next step: replicates (which cells, which windows), or cross-crate changes. Before more runs: probes version 6, with the S1 setup fixed and the judge counting a broken witness only when it could change the deciding reading.
 2. **Extend `report.py`** for recalled intent (review and question), contradictions kept against drawn, keeping, the Clowder measures (held-out retention, missing items, intent reach, cost to green, edits to visible tests), and the window dose.
 3. **Finish the owner checks:**
    - labelled judgments on about 100 replayed stops;
