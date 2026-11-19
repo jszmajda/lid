@@ -109,6 +109,20 @@ KEEP_BROKEN = "error[E0433]: failed to resolve: could not find `Kitten`\nerror: 
 
 
 class KeepingTest(unittest.TestCase):
+    def test_tests_not_built_are_counted_by_cause(self):
+        r = rg.keeping_result([("core", "heldout_beta", KEEP_BROKEN), ("ui", "heldout_term", KEEP_BROKEN),
+                               ("ui", "heldout_frame", KEEP_OK)],
+                              {"heldout_beta": 5, "heldout_term": 3, "heldout_frame": 2},
+                              {"heldout_beta": {"status": "not adapted", "reason": "E0382 at a.rs:3 is not one the rule adapts: borrow of moved value"},
+                               "heldout_term": {"status": "not adapted", "reason": "E0063 at b.rs:4: no empty value for field `x` of type `Mood`"},
+                               "heldout_frame": {"status": "built", "edits": []}})
+        self.assertEqual(r["tests_not_built"], 8)
+        self.assertEqual(r["tests_not_built_by_cause"], {"E0063 no empty value": 3, "E0382": 5})
+        self.assertEqual(rg.not_built_cause("E0061 at x.rs:1 is not one the rule adapts: this enum variant takes 2 arguments"), "E0061")
+        self.assertEqual(rg.not_built_cause("E0063 at x.rs:1: the literal has a base expression"), "E0063 base expression")
+        self.assertEqual(rg.not_built_cause("still failing after 3 rounds"), "still failing after adaptation")
+        self.assertEqual(rg.not_built_cause("E0063 at x.rs:2 is outside the held-out files"), "outside the held-out files")
+
     def test_results_per_test_and_compile_failures_apart(self):
         r = rg.keeping_result([("core", "heldout_beta", KEEP_OK), ("ui", "heldout_term", KEEP_BROKEN)])
         self.assertEqual(r["targets"]["heldout_beta"]["tests"], {"b": "ok", "c": "FAILED", "slow": "ignored"})
@@ -716,6 +730,50 @@ class ConflictTest(unittest.TestCase):
         self.assertEqual(v("missing", grading.CONFLICT), grading.CONFLICT)
 
 
+class KeepingOnlyTest(unittest.TestCase):
+    def test_keeping_alone_is_run_again_and_the_rest_of_the_summary_kept(self):
+        import grade_rust
+        root = Path(tempfile.mkdtemp())
+        import shutil
+        shutil.copytree(held_dir(), root / "variants" / "held-out")
+        (root / "variants" / "manifest.json").write_text(json.dumps({"held_out": ["crates/core/tests/integration/beta.rs"], "variants": {}}))
+        run = root / "runs" / "cf-x"
+        out = run / "grading" / "change-03"
+        out.mkdir(parents=True)
+        (run / "trajectory.json").write_text(json.dumps({
+            "id": "cf-x", "change": 3, "start_commit": "b0", "image": "img", "volumes": {"workspace": "ws"},
+            "fork_of": {"variants": str(root / "variants")}, "changes": {"3": {"commit": "c1"}}}))
+        (out / "summary.json").write_text(json.dumps({"items": {"NEW-01": "met"}, "held_out_retention": {"passed": 0}}))
+        (out / "keeping.json").write_text('{"old": true}')
+
+        class Ck(FakeCk):
+            volume = "ckpt"
+
+            def sh(self, script, stdin=None, check=True):
+                self.scripts.append(script)
+                if "--no-run" in script:
+                    return '{"reason":"build-finished","success":true}\n'
+                return KEEP_OK if "--test heldout_beta" in script else ""
+
+            def export(self, vol):
+                pass
+
+            def drop_target(self):
+                pass
+        calls = []
+        rc = grade_rust.main(["--id", "cf-x", "--runs", str(root / "runs"), "--seed-dir", str(root), "--keeping-only",
+                              "--no-classify"], checkpoint=lambda name, commit, image: Ck(),
+                             run_role=lambda *a, **k: calls.append(a))
+        self.assertEqual(rc, 0)
+        self.assertEqual(calls, [])  # no extraction, execution, or judgment
+        summary = json.loads((out / "summary.json").read_text())
+        self.assertEqual(summary["items"], {"NEW-01": "met"})  # the probes' results stand
+        self.assertEqual(summary["held_out_retention"]["passed"], 1)
+        self.assertIn("keeping_rerun", summary)
+        self.assertEqual(json.loads((out / "keeping.before-rerun.json").read_text()), {"old": True})
+        self.assertNotIn("old", json.loads((out / "keeping.json").read_text()))
+
+
 class GradeRustMainTest(unittest.TestCase):
     def test_a_fork_is_graded_for_keeping_test_edits_and_probes(self):
         import grade_rust
@@ -793,6 +851,7 @@ class GradeRustMainTest(unittest.TestCase):
                                                 "interface_faults": {"not met (absent)": 0, "missing": 0}})
         self.assertEqual(summary["conflicts"], {})
         self.assertEqual(summary["doc_changes"]["files"], 0)  # the fake diff touches source and tests only
+        self.assertTrue((out / "arm.diff").exists())  # the code diff the extraction read, kept for spot-checks
         self.assertTrue(any(".git" in s and s.startswith("cd /work/app && rm -rf") for s in ck.scripts))
         self.assertEqual(summary["missing_by_fault"], {"observation": 2})
         self.assertEqual(summary["kept_behaviour_checks"], {})

@@ -116,3 +116,19 @@ class RegradeTest(unittest.TestCase):
                       [c.replace("mkdir -p " + str(runs / 'cf-full-bare-1m-c02-r1' / 'grading-v3') + " && ", "") for c in cmds])
         self.assertFalse(any("cf-stripped-null-200k-c02-r1" in c for c in grades))
         self.assertTrue(any("cf-stripped-null-200k-c03-r1" in c for c in grades))
+
+
+class RekeepTest(unittest.TestCase):
+    def test_rekeep_runs_keeping_alone_once_per_fork(self):
+        runs = Path(tempfile.mkdtemp())
+        done = runs / "cf-full-bare-1m-c02-r1" / "grading" / "change-02"
+        done.mkdir(parents=True)
+        (done / "keeping.before-rerun.json").write_text("{}")
+        env = {**os.environ, "DRY": "1", "RUNS": str(runs), "PY": sys.executable, "JOBS": "1"}
+        p = subprocess.run(["sh", "run_clowder_pilot.sh", "rekeep", "cf-full-bare-200k-c01-r1", "cf-full-bare-1m-c02-r1"],
+                           cwd=HARNESS, env=env, capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0, p.stderr)
+        cmds = [l for l in p.stdout.splitlines() if "grade_rust.py" in l]
+        self.assertEqual(len(cmds), 1)
+        self.assertIn("grade_rust.py --id cf-full-bare-200k-c01-r1 --runs", cmds[0])
+        self.assertIn("--keeping-only", cmds[0])

@@ -11,6 +11,8 @@
 #   regrade <changes> [tag]    grade again, under the current probes.md, the changes given for all six cells and the
 #                              null arm (no forking): each earlier grading moves to grading-<tag>/ (default v3); one
 #                              already graded under the current probes.md's hash is skipped
+#   rekeep <fork ids...>       run the held-out keeping step alone again for these forks (grade_rust --keeping-only),
+#                              once each: the earlier keeping stays beside it as keeping.before-rerun
 #
 # Resumable: a fork whose change is recorded isn't run again, nor a grading with a summary; a fork that stopped
 # partway is moved aside (<id>.stopped-<time>) and run again. Concurrency is kept low for a 2-CPU Docker VM (JOBS,
@@ -29,7 +31,7 @@ POLICY=${POLICY:-bounded}
 CHANGES="1 2 3 4 5 6 7 8 9 10 11 12"
 
 usage() {
-  echo "usage: sh run_clowder_pilot.sh phase0 <changes> [repeat] | phase1 | phase2 | all | regrade <changes> [tag]" >&2
+  echo "usage: sh run_clowder_pilot.sh phase0 <changes> [repeat] | phase1 | phase2 | all | regrade <changes> [tag] | rekeep <fork ids...>" >&2
   exit 2
 }
 
@@ -93,6 +95,18 @@ regrade() {
   done | run_queue "$JOBS"
 }
 
+rekeep_one() {  # <fork id>
+  fid=$1
+  nn=$(echo "$fid" | sed 's/.*-c\([0-9][0-9]\)-r[0-9]*$/\1/')
+  [ -f "$RUNS/$fid/grading/change-$nn/keeping.before-rerun.json" ] && return 0
+  run "$PY grade_rust.py --id $fid --runs $RUNS --keeping-only > $LOG/$fid.rekeep.log 2>&1"
+}
+
+rekeep() {
+  [ -n "$1" ] || usage
+  for fid in "$@"; do echo "sh $0 rekeep-one $fid"; done | run_queue "$JOBS"
+}
+
 phase0() {
   [ -n "$1" ] || usage
   repeat=${2:-2}
@@ -122,6 +136,8 @@ case "$1" in
   one) shift; one "$@" ;;
   regrade-one) shift; regrade_one "$@" ;;
   regrade) shift; regrade "$@"; echo "regrade done" ;;
+  rekeep-one) shift; rekeep_one "$@" ;;
+  rekeep) shift; rekeep "$@"; echo "rekeep done" ;;
   phase0) shift; phase0 "$@"; echo "phase 0 done" ;;
   phase1) phase1; echo "phase 1 done" ;;
   phase2) phase2; echo "phase 2 done" ;;

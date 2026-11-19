@@ -113,3 +113,46 @@ class ReportTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ForkReportTest(unittest.TestCase):
+    """report.py --forks: the Rust seed's forks by cell (variant, arm, window), one row per change."""
+
+    def fork(self, runs, variant, arm, window, n, **summary):
+        fid = f"cf-{variant}-{arm}-{window}-c{n:02d}-r1"
+        write(runs / fid / "trajectory.json", {"id": fid, "arm": arm, "window": window, "change": n,
+                                               "fork_of": {"variant": variant}, "changes": {str(n): {"commit": "c"}}})
+        write(runs / fid / "grading" / f"change-{n:02d}" / "summary.json", summary)
+
+    def test_each_cell_shows_items_retention_and_tests_not_built_by_cause(self):
+        runs = Path(tempfile.mkdtemp())
+        self.fork(runs, "full", "bare", "200k", 1,
+                  items_met={"met": 2, "of": 3, "missing": 1, "conflicts": 0}, missing_by_fault={"fixture": 1},
+                  held_out_retention={"passed": 232, "failed": 0, "tests_not_built": 91,
+                                      "tests_not_built_by_cause": {"E0063 no empty value": 91}},
+                  seed_files={"probes_sha256": "abcdef0123"})
+        self.fork(runs, "full", "bare", "200k", 2, items_met={"met": 4, "of": 4, "missing": 0, "conflicts": 1},
+                  conflicts={"CLW-201": {}}, held_out_retention={"passed": 323, "failed": 0, "tests_not_built": 0,
+                                                                  "tests_not_built_by_cause": {}})
+        self.fork(runs, "stripped", "null", "200k", 1, items_met={"met": 0, "of": 3, "missing": 0, "conflicts": 0},
+                  held_out_retention={"passed": 323, "failed": 0})
+        r = report.fork_report(runs, "cf-*-r1")
+        cell = r["cells"]["full-bare-200k"]
+        self.assertEqual(cell["total"], {"met": 6, "of": 7, "missing": 1, "conflicts": 1,
+                                         "tests_not_built_by_cause": {"E0063 no empty value": 91},
+                                         "missing_by_fault": {"fixture": 1}})
+        text = report.render_forks(r)
+        self.assertIn("## full-bare-200k", text)
+        self.assertIn("| 1 | 2/3 | 1 | 0 | 232/232 | E0063 no empty value 91 | abcdef0 |", text)
+        self.assertIn("## stripped-null-200k", text)
+
+    def test_an_older_summary_takes_its_tests_not_built_from_keeping(self):
+        runs = Path(tempfile.mkdtemp())
+        self.fork(runs, "full", "lid-full", "1m", 7, items_met={"met": 4, "of": 4},
+                  held_out_retention={"passed": 244, "failed": 0, "tests_not_built": 79})
+        write(runs / "cf-full-lid-full-1m-c07-r1" / "grading" / "change-07" / "keeping.json", {"targets": {
+            "heldout_chrome": {"compile_failed": True, "tests_expected": 79,
+                               "adaptation": {"status": "not adapted", "reason": "E0382 at c.rs:5260 is not one the rule adapts"}},
+            "heldout_frame": {"compile_failed": False, "tests_expected": 44}}})
+        r = report.fork_report(runs, "cf-*-r1")
+        self.assertEqual(r["cells"]["full-lid-full-1m"]["total"]["tests_not_built_by_cause"], {"E0382": 79})

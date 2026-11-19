@@ -96,6 +96,10 @@ class DefinitionsTest(unittest.TestCase):
         self.assertEqual(ra.empty_value("Ticks", SOURCES), "0")  # an alias of u64
         self.assertIsNone(ra.empty_value("Mood", SOURCES))  # no Default, no obvious empty value
         self.assertIsNone(ra.empty_value("(u32, Mood)", SOURCES))
+        # an array takes Default when its element has an empty value; the rebuild checks the length allows it
+        self.assertEqual(ra.empty_value("[String; clowder_core::MAX_RECIPE_INPUTS]", SOURCES), "Default::default()")
+        self.assertEqual(ra.empty_value("[f64; 8]", SOURCES), "Default::default()")
+        self.assertIsNone(ra.empty_value("[Mood; 3]", SOURCES))
         impl = {"lib.rs": "pub struct Leash(u8);\nimpl Default for Leash { fn default() -> Self { Leash(1) } }"}
         self.assertEqual(ra.empty_value("Leash", impl), "Default::default()")
 
@@ -204,6 +208,9 @@ class FakeCk:
 
     def put(self, path, text):
         self.files[path] = text
+
+    def get(self, path):
+        return self.files.get(path)
 
     def sh(self, script, stdin=None, check=True):
         self.scripts.append(script)

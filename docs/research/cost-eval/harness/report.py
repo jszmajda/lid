@@ -28,7 +28,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
-from costeval import grading, simulator  # noqa: E402
+from costeval import grading, rust_grading, simulator  # noqa: E402
 
 KINDS = ("stated", "askable", "recognized on sight", "emerging")
 
@@ -304,7 +304,79 @@ def render(r: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
+def fork_report(runs: Path, pattern: str) -> dict:
+    """The Rust seed's forks by cell (variant, arm, window): per change, items met of those with a verdict, missing,
+    conflicts, held-out retention, tests not built by cause, and the probes version graded under; and per cell, the
+    totals."""
+    cells: dict[str, dict] = {}
+    for run in sorted(runs.glob(pattern)):
+        meta_path = run / "trajectory.json"
+        if not run.is_dir() or not meta_path.exists():
+            continue
+        meta = json.loads(meta_path.read_text())
+        n = meta.get("change")
+        g = run / "grading" / f"change-{n:02d}" / "summary.json" if n is not None else None
+        if g is None or not g.exists():
+            continue
+        s = json.loads(g.read_text())
+        cell = f"{(meta.get('fork_of') or {}).get('variant')}-{meta.get('arm')}-{meta.get('window')}"
+        m, h = s.get("items_met") or {}, s.get("held_out_retention") or {}
+        if "tests_not_built_by_cause" not in h and (g.parent / "keeping.json").exists():  # an older summary
+            targets = json.loads((g.parent / "keeping.json").read_text()).get("targets") or {}
+            h = {**h, "tests_not_built_by_cause": {}}
+            for t in targets.values():
+                if t.get("compile_failed"):
+                    cause = rust_grading.not_built_cause((t.get("adaptation") or {}).get("reason") or (t.get("errors") or [""])[0])
+                    h["tests_not_built_by_cause"][cause] = h["tests_not_built_by_cause"].get(cause, 0) + (t.get("tests_expected") or 0)
+        row = {"change": n, "met": m.get("met", 0), "of": m.get("of", 0), "missing": m.get("missing", 0),
+               "conflicts": m.get("conflicts", 0), "passed": h.get("passed"), "run": (h.get("passed") or 0) + (h.get("failed") or 0),
+               "not_built": h.get("tests_not_built_by_cause") or {}, "missing_by_fault": s.get("missing_by_fault") or {},
+               "probes": ((s.get("seed_files") or {}).get("probes_sha256") or "")[:7]}
+        c = cells.setdefault(cell, {"changes": [], "total": {"met": 0, "of": 0, "missing": 0, "conflicts": 0,
+                                                            "tests_not_built_by_cause": {}, "missing_by_fault": {}}})
+        c["changes"].append(row)
+        t = c["total"]
+        for k in ("met", "of", "missing", "conflicts"):
+            t[k] += row[k]
+        for k, src in (("tests_not_built_by_cause", row["not_built"]), ("missing_by_fault", row["missing_by_fault"])):
+            for cause, x in src.items():
+                t[k][cause] = t[k].get(cause, 0) + x
+    for c in cells.values():
+        c["changes"].sort(key=lambda r: r["change"])
+    return {"pattern": pattern, "cells": dict(sorted(cells.items()))}
+
+
+def render_forks(r: dict) -> str:
+    lines = [f"# Forks: {r['pattern']}", "", "Items met counts items with a verdict; missing and conflicts are left out of it. "
+             "Retention is held-out tests passed of those run; tests not built are counted by cause.", ""]
+    for name, c in r["cells"].items():
+        t = c["total"]
+        lines += [f"## {name}", "", f"Items met {t['met']}/{t['of']}, missing {t['missing']}"
+                  + (f" ({', '.join(f'{k} {x}' for k, x in t['missing_by_fault'].items())})" if t["missing_by_fault"] else "")
+                  + f", conflicts {t['conflicts']}; tests not built: "
+                  + (", ".join(f"{k} {x}" for k, x in t["tests_not_built_by_cause"].items()) or "none"), "",
+                  "| Change | Items met | Missing | Conflicts | Retention | Tests not built | Probes |", "|---|---|---|---|---|---|---|"]
+        for row in c["changes"]:
+            lines.append(f"| {row['change']} | {row['met']}/{row['of']} | {row['missing']} | {row['conflicts']} | "
+                         f"{row['passed']}/{row['run']} | {', '.join(f'{k} {x}' for k, x in row['not_built'].items()) or '–'} | "
+                         f"{row['probes'] or '–'} |")
+        lines.append("")
+    return "\n".join(lines)
+
+
 def main(argv=None) -> int:
+    argv = sys.argv[1:] if argv is None else argv
+    if "--forks" in argv:  # the Rust seed's forks: report.py --forks 'cf-*-r1' --out ../runs/clowder-pilot/report.md
+        ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+        ap.add_argument("--forks", required=True, help="a glob of fork folders under ../runs")
+        ap.add_argument("--out", required=True)
+        args = ap.parse_args(argv)
+        r = fork_report(HERE.parent / "runs", args.forks)
+        out = Path(args.out)
+        out.write_text(render_forks(r), encoding="utf-8")
+        out.with_suffix(".json").write_text(json.dumps(r, indent=1), encoding="utf-8")
+        print(out.read_text())
+        return 0
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--seed", required=True)
     ap.add_argument("--prefix", required=True)

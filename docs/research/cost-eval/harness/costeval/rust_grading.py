@@ -132,6 +132,9 @@ def keeping_result(runs: list[tuple[str, str, str]], expected: dict[str, int] | 
             "compile_failed_not_adapted": {t: (r.get("adaptation") or {}).get("reason") or (r["errors"] or ["?"])[0]
                                            for t, r in sorted(broken.items())},
             "tests_not_built": sum(r.get("tests_expected", 0) for r in broken.values()),
+            "tests_not_built_by_cause": _sum_by((not_built_cause((r.get("adaptation") or {}).get("reason")
+                                                                 or (r["errors"] or [""])[0]), r.get("tests_expected", 0))
+                                                for r in broken.values()),
             "adapted": sorted(t for t, r in targets.items()
                               if (r.get("adaptation") or {}).get("status") == "adapted" and not r["compile_failed"]),
             "reached_adaptation": sum(len(r["reached_adaptation"]) for r in targets.values()),
@@ -141,6 +144,27 @@ def keeping_result(runs: list[tuple[str, str, str]], expected: dict[str, int] | 
                                           for e in (r.get("adaptation") or {}).get("edits", [])),
             "share_passed": passed / (passed + failed) if passed + failed else None,
             "share_of_held_out_passed": passed / total_expected if total_expected else None}
+
+
+def not_built_cause(reason: str) -> str:
+    """Why a held-out target wasn't built, as a short cause: the error code the rule doesn't adapt (an API change,
+    such as E0061 or E0382), or what stopped an adaptation the rule covers."""
+    m = re.match(r"(E\d{4})\b", reason or "")
+    for words, cause in (("outside the held-out files", "outside the held-out files"),
+                         ("still failing after", "still failing after adaptation"),
+                         ("no empty value", "no empty value"), ("base expression", "base expression"),
+                         ("no single definition", "no definition found"), ("don't match", "fields don't match"),
+                         ("inside a macro", "inside a macro")):
+        if words in (reason or ""):
+            return f"{m.group(1)} {cause}" if m and cause not in ("outside the held-out files", "still failing after adaptation") else cause
+    return m.group(1) if m else ((reason or "unknown").split(":")[0][:60] or "unknown")
+
+
+def _sum_by(pairs) -> dict[str, int]:
+    out: dict[str, int] = {}
+    for k, n in pairs:
+        out[k] = out.get(k, 0) + n
+    return dict(sorted(out.items()))
 
 
 def _count(xs) -> dict[str, int]:

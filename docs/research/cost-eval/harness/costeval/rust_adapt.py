@@ -12,7 +12,8 @@ So, for every change:
 - E0063: each missing field is added at an empty value, in the order the arm's definition declares them, with its
   name and type taken from that definition. The value is `Default::default()` where the arm's source shows the type
   implements Default (a derive or an impl, or a standard collection), and otherwise a typed empty value where one is
-  obvious: `String::new()`, `Vec::new()`, `None`, `0`, `0.0`, `false`, `""`. A type alias is followed to its type.
+  obvious: `String::new()`, `Vec::new()`, `None`, `0`, `0.0`, `false`, `""`; an array whose element has one is
+  `Default::default()` too. A type alias is followed to its type.
   Any other field type means no adaptation.
 - E0027: `..` goes last in the pattern, so it ignores the fields the arm added.
 - E0004: a wildcard arm, `_ => unreachable!("grader adaptation: ...")`, goes last in the match. A test that reaches it
@@ -328,6 +329,9 @@ def empty_value(type_text: str, sources: dict[str, str], _depth: int = 0) -> str
         return "false"
     if t in ("&str", "&'staticstr"):
         return '""'
+    arr = re.fullmatch(r"\[(.+);[^;\]]+\]", t)
+    if arr:  # an array is Default when its element is; the rebuild checks its length allows it
+        return "Default::default()" if empty_value(arr.group(1), sources, _depth + 1) is not None else None
     m = re.fullmatch(r"(?:\w+::)*(\w+)(<.*>)?", t)
     if not m or _depth > 4:
         return None
