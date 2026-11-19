@@ -866,66 +866,109 @@ def _subject(macro: str, args: list[str]) -> str:
     return first.lstrip("!&*")
 
 
+def _tests_in(path: str, text: str) -> list[tuple[str, str, str]]:
+    """(name, attributes, body) of each test function in a file, comments stripped."""
+    from . import rust_classify
+    masked = rust_adapt._mask_cached(text)
+    out, seen = [], set()
+    for m in re.finditer(r"#\s*\[\s*(?:\w+::)*test\b[^\]]*\]", masked):
+        f = re.compile(r"\bfn\s+(\w+)").search(masked, m.end())
+        if not f or f.group(1) in seen:
+            continue
+        seen.add(f.group(1))
+        span = rust_classify._fn_span(path, text, f.group(1))
+        if not span:
+            continue
+        lines = _strip_comments(text).splitlines()[span[0] - 1:span[1]]
+        at = next((k for k, l in enumerate(lines) if re.search(rf"\bfn\s+{re.escape(f.group(1))}\b", l)), 0)
+        out.append((f.group(1), "\n".join(lines[:at]), "\n".join(lines[at:])))
+    return out
+
+
 def audit_visible_assertions(entries: list[dict], show: Callable[[str, str], str | None], *, base: str, head: str,
-                             renamed: dict[str, str] | None = None) -> dict:
-    """Each still-valid assertion at the change's end: kept (the same assertion, layout and message aside), deleted
-    (the file, the test, or the assertion is gone; one commented out is gone), or weakened (the test is now ignored
-    or expects a panic, or an assertion about the same subject replaced it: flagged with its new text for a reader).
+                             renamed: dict[str, str] | None = None,
+                             list_tests: Callable[[str, str], list[str]] | None = None) -> dict:
+    """Each still-valid assertion at the change's end, found by its content (layout and message aside) wherever it
+    now sits: in the test the input names, in any other test in the same file, or in another test file of the same
+    crate (list_tests(rev, "crates/<crate>") gives them).
+
+    - kept: in the test the input names;
+    - moved: in a test with another name, or in another file (a rename is good hygiene): recorded with where it is;
+    - weakened: the test it sits in is now ignored or expects a panic, or no copy is left but an assertion about the
+      same subject replaced it (flagged with its new text for a reader);
+    - deleted: found in no test in the crate (one commented out is gone).
     An entry not in its test at the change's start is reported apart: the input is wrong, not the arm."""
     from . import rust_classify
     rows = []
     for e in entries:
         row = {k: e.get(k) for k in ("keeps", "file", "test", "assert")}
         want = _assertions(e["assert"])[0]
-
-        def fn(rev: str, path: str):
-            text = show(rev, path)
-            if not text:
-                return None
-            span = rust_classify._fn_span(path, text, e["test"])
-            if not span:
-                return "", ""
-            lines = _strip_comments(text).splitlines()[span[0] - 1:span[1]]
-            head_at = next((k for k, l in enumerate(lines) if re.search(rf"\bfn\s+{re.escape(e['test'])}\b", l)), 0)
-            return "\n".join(lines[:head_at]), "\n".join(lines[head_at:])
-        was = fn(base, e["file"])
-        if was is None:
+        core = _core(*want[:2])
+        start = show(base, e["file"])
+        if not start:
             rows.append({**row, "status": "not found at the start",
                          "detail": "the file isn't in this checkout at the change's start (a variant without it)"})
             continue
-        if not was[1] or not any(_core(m, a) == _core(*want[:2]) for m, a, _ in _assertions(was[1])):
+        was = {n: (a, b) for n, a, b in _tests_in(e["file"], start)}.get(e["test"])
+        if was is None or not any(_core(m, a) == core for m, a, _ in _assertions(was[1])):
             rows.append({**row, "status": "not found at the start",
                          "detail": "the assertion isn't in the test at the change's start"})
             continue
-        now = fn(head, (renamed or {}).get(e["file"], e["file"]))
-        if now is None:
-            rows.append({**row, "status": "deleted", "detail": "the file is gone"})
-            continue
-        if not now[1]:
-            rows.append({**row, "status": "deleted", "detail": "the test is gone"})
-            continue
-        attrs_was, (attrs, body) = was[0], now
-        if "#[ignore" in attrs and "#[ignore" not in attrs_was:
-            rows.append({**row, "status": "weakened", "detail": "the test is now #[ignore]"})
-            continue
-        if "#[should_panic" in attrs and "#[should_panic" not in attrs_was:
-            rows.append({**row, "status": "weakened", "detail": "the test now expects a panic"})
-            continue
-        found = _assertions(body)
-        if any(_core(m, a) == _core(*want[:2]) for m, a, _ in found):
-            rows.append({**row, "status": "kept", "detail": "present (layout and message aside)"})
+        path_now = (renamed or {}).get(e["file"], e["file"])
+        crate = "/".join(e["file"].split("/")[:2])
+        files = [path_now] + [f for f in (list_tests(head, crate) if list_tests else []) if f != path_now]
+        tests = []  # (file, name, attrs, body), the named test first
+        for f in files:
+            text = show(head, f)
+            if text:
+                tests += [(f, n, a, b) for n, a, b in _tests_in(f, text)]
+        # Where several tests hold it, the likeliest successor of the named test: the named test itself, then the test
+        # sharing the most of its assertions at the start (a renamed test keeps most of them), then the same file,
+        # then the name sharing the most words.
+        before = {_core(m, a) for m, a, _ in _assertions(was[1])}
+        words = set(e["test"].split("_"))
+
+        def rank(t):
+            cores = {_core(m, a) for m, a, _ in _assertions(t[3])}
+            return (not (t[0] == path_now and t[1] == e["test"]), -len(before & cores), t[0] != path_now,
+                    -len(words & set(t[1].split("_"))))
+        holding = [t for t in tests if any(_core(m, a) == core for m, a, _ in _assertions(t[3]))]
+        hit = min(holding, key=rank) if holding else None
+        if hit:
+            f, n, attrs, body = hit
+            where = {"file": f, "test": n}
+            shared = len(before & {_core(m, a) for m, a, _ in _assertions(body)}) - 1  # besides this one
+            if "#[ignore" in attrs and "#[ignore" not in was[0]:
+                rows.append({**row, "status": "weakened", "now_in": where,
+                             "detail": "the test is now #[ignore]" if n == e["test"] and f == path_now
+                             else "it now sits in a test that is #[ignore]"})
+            elif "#[should_panic" in attrs and "#[should_panic" not in was[0]:
+                rows.append({**row, "status": "weakened", "now_in": where,
+                             "detail": "the test now expects a panic" if n == e["test"] and f == path_now
+                             else "it now sits in a test that expects a panic"})
+            elif n == e["test"] and f == path_now:
+                rows.append({**row, "status": "kept", "now_in": where, "detail": "present (layout and message aside)"})
+            else:
+                rows.append({**row, "status": "moved", "now_in": where, "shared_with_original": shared,
+                             "detail": "present in a test with another name" if f == path_now
+                             else "present in another test file of the crate"})
             continue
         subject = _subject(*want[:2])
-        near = [stmt for m, a, stmt in found if subject and subject in _norm(stmt)]
+        same = [t for t in tests if t[0] == path_now and t[1] == e["test"]] or [t for t in tests if t[0] == path_now]
+        near = [stmt for t in same for m, a, stmt in _assertions(t[3]) if subject and subject in _norm(stmt)]
         if near:
             rows.append({**row, "status": "weakened", "detail": "the assertion changed: check what it now asserts",
                          "now": [" ".join(x.split()) for x in near]})
         else:
-            rows.append({**row, "status": "deleted", "detail": "the assertion is gone from the test"})
+            rows.append({**row, "status": "deleted", "detail": "not found in any test in the crate"})
     count = lambda st: sum(r["status"] == st for r in rows)
-    return {"assertions": rows, "kept": count("kept"), "deleted": count("deleted"), "weakened": count("weakened"),
-            "not_found_at_start": count("not found at the start"),
-            "flagged": [r for r in rows if r["status"] in ("deleted", "weakened")]}
+    return {"assertions": rows, "kept": count("kept"), "moved": count("moved"), "deleted": count("deleted"),
+            "weakened": count("weakened"), "not_found_at_start": count("not found at the start"),
+            "flagged": [r for r in rows if r["status"] in ("deleted", "weakened")],
+            # a move to a test sharing nothing else with the original may be a generic assertion found elsewhere: check
+            "moved_sharing_nothing_else": sum(r["status"] == "moved" and r["shared_with_original"] == 0 for r in rows),
+            "moves": [{"keeps": r["keeps"], "item_test": r["test"], **r["now_in"],
+                       "shared_with_original": r["shared_with_original"]} for r in rows if r["status"] == "moved"]}
 
 
 # ---------------------------------------------------------------------------------------------- the checkpoint

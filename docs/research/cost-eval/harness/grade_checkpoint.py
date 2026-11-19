@@ -28,6 +28,12 @@ IMAGE = "lid-cost-eval-executor:2.1.323"
 CLAUDE_CODE = "2.1.323"
 
 
+def checkpoint_name(run_id: str, out_name: str | None = None) -> str:
+    """The name the checkpoint's volumes and containers are made from: a fork recorded under its trajectory
+    (g-bare-1/course-forks/c13-1) is named with dashes, since Docker names can't hold a slash."""
+    return run_id.replace("/", "-") + (f"-{out_name}" if out_name else "")
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--id", required=True)
@@ -56,7 +62,7 @@ def main(argv=None) -> int:
     runnable = [p for p in applicable if not p.deferred]
     g = grading.Graders(image=IMAGE, roles_volume="ce-roles-cfg", claude_code=CLAUDE_CODE,
                         execute_model=args.execute_model, judge_model=args.judge_model)
-    ck = grading.Checkpoint(trajectory=args.id + (f"-{args.out_name}" if args.out_name else ""), change=args.change,
+    ck = grading.Checkpoint(trajectory=checkpoint_name(args.id, args.out_name), change=args.change,
                             commit=commit, image=IMAGE)
     started = time.monotonic()
     summary = {"trajectory": args.id, "change": args.change, "commit": commit, "workers": args.workers,

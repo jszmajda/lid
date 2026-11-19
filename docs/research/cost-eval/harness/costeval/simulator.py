@@ -505,6 +505,26 @@ class Redirect:
 
 
 @dataclass(frozen=True)
+class CourseChange:
+    """A change of course in the growth test's script: `retirement of change N (distance D)`."""
+    kind: str  # retirement, reversal, rescope, emerging, or re-reversal
+    of_change: int  # the change whose intent it overturns
+    distance: int  # how many changes back that intent was set
+
+
+@dataclass(frozen=True)
+class IntentDistance:
+    """How far a change's relevant intent sits from the code it edits, recorded before any run."""
+    kind: str  # same module, another module, or set at change
+    set_at: int | None = None  # for "set at change N"
+
+
+COURSE_KINDS = ("retirement", "reversal", "rescope", "emerging", "re-reversal")
+DISTANCE_FLOOR = {"retirement": 5, "reversal": 5}  # intent set at least five changes earlier
+RELIANCE_GAP = (2, 5)  # a reliance change comes two to five changes after its course change
+
+
+@dataclass(frozen=True)
 class Change:
     number: int  # for a probe, the snapshot it forks from
     title: str
@@ -518,6 +538,10 @@ class Change:
     relies_on: tuple[str, ...] | str = ()
     probe: bool = False
     planted_bug: str | None = None  # a patch applied to the change's starting snapshot, relative to the change script
+    retires: tuple[str, ...] = ()
+    course_change: CourseChange | None = None  # the growth test's fields
+    reliance_for: tuple[int, ...] = ()  # the course changes whose rules it works near
+    intent_distance: IntentDistance | None = None
 
     @property
     def owner_request(self) -> str:
@@ -614,10 +638,65 @@ def parse_change_script(text: str) -> dict[int, Change]:
             introduces=parse_ids(_field(body, "Introduces") or "") or (),
             relies_on=parse_ids(_field(body, "Relies on") or ""),
             planted_bug=(_field(body, "Planted bug") or "").strip("` ") or None,
+            retires=(lambda r: () if r == ALL else r)(parse_ids(_field(body, "Retires") or "")) or (),
+            **_growth_fields(n, body),
         )
         ch.owner_request  # raises if the change has neither a request nor a symptom report
         changes[n] = ch
     return changes
+
+
+def _growth_fields(n: int, body: str) -> dict:
+    out: dict = {}
+    if (v := _field(body, "Course change")) is not None:
+        m = re.fullmatch(rf"({'|'.join(COURSE_KINDS)}) of change (\d+) \(distance (\d+)\)\.?", v.strip())
+        if not m:
+            raise ValueError(f"change {n}: can't read **Course change:** {v!r}")
+        out["course_change"] = CourseChange(m.group(1), int(m.group(2)), int(m.group(3)))
+    if (v := _field(body, "Reliance for")) is not None:
+        if not re.fullmatch(r"change \d+(?:,\s*change \d+)*\.?", v.strip()):
+            raise ValueError(f"change {n}: can't read **Reliance for:** {v!r}")
+        out["reliance_for"] = tuple(int(x) for x in re.findall(r"change (\d+)", v))
+    if (v := _field(body, "Intent distance")) is not None:
+        m = re.fullmatch(r"(same module|another module)\.?|set at change (\d+)\.?", v.strip())
+        if not m:
+            raise ValueError(f"change {n}: can't read **Intent distance:** {v!r}")
+        out["intent_distance"] = (IntentDistance(m.group(1)) if m.group(1) else
+                                  IntentDistance("set at change", int(m.group(2))))
+    return out
+
+
+def validate_growth_fields(changes: dict[int, Change]) -> list[str]:
+    """What's wrong with a script's growth fields: links that don't resolve to an earlier change (change 0 is the
+    first build), a course change's distance that isn't the gap to the change it overturns, a retirement or reversal
+    of intent set fewer than five changes earlier, a course change with no reliance change, and a reliance change
+    that doesn't follow a course change by two to five changes."""
+    problems = []
+    known = set(changes) | {0}
+    relied = {t for c in changes.values() for t in c.reliance_for}
+    for n, c in sorted(changes.items()):
+        if (cc := c.course_change) is not None:
+            if cc.of_change not in known or cc.of_change >= n:
+                problems.append(f"change {n}: its course change names change {cc.of_change}, which isn't an earlier change")
+            if cc.distance != n - cc.of_change:
+                problems.append(f"change {n}: distance {cc.distance} isn't {n} - {cc.of_change} = {n - cc.of_change}")
+            floor = DISTANCE_FLOOR.get(cc.kind)
+            if floor and cc.distance < floor:
+                problems.append(f"change {n}: a {cc.kind} must overturn intent set at least {floor} changes earlier, "
+                                f"not {cc.distance}")
+            if n not in relied:
+                problems.append(f"change {n}: a course change with no reliance change")
+        for t in c.reliance_for:
+            target = changes.get(t)
+            if target is None or target.course_change is None:
+                problems.append(f"change {n}: relies on change {t}, which isn't a course change")
+            elif not RELIANCE_GAP[0] <= n - t <= RELIANCE_GAP[1]:
+                problems.append(f"change {n}: a reliance change must come {RELIANCE_GAP[0]} to {RELIANCE_GAP[1]} changes "
+                                f"after its course change {t}, not {n - t}")
+        d = c.intent_distance
+        if d is not None and d.set_at is not None and (d.set_at not in known or d.set_at >= n):
+            problems.append(f"change {n}: its intent was set at change {d.set_at}, which isn't an earlier change")
+    return problems
 
 
 def first_build(brief: str) -> Change:

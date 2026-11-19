@@ -85,6 +85,18 @@ See design.md, "Later seeds and variants". Feasibility is checked:
   - intent reach and context telemetry.
 - `[ ]` The pilot: bare stripped first as a ceiling check, then all three arms at both windows.
 
+## M2d: The growth test `[ ]`
+
+ReleaseDesk grown by each arm through 40 changes (design.md, "The growth test").
+
+- `[ ]` Draft the thirty new changes with Sol, blind to the hypotheses: six course changes per block, a reliance change for each, three re-reversals, and new oracle rows with disclosure points and lifetimes.
+- `[ ]` Review by Claude Fable and GPT-6.2 Astra, and apply their fixes; record each change's predicted direction and intent distance.
+- `[ ]` Rate the new askable items with the salience panel; draft and review the probes, including flip checks for every retirement and reversal.
+- `[ ]` Build the harness pieces: the one-line arm, course-change forks, the drift floor, intent from tests and docs at checkpoints (with its baseline, stripped variant and positive control), the stale-intent audit, and fidelity per owner-hour.
+- `[ ]` Trial: one bare and one LID trajectory through change 20. Gate: bare shows stale claims after course changes, the positive control fires, and flip checks behave.
+- `[ ]` Fix X and Y for the predictions from the trial's spread, and record them.
+- `[ ]` Full run: bare ×5 (plus the drift floor), LID Full ×5, one-line bare ×3.
+
 ## M2b: Check against SlopCodeBench `[ ]`
 
 - `[ ]` Find out whether SlopCodeBench can run Claude Code with a plugin or a project instruction file.

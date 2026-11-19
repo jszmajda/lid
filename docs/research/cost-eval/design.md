@@ -144,6 +144,93 @@ The first against the third is the falsification test. The second against the th
 
 **The pilot size:** 12 changes × 3 arms × 2 windows, one repeat each, before any expansion. The pilot's changes keep their relevant intent within one crate. Cross-crate changes are added if the pilot shows a gap or room, with keeping graded through the terminal UI's held-out tests. Cross-crate intent is where the hypothesis says LID should help most. The changes are written fresh in the owner's voice, each with its predicted direction and how far its relevant intent sits from the code it edits (same module, another module, another crate), recorded before any run.
 
+## The growth test
+
+**What it tests.** Two hypotheses, on one project that each arm grows from nothing:
+
+- **Scale:** LID's lead in intent fidelity grows as a system grows past what an agent reads in one session.
+- **Test rot:** as intent changes course over a long-running system, tests keep passing but carry stale or confusing intent. That means names and comments that describe retired rules, tests pinning incidental behaviour, and still-valid intent lost when a test is rewritten. Without docs, tests are a system's main record of intent, so rot misleads later changes. LID's cascade from specs to tests should resist it.
+
+**Why grown from scratch.** On Clowder, a bare agent working in a repository LID built copied what it found. It wrote tests at Clowder's own density and updated the LID docs in 10 of 12 changes. So a comparison on an existing LID-built codebase measures LID's workflow against a bare agent imitating LID's artifacts. Only a project each arm grows itself shows whether those artifacts come to exist, and whether they keep up as intent changes.
+
+**The project.** ReleaseDesk, grown from its brief through 40 changes. Its existing ten changes are the first block, unchanged. Thirty new changes follow in three blocks of ten, in the owner's voice.
+
+**Size is breadth, not tokens.** Clowder showed agents never load a codebase; they search it. What strains an agent is how many places intent lives. Each change records, before any run, how far its relevant intent sits from the code it edits: same module, another module, or a rule set many changes earlier. By the last block, most changes should rely on intent set elsewhere.
+
+### Its change script
+
+**Course changes.** Each new block has six:
+
+- two retirements and two reversals of intent set at least five changes earlier;
+- one rescope, where a rule's reach widens or narrows;
+- one emerging realisation that overturns a choice the owner earlier left to the agent.
+
+The other four changes in a block come from the ordinary mix (local features, cross-cutting rules, symptom-only bugs, a refactor). Across the three blocks, three re-reversals return a rule toward what it was before.
+
+**Each course change has a reliance change.** Two to five changes later, a scripted change works in the overturned rule's area without mentioning it. Whether that later change regresses the current rule, or rebuilds the retired one, is the measured consequence of rot. Stale prose that never misleads anyone is reported, but not counted as harm.
+
+**Authorship is blind to the hypotheses.** Sol drafts the thirty changes from counts by type and distance alone, without being told what the study tests. Each change records a predicted direction before any run, including course changes expected to cost LID through its cascade. Results are reported per change type, as for every seed.
+
+### Arms and replicates
+
+**Bare and LID Full run five trajectories each.** A third arm runs three: bare with one added instruction, "When a rule changes, update its tests and their names." It is the cheapest answer to the rot hypothesis: if one sentence buys most of LID's resistance to rot, that matters. Cheap discipline differed little from bare on BenchTime (93% against 95%), so it joins with the competitor arms. Within a replicate, the arms share a seed. Sessions are one per change with a fresh context, under the bounded owner at its central constants.
+
+**Course-change forks.** For each arm's first replicate, each course change is forked three times from the snapshot before it, to sample how the change is handled (flip checks and the stale-intent audit). Each reliance change is forked three times from the trajectory's own snapshot just before it, to sample the consequence given the codebase the trajectory actually has. Forks are discarded once graded.
+
+**A drift floor.** A sixth bare trajectory shares the first bare trajectory's replicate seed across all 40 changes, so their differences show how far a codebase drifts by chance alone.
+
+Cheap discipline and the competitor arms (OpenSpec, Spec Kit, BMAD) join in milestone M5. Before they do, the probe and judge versions are frozen, so the instrument isn't tuned on LID alone.
+
+### What is measured, at changes 10, 20, 30 and 40
+
+- **Items met,** stated and latent. The latent lead is also reported on items disclosed in every arm of a replicate, because LID asks more and so hears more over 40 changes.
+- **Keeping:** items met at an earlier checkpoint that are still met.
+- **Regression on reliance changes:** whether each reliance change keeps the current rule.
+- **Flip checks:** for every retirement and reversal, the old rule's probe should pass before the change and fail after, and the new rule's probe should do the reverse. A rescope gives the item a new version, with its own probe.
+- **Intent from tests.** A fresh reader, working within a fixed search budget rather than a truncated input, sees only the arm's tests and writes the system's current rules. A judge maps each rule to the oracle: recovers an item in force, contradicts one, implies a retired one (stale), or matches nothing.
+  - Recall counts only items the arm's build actually meets, so it measures how well the tests record intent the arm built, not whether it built it.
+  - Stale claims are counted per course-changed item, never as raw totals, so a larger suite isn't penalised for its size.
+  - A brief-only reader gives the baseline that each arm's recall is measured against, because strong models guess defaults.
+  - The reader runs twice: once on the tests as written, and once with names, comments and docstrings replaced by placeholders, to show how much intent rides on names.
+  - There are three readers per checkpoint, and the judge is retested.
+  - A positive control plants stale tests in one build, and the measure must catch them.
+- **Intent from docs,** the same way, for arms that keep docs.
+- **The stale-intent audit:** a blind reader checks every test and doc a course change touched, or should have touched. It asks whether names, comments and assertions agree with current intent.
+- **Cost, owner attention and context,** per change, and fidelity per owner-hour as well as per dollar. On this length, LID's owner reading could reach several hundred thousand words.
+- **Probe forks:** the same request is run from each checkpoint, so age is separated from how hard a particular change is.
+
+**The instrument is checked at the end too.** Seeded violations and a judge test-retest are repeated at change 40, not only at the start.
+
+### How it's scored
+
+- **Scale** is scored on probe forks and on changes that aren't course changes, stratified by the recorded intent distance. Course changes are left out, so a block's content can't stand in for age.
+- **Rot** is scored on course-changed rules against untouched rules of the same age within the same arm, and on the reliance changes.
+
+**Predictions.** X and Y are fixed after the trial, from its replicate spread, and before the full run:
+
+1. LID's lead over bare in latent items met (paired by replicate) is at least X points higher at change 40 than at change 10, in every replicate. The same holds on probe forks.
+2. Bare's intent-from-tests recall, above the baseline, falls at least Y points from change 10 to change 40, and LID's falls at most half as much. Stale claims per course-changed item are at least twice as high for bare. Reliance changes regress more often for bare.
+3. The probe forks' cost ratio (change 40 over change 10) is higher for bare in every replicate. No absolute crossover is claimed.
+
+**Falsification, each hypothesis on its own.** If prediction 1 fails while bare still has room on latent items at change 40, that counts against the scale hypothesis. If prediction 2 fails while the positive control fires, that counts against the rot hypothesis. The maintainer agrees to both in advance. With this few trajectories, any result is reported as grade C evidence.
+
+### The trial, and its gate
+
+One bare and one LID trajectory run through change 20, with their course-change forks. The full run goes ahead only if:
+- bare shows stale claims above zero after its course changes;
+- the positive control fires;
+- the flip checks behave on a correct build.
+
+### What it costs, roughly
+
+On BenchTime, eleven changes cost $2.53 for bare and $11.17 for LID per trajectory. Forty changes on a growing codebase might cost four to six times that: about $15 for bare and $60 for LID. Six bare, five LID and three one-line trajectories come to about $440. Course-change forks and grading at four checkpoints bring that to about $730, plus about $80 for the trial. That's subscription quota, over about four days on the Docker VM. Drafting and cross-family review cost about $20 on OpenRouter.
+
+### Known limits
+
+- One seed and one executor.
+- Fresh contexts give arms without docs nothing to carry intent between changes. That's how a long-running project works, but it is a choice.
+- The rot measure resembles LID's own differential audit.
+
 ## The change script
 
 Each seed has a scripted sequence of changes, written in plain product language. Every change has a type, and before any run we record whether that type should favour LID, disfavour it, or neither:

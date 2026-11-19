@@ -28,7 +28,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
-from costeval import grading, rust_grading, simulator  # noqa: E402
+from costeval import grading, growth, rust_grading, simulator  # noqa: E402
 
 KINDS = ("stated", "askable", "recognized on sight", "emerging")
 
@@ -399,8 +399,141 @@ def render_forks(r: dict) -> str:
     return "\n".join(lines)
 
 
+def _json(path: Path):
+    return json.loads(path.read_text()) if path.exists() else None
+
+
+def growth_report(runs: Path, seed_dir: Path, prefix: str, arms: dict[str, list[str]], checkpoints: list[int]) -> dict:
+    """The growth test per trajectory and checkpoint (design.md, "The growth test"). Trajectories are
+    <prefix>-<arm>-<k>; a replicate k that isn't a number (the drift floor, g-bare-drift) is its own row and joins no
+    replicate's intersection."""
+    oracle = simulator.parse_oracle((seed_dir / "hidden" / "oracle.md").read_text(encoding="utf-8"))
+    kinds = {i.id: kind_of(i) for i in oracle.items}
+    latent = {i for i, k in kinds.items() if k != "stated"}
+    probes = grading.parse_probes((seed_dir / "hidden" / "probes.md").read_text(encoding="utf-8")).probes
+    trajs = {(arm, k): runs / f"{prefix}-{arm}-{k}" for arm, ks in arms.items() for k in ks
+             if (runs / f"{prefix}-{arm}-{k}" / "trajectory.json").exists()}
+    disclosed: dict[tuple, dict[int, set]] = {}
+    for key, run in trajs.items():
+        seen, by_change = set(), {}
+        for d in sorted(run.glob("change-[0-9][0-9]")):
+            n = int(d.name.split("-")[1])
+            for o in sorted(d.glob("owner-*.json")):
+                seen |= {x["item"] for x in json.loads(o.read_text()).get("shared") or [] if x.get("item")}
+            by_change[n] = set(seen)
+        disclosed[key] = by_change
+
+    def by(key, c):
+        known = [n for n in disclosed[key] if n <= c]
+        return disclosed[key][max(known)] if known else set()
+
+    out = {"prefix": prefix, "checkpoints": checkpoints, "arms": {}}
+    for (arm, k), run in trajs.items():
+        s, rows, prev_met = trajectory_summary(run), [], None
+        for c in checkpoints:
+            v = checkpoint_items(run / "grading" / f"change-{c:02d}", "verdicts", probes)
+            if v is None:
+                continue
+            met = {i for i, x in v.items() if x == "met"}
+            common = None
+            if k.isdigit():
+                peers = [key for key in trajs if key[1] == k]
+                everywhere = latent & set.intersection(*(by(p, c) for p in peers))
+                common = share_met(v, lambda i: i in everywhere) if everywhere else None
+            g = run / "growth" / f"checkpoint-{c:02d}"
+            rel, flips, stale = _json(g / "reliance.json") or [], _json(g / "flips.json") or [], _json(g / "stale-audit.json")
+            cforks = _json(g / "course-forks.json") or []
+            real_flips = [f for f in flips if f.get("behaves") is not None]
+            anticipations = [f for f in flips if "anticipated" in f]
+            courses = (stale or {}).get("courses", {}).values()
+            spent = [x for n, x in s["changes"].items() if n <= c]
+            dollars = sum(x["agent_usd"] + x["owner_usd"] for x in spent)
+            hours = growth.owner_hours(sum(x["words_shown"] for x in spent))
+            rows.append({
+                "checkpoint": c, "stated": share_met(v, lambda i: kinds.get(i) == "stated"),
+                "latent": share_met(v, lambda i: i in latent), "latent_disclosed_everywhere": common,
+                "keeping": (len(prev_met & met), len(prev_met & set(v))) if prev_met else None,
+                "reliance_regressions": (sum(r.get("regressed") is True for r in rel),
+                                         sum(r.get("regressed") is not None for r in rel)) if rel else None,
+                "flips_behaving": (sum(bool(f.get("behaves")) for f in real_flips), len(real_flips)) if real_flips else None,
+                "anticipated": (sum(bool(f["anticipated"]) for f in anticipations), len(anticipations)) if anticipations else None,
+                "course_forks_behaving": (sum(f.get("behaves") is True for f in cforks),
+                                          sum(f.get("behaves") is not None for f in cforks)) if cforks else None,
+                "course_fork_stale_files": sum(f.get("stale") or 0 for f in cforks) if cforks else None,
+                "stale_files": (sum(x.get("stale", 0) for x in courses),
+                                sum(x.get("stale", 0) + x.get("current", 0) + x.get("mixed", 0) for x in courses)) if stale else None,
+                "intent": ((_json(g / "status.json") or {}).get("intent") or {}).get("state"),
+                "cost_usd": round(dollars, 4), "cost_per_change": dollars / len(spent) if spent else None,
+                "owner_words": sum(x["words_shown"] for x in spent), "owner_hours": hours,
+                "met_per_owner_hour": len(met) / hours if hours else None,
+                "met_per_dollar": len(met) / dollars if dollars else None})
+            prev_met = met
+        label = arm if k.isdigit() else f"{arm} ({k})"
+        out["arms"].setdefault(label, []).append({"id": run.name, "replicate": k, "checkpoints": rows})
+    return out
+
+
+def render_growth(r: dict) -> str:
+    def ratio(xs):
+        xs = [x for x in xs if x]
+        return f"{sum(m for m, _ in xs)}/{sum(d for _, d in xs)}" if xs else "–"
+
+    def share(xs):
+        vals = [m / d for m, d in (x for x in xs if x) if d]
+        return f"{pct(mean(vals))} [{', '.join(pct(v) for v in vals)}]" if vals else "–"
+
+    def num(xs, f="{:.2f}"):
+        vals = [x for x in xs if x is not None]
+        return f.format(mean(vals)) if vals else "–"
+    lines = [f"# Growth: {r['prefix']}", "", "Means over trajectories (per trajectory in brackets); counts summed.", "",
+             "- Latent: every kind of item that isn't stated (askable, recognized on sight, emerging). \"Latent disclosed "
+             "in every arm\" keeps to the latent items every arm of the replicate had heard by then.",
+             "- Keeping: items met at the previous checkpoint that are still graded and still met.",
+             "- Flips: each retirement, reversal, re-reversal and rescope, the retired rule failing after it and the new "
+             "rule before it. An emerging change's new rule, checked before it, counts as anticipated, never as a flip.",
+             "- Course forks behave when the new rule holds and the retired one fails at the fork's end.",
+             "- Owner-hours at 238 words a minute; fidelity per owner-hour and per dollar count items met.", ""]
+    for c in r["checkpoints"]:
+        lines += [f"## Change {c}", "", "| Arm | Stated | Latent | Latent disclosed in every arm | Keeping | Reliance regressions | "
+                  "Flips behaving | Anticipated | Course forks behaving | Stale files (forks) | Cost per change | Owner-hours | "
+                  "Met per owner-hour | Met per $ |", "|---|" + "---|" * 14]
+        for arm, ts in r["arms"].items():
+            rows = [next((x for x in t["checkpoints"] if x["checkpoint"] == c), None) for t in ts]
+            rows = [x for x in rows if x]
+            if not rows:
+                continue
+            col = lambda k: [x[k] for x in rows]
+            lines.append(f"| {arm} | {share(col('stated'))} | {share(col('latent'))} | {share(col('latent_disclosed_everywhere'))} | "
+                         f"{ratio(col('keeping'))} | {ratio(col('reliance_regressions'))} | {ratio(col('flips_behaving'))} | "
+                         f"{ratio(col('anticipated'))} | {ratio(col('course_forks_behaving'))} | {ratio(col('stale_files'))} "
+                         f"({sum(x or 0 for x in col('course_fork_stale_files'))}) | ${num(col('cost_per_change'))} | {num(col('owner_hours'))} | "
+                         f"{num(col('met_per_owner_hour'), '{:.1f}')} | {num(col('met_per_dollar'))} |")
+        lines.append("")
+    return "\n".join(lines)
+
+
 def main(argv=None) -> int:
     argv = sys.argv[1:] if argv is None else argv
+    if "--growth" in argv:  # report.py --growth --prefix g --seed releasedesk --arms bare:1,2 lid-full:1,2 --checkpoints 10,20
+        ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+        ap.add_argument("--growth", action="store_true")
+        ap.add_argument("--prefix", default="g")
+        ap.add_argument("--seed", default="releasedesk")
+        ap.add_argument("--arms", nargs="+", required=True, help="arm:k1,k2 (run ids are <prefix>-<arm>-<k>)")
+        ap.add_argument("--checkpoints", default="10,20,30,40")
+        ap.add_argument("--out", required=True)
+        args = ap.parse_args(argv)
+        arms: dict[str, list[str]] = {}
+        for a in args.arms:
+            name, ks = a.split(":")
+            arms.setdefault(name, []).extend(ks.split(","))
+        r = growth_report(HERE.parent / "runs", HERE.parent / "seeds" / args.seed, args.prefix, arms,
+                          [int(x) for x in args.checkpoints.split(",")])
+        out = Path(args.out)
+        out.write_text(render_growth(r), encoding="utf-8")
+        out.with_suffix(".json").write_text(json.dumps(r, indent=1), encoding="utf-8")
+        print(out.read_text())
+        return 0
     if "--forks" in argv:  # the Rust seed's forks: report.py --forks 'cf-*-r1' --out ../runs/clowder-pilot/report.md
         ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
         ap.add_argument("--forks", required=True, help="a glob of fork folders under ../runs")

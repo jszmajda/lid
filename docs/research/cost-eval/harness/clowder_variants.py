@@ -131,12 +131,13 @@ def spec_id_pattern(tree: Tree) -> re.Pattern:
 _COMMENT = ("//", "/*", "*")
 
 
-def strip_spec_ids(text: str, pattern: re.Pattern) -> tuple[str, dict[str, int]]:
+def strip_spec_ids(text: str, pattern: re.Pattern, *, hash_comments: bool = False) -> tuple[str, dict[str, int]]:
     """Remove `@spec` annotations and every other citation of a spec ID, keeping the prose around them.
 
     A line that is only an annotation goes. An annotation at the end of prose or code goes, and the rest stays. A
     citation goes with what only frames it: parentheses around it ("(X-001)", "(X-001 amended)"), a lead-in ("see",
-    "per"), a label colon ("X-001: ..."); "X-001's rule" becomes "the rule". A comment left with no words goes."""
+    "per"), a label colon ("X-001: ..."); "X-001's rule" becomes "the rule". A comment left with no words goes.
+    With hash_comments (Python), comments start with `#`, and a docstring line that is only an annotation goes too."""
     ident = pattern.pattern
     lst = rf"(?:{ident})(?:\s*(?:,|\band\b|&|/)\s*(?:{ident}))*"
     counts = {"annotation lines": 0, "lines changed": 0, "lines dropped": 0}
@@ -147,7 +148,7 @@ def strip_spec_ids(text: str, pattern: re.Pattern) -> tuple[str, dict[str, int]]
             continue
         body, nl = (line[:-1], "\n") if line.endswith("\n") else (line, "")
         stripped = body.strip()
-        if re.match(r"^(?:///|//!|//)\s*@spec\b", stripped):
+        if re.match(r"^(?:#+:?\s*)?@spec\b" if hash_comments else r"^(?:///|//!|//)\s*@spec\b", stripped):
             counts["annotation lines"] += 1
             continue
         new = re.sub(rf"\s*@spec\s+{lst}", "", body)
@@ -166,9 +167,9 @@ def strip_spec_ids(text: str, pattern: re.Pattern) -> tuple[str, dict[str, int]]
         rest = re.sub(r" {2,}", " ", new[lead:])
         rest = re.sub(r" +([,.;:)])", r"\1", rest).replace("()", "").replace("( )", "")
         new = (new[:lead] + rest).rstrip()
-        is_comment = stripped.startswith(_COMMENT)
+        is_comment = stripped.startswith("#" if hash_comments else _COMMENT)
         if is_comment:
-            m = re.match(r"^(\s*(?:///|//!|//|/\*|\*))\s*(.*)$", new)
+            m = re.match(r"^(\s*#+:?)\s*(.*)$" if hash_comments else r"^(\s*(?:///|//!|//|/\*|\*))\s*(.*)$", new)
             head, words = m.group(1), m.group(2)
             words = re.sub(r"[\s\u2014\u2013:;,]+$", "", re.sub(r"^[\s\u2014\u2013:;,.]+", "", words))
             if not re.search(r"\w", words):
@@ -176,7 +177,8 @@ def strip_spec_ids(text: str, pattern: re.Pattern) -> tuple[str, dict[str, int]]
                 continue
             new = f"{head} {words}"
         if not is_comment:
-            new = re.sub(r"\s*//[!/]?\s*[.,;:]*\s*$", "", new)  # a trailing comment left empty
+            # a trailing comment left empty
+            new = re.sub(r"\s*#+\s*[.,;:]*\s*$" if hash_comments else r"\s*//[!/]?\s*[.,;:]*\s*$", "", new)
             if not new.strip() and stripped:
                 counts["lines dropped"] += 1
                 continue

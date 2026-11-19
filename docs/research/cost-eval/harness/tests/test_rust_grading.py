@@ -480,17 +480,75 @@ class VisibleAssertionsTest(unittest.TestCase):
         self.assertEqual([(x["status"], x["detail"]) for x in a["assertions"]], [
             ("kept", "present (layout and message aside)"),
             ("kept", "present (layout and message aside)"),
-            ("deleted", "the assertion is gone from the test"),
+            ("deleted", "not found in any test in the crate"),
             ("weakened", "the assertion changed: check what it now asserts"),
             ("weakened", "the test is now #[ignore]"),
-            ("deleted", "the test is gone"),
+            ("deleted", "not found in any test in the crate"),
             ("not found at the start", "the assertion isn't in the test at the change's start"),
             ("kept", "present (layout and message aside)"),
             ("not found at the start", "the file isn't in this checkout at the change's start (a variant without it)")])
         self.assertEqual(a["assertions"][3]["now"], ["assert!(saved(&s).rules.len() >= 1);"])
-        self.assertEqual((a["kept"], a["deleted"], a["weakened"], a["not_found_at_start"]), (3, 2, 2, 2))
+        self.assertEqual(a["assertions"][0]["now_in"], {"file": SOC, "test": "adopt_rule_spends_charm"})
+        self.assertEqual((a["kept"], a["moved"], a["deleted"], a["weakened"], a["not_found_at_start"]), (3, 0, 2, 2, 2))
         self.assertEqual([(f["keeps"], f["status"]) for f in a["flagged"]],
                          [("CLK-301", "deleted"), ("CLK-305", "weakened"), ("CLK-305", "weakened"), ("CLK-303", "deleted")])
+
+    def test_an_assertion_is_found_by_content_wherever_it_now_sits_in_the_crates_tests(self):
+        head = """#[test]
+fn adopting_swaps_the_sibling() {
+    let mut s = setup();
+    assert_eq!(s.charm(),
+               0.0);
+}
+
+#[test]
+#[ignore]
+fn slow_one() {
+    assert!(s.is_adopted(Rule::A));
+}
+"""
+        rules = "#[test]\nfn rules_survive_save_and_load() {\n    assert_eq!(load(save(&state())).rules, state().rules);\n}\n"
+        texts = {("b0", SOC): SOCIETY_BASE, ("c1", SOC): head, ("c1", "crates/core/tests/integration/rules.rs"): rules}
+        tests = {"crates/core": [SOC, "crates/core/tests/integration/rules.rs", "crates/core/tests/integration/main.rs"]}
+        entries = [e for e in KEPT_ASSERTIONS["changes"]["3"] if e["file"] == SOC][:6]
+        a = rg.audit_visible_assertions(entries, lambda rev, path: texts.get((rev, path)), base="b0", head="c1",
+                                        list_tests=lambda rev, crate: tests.get(crate, []))
+        self.assertEqual([(x["status"], (x.get("now_in") or {}).get("test")) for x in a["assertions"]], [
+            ("moved", "adopting_swaps_the_sibling"),  # renamed with the assertion in it, layout aside
+            ("weakened", "slow_one"),                  # it now sits in an ignored test
+            ("deleted", None),                         # nowhere in the crate's tests
+            ("deleted", None),
+            ("moved", "rules_survive_save_and_load"),  # in another test file of the same crate
+            ("deleted", None)])
+        self.assertEqual(a["assertions"][4]["now_in"]["file"], "crates/core/tests/integration/rules.rs")
+        self.assertEqual(a["assertions"][1]["detail"], "it now sits in a test that is #[ignore]")
+        self.assertEqual((a["kept"], a["moved"], a["deleted"], a["weakened"]), (0, 2, 3, 1))
+        self.assertEqual(a["moved_sharing_nothing_else"], 2)  # each landed where nothing else of its test went: check
+        self.assertEqual(a["moves"][0]["shared_with_original"], 0)
+        self.assertEqual([m["item_test"] for m in a["moves"]], ["adopt_rule_spends_charm", "rules_survive_save"])
+
+    def test_a_renamed_test_is_preferred_over_an_unrelated_test_holding_the_same_assertion(self):
+        head = """#[test]
+fn promote_ranks_up() {
+    let mut s = setup();
+    assert_eq!(s.charm(), 0.0, "promotion costs nothing here");
+}
+
+#[test]
+fn adopt_rule_spends_charm_and_swaps() {
+    let mut s = setup();
+    assert_eq!(s.charm(), 0.0);
+    assert!(s.is_adopted(Rule::A));
+    assert_eq!(saved(&s).rules, vec![Rule::A]);
+}
+"""
+        texts = {("b0", SOC): SOCIETY_BASE, ("c1", SOC): head}
+        entries = [e for e in KEPT_ASSERTIONS["changes"]["3"] if e["keeps"] == "CLK-302"]
+        a = rg.audit_visible_assertions(entries, lambda rev, path: texts.get((rev, path)), base="b0", head="c1")
+        self.assertEqual((a["assertions"][0]["status"], a["assertions"][0]["now_in"]["test"]),
+                         ("moved", "adopt_rule_spends_charm_and_swaps"))
+        self.assertEqual(a["assertions"][0]["shared_with_original"], 2)  # is_adopted and saved rules came along too
+        self.assertEqual(a["moved_sharing_nothing_else"], 0)
 
     def test_the_input_names_each_assertion_in_full(self):
         d = Path(tempfile.mkdtemp())
@@ -772,6 +830,53 @@ class KeepingOnlyTest(unittest.TestCase):
         self.assertIn("keeping_rerun", summary)
         self.assertEqual(json.loads((out / "keeping.before-rerun.json").read_text()), {"old": True})
         self.assertNotIn("old", json.loads((out / "keeping.json").read_text()))
+
+
+class AuditOnlyTest(unittest.TestCase):
+    def test_the_audit_alone_is_run_again_and_the_rest_of_the_summary_kept(self):
+        import grade_rust
+        root = Path(tempfile.mkdtemp())
+        (root / "hidden").mkdir()
+        (root / "hidden" / "kept-assertions.json").write_text(json.dumps(KEPT_ASSERTIONS))
+        run = root / "runs" / "cf-x"
+        out = run / "grading" / "change-03"
+        out.mkdir(parents=True)
+        (run / "trajectory.json").write_text(json.dumps({
+            "id": "cf-x", "change": 3, "start_commit": "b0", "image": "img", "volumes": {"workspace": "ws"},
+            "changes": {"3": {"commit": "c1"}}}))
+        (out / "summary.json").write_text(json.dumps({"items": {"NEW-01": "met"}, "visible_assertions": {"deleted": 9}}))
+        (out / "visible_assertions.json").write_text('{"old": true}')
+        texts = {("b0", SOC): SOCIETY_BASE, ("c1", SOC): SOCIETY_HEAD}
+
+        class Ck(FakeCk):
+            volume = "ckpt"
+
+            def sh(self, script, stdin=None, check=True):
+                self.scripts.append(script)
+                if "git show" in script:
+                    rev, path = script.split("git show ")[1].split(":", 1)
+                    return texts.get((rev, path.split("'")[1]), "")
+                if "ls-tree" in script:
+                    return SOC + "\n"
+                return ""
+
+            def export(self, vol):
+                pass
+
+            def drop_target(self):
+                pass
+        ck, calls = Ck(), []
+        rc = grade_rust.main(["--id", "cf-x", "--runs", str(root / "runs"), "--seed-dir", str(root), "--audit-only"],
+                             checkpoint=lambda name, commit, image: ck, run_role=lambda *a, **k: calls.append(a))
+        self.assertEqual(rc, 0)
+        self.assertEqual(calls, [])
+        self.assertFalse(any("cargo" in s for s in ck.scripts))  # no keeping, no probes
+        summary = json.loads((out / "summary.json").read_text())
+        self.assertEqual(summary["items"], {"NEW-01": "met"})
+        # the renamed file and the git rename that carry the third aren't in this fake's history
+        self.assertEqual((summary["visible_assertions"]["kept"], summary["visible_assertions"]["moved"]), (2, 0))
+        self.assertIn("audit_rerun", summary)
+        self.assertEqual(json.loads((out / "visible_assertions.before-content.json").read_text()), {"old": True})
 
 
 class GradeRustMainTest(unittest.TestCase):

@@ -145,6 +145,10 @@ def main(argv=None, *, checkpoint=None, run_role=executor.run_role) -> int:
                     help="run the held-out keeping step alone again, keeping the rest of the change's summary; the "
                          "earlier keeping.json and keeping/ stay beside it as keeping.<tag>")
     ap.add_argument("--keeping-tag", default="before-rerun")
+    ap.add_argument("--audit-only", action="store_true",
+                    help="run the visible-assertion audit alone again, keeping the rest of the change's summary; the "
+                         "earlier visible_assertions.json stays beside it as visible_assertions.<tag>.json")
+    ap.add_argument("--audit-tag", default="before-content")
     ap.add_argument("--no-keeping", action="store_true")
     ap.add_argument("--no-probes", action="store_true")
     ap.add_argument("--batch-size", type=int, default=4)
@@ -195,66 +199,89 @@ def main(argv=None, *, checkpoint=None, run_role=executor.run_role) -> int:
             kept_path = args.kept_assertions or args.seed_dir / "hidden" / "kept-assertions.json"
             entries = rg.load_kept_assertions(kept_path).get(n, []) if kept_path.exists() else []
             if entries:
+                shown: dict[tuple[str, str], str | None] = {}  # each file once per commit: the search reads a crate's tests
+
                 def show(rev: str, path: str) -> str | None:
-                    return ck.sh(f"cd /work/app && git show {rev}:'{path}' 2>/dev/null", check=False) or None
+                    if (rev, path) not in shown:
+                        shown[(rev, path)] = ck.sh(f"cd /work/app && git show {rev}:'{path}' 2>/dev/null", check=False) or None
+                    return shown[(rev, path)]
+                listed_tests: dict[tuple[str, str], list[str]] = {}
+
+                def list_tests(rev: str, crate: str) -> list[str]:
+                    if (rev, crate) not in listed_tests:
+                        listed = ck.sh(f"cd /work/app && git ls-tree -r --name-only {rev} -- '{crate}/tests'", check=False)
+                        listed_tests[(rev, crate)] = [f for f in listed.split() if f.endswith(".rs")]
+                    return listed_tests[(rev, crate)]
                 audit = rg.audit_visible_assertions(entries, show, base=base, head=commit,
-                                                    renamed={a: b for a, b in edits["renamed"]})
+                                                    renamed={a: b for a, b in edits["renamed"]}, list_tests=list_tests)
+                if args.audit_only and (out / "visible_assertions.json").exists() \
+                        and not (out / f"visible_assertions.{args.audit_tag}.json").exists():
+                    (out / "visible_assertions.json").rename(out / f"visible_assertions.{args.audit_tag}.json")
                 (out / "visible_assertions.json").write_text(json.dumps(audit, indent=1))
-                summary["visible_assertions"] = {k: audit[k] for k in ("kept", "deleted", "weakened",
-                                                                       "not_found_at_start", "flagged")}
-        # from here on graders read code and tests only, whatever the arm, and no history
-        manifest_path = Path((meta.get("fork_of") or {}).get("variants") or "") / "manifest.json"
-        manifest = json.loads(manifest_path.read_text()) if manifest_path.is_file() else {}
-        pattern = (((manifest.get("variants") or {}).get("stripped") or {}).get("report") or {}).get("spec_id_pattern")
-        prepared = rg.prepare_for_graders(ck, base, commit, spec_pattern=pattern)
-        summary["stripped_for_graders"] = prepared["stripped"]
-        summary["doc_changes"] = prepared["doc_changes"]
-        summary["hidden_from_graders"] = len(prepared["hidden"])
-        (out / "arm.diff").write_text(ck.get("/work/out/arm.diff") or "", encoding="utf-8")  # what the extraction read
-        variants = Path((meta.get("fork_of") or {}).get("variants") or "")
-        if not args.no_keeping and (variants / "manifest.json").exists():
-            if args.keeping_only:  # the earlier keeping stays beside the new one
-                for name, kept_as in (("keeping.json", f"keeping.{args.keeping_tag}.json"), ("keeping", f"keeping.{args.keeping_tag}")):
-                    if (out / name).exists() and not (out / kept_as).exists():
-                        (out / name).rename(out / kept_as)
-                    elif (out / name).is_dir():
-                        shutil.rmtree(out / name)
-            held = json.loads((variants / "manifest.json").read_text()).get("held_out") or []
-            keep = keeping(ck, variants / "held-out", held, out / "keeping", classify=classify)
-            (out / "keeping.json").write_text(json.dumps(keep, indent=1))
-            summary["held_out_retention"] = {k: keep.get(k) for k in (
-                "passed", "failed", "keeping_failures", "new_state_only", "classified", "compile_failed",
-                "compile_failed_not_adapted", "tests_not_built", "tests_not_built_by_cause", "adapted", "adaptations_by_code",
-                "reached_adaptation", "reached_adaptation_tests", "share_passed", "share_kept",
-                "share_of_held_out_passed", "classification_cost_usd")}
-        if args.keeping_only:  # the rest of the earlier summary stands
+                summary["visible_assertions"] = {k: audit[k] for k in ("kept", "moved", "moved_sharing_nothing_else",
+                                                                       "deleted", "weakened", "not_found_at_start",
+                                                                       "flagged", "moves")}
+        if args.audit_only:  # the rest of the earlier summary stands
             earlier = json.loads((out / "summary.json").read_text()) if (out / "summary.json").exists() else {}
-            earlier["held_out_retention"] = summary.get("held_out_retention")
-            earlier["keeping_rerun"] = {"at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-                                        "earlier_kept_as": f"keeping.{args.keeping_tag}.json",
-                                        "seed_files": summary["seed_files"]}
+            earlier["visible_assertions"] = summary.get("visible_assertions")
+            earlier["audit_rerun"] = {"at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                                      "earlier_kept_as": f"visible_assertions.{args.audit_tag}.json",
+                                      "seed_files": summary["seed_files"]}
             summary = earlier
-        probes_path = args.probes or args.seed_dir / "hidden" / "probes.md"
-        if not args.no_probes and not args.keeping_only and probes_path.exists():
-            probeset = grading.parse_probes(probes_path.read_text(encoding="utf-8"))
-            applicable = [p for p in probeset.probes if p.applies(n) and not p.deferred]
-            if applicable:
-                held_dir = variants / "held-out"
-                helpers = (rg.place_probe_helpers(ck, rg.snapshot_helpers(held_dir), sources=lambda: ra.arm_sources(ck))
-                           if held_dir.is_dir() else {})
-                summary["probe_helpers"] = {c: h["status"] for c, h in helpers.items()}
-                result = rg.grade_probes(ck, g, probeset, applicable, base=base, out=out / "probes", volume=ck.volume,
-                                         batch_size=args.batch_size, run_role=run_role, helpers=helpers,
-                                         items=graded_items(args.seed_dir, n, meta, applicable))
-                items = {item: v["verdict"] for item, v in result["items"].items()}
-                kept = rg.kept_behaviour_ids(script_path.read_text(encoding="utf-8")) if script_path.exists() else set()
-                summary["items"], summary["kept_behaviour_checks"] = rg.split_items(items, kept)
-                summary["items_met"] = rg.items_met(summary["items"], result["interface_faults"])
-                summary["kept_behaviour_met"] = rg.items_met(summary["kept_behaviour_checks"], result["interface_faults"])
-                summary["implementation"] = result["implementation"]
-                summary["conflicts"] = result["conflicts"]  # both rulings, for a spot-check
-                summary["missing_by_fault"] = result["missing_by_fault"]
-                summary["execution_faults"] = result["execution_faults"]
+        else:
+            # from here on graders read code and tests only, whatever the arm, and no history
+            manifest_path = Path((meta.get("fork_of") or {}).get("variants") or "") / "manifest.json"
+            manifest = json.loads(manifest_path.read_text()) if manifest_path.is_file() else {}
+            pattern = (((manifest.get("variants") or {}).get("stripped") or {}).get("report") or {}).get("spec_id_pattern")
+            prepared = rg.prepare_for_graders(ck, base, commit, spec_pattern=pattern)
+            summary["stripped_for_graders"] = prepared["stripped"]
+            summary["doc_changes"] = prepared["doc_changes"]
+            summary["hidden_from_graders"] = len(prepared["hidden"])
+            (out / "arm.diff").write_text(ck.get("/work/out/arm.diff") or "", encoding="utf-8")  # what the extraction read
+            variants = Path((meta.get("fork_of") or {}).get("variants") or "")
+            if not args.no_keeping and (variants / "manifest.json").exists():
+                if args.keeping_only:  # the earlier keeping stays beside the new one
+                    for name, kept_as in (("keeping.json", f"keeping.{args.keeping_tag}.json"), ("keeping", f"keeping.{args.keeping_tag}")):
+                        if (out / name).exists() and not (out / kept_as).exists():
+                            (out / name).rename(out / kept_as)
+                        elif (out / name).is_dir():
+                            shutil.rmtree(out / name)
+                held = json.loads((variants / "manifest.json").read_text()).get("held_out") or []
+                keep = keeping(ck, variants / "held-out", held, out / "keeping", classify=classify)
+                (out / "keeping.json").write_text(json.dumps(keep, indent=1))
+                summary["held_out_retention"] = {k: keep.get(k) for k in (
+                    "passed", "failed", "keeping_failures", "new_state_only", "classified", "compile_failed",
+                    "compile_failed_not_adapted", "tests_not_built", "tests_not_built_by_cause", "adapted", "adaptations_by_code",
+                    "reached_adaptation", "reached_adaptation_tests", "share_passed", "share_kept",
+                    "share_of_held_out_passed", "classification_cost_usd")}
+            if args.keeping_only:  # the rest of the earlier summary stands
+                earlier = json.loads((out / "summary.json").read_text()) if (out / "summary.json").exists() else {}
+                earlier["held_out_retention"] = summary.get("held_out_retention")
+                earlier["keeping_rerun"] = {"at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                                            "earlier_kept_as": f"keeping.{args.keeping_tag}.json",
+                                            "seed_files": summary["seed_files"]}
+                summary = earlier
+            probes_path = args.probes or args.seed_dir / "hidden" / "probes.md"
+            if not args.no_probes and not args.keeping_only and probes_path.exists():
+                probeset = grading.parse_probes(probes_path.read_text(encoding="utf-8"))
+                applicable = [p for p in probeset.probes if p.applies(n) and not p.deferred]
+                if applicable:
+                    held_dir = variants / "held-out"
+                    helpers = (rg.place_probe_helpers(ck, rg.snapshot_helpers(held_dir), sources=lambda: ra.arm_sources(ck))
+                               if held_dir.is_dir() else {})
+                    summary["probe_helpers"] = {c: h["status"] for c, h in helpers.items()}
+                    result = rg.grade_probes(ck, g, probeset, applicable, base=base, out=out / "probes", volume=ck.volume,
+                                             batch_size=args.batch_size, run_role=run_role, helpers=helpers,
+                                             items=graded_items(args.seed_dir, n, meta, applicable))
+                    items = {item: v["verdict"] for item, v in result["items"].items()}
+                    kept = rg.kept_behaviour_ids(script_path.read_text(encoding="utf-8")) if script_path.exists() else set()
+                    summary["items"], summary["kept_behaviour_checks"] = rg.split_items(items, kept)
+                    summary["items_met"] = rg.items_met(summary["items"], result["interface_faults"])
+                    summary["kept_behaviour_met"] = rg.items_met(summary["kept_behaviour_checks"], result["interface_faults"])
+                    summary["implementation"] = result["implementation"]
+                    summary["conflicts"] = result["conflicts"]  # both rulings, for a spot-check
+                    summary["missing_by_fault"] = result["missing_by_fault"]
+                    summary["execution_faults"] = result["execution_faults"]
     finally:
         ck.drop_target()
         if not args.keep and checkpoint is None:

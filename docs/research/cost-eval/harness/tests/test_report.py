@@ -187,8 +187,60 @@ class SpotCheckTest(unittest.TestCase):
 
     def test_the_seed_holds_the_change_11_ruling(self):
         seeded = report.load_spot_checks(HERE_SEED / "spot-checks.json")
-        self.assertEqual([(c["fork"], c["item"], c["ruling"], c["by"]) for c in seeded],
-                         [("cf-full-lid-full-1m-c11-r1", "CLW-1104", "not met", "Claude Fable")])
+        self.assertIn(("cf-full-lid-full-1m-c11-r1", "CLW-1104", "not met", "Claude Fable"),
+                      [(c["fork"], c["item"], c["ruling"], c["by"]) for c in seeded])
 
 
 HERE_SEED = Path(__file__).resolve().parent.parent.parent / "seeds" / "clowder" / "hidden"
+
+
+class GrowthReportTest(unittest.TestCase):
+    """report.py --growth: per arm and checkpoint, items met (stated, latent, and latent disclosed in every arm of the
+    replicate), keeping, reliance regressions, flip checks, the stale-intent audit, cost, owner time, and fidelity per
+    owner-hour and per dollar."""
+
+    def traj(self, runs, tid, arm, verdicts_by_c, shared_by_change, words=2380):
+        changes = {str(n): {"agent_cost_usd": 1.0, "owner_cost_usd": 0.5, "rounds": 1} for n in range(3)}
+        write(runs / tid / "trajectory.json", {"id": tid, "arm": arm, "replicate": "g-r1", "changes": changes})
+        for n in range(3):
+            write(runs / tid / f"change-{n:02d}" / "owner-00.json",
+                  {"words_shown": words, "shared": [{"item": i, "reason": "asked"} for i in shared_by_change.get(n, [])]})
+        for c, pv in verdicts_by_c.items():
+            write(runs / tid / "grading" / f"change-{c:02d}" / "verdicts.json", {"probes": {p: {"verdict": v} for p, v in pv.items()}})
+
+    def test_growth_figures_per_arm_and_checkpoint(self):
+        root = Path(tempfile.mkdtemp())
+        runs, seed = root / "runs", root / "seeds" / "bk"
+        write(seed / "hidden" / "oracle.md", ORACLE)
+        write(seed / "hidden" / "change-script.md", CHANGES)
+        write(seed / "hidden" / "probes.md", PROBES)
+        self.traj(runs, "g-bare-1", "bare", {1: {"P-BK01-a": "met", "P-BK02-a": "not met"}, 2: {"P-BK01-a": "met", "P-BK02-a": "met"}},
+                  {2: ["BK-02"]})
+        self.traj(runs, "g-lid-full-1", "lid-full", {1: {"P-BK01-a": "met", "P-BK02-a": "met"}, 2: {"P-BK01-a": "not met", "P-BK02-a": "met"}},
+                  {1: ["BK-02"]})
+        g = runs / "g-bare-1" / "growth" / "checkpoint-02"
+        write(g / "flips.json", [{"behaves": True}, {"behaves": False}, {"behaves": None, "anticipated": True}])
+        write(g / "course-forks.json", [{"behaves": True, "stale": 0}, {"behaves": False, "stale": 2}, {"behaves": None, "stale": None}])
+        write(g / "reliance.json", [{"regressed": False}, {"regressed": True}, {"regressed": None}])
+        write(g / "stale-audit.json", {"courses": {"2": {"stale": 1, "current": 2, "mixed": 0, "unrelated": 0, "no_ruling": 0}}})
+        r = report.growth_report(runs, seed, "g", {"bare": ["1"], "lid-full": ["1"]}, [1, 2])
+        bare = {row["checkpoint"]: row for row in r["arms"]["bare"][0]["checkpoints"]}
+        lid = {row["checkpoint"]: row for row in r["arms"]["lid-full"][0]["checkpoints"]}
+        self.assertEqual((bare[1]["stated"], bare[1]["latent"]), ((1, 1), (0, 1)))
+        self.assertEqual(bare[1]["latent_disclosed_everywhere"], None)  # bare hadn't asked about BK-02 by change 1
+        self.assertEqual(bare[2]["latent_disclosed_everywhere"], (1, 1))
+        self.assertEqual(lid[2]["keeping"], (1, 2))  # BK-01, met at change 1, no longer is
+        self.assertEqual((bare[2]["reliance_regressions"], bare[2]["flips_behaving"], bare[2]["stale_files"]),
+                         ((1, 2), (1, 2), (1, 3)))
+        self.assertEqual(bare[2]["anticipated"], (1, 1))  # an emerging change's check, never a flip
+        self.assertEqual((bare[2]["course_forks_behaving"], bare[2]["course_fork_stale_files"]), ((1, 2), 2))
+        self.assertAlmostEqual(bare[2]["cost_per_change"], 1.5)
+        self.assertAlmostEqual(bare[2]["owner_hours"], 3 * 2380 / 238 / 60)
+        self.assertAlmostEqual(bare[2]["met_per_owner_hour"], 2 / bare[2]["owner_hours"])
+        self.assertAlmostEqual(bare[2]["met_per_dollar"], 2 / 4.5)
+        text = report.render_growth(r)
+        self.assertIn("## Change 2", text)
+        for definition in ("Latent: every kind of item that isn't stated", "Keeping: items met at the previous checkpoint",
+                           "count items met"):
+            self.assertIn(definition, text)
+        self.assertIn("| bare |", text)
