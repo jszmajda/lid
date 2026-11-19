@@ -46,7 +46,7 @@ The spec file for this segment is `docs/intent/onboarding/marketing-site/marketi
 
 Verification substitutes content-appropriate mechanisms for test-harness evals:
 
-1. **Build-time structural checks** — link checks, Mermaid rendering, markdown lint. Dead internal links, missing assets, and build failures block deployment. These are the site's equivalent of "tests must pass."
+1. **Build-time structural checks** — link checks (including that every link into this repository points to a file or folder that exists at the commit being built, since docs move as the design tree grows), Mermaid rendering, markdown lint. Dead internal links, missing assets, and build failures block deployment. These are the site's equivalent of "tests must pass."
 2. **Dogfooding content review** — when the HLD or a plugin LLD changes, site content is reviewed for claim drift. Unreviewed drift is a coherence signal going red under HLD Goal 4.
 3. **Spec coverage** — assertions referenced by the EARS specs are checked at build time where automatable (page presence, navigation structure, theme behavior, quickstart command match) and by reviewer judgment where not (content framing, cascade currency, anti-pattern honesty).
 

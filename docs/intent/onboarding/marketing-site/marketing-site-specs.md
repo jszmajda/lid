@@ -136,6 +136,7 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 
 - `[ ]` **ONB-SITE-027**: The site build SHALL render all Mermaid code blocks to static SVG at build time rather than loading a Mermaid runtime in the browser.
 - `[ ]` **ONB-SITE-028**: The site build SHALL fail if any internal link resolves to a missing page, asset, or anchor.
+- `[x]` **ONB-SITE-140**: Every link from the site to this repository's `main` branch (`github.com/jszmajda/lid/blob/main/…` or `…/tree/main/…`) SHALL point to a file or folder that exists in the repository at the commit being built.
 - `[ ]` **ONB-SITE-029**: If the site build detects a broken external link, the build SHALL emit a warning but SHALL NOT fail.
 - `[x]` **ONB-SITE-030**: The site MAY load typefaces from a no-tracking font service (such as Bunny Fonts) or self-hosted font files. Typefaces from services that log user requests for tracking or analytics purposes SHALL NOT be used.
 - `[x]` **ONB-SITE-031**: The site SHALL NOT include analytics, tracking scripts, or cookie-setting code beyond what GitHub Pages emits by default.

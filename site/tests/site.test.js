@@ -1,7 +1,7 @@
 // Checks the built site. Run from the repository root:
 //   node --test site/tests/site.test.js
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { after, before, describe, it } from "node:test";
@@ -122,9 +122,30 @@ describe("structure and navigation", () => {
       assert.match(f, /<svg class="icon"/);
       assert.match(f, /Jess Szmajda/);
       assert.match(f, /MIT/);
-      assert.ok(f.includes(`${repoUrl}/blob/main/docs/intent/marketing-site/marketing-site-design.md`));
-      assert.ok(f.includes(`${repoUrl}/blob/main/docs/intent/marketing-site/marketing-site-specs.md`));
+      assert.ok(f.includes(`${repoUrl}/blob/main/docs/intent/onboarding/marketing-site/marketing-site-design.md`));
+      assert.ok(f.includes(`${repoUrl}/blob/main/docs/intent/onboarding/marketing-site/marketing-site-specs.md`));
     }
+  });
+
+  // @spec ONB-SITE-140
+  it("links into the repository only at paths that exist", () => {
+    const repoDir = join(siteDir, "..");
+    const pages = [];
+    const walk = (dir) => {
+      for (const name of readdirSync(dir, { withFileTypes: true })) {
+        const path = join(dir, name.name);
+        if (name.isDirectory()) walk(path);
+        else if (name.name.endsWith(".html")) pages.push(path);
+      }
+    };
+    walk(out);
+    const broken = [];
+    for (const file of pages) {
+      for (const m of readFileSync(file, "utf8").matchAll(/https:\/\/github\.com\/jszmajda\/lid\/(?:blob|tree)\/main\/([^"'#?\s<>)]+)/g)) {
+        if (!existsSync(join(repoDir, decodeURIComponent(m[1])))) broken.push(`${file.slice(out.length)} → ${m[1]}`);
+      }
+    }
+    assert.deepEqual(broken, []);
   });
 });
 
