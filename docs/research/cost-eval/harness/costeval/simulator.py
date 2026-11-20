@@ -519,9 +519,22 @@ class IntentDistance:
     set_at: int | None = None  # for "set at change N"
 
 
+@dataclass(frozen=True)
+class RelianceRequest:
+    """A course change's dedicated reliance request: an ordinary request in the overturned rule's area that never names
+    the rule, run only as a fork from the trajectory's snapshot `lag` changes after the course change. Its outcome is
+    frozen twice, under the current rule and under the displaced one, as two probes sharing a setup and scenario."""
+    lag: int
+    request: str | None
+    setup: str | None
+    scenario: str | None
+    current_outcome: str | None
+    displaced_outcome: str | None
+
+
 COURSE_KINDS = ("retirement", "reversal", "rescope", "emerging", "re-reversal")
 DISTANCE_FLOOR = {"retirement": 5, "reversal": 5}  # intent set at least five changes earlier
-RELIANCE_GAP = (2, 5)  # a reliance change comes two to five changes after its course change
+RELIANCE_GAP = (2, 5)  # a reliance request runs two to five changes after its course change
 
 
 @dataclass(frozen=True)
@@ -540,7 +553,8 @@ class Change:
     planted_bug: str | None = None  # a patch applied to the change's starting snapshot, relative to the change script
     retires: tuple[str, ...] = ()
     course_change: CourseChange | None = None  # the growth test's fields
-    reliance_for: tuple[int, ...] = ()  # the course changes whose rules it works near
+    reliance_for: tuple[int, ...] = ()  # the first draft's main-line reliance changes (parsed, no longer validated)
+    reliance_request: RelianceRequest | None = None
     intent_distance: IntentDistance | None = None
 
     @property
@@ -640,6 +654,7 @@ def parse_change_script(text: str) -> dict[int, Change]:
             planted_bug=(_field(body, "Planted bug") or "").strip("` ") or None,
             retires=(lambda r: () if r == ALL else r)(parse_ids(_field(body, "Retires") or "")) or (),
             **_growth_fields(n, body),
+            reliance_request=_reliance_request(n, next((b for h, b in parts.items() if h.lower() == "reliance request"), None)),
         )
         ch.owner_request  # raises if the change has neither a request nor a symptom report
         changes[n] = ch
@@ -666,14 +681,32 @@ def _growth_fields(n: int, body: str) -> dict:
     return out
 
 
+def _block(body: str, name: str) -> str | None:
+    """A field that may run over several lines: to the next bold field, a blank line, or the end."""
+    m = re.search(rf"\*\*{re.escape(name)}:\*\*\s*(.*?)(?=\n\s*\*\*[A-Z][\w -]*:\*\*|\n\s*\n|\Z)", body, re.S)
+    return " ".join(m.group(1).split()) or None if m else None
+
+
+def _reliance_request(n: int, body: str | None) -> RelianceRequest | None:
+    if body is None:
+        return None
+    lag = _field(body, "Lag")
+    if lag is None or not re.fullmatch(r"\d+\.?", lag.strip()):
+        raise ValueError(f"change {n}: can't read the reliance request's **Lag:** {lag!r}")
+    return RelianceRequest(lag=int(lag.strip(".")), request=_quote(body) or None, setup=(_field(body, "Setup") or "").strip(". ") or None,
+                           scenario=_block(body, "Scenario"), current_outcome=_block(body, "Current-rule outcome"),
+                           displaced_outcome=_block(body, "Displaced-rule outcome"))
+
+
 def validate_growth_fields(changes: dict[int, Change]) -> list[str]:
     """What's wrong with a script's growth fields: links that don't resolve to an earlier change (change 0 is the
     first build), a course change's distance that isn't the gap to the change it overturns, a retirement or reversal
-    of intent set fewer than five changes earlier, a course change with no reliance change, and a reliance change
-    that doesn't follow a course change by two to five changes."""
+    of intent set fewer than five changes earlier, and a course change without exactly what its reliance request
+    needs: a lag of two to five changes (within the script), the owner's request, a setup and scenario, and both
+    frozen outcomes. A reliance request belongs to a course change only."""
     problems = []
     known = set(changes) | {0}
-    relied = {t for c in changes.values() for t in c.reliance_for}
+    last = max(changes) if changes else 0
     for n, c in sorted(changes.items()):
         if (cc := c.course_change) is not None:
             if cc.of_change not in known or cc.of_change >= n:
@@ -684,15 +717,24 @@ def validate_growth_fields(changes: dict[int, Change]) -> list[str]:
             if floor and cc.distance < floor:
                 problems.append(f"change {n}: a {cc.kind} must overturn intent set at least {floor} changes earlier, "
                                 f"not {cc.distance}")
-            if n not in relied:
-                problems.append(f"change {n}: a course change with no reliance change")
-        for t in c.reliance_for:
-            target = changes.get(t)
-            if target is None or target.course_change is None:
-                problems.append(f"change {n}: relies on change {t}, which isn't a course change")
-            elif not RELIANCE_GAP[0] <= n - t <= RELIANCE_GAP[1]:
-                problems.append(f"change {n}: a reliance change must come {RELIANCE_GAP[0]} to {RELIANCE_GAP[1]} changes "
-                                f"after its course change {t}, not {n - t}")
+            r = c.reliance_request
+            if r is None:
+                problems.append(f"change {n}: a course change with no reliance request")
+            else:
+                if not RELIANCE_GAP[0] <= r.lag <= RELIANCE_GAP[1]:
+                    problems.append(f"change {n}: its reliance request's lag must be {RELIANCE_GAP[0]} to {RELIANCE_GAP[1]} "
+                                    f"changes, not {r.lag}")
+                elif n + r.lag > last:
+                    problems.append(f"change {n}: its reliance request runs after change {n + r.lag}, past the script's "
+                                    f"last change {last}")
+                if not (r.current_outcome and r.displaced_outcome):
+                    problems.append(f"change {n}: its reliance request needs both outcomes, current-rule and displaced-rule")
+                if not (r.setup and r.scenario):
+                    problems.append(f"change {n}: its reliance request needs a setup and a scenario to observe the outcomes")
+                if not r.request:
+                    problems.append(f"change {n}: its reliance request has no owner's request")
+        elif c.reliance_request is not None:
+            problems.append(f"change {n}: has a reliance request but isn't a course change")
         d = c.intent_distance
         if d is not None and d.set_at is not None and (d.set_at not in known or d.set_at >= n):
             problems.append(f"change {n}: its intent was set at change {d.set_at}, which isn't an earlier change")

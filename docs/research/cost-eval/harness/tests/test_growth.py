@@ -21,6 +21,22 @@ def script(*changes):
     return "# Change script\n\n" + "\n".join(changes)
 
 
+def reliance(lag=3, *, setup="S0", outcomes=True, request=True):
+    lines = ["### Reliance request", "", f"**Lag:** {lag}  ", f"**Setup:** {setup}  " if setup else "",
+             "**Scenario:** Export this week's releases and read the file.  " if setup else ""]
+    if outcomes:
+        lines += ["**Current-rule outcome:** The export leaves embargoed titles out.  ",
+                  "**Displaced-rule outcome:** The export lists embargoed titles.  "]
+    if request:
+        lines += ["", "> Can I get this week's releases as a file?"]
+    return "\n".join(lines) + "\n"
+
+
+def course(n, of, distance, lag=3, **kw):
+    return (change(n, ("Course change", f"retirement of change {of} (distance {distance})"), ("Retires", f"RD-{100 + of}"))
+            + "\n" + reliance(lag, **kw))
+
+
 class OneLineArmTest(unittest.TestCase):
     def test_bare_with_one_sentence_at_the_repository_root(self):
         arm = tj.load_arm("bare-one-line")
@@ -35,24 +51,28 @@ class CourseChangeFieldsTest(unittest.TestCase):
     def test_the_growth_fields_parse(self):
         s = sm.parse_change_script(script(
             change(3, ("Retires", "Nothing")),
-            change(11, ("Course change", "retirement of change 3 (distance 8)"), ("Retires", "RD-103"),
-                   ("Intent distance", "set at change 3")),
-            change(13, ("Reliance for", "change 11"), ("Intent distance", "another module")),
-            change(14, ("Intent distance", "same module"))))
+            course(11, 3, 8, lag=4).replace("**Retires:** RD-103", "**Retires:** RD-103  \n**Intent distance:** set at change 3"),
+            change(14, ("Intent distance", "same module")), change(15)))
         c = s[11].course_change
         self.assertEqual((c.kind, c.of_change, c.distance), ("retirement", 3, 8))
         self.assertEqual(s[11].retires, ("RD-103",))
         self.assertEqual((s[11].intent_distance.kind, s[11].intent_distance.set_at), ("set at change", 3))
-        self.assertEqual(s[13].reliance_for, (11,))
-        self.assertEqual(s[13].intent_distance.kind, "another module")
+        r = s[11].reliance_request
+        self.assertEqual((r.lag, r.setup), (4, "S0"))
+        self.assertEqual(r.request, "Can I get this week's releases as a file?")
+        self.assertIn("leaves embargoed titles out", r.current_outcome)
+        self.assertIn("lists embargoed titles", r.displaced_outcome)
+        self.assertIn("Export this week's releases", r.scenario)
         self.assertEqual(s[14].intent_distance.kind, "same module")
         self.assertIsNone(s[14].course_change)
+        self.assertIsNone(s[14].reliance_request)
         self.assertEqual(s[3].retires, ())
         self.assertEqual(sm.validate_growth_fields(s), [])
 
     def test_every_kind_of_course_change(self):
         for kind in ("retirement", "reversal", "rescope", "emerging", "re-reversal"):
-            s = sm.parse_change_script(script(change(2), change(9, ("Course change", f"{kind} of change 2 (distance 7)"))))
+            s = sm.parse_change_script(script(change(2), change(9, ("Course change", f"{kind} of change 2 (distance 7)"))
+                                              + "\n" + reliance()))
             self.assertEqual(s[9].course_change.kind, kind)
 
     def test_a_malformed_field_is_refused(self):
@@ -60,55 +80,52 @@ class CourseChangeFieldsTest(unittest.TestCase):
             sm.parse_change_script(script(change(9, ("Course change", "a big change"))))
         with self.assertRaisesRegex(ValueError, "Intent distance"):
             sm.parse_change_script(script(change(9, ("Intent distance", "far away"))))
-        with self.assertRaisesRegex(ValueError, "Reliance for"):
-            sm.parse_change_script(script(change(9, ("Reliance for", "the last one"))))
+        with self.assertRaisesRegex(ValueError, "Lag"):
+            sm.parse_change_script(script(change(9, ("Course change", "retirement of change 2 (distance 7)"))
+                                          + "\n" + reliance().replace("**Lag:** 3", "**Lag:** soon")))
 
     def test_links_resolve_and_distances_hold(self):
         s = sm.parse_change_script(script(
-            change(2), change(6, ("Course change", "retirement of change 2 (distance 4)")),
-            change(7, ("Course change", "reversal of change 40 (distance 1)")),
-            change(8, ("Course change", "rescope of change 2 (distance 6)")),
-            change(9, ("Reliance for", "change 2")), change(10, ("Reliance for", "change 8")),
-            change(12, ("Intent distance", "set at change 15"))))
+            change(2), course(6, 2, 4), change(7, ("Course change", "reversal of change 40 (distance 1)")) + "\n" + reliance(),
+            change(8, ("Course change", "rescope of change 2 (distance 6)")) + "\n" + reliance(),
+            change(12, ("Intent distance", "set at change 15")), change(13)))
         problems = sm.validate_growth_fields(s)
         self.assertTrue(any("change 6" in p and "at least 5" in p for p in problems))       # a retirement 4 back
         self.assertTrue(any("change 7" in p and "change 40" in p for p in problems))         # no such earlier change
         self.assertTrue(any("change 7" in p and "distance" in p for p in problems))          # 1 isn't 7 - 40
-        self.assertTrue(any("change 9" in p and "isn't a course change" in p for p in problems))
-        self.assertTrue(any("change 6" in p and "no reliance change" in p for p in problems))
         self.assertTrue(any("change 12" in p and "change 15" in p for p in problems))       # set later than it
         self.assertFalse(any("change 8" in p and "at least 5" in p for p in problems))       # a rescope has no floor
-        self.assertFalse(any("change 10" in p for p in problems))                           # 2 after its course change
 
-    def test_a_reliance_change_can_serve_several_course_changes(self):
+    def test_each_course_change_has_one_reliance_request_with_a_lag_of_2_to_5_and_two_outcomes(self):
         s = sm.parse_change_script(script(
-            change(2), change(3), change(9, ("Course change", "retirement of change 2 (distance 7)")),
-            change(10, ("Course change", "reversal of change 3 (distance 7)")),
-            change(12, ("Reliance for", "change 9, change 10")), change(13, ("Reliance for", "change 9, change 4."))))
-        self.assertEqual(s[12].reliance_for, (9, 10))
-        self.assertEqual(s[13].reliance_for, (9, 4))
+            change(1), change(2),
+            change(8, ("Course change", "retirement of change 1 (distance 7)")),                   # none
+            course(9, 2, 7, lag=6),                                                                 # too late
+            course(10, 2, 8, outcomes=False),                                                       # no outcomes
+            course(11, 2, 9, setup=None),                                                           # no scenario
+            course(12, 2, 10, request=False),                                                       # no request
+            change(14) + "\n" + reliance()))                                                         # not a course change
         problems = sm.validate_growth_fields(s)
-        self.assertFalse(any("change 12" in p for p in problems))
-        self.assertTrue(any("change 13" in p and "change 4" in p and "isn't a course change" in p for p in problems))
-        self.assertEqual(growth.course_pairs(s), [(9, 12), (9, 13), (10, 12)])
-        self.assertEqual(growth.reliance_changes(s, upto=13), {12: [9, 10], 13: [9]})
-        ps = grading.parse_probes(PROBES)
-        self.assertEqual(growth.reliance_change_probes(s, ps, 12),
-                         growth.probes_for(ps, set(s[9].introduces) | set(s[9].retires) | set(s[10].introduces) | set(s[10].retires)))
+        self.assertTrue(any("change 8" in p and "no reliance request" in p for p in problems))
+        self.assertTrue(any("change 9" in p and "2 to 5" in p for p in problems))
+        self.assertTrue(any("change 10" in p and "outcome" in p for p in problems))
+        self.assertTrue(any("change 11" in p and "setup" in p for p in problems))
+        self.assertTrue(any("change 12" in p and "request" in p for p in problems))
+        self.assertTrue(any("change 14" in p and "isn't a course change" in p for p in problems))
+        self.assertTrue(any("change 12" in p and "change 15" in p for p in problems))  # 12 + 3 is past the script
+
+    def test_the_old_reliance_field_still_parses(self):
+        s = sm.parse_change_script(script(change(2), change(13, ("Reliance for", "change 9, change 10"))))
+        self.assertEqual(s[13].reliance_for, (9, 10))
 
     def test_the_drafters_growth_script_validates(self):
         hidden = Path(__file__).resolve().parent.parent.parent / "seeds" / "releasedesk" / "hidden"
-        if not (hidden / "change-script-growth.md").exists():
-            self.skipTest("no growth script yet")
-        # the growth changes follow the first ten, as the drafter's validator reads them
+        f = hidden / "change-script-growth.md"
+        if not f.exists() or "### Reliance request" not in f.read_text():
+            self.skipTest("no growth script with reliance requests yet (round 2)")
         first = (hidden / "change-script.md").read_text().split("\n## Probe request", 1)[0]
-        s = sm.parse_change_script(first + "\n\n" + (hidden / "change-script-growth.md").read_text())
+        s = sm.parse_change_script(first + "\n\n" + f.read_text())
         self.assertEqual(sm.validate_growth_fields(s), [])
-
-    def test_a_reliance_change_comes_two_to_five_changes_after_its_course_change(self):
-        s = sm.parse_change_script(script(change(1), change(8, ("Course change", "reversal of change 1 (distance 7)")),
-                                          change(14, ("Reliance for", "change 8"))))
-        self.assertTrue(any("change 14" in p and "2 to 5" in p for p in sm.validate_growth_fields(s)))
 
     def test_the_existing_scripts_still_parse_and_validate(self):
         for seed in ("benchtime", "releasedesk"):
@@ -117,11 +134,7 @@ class CourseChangeFieldsTest(unittest.TestCase):
             self.assertEqual(sm.validate_growth_fields(s), [], seed)
 
 
-if __name__ == "__main__":
-    unittest.main()
-
-
-# ----------------------------------------------------------------------------------------- course-change forks
+# ----------------------------------------------------------------------------------------- course and reliance forks
 
 import json  # noqa: E402
 import tempfile  # noqa: E402
@@ -135,15 +148,37 @@ from test_trajectory import FakeTurns, FakeWorkspace  # noqa: E402
 GROWTH_SCRIPT = script(
     "## Change 1 — Fees\n\n### Owner request\n\n> Add fees.\n\n**Introduces:** BK-05.\n",
     "## Change 2 — Drop fees\n\n### Owner request\n\n> Drop the fees.\n\n**Introduces:** BK-06.  \n**Retires:** BK-05.  \n"
-    "**Course change:** retirement of change 1 (distance 1)\n",
-    "## Change 3 — Refunds\n\n### Owner request\n\n> Refunds.\n\n**Introduces:** BK-07.  \n**Reliance for:** change 2\n")
+    "**Course change:** retirement of change 1 (distance 1)\n\n" + reliance(2),
+    "## Change 3 — Refunds\n\n### Owner request\n\n> Refunds.\n\n**Introduces:** BK-07.\n",
+    "## Change 4 — Receipts\n\n### Owner request\n\n> Receipts.\n\n**Introduces:** BK-08.\n")
 
 
 class GrowthHelpersTest(unittest.TestCase):
-    def test_course_changes_with_their_reliance_changes(self):
+    def test_each_course_changes_reliance_request_runs_once_its_lag_has_passed(self):
         s = sm.parse_change_script(GROWTH_SCRIPT)
-        self.assertEqual(growth.course_pairs(s), [(2, 3)])
-        self.assertEqual(growth.course_pairs(s, upto=2), [])  # its reliance change isn't run yet
+        self.assertEqual(growth.reliance_requests(s), [(2, 2)])  # (course change, lag): run after change 4
+        self.assertEqual(growth.reliance_requests(s, upto=3), [])
+
+    def test_the_reliance_outcomes_as_two_probes_beside_the_seeds_own(self):
+        s = sm.parse_change_script(GROWTH_SCRIPT)
+        text, ids = growth.reliance_probes(PROBES, s, 2)
+        self.assertEqual(ids, ["P-RR02-current", "P-RR02-displaced"])
+        ps = grading.parse_probes(text)
+        got = {p.id: p for p in ps.probes}
+        self.assertIn("P-BK01-a", got)  # the seed's own probes stay
+        self.assertEqual(got["P-RR02-current"].setup, "S0")
+        self.assertIn("leaves embargoed titles out", got["P-RR02-current"].expected)
+        self.assertIn("lists embargoed titles", got["P-RR02-displaced"].expected)
+        self.assertEqual(got["P-RR02-current"].scenario, got["P-RR02-displaced"].scenario)
+
+    def test_a_reliance_fork_follows_the_current_rule_the_displaced_one_neither_or_both(self):
+        o = growth.reliance_outcome
+        self.assertEqual(o("met", "not met"), "current")
+        self.assertEqual(o("not met", "met"), "displaced")
+        self.assertEqual(o("not met", "not met"), "neither")
+        self.assertEqual(o("met", "met"), "both")
+        self.assertEqual(o("missing", "not met"), "undetermined")
+        self.assertEqual(o(None, None), "undetermined")
 
     def test_probes_by_item_and_the_flip_checks_of_a_retirement(self):
         ps = grading.parse_probes(PROBES)
@@ -154,7 +189,6 @@ class GrowthHelpersTest(unittest.TestCase):
              "probes": ["P-BK01-a", "P-BK01-b"], "expect": "not met"},
             {"course": 2, "kind": "retirement", "when": "before", "at_change": 1, "items": ["BK-02"],
              "probes": ["P-BK02-a"], "expect": "not met"}])
-        self.assertEqual(growth.reliance_probes(s, ps, 2), ["P-BK01-a", "P-BK01-b", "P-BK02-a"])
 
     def test_a_rescope_flips_as_a_reversal_and_an_emerging_change_is_checked_for_anticipation(self):
         ps = grading.parse_probes(PROBES)
@@ -179,6 +213,9 @@ class DriftFloorTest(unittest.TestCase):
         self.assertNotEqual(sm.uniform("g-r1", "RD-04", "recall", "c03"), sm.uniform("g-r2", "RD-04", "recall", "c03"))
 
 
+EMPTY_STATE = {"record": [], "requests": [], "seen": {}, "disclosed": []}
+
+
 class CourseForkTest(unittest.TestCase):
     def setUp(self):
         self.root = Path(tempfile.mkdtemp())
@@ -195,8 +232,9 @@ class CourseForkTest(unittest.TestCase):
             "id": "g-bare-1", "arm": "bare", "seed": "seed", "model": "m", "effort": "medium", "policy": "bounded",
             "owner_model": "o", "replicate": "g-r1", "isolation": {"window": "1m"}, "round_cap": 6,
             "volumes": {"workspace": "ce-g-bare-1-ws", "config": "ce-g-bare-1-cfg"},
-            "changes": {"1": {"commit": "c-after-1"}, "2": {"commit": "c-after-2"}}}))
-        (base / "owner-state-01.json").write_text(json.dumps({"record": [], "requests": [], "seen": {}, "disclosed": []}))
+            "changes": {str(n): {"commit": f"c-after-{n}"} for n in range(1, 5)}}))
+        for n in (1, 4):
+            (base / f"owner-state-{n:02d}.json").write_text(json.dumps({**EMPTY_STATE, "disclosed": ["BK-02"]}))
 
     def fork(self, kind, *turn_texts):
         import run_course_forks as rcf
@@ -205,16 +243,15 @@ class CourseForkTest(unittest.TestCase):
         ask = FakeAsk(*[out("completion") for _ in turn_texts])
         deps = rcf.Deps(docker=lambda cmd, **kw: docker.append(cmd) or subprocess_ok(cmd), turn_for=lambda s: turns,
                         workspace_for=lambda image, vol: ws, ask=ask, touch=ask.touch, trim=None)
-        which = ["--course", "2"] if kind == "course" else ["--reliance", "3"]
-        argv = ["--id", "g-bare-1", *which, "--kind", kind, "--fork", "1", "--runs", str(self.runs),
+        argv = ["--id", "g-bare-1", "--kind", kind, "--course", "2", "--fork", "1", "--runs", str(self.runs),
                 "--seed-dir", str(self.seed)]
-        return rcf.main(argv, deps=deps), docker, turns, argv, deps
+        return rcf.main(argv, deps=deps), docker, turns, argv, deps, ask
 
     def test_a_course_fork_runs_the_course_change_alone_from_the_snapshot_before_it(self):
-        rc, docker, turns, argv, deps = self.fork("course", "Done: fees dropped.")
+        rc, docker, turns, argv, deps, ask = self.fork("course", "Done: fees dropped.")
         self.assertEqual(rc, 0)
         meta = json.loads((self.runs / "g-bare-1" / "course-forks" / "c02-course-1" / "trajectory.json").read_text())
-        self.assertEqual((meta["kind"], meta["fork_of"], meta["course"], meta["reliance"]), ("course", "g-bare-1", 2, 3))
+        self.assertEqual((meta["kind"], meta["fork_of"], meta["course"]), ("course", "g-bare-1", 2))
         self.assertEqual((meta["change"], meta["commit"]), (2, "c-after-1"))
         self.assertEqual(sorted(meta["changes"]), ["2"])  # one change long
         self.assertEqual(meta["replicate"], "g-r1-course02-fork-1")
@@ -226,23 +263,77 @@ class CourseForkTest(unittest.TestCase):
         self.assertEqual(rcf.main(argv, deps=deps), 0)  # recorded already: left alone
         self.assertEqual(len(docker), 1)
 
-    def test_a_reliance_fork_runs_the_reliance_change_from_the_trajectorys_own_snapshot_before_it(self):
-        (self.runs / "g-bare-1" / "owner-state-02.json").write_text(json.dumps({"record": [], "requests": [], "seen": {}, "disclosed": []}))
-        rc, docker, turns, _, _ = self.fork("reliance", "Done: refunds.")
+    def test_a_reliance_fork_runs_the_request_from_the_trajectorys_snapshot_after_the_lag(self):
+        rc, docker, turns, argv, deps, ask = self.fork("reliance", "Done: the file is ready.")
         self.assertEqual(rc, 0)
-        meta = json.loads((self.runs / "g-bare-1" / "course-forks" / "r03-reliance-1" / "trajectory.json").read_text())
-        self.assertEqual((meta["kind"], meta["change"], meta["commit"]), ("reliance", 3, "c-after-2"))  # the intermediate changes kept
-        self.assertEqual(meta["courses"], [2])  # the course changes whose rules it relies on
-        self.assertEqual(meta["replicate"], "g-r1-reliance03-fork-1")
-        self.assertEqual(sorted(meta["changes"]), ["3"])
-        self.assertIn("c-after-2", " ".join(docker[0]))
+        meta = json.loads((self.runs / "g-bare-1" / "course-forks" / "c02-reliance-1" / "trajectory.json").read_text())
+        self.assertEqual((meta["kind"], meta["course"], meta["lag"], meta["at"]), ("reliance", 2, 2, 4))
+        self.assertEqual(meta["commit"], "c-after-4")  # after change 2 + 2: the changes in between included
+        self.assertIn("c-after-4", " ".join(docker[0]))
+        self.assertEqual(meta["replicate"], "g-r1-reliance02-fork-1")
+        self.assertEqual(list(meta["changes"]), ["reliance"])
+        self.assertIn("Can I get this week's releases as a file?", turns.calls[0]["prompt"])  # the request, fresh session
+        self.assertEqual(turns.calls[0]["resume"], None)
+
+    def test_a_growth_forks_owner_holds_the_main_lines_state_never_the_clowder_forks_scope(self):
+        # the reliance fork's owner stands at change 4 as the main line's does: every item in force by then, the retired
+        # ones gone, and what it had told the agent by then
+        rc, docker, turns, argv, deps, ask = self.fork("reliance", "Done.")
+        o = sm.parse_oracle(ORACLE)
+        main_line = {i.id for i in sm.released_items(o, 4)}
+        clowder = {i.id for i in sm.released_items(o, 4, only_change=True)}
+        self.assertNotEqual(main_line, clowder)  # the two scopes differ here, so the check means something
+        prompt = ask.prompts[0]
+        for i in main_line:
+            self.assertIn(f"[{i}]", prompt)
+        for i in {x.id for x in o.items} - main_line:  # retired by change 4, or not yet in force
+            self.assertNotIn(f"[{i}]", prompt)
+        import run_course_forks as rcf
+        self.assertFalse(rcf.LAST_OWNER.only_change)
+        self.assertIn("BK-02", rcf.LAST_OWNER.disclosed)  # the trajectory's owner state at that point
 
     def test_discarding_removes_the_forks_volumes(self):
         import run_course_forks as rcf
         docker = []
-        rcf.main(["--id", "g-bare-1", "--reliance", "3", "--kind", "reliance", "--fork", "1", "--runs", str(self.runs), "--discard"],
+        rcf.main(["--id", "g-bare-1", "--kind", "reliance", "--course", "2", "--fork", "1", "--runs", str(self.runs), "--discard"],
                  deps=rcf.Deps(docker=lambda cmd, **kw: docker.append(cmd) or subprocess_ok(cmd)))
-        self.assertEqual(docker, [["docker", "volume", "rm", "-f", "ce-g-bare-1-reliance03-1-ws", "ce-g-bare-1-reliance03-1-cfg"]])
+        self.assertEqual(docker, [["docker", "volume", "rm", "-f", "ce-g-bare-1-reliance02-1-ws", "ce-g-bare-1-reliance02-1-cfg"]])
+
+
+class PendingTest(unittest.TestCase):
+    """pending.py: whether a queued job has work left, so the pacing gate never holds up one that doesn't."""
+
+    def setUp(self):
+        self.runs = Path(tempfile.mkdtemp())
+        base = self.runs / "g-bare-1"
+        (base / "course-forks" / "c02-reliance-1").mkdir(parents=True)
+        (base / "trajectory.json").write_text(json.dumps({"changes": {
+            "0": {"finished": "t", "commit": "a"}, "1": {"finished": "t", "commit": "b"},
+            "2": {"finished": "t", "error": "stopped"}}}))
+        (base / "course-forks" / "c02-reliance-1" / "trajectory.json").write_text(json.dumps(
+            {"kind": "reliance", "course": 2, "at": 4, "changes": {"reliance": {"commit": "f4"}}}))
+
+    def left(self, *argv):
+        import pending
+        return pending.main([*argv, "--runs", str(self.runs)]) == 0
+
+    def test_a_batch_has_work_left_until_each_change_finished_without_error(self):
+        self.assertFalse(self.left("batch", "--id", "g-bare-1", "--changes", "0,1"))
+        self.assertTrue(self.left("batch", "--id", "g-bare-1", "--changes", "0,1,2"))  # stopped: run again
+        self.assertTrue(self.left("batch", "--id", "g-bare-1", "--changes", "3,4"))
+        self.assertTrue(self.left("batch", "--id", "g-new-1", "--changes", "0"))
+
+    def test_a_fork_has_work_left_until_it_is_recorded(self):
+        self.assertFalse(self.left("fork", "--id", "g-bare-1", "--kind", "reliance", "--course", "2", "--fork", "1"))
+        self.assertTrue(self.left("fork", "--id", "g-bare-1", "--kind", "reliance", "--course", "2", "--fork", "2"))
+        self.assertTrue(self.left("fork", "--id", "g-bare-1", "--kind", "course", "--course", "2", "--fork", "1"))
+
+    def test_a_checkpoint_has_work_left_until_it_finished_with_every_fork_it_should_grade(self):
+        self.assertTrue(self.left("checkpoint", "--id", "g-bare-1", "--change", "4"))
+        g = self.runs / "g-bare-1" / "growth" / "checkpoint-04"
+        g.mkdir(parents=True)
+        (g / "status.json").write_text(json.dumps({"finished": True, "left": [], "forks": ["c02-reliance-1"]}))
+        self.assertFalse(self.left("checkpoint", "--id", "g-bare-1", "--change", "4"))
 
 
 def subprocess_ok(cmd):
@@ -392,29 +483,68 @@ class GrowthCheckpointTest(unittest.TestCase):
         (t / "trajectory.json").write_text(json.dumps({
             "id": "g-bare-1", "arm": "bare", "seed": "bk", "replicate": "g-r1",
             "volumes": {"workspace": "ce-g-bare-1-ws"},
-            "changes": {"1": {"commit": "c1"}, "2": {"commit": "c2"}, "3": {"commit": "c3"}}}))
-        for name, meta in (("c02-course-1", {"kind": "course", "change": 2, "courses": [2], "commit": "c1",
+            "changes": {str(n): {"commit": f"c{n}"} for n in range(1, 5)}}))
+        for name, meta in (("c02-course-1", {"kind": "course", "change": 2, "course": 2, "commit": "c1",
                                              "volumes": {"workspace": "ce-g-bare-1-course02-1-ws"}, "changes": {"2": {"commit": "f2"}}}),
-                           ("r03-reliance-1", {"kind": "reliance", "change": 3, "courses": [2], "commit": "c2",
-                                               "volumes": {"workspace": "ce-g-bare-1-reliance03-1-ws"}, "changes": {"3": {"commit": "f3"}}})):
+                           ("c02-reliance-1", {"kind": "reliance", "change": 4, "course": 2, "lag": 2, "at": 4, "commit": "c4",
+                                               "volumes": {"workspace": "ce-g-bare-1-reliance02-1-ws"},
+                                               "changes": {"reliance": {"commit": "f4"}}})):
             (t / "course-forks" / name).mkdir(parents=True)
             (t / "course-forks" / name / "trajectory.json").write_text(json.dumps(meta))
         self.commands = []
 
     def run_pipeline(self, *steps, ask=None):
-        vols = FakeVolumes({"c3": self.TESTS, "f2": self.TESTS}, touched=["tests/test_fees.py", "src/app.py"])
-        rc = gc.main(["--id", "g-bare-1", "--change", "3", "--runs", str(self.runs), "--seeds", str(self.root / "seeds"),
+        vols = FakeVolumes({"c4": self.TESTS, "f2": self.TESTS}, touched=["tests/test_fees.py", "src/app.py"])
+        rc = gc.main(["--id", "g-bare-1", "--change", "4", "--runs", str(self.runs), "--seeds", str(self.root / "seeds"),
                       *(["--steps", ",".join(steps)] if steps else [])],
                      run=lambda cmd: self.commands.append(cmd) or 0, volume=vols,
                      ask=ask or (lambda p: ({"name": "current", "comments": "silent", "assertions": "current",
                                               "verdict": "current", "evidence": [1], "reason": "It waives the fee as intended."}, 0.01)))
         return rc, vols
 
+    def grading_writes_verdicts(self, cmd):
+        """A grading run that leaves verdicts where grade_checkpoint.py would."""
+        self.commands.append(cmd)
+        if "grade_checkpoint.py" in cmd:
+            fid, n = cmd[cmd.index("--id") + 1], int(cmd[cmd.index("--change") + 1])
+            name = cmd[cmd.index("--out-name") + 1] if "--out-name" in cmd else f"change-{n:02d}"
+            probes = cmd[cmd.index("--probes") + 1].split(",") if "--probes" in cmd else ["P-BK01-a"]
+            g = self.runs / fid / "grading" / name
+            g.mkdir(parents=True, exist_ok=True)
+            (g / "verdicts.json").write_text(json.dumps({"probes": {x: "met" for x in probes}}))
+        return 0
+
+    def test_a_checkpoint_is_finished_once_every_step_ran_and_nothing_is_left(self):
+        vols = FakeVolumes({"c4": self.TESTS, "f2": self.TESTS}, touched=["tests/test_fees.py"])
+        argv = ["--id", "g-bare-1", "--change", "4", "--runs", str(self.runs), "--seeds", str(self.root / "seeds")]
+        ask = lambda p: ({"name": "current", "comments": "silent", "assertions": "current", "verdict": "current",  # noqa: E731
+                          "evidence": [1], "reason": "As intended."}, 0.01)
+        gc.main(argv, run=lambda cmd: self.commands.append(cmd) or 0, volume=vols, ask=ask)  # gradings that left nothing
+        status = json.loads((self.runs / "g-bare-1" / "growth" / "checkpoint-04" / "status.json").read_text())
+        self.assertFalse(status["finished"])
+        self.assertIn("grade", status["left"])
+        self.assertTrue(gc.pending(self.runs, "g-bare-1", 4))
+        gc.main(argv, run=self.grading_writes_verdicts, volume=vols, ask=ask)
+        status = json.loads((self.runs / "g-bare-1" / "growth" / "checkpoint-04" / "status.json").read_text())
+        self.assertEqual((status["finished"], status["left"]), (True, []))
+        self.assertEqual(sorted(status["forks"]), ["c02-course-1", "c02-reliance-1"])
+        self.assertFalse(gc.pending(self.runs, "g-bare-1", 4))
+        # a fork recorded after the checkpoint finished still needs it
+        late = self.runs / "g-bare-1" / "course-forks" / "c02-reliance-2"
+        late.mkdir(parents=True)
+        (late / "trajectory.json").write_text(json.dumps({"kind": "reliance", "course": 2, "at": 4,
+                                                          "changes": {"reliance": {"commit": "f9"}}}))
+        self.assertTrue(gc.pending(self.runs, "g-bare-1", 4))
+        g3 = self.runs / "g-bare-1" / "growth" / "checkpoint-03"
+        g3.mkdir(parents=True)
+        (g3 / "status.json").write_text(json.dumps({"finished": True, "left": [], "forks": ["c02-course-1"]}))
+        self.assertFalse(gc.pending(self.runs, "g-bare-1", 3))  # the reliance forks at change 4 aren't checkpoint 3's
+
     def test_grading_flip_checks_and_course_forks(self):
         rc, _ = self.run_pipeline("grade", "flips")
         self.assertEqual(rc, 0)
         cmds = [" ".join(c) for c in self.commands]
-        self.assertTrue(any("grade_checkpoint.py --id g-bare-1 --change 3 --seed bk" in c and "--probes" not in c for c in cmds))
+        self.assertTrue(any("grade_checkpoint.py --id g-bare-1 --change 4 --seed bk" in c and "--probes" not in c for c in cmds))
         self.assertTrue(any("--change 2" in c and "--probes P-BK01-a,P-BK01-b" in c and "--out-name flip-c02-after" in c for c in cmds))
         self.assertTrue(any("--change 1" in c and "--probes P-BK02-a" in c and "--out-name flip-c02-before" in c for c in cmds))
         # each course fork: the new rule and the retired one at its end, then audited, then discarded
@@ -424,13 +554,33 @@ class GrowthCheckpointTest(unittest.TestCase):
         audit = json.loads((self.runs / "g-bare-1" / "course-forks" / "c02-course-1" / "growth" / "stale-audit.json").read_text())
         self.assertIn("tests/test_fees.py", audit["files"])
 
-    def test_reliance_changes_on_the_trajectory_and_its_reliance_forks_against_every_rule(self):
-        self.run_pipeline("reliance")
-        cmds = [" ".join(c) for c in self.commands]
-        self.assertTrue(any("--id g-bare-1 --change 3" in c and "--out-name reliance-r03" in c
-                            and "--probes P-BK01-a,P-BK01-b,P-BK02-a" in c for c in cmds))
-        self.assertTrue(any("--id g-bare-1/course-forks/r03-reliance-1 --change 3" in c and "--out-name reliance" in c for c in cmds))
-        self.assertTrue(any("run_course_forks.py --id g-bare-1 --kind reliance --reliance 3 --fork 1 --discard" in c for c in cmds))
+    def test_each_reliance_fork_is_graded_on_its_two_frozen_outcomes_and_the_current_rule(self):
+        fork = self.runs / "g-bare-1" / "course-forks" / "c02-reliance-1"
+        graded = []
+
+        def run(cmd):
+            self.commands.append(cmd)
+            if "grade_checkpoint.py" in cmd:  # the grading the fork would get: it followed the displaced rule
+                g = fork / "grading" / "reliance"
+                g.mkdir(parents=True, exist_ok=True)
+                (g / "verdicts.json").write_text(json.dumps({"probes": {"P-RR02-current": "not met", "P-RR02-displaced": "met",
+                                                                        "P-BK02-a": "met"}}))
+                graded.append(cmd)
+            return 0
+        gc.main(["--id", "g-bare-1", "--change", "4", "--runs", str(self.runs), "--seeds", str(self.root / "seeds"),
+                 "--steps", "reliance"], run=run, volume=FakeVolumes({}, touched=[]), ask=None)
+        cmd = " ".join(graded[0])
+        self.assertIn("--id g-bare-1/course-forks/c02-reliance-1", cmd)
+        self.assertIn("--commit f4", cmd)
+        self.assertIn("--probes P-RR02-current,P-RR02-displaced,P-BK02-a", cmd)  # the outcomes and the current rule
+        probes_file = Path(cmd.split("--probes-file ")[1].split()[0])
+        self.assertIn("#### P-RR02-displaced", probes_file.read_text())
+        self.assertTrue(any("run_course_forks.py --id g-bare-1 --kind reliance --course 2 --fork 1 --discard" in " ".join(c)
+                            for c in self.commands))
+        rows = json.loads((self.runs / "g-bare-1" / "growth" / "checkpoint-04" / "reliance.json").read_text())
+        self.assertEqual([(r["course"], r["fork"], r["outcome"], r["current_rule_held"]) for r in rows],
+                         [(2, "1", "displaced", True)])
+        self.assertFalse(any("--id g-bare-1 --change" in " ".join(c) for c in graded))  # nothing on the main line
 
     def test_an_emerging_change_is_checked_for_anticipation_not_counted_as_a_flip(self):
         (self.seed / "hidden" / "change-script.md").write_text(
@@ -440,22 +590,22 @@ class GrowthCheckpointTest(unittest.TestCase):
         g.mkdir(parents=True)
         (g / "verdicts.json").write_text(json.dumps({"probes": {"P-BK02-a": "met"}}))
         self.run_pipeline("flips")
-        flips = json.loads((self.runs / "g-bare-1" / "growth" / "checkpoint-03" / "flips.json").read_text())
+        flips = json.loads((self.runs / "g-bare-1" / "growth" / "checkpoint-04" / "flips.json").read_text())
         self.assertEqual([(f["kind"], f["anticipated"], f["behaves"]) for f in flips], [("emerging", True, None)])
 
     def test_intent_from_tests_and_docs_through_the_other_cli_with_a_plan(self):
         rc, vols = self.run_pipeline("intent")
-        plan = json.loads((self.runs / "intent-from-tests" / "growth-g-bare-1-c03" / "plan.json").read_text())
+        plan = json.loads((self.runs / "intent-from-tests" / "growth-g-bare-1-c04" / "plan.json").read_text())
         labels = {i["label"]: i for i in plan["inputs"]}
-        self.assertEqual(sorted(labels), ["brief", "g-bare-1-c03-docs", "g-bare-1-c03-tests", "g-bare-1-c03-tests-neutral"])
-        self.assertTrue(labels["g-bare-1-c03-tests-neutral"]["neutral"])
-        self.assertEqual(labels["g-bare-1-c03-tests"]["oracle"], {"kind": "benchtime", "seed": "bk", "change": 3})
-        self.assertEqual(labels["g-bare-1-c03-tests"]["baseline"], "brief")
-        self.assertEqual(labels["g-bare-1-c03-tests"]["verdicts"], "runs/g-bare-1/grading/change-03")
+        self.assertEqual(sorted(labels), ["brief", "g-bare-1-c04-docs", "g-bare-1-c04-tests", "g-bare-1-c04-tests-neutral"])
+        self.assertTrue(labels["g-bare-1-c04-tests-neutral"]["neutral"])
+        self.assertEqual(labels["g-bare-1-c04-tests"]["oracle"], {"kind": "benchtime", "seed": "bk", "change": 4})
+        self.assertEqual(labels["g-bare-1-c04-tests"]["baseline"], "brief")
+        self.assertEqual(labels["g-bare-1-c04-tests"]["verdicts"], "runs/g-bare-1/grading/change-04")
         cmds = [" ".join(c) for c in self.commands]
         self.assertTrue(any("intent_from_tests.py batch --plan" in c for c in cmds))
-        self.assertTrue(any("intent_from_tests.py summarize --name growth-g-bare-1-c03" in c for c in cmds))
-        self.assertIn("docker volume rm -f ce-gc-g-bare-1-c03", cmds)  # the readers' copy goes once they're done
+        self.assertTrue(any("intent_from_tests.py summarize --name growth-g-bare-1-c04" in c for c in cmds))
+        self.assertIn("docker volume rm -f ce-gc-g-bare-1-c04", cmds)  # the readers' copy goes once they're done
 
     def test_the_stale_intent_audit_on_what_each_course_change_touched_or_should_have(self):
         seen = []
@@ -465,7 +615,7 @@ class GrowthCheckpointTest(unittest.TestCase):
             return {"name": "contradicts", "comments": "silent", "assertions": "contradicts", "verdict": "stale",
                     "evidence": [1], "reason": "It still expects the retired fee."}, 0.02
         rc, _ = self.run_pipeline("stale", ask=ask)
-        out = json.loads((self.runs / "g-bare-1" / "growth" / "checkpoint-03" / "stale-audit.json").read_text())
+        out = json.loads((self.runs / "g-bare-1" / "growth" / "checkpoint-04" / "stale-audit.json").read_text())
         # touched by the change, and mentioning the area's terms
         self.assertEqual(sorted(out["courses"]["2"]["files"]), ["tests/test_fees.py", "tests/test_refunds.py"])
         self.assertEqual(out["courses"]["2"]["stale"], 2)
@@ -473,10 +623,10 @@ class GrowthCheckpointTest(unittest.TestCase):
         self.assertNotIn("bare", seen[0])
 
     def test_a_missing_intent_cli_leaves_a_hook(self):
-        vols = FakeVolumes({"c3": {"tests/test_fees.py": "x"}}, touched=[])
-        gc.main(["--id", "g-bare-1", "--change", "3", "--runs", str(self.runs), "--seeds", str(self.root / "seeds"),
+        vols = FakeVolumes({"c4": {"tests/test_fees.py": "x"}}, touched=[])
+        gc.main(["--id", "g-bare-1", "--change", "4", "--runs", str(self.runs), "--seeds", str(self.root / "seeds"),
                  "--steps", "intent"], run=lambda cmd: 2, volume=vols, ask=None)
-        status = json.loads((self.runs / "g-bare-1" / "growth" / "checkpoint-03" / "status.json").read_text())
+        status = json.loads((self.runs / "g-bare-1" / "growth" / "checkpoint-04" / "status.json").read_text())
         self.assertEqual(status["intent"]["state"], "pending")
         self.assertIn("plan.json", status["intent"]["plan"])
 

@@ -44,6 +44,8 @@ def main(argv=None) -> int:
     ap.add_argument("--probes", default="", help="comma-separated probe IDs to run, whatever their range (default: every applicable probe)")
     ap.add_argument("--out-name", default=None, help="folder under grading/ (default: change-NN)")
     ap.add_argument("--commit", default=None, help="grade this commit of the trajectory's workspace instead of the change's")
+    ap.add_argument("--probes-file", type=Path, default=None,
+                    help="a probes file in place of the seed's (a reliance fork's, with its two frozen outcomes added)")
     ap.add_argument("--execute-model", default="claude-haiku-5-5")
     ap.add_argument("--judge-model", default="claude-sonnet-5-5")
     ap.add_argument("--keep", action="store_true", help="leave the app containers running afterwards")
@@ -55,7 +57,8 @@ def main(argv=None) -> int:
     commit = args.commit or meta["changes"][str(args.change)]["commit"]
     out = run_dir / "grading" / (args.out_name or f"change-{args.change:02d}")
     out.mkdir(parents=True, exist_ok=True)
-    probeset = grading.parse_probes((HERE.parent / "seeds" / args.seed / "hidden" / "probes.md").read_text(encoding="utf-8"))
+    probes_path = args.probes_file or HERE.parent / "seeds" / args.seed / "hidden" / "probes.md"
+    probeset = grading.parse_probes(probes_path.read_text(encoding="utf-8"))
     chosen = set(filter(None, args.probes.split(",")))
     # Named probes run whatever their range, so a symptom diagnostic can run a later item's probes on the incoming version.
     applicable = [p for p in probeset.probes if (p.id in chosen if chosen else p.applies(args.change))]

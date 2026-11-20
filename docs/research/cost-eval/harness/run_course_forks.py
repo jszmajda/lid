@@ -3,17 +3,19 @@ twins and probe forks are. Two kinds:
 
 - a course fork (--kind course --course C) runs course change C from the arm's snapshot just before it: graded for
   the flip checks, and audited for stale intent, it samples how the change is handled;
-- a reliance fork (--kind reliance --reliance R) runs reliance change R from the trajectory's own snapshot just before
-  it, the changes in between included: graded for regression against every rule R relies on, it samples the
-  consequence, given the codebase the trajectory actually has.
+- a reliance fork (--kind reliance --course C) runs C's reliance request, which is never on the main line, from the
+  trajectory's own snapshot after change C + lag (the changes in between included): graded on its two frozen outcomes
+  and the current rule's probes, it records whether the build followed the current rule, the displaced one, neither,
+  or both, given the codebase the trajectory actually has.
 
     ../plumbing/with-token.sh python3.12 run_course_forks.py --id g-bare-1 --kind course --course 13 --fork 1
-    python3.12 run_course_forks.py --id g-bare-1 --kind reliance --reliance 16 --fork 1 --discard     # after grading
+    python3.12 run_course_forks.py --id g-bare-1 --kind reliance --course 13 --fork 1 --discard     # after grading
 
-Records go under the trajectory, ../runs/<id>/course-forks/cNN-course-K/ or rNN-reliance-K/: trajectory.json (its kind,
-the change, its commit and costs), the change's turns and owner records, and the owner's state after it. The owner
-starts as it stood before the change, and the fork draws on its own replicate, <the trajectory's>-<kind>NN-fork-K, so
-three forks are three draws. A fork already recorded is left alone.
+Records go under the trajectory, ../runs/<id>/course-forks/cNN-course-K/ or cNN-reliance-K/: trajectory.json (its kind,
+the change, its commit and costs), the change's turns and owner records, and the owner's state after it. A growth
+fork's owner is the trajectory's own, as it stood at the fork's snapshot: every item in force there, the retired ones
+gone, and everything it had said, never the Clowder forks' one-change scope. The fork draws on its own replicate,
+<the trajectory's>-<kind>NN-fork-K, so three forks are three draws. A fork already recorded is left alone.
 """
 
 from __future__ import annotations
@@ -65,23 +67,29 @@ def _role_calls(owner_model: str, costs: list[float]):
             call(simulator.completion_schema_json()))
 
 
+LAST_OWNER = None  # the last fork's owner, for tests to inspect
+
+
+def recorded(runs: Path, trajectory_id: str, kind: str, course: int, fork: int | str) -> bool:
+    """Whether this fork has run to its record (a fork that stopped partway hasn't)."""
+    meta_path = runs / trajectory_id / "course-forks" / f"c{course:02d}-{kind}-{fork}" / "trajectory.json"
+    key = str(course) if kind == "course" else "reliance"
+    return meta_path.exists() and key in json.loads(meta_path.read_text()).get("changes", {})
+
+
 def main(argv=None, *, deps: Deps | None = None) -> int:
     deps = deps or Deps()
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--id", required=True, help="the growth trajectory")
     ap.add_argument("--kind", choices=("course", "reliance"), required=True)
-    ap.add_argument("--course", type=int, help="the course change (a course fork)")
-    ap.add_argument("--reliance", type=int, help="the reliance change (a reliance fork)")
+    ap.add_argument("--course", type=int, required=True, help="the course change")
     ap.add_argument("--fork", type=int, required=True, help="the fork's number (1-3)")
     ap.add_argument("--runs", type=Path, default=HERE.parent / "runs")
     ap.add_argument("--seed-dir", type=Path, help="default: ../seeds/<the trajectory's seed>")
     ap.add_argument("--lid-repo", type=Path, default=None)
     ap.add_argument("--discard", action="store_true", help="only remove the fork's volumes (after grading)")
     args = ap.parse_args(argv)
-    n = args.course if args.kind == "course" else args.reliance
-    if n is None:
-        ap.error(f"a {args.kind} fork needs --{args.kind}")
-    tag = f"{args.kind}{n:02d}"
+    tag = f"{args.kind}{args.course:02d}"
     ws_vol, cfg_vol = f"ce-{args.id}-{tag}-{args.fork}-ws", f"ce-{args.id}-{tag}-{args.fork}-cfg"
     if args.discard:
         deps.docker(["docker", "volume", "rm", "-f", ws_vol, cfg_vol], capture_output=True, text=True)
@@ -91,31 +99,31 @@ def main(argv=None, *, deps: Deps | None = None) -> int:
     seed_dir = args.seed_dir or HERE.parent / "seeds" / base["seed"]
     script_path = seed_dir / "hidden" / "change-script.md"
     script = simulator.parse_change_script(script_path.read_text(encoding="utf-8"))
-    if args.kind == "course":
-        if script.get(n) is None or script[n].course_change is None:
-            print(f"change {n} isn't a course change")
-            return 2
-        courses = [n]
-        reliance = [r for c, r in growth.course_pairs(script) if c == n]
-    else:
-        courses = growth.reliance_changes(script).get(n)
-        if not courses:
-            print(f"change {n} isn't a reliance change")
-            return 2
-        reliance = [n]
-    start = base["changes"].get(str(n - 1), {}).get("commit") if n > 1 else base.get("start_commit")
-    state_path = base_dir / f"owner-state-{n - 1:02d}.json"
-    if not start or not state_path.exists():
-        print(f"{args.id} has no snapshot or owner state after change {n - 1}")
+    c = script.get(args.course)
+    if c is None or c.course_change is None:
+        print(f"change {args.course} isn't a course change")
         return 2
-    name = f"c{n:02d}-course-{args.fork}" if args.kind == "course" else f"r{n:02d}-reliance-{args.fork}"
+    if args.kind == "course":  # the course change itself, from the snapshot just before it
+        change, at, key = c, args.course - 1, str(args.course)
+    else:  # the reliance request, from the snapshot after the lag
+        if c.reliance_request is None:
+            print(f"change {args.course} has no reliance request")
+            return 2
+        change, key = growth.reliance_change(script, args.course), "reliance"
+        at = change.number
+    start = base["changes"].get(str(at), {}).get("commit") if at > 0 else base.get("start_commit")
+    state_path = base_dir / f"owner-state-{at:02d}.json"
+    if not start or not state_path.exists():
+        print(f"{args.id} has no snapshot or owner state after change {at}")
+        return 2
+    name = f"c{args.course:02d}-{args.kind}-{args.fork}"
     fid = f"{args.id}/course-forks/{name}"
     out = args.runs / fid
     meta_path = out / "trajectory.json"
+    if recorded(args.runs, args.id, args.kind, args.course, args.fork):
+        print(f"{fid} already recorded")
+        return 0
     if meta_path.exists():
-        if str(n) in json.loads(meta_path.read_text()).get("changes", {}):
-            print(f"{fid} already recorded")
-            return 0
         shutil.rmtree(out)  # a fork that stopped partway runs again from its start
     out.mkdir(parents=True)
 
@@ -144,6 +152,8 @@ def main(argv=None, *, deps: Deps | None = None) -> int:
                             replicate=replicate, ask=ask, touch=touch, trim=trim, model=owner_model,
                             owner_items=owner_items, check=check)
     trajectory.restore_owner_state(owner, json.loads(state_path.read_text()))
+    global LAST_OWNER
+    LAST_OWNER = owner
     isolation = executor.Isolation(window=(base.get("isolation") or {}).get("window", "1m"))
     session = executor.ContainerSession(image=IMAGE, workspace_volume=ws_vol, config_volume=cfg_vol, model=base["model"],
                                         claude_code_version=CLAUDE_CODE, expected_plugins=frozenset(arm.plugins),
@@ -154,8 +164,8 @@ def main(argv=None, *, deps: Deps | None = None) -> int:
         def turn(prompt, stream_path, *, resume=None, permission_mode="bypassPermissions"):
             return executor.run_turn(session, prompt, stream_path, resume=resume, permission_mode=permission_mode)
     workspace = (deps.workspace_for or trajectory.DockerWorkspace)(IMAGE, ws_vol)
-    meta = {"id": fid, "kind": args.kind, "fork_of": args.id, "change": n, "courses": courses,
-            "course": courses[0] if args.kind == "course" else None, "reliance": reliance[0] if len(reliance) == 1 else reliance,
+    meta = {"id": fid, "kind": args.kind, "fork_of": args.id, "course": args.course, "change": change.number,
+            "at": at if args.kind == "reliance" else None, "lag": c.reliance_request.lag if args.kind == "reliance" else None,
             "fork": args.fork, "commit": start, "arm": arm.name, "seed": base["seed"], "model": base["model"],
             "effort": base["effort"], "policy": base["policy"], "owner_model": base["owner_model"], "replicate": replicate,
             "owner_model_config": asdict(owner_model), "isolation": isolation.record(), "lid_release": arm.lid_release,
@@ -165,15 +175,16 @@ def main(argv=None, *, deps: Deps | None = None) -> int:
             "volumes": {"workspace": ws_vol, "config": cfg_vol}, "changes": {}}
     meta_path.write_text(json.dumps(meta, indent=1))
     began = time.monotonic()
-    res = trajectory.run_change(arm=arm, change=script[n], owner=owner, turn=turn, workspace=workspace,
-                                out_dir=out / f"change-{n:02d}", round_cap=meta["round_cap"])
+    res = trajectory.run_change(arm=arm, change=change, owner=owner, turn=turn, workspace=workspace,
+                                out_dir=out / f"change-{key}" if key == "reliance" else out / f"change-{change.number:02d}",
+                                round_cap=meta["round_cap"])
     agent_cost = sum((t["usage"] or {}).get("reported_cost_usd") or 0 for t in res.turns)
-    meta["changes"][str(n)] = {"title": res.title, "rounds": res.rounds, "finished": res.finished, "capped": res.capped,
+    meta["changes"][key] = {"title": res.title, "rounds": res.rounds, "finished": res.finished, "capped": res.capped,
                                "error": res.error, "commit": res.commit, "agent_cost_usd": round(agent_cost, 4),
                                "owner_cost_usd": round(sum(costs), 4), "minutes": round((time.monotonic() - began) / 60, 1)}
     meta_path.write_text(json.dumps(meta, indent=1))
-    (out / f"owner-state-{n:02d}.json").write_text(json.dumps(trajectory.owner_state(owner), indent=1))
-    print(f"{fid}: change {n} {'stopped: ' + res.error if res.error else 'done'}")
+    (out / f"owner-state-{key}.json").write_text(json.dumps(trajectory.owner_state(owner), indent=1))
+    print(f"{fid}: {key} {'stopped: ' + res.error if res.error else 'done'}")
     return 1 if res.error else 0
 
 

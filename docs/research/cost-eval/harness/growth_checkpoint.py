@@ -10,9 +10,9 @@ Steps, each skipped where its record exists:
   emerging change's new item once before it, recorded as anticipated or not (not a flip). Then each course fork
   (course-forks/cNN-course-K/), graded at its end on the new rule (should hold) and the retired one (should not),
   audited for stale intent, and discarded;
-- reliance: each reliance change so far, graded against every rule it relies on (each should still hold, and each
-  retired one stay retired), on the trajectory (grading/reliance-rNN/) and on each reliance fork
-  (course-forks/rNN-reliance-K/), which is discarded once graded;
+- reliance: each reliance fork whose request has run (course-forks/cNN-reliance-K/, the request at change course +
+  lag, never on the main line), graded on its two frozen outcomes and the current rule's probes, and recorded as
+  following the current rule, the displaced one, neither, or both; then discarded;
 - intent: intent from tests and docs, by intent_from_tests.py (another module): a plan of the tests as written, the
   tests with names and comments replaced, the docs where the build keeps any, and the brief as the baseline, read from
   a volume of the checkpoint's commit. If that tool can't run, the plan is left ready and the step marked pending;
@@ -22,7 +22,8 @@ Steps, each skipped where its record exists:
   context where there is one).
 
 Results go to ../runs/<id>/growth/checkpoint-NN/: flips.json, course-forks.json, reliance.json, stale-audit.json, and
-status.json.
+status.json, which says whether the checkpoint is finished (a run of every step left nothing ungraded or pending), what
+was left, and which forks were graded; pending.py reads it so a finished checkpoint never waits at the pacing gate.
 """
 
 from __future__ import annotations
@@ -43,6 +44,22 @@ from run_trajectory import CLAUDE_CODE, IMAGE, ROLES_VOLUME  # noqa: E402
 
 STEPS = ("grade", "flips", "reliance", "intent", "stale")
 PY = sys.executable
+
+
+def pending(runs: Path, trajectory_id: str, c: int) -> bool:
+    """Whether checkpoint c still has work: it hasn't finished (every step run, nothing left ungraded), or a fork it
+    should grade (a course fork of a change up to c, a reliance fork whose request ran by c) was recorded since."""
+    f = runs / trajectory_id / "growth" / f"checkpoint-{c:02d}" / "status.json"
+    status = json.loads(f.read_text()) if f.exists() else {}
+    if not status.get("finished"):
+        return True
+    seen = set(status.get("forks") or [])
+    for meta_path in (runs / trajectory_id / "course-forks").glob("c*-*-*/trajectory.json"):
+        m = json.loads(meta_path.read_text())
+        due = m.get("course", 99_999) <= c if m.get("kind") == "course" else (m.get("at") or 99_999) <= c
+        if m.get("changes") and due and meta_path.parent.name not in seen:
+            return True
+    return False
 
 
 def _verdicts(path: Path) -> dict[str, str] | None:
@@ -89,6 +106,8 @@ def main(argv=None, *, run: Callable[[list[str]], int] | None = None, volume: Ca
     status_path = out / "status.json"
     status = json.loads(status_path.read_text()) if status_path.exists() else {}
     grading_dir = args.runs / t / "grading"
+    left: list[str] = []  # what this run left ungraded or pending
+    forks_seen: list[str] = []  # the forks this run graded
 
     def grade(fid: str, n: int, *extra: str) -> int:
         return run([PY, "grade_checkpoint.py", "--id", fid, "--change", str(n), "--seed", seed, *extra])
@@ -96,6 +115,8 @@ def main(argv=None, *, run: Callable[[list[str]], int] | None = None, volume: Ca
     if "grade" in steps:
         if _verdicts(grading_dir / f"change-{c:02d}") is None:
             status["grade"] = {"exit": grade(t, c)}
+        if _verdicts(grading_dir / f"change-{c:02d}") is None:
+            left.append("grade")
 
     terms_file = seed_dir / "hidden" / "stale-audit-terms.json"
     terms = json.loads(terms_file.read_text()) if terms_file.exists() else {}
@@ -123,6 +144,8 @@ def main(argv=None, *, run: Callable[[list[str]], int] | None = None, volume: Ca
             name = f"flip-c{e['course']:02d}-{e['when']}"
             if e["probes"] and _verdicts(grading_dir / name) is None:
                 grade(t, e["at_change"], "--probes", ",".join(e["probes"]), "--out-name", name)
+            if e["probes"] and _verdicts(grading_dir / name) is None:
+                left.append(name)
             got = _verdicts(grading_dir / name) or {}
             row = {**e, "verdicts": {p: got.get(p) for p in e["probes"]}}
             if e["expect"] == "anticipated?":  # an emerging change: did the build already do it? Not a flip
@@ -154,36 +177,45 @@ def main(argv=None, *, run: Callable[[list[str]], int] | None = None, volume: Ca
                 if graded_now:
                     run([PY, "run_course_forks.py", "--id", t, "--kind", "course", "--course", str(n), "--fork",
                          fork.name.rsplit("-", 1)[1], "--discard"])
+                if new + old and _verdicts(where) is None:
+                    left.append(fork.name)
+                else:
+                    forks_seen.append(fork.name)
                 got = _verdicts(where) or {}
                 forks.append({"course": n, "kind": ch.course_change.kind, "run": fid, "verdicts": got,
                               "behaves": (all(got.get(x) == "met" for x in new) and all(got.get(x) == "not met" for x in old))
                               if got else None, "stale": json.loads(audit_path.read_text()).get("stale")})
         (out / "course-forks.json").write_text(json.dumps(forks, indent=1))
 
-    if "reliance" in steps:
+    if "reliance" in steps:  # reliance forks: the request at course + lag, on its two frozen outcomes and the current rule
         rows = []
-        for r, courses in growth.reliance_changes(script, upto=c).items():
-            probes = growth.reliance_change_probes(script, probeset, r)
-            new = set().union(*(growth.probes_for(probeset, script[x].introduces) for x in courses))
-            targets = [(t, f"reliance-r{r:02d}", None)]
-            for fork in sorted((args.runs / t / "course-forks").glob(f"r{r:02d}-reliance-*")):
+        probes_text = (seed_dir / "hidden" / "probes.md").read_text(encoding="utf-8")
+        for course, lag in growth.reliance_requests(script, upto=c):
+            current = growth.probes_for(probeset, script[course].introduces)
+            for fork in sorted((args.runs / t / "course-forks").glob(f"c{course:02d}-reliance-*")):
                 fm = json.loads((fork / "trajectory.json").read_text()) if (fork / "trajectory.json").exists() else {}
-                if str(r) in fm.get("changes", {}):
-                    targets.append((f"{t}/course-forks/{fork.name}", "reliance", fork.name.rsplit("-", 1)[1]))
-            for fid, name, k in targets:
-                where = args.runs / fid / "grading" / name
-                if probes and _verdicts(where) is None:
-                    if grade(fid, r, "--probes", ",".join(probes), "--out-name", name) == 0 and k is not None:
-                        run([PY, "run_course_forks.py", "--id", t, "--kind", "reliance", "--reliance", str(r), "--fork", k,
-                             "--discard"])
+                done = (fm.get("changes") or {}).get("reliance")
+                if not done or not done.get("commit"):
+                    continue
+                fid, where, k = f"{t}/course-forks/{fork.name}", fork / "grading" / "reliance", fork.name.rsplit("-", 1)[1]
+                if _verdicts(where) is None:
+                    text, ids = growth.reliance_probes(probes_text, script, course)
+                    probes_file = fork / "reliance-probes.md"
+                    probes_file.write_text(text, encoding="utf-8")
+                    if grade(fid, course + lag, "--probes", ",".join(ids + current), "--out-name", "reliance",
+                             "--probes-file", str(probes_file.resolve()), "--commit", done["commit"]) == 0:
+                        run([PY, "run_course_forks.py", "--id", t, "--kind", "reliance", "--course", str(course),
+                             "--fork", k, "--discard"])
+                if _verdicts(where) is None:
+                    left.append(fork.name)
+                else:
+                    forks_seen.append(fork.name)
                 got = _verdicts(where) or {}
-                per_course = {}
-                for x in courses:  # each rule it relies on: still in force, and the retired one still gone
-                    keep = growth.probes_for(probeset, script[x].introduces)
-                    gone = [q for q in growth.probes_for(probeset, script[x].retires) if q not in keep]
-                    per_course[str(x)] = (any(got.get(q) != "met" for q in keep) or any(got.get(q) == "met" for q in gone)) if got else None
-                rows.append({"reliance": r, "courses": courses, "run": fid, "verdicts": got, "regressed_by_course": per_course,
-                             "regressed": (any(v for v in per_course.values())) if got else None})
+                rows.append({"course": course, "kind": script[course].course_change.kind, "lag": lag, "run": fid, "fork": k,
+                             "outcome": growth.reliance_outcome(got.get(f"P-RR{course:02d}-current"),
+                                                                got.get(f"P-RR{course:02d}-displaced")),
+                             "current_rule_held": all(got.get(x) == "met" for x in current) if got and current else None,
+                             "verdicts": got})
         (out / "reliance.json").write_text(json.dumps(rows, indent=1))
 
     if "intent" in steps or "stale" in steps:
@@ -214,6 +246,8 @@ def main(argv=None, *, run: Callable[[list[str]], int] | None = None, volume: Ca
         if rc == 0:
             rc = run([PY, "intent_from_tests.py", "summarize", "--name", name])
         status["intent"] = {"state": "done" if rc == 0 else "pending", "plan": rel, "exit": rc, "name": name}
+        if rc != 0:
+            left.append("intent")
         if rc == 0:  # the checkpoint's copy is only the readers' input; a pending one stays for the rerun
             run(["docker", "volume", "rm", "-f", vol])
 
@@ -228,6 +262,10 @@ def main(argv=None, *, run: Callable[[list[str]], int] | None = None, volume: Ca
                 courses[str(n)] = audit_course(n, ch, ws, before, after, at=commit)
         (out / "stale-audit.json").write_text(json.dumps({"checkpoint": c, "courses": courses}, indent=1))
 
+    if set(STEPS) <= set(steps):  # a full run says whether the checkpoint is finished; a partial one only unsettles it
+        status.update(finished=not left, left=left, forks=sorted(forks_seen))
+    elif left:
+        status.update(finished=False, left=sorted(set(status.get("left") or []) | set(left)))
     status_path.write_text(json.dumps(status, indent=1))
     return 0
 

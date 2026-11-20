@@ -403,6 +403,16 @@ def _json(path: Path):
     return json.loads(path.read_text()) if path.exists() else None
 
 
+RELIANCE_OUTCOMES = ("current", "displaced", "neither", "both", "undetermined")
+
+
+def _displaced(rows: list[dict]) -> tuple[int, int]:
+    """Reliance forks that followed the displaced rule, of those that followed one rule or neither. A fork that met both
+    frozen outcomes is inconsistent: counted apart and sent for a spot-check, like a grading conflict."""
+    decided = [r for r in rows if r.get("outcome") in ("current", "displaced", "neither")]
+    return sum(r["outcome"] == "displaced" for r in decided), len(decided)
+
+
 def growth_report(runs: Path, seed_dir: Path, prefix: str, arms: dict[str, list[str]], checkpoints: list[int]) -> dict:
     """The growth test per trajectory and checkpoint (design.md, "The growth test"). Trajectories are
     <prefix>-<arm>-<k>; a replicate k that isn't a number (the drift floor, g-bare-drift) is its own row and joins no
@@ -427,7 +437,8 @@ def growth_report(runs: Path, seed_dir: Path, prefix: str, arms: dict[str, list[
         known = [n for n in disclosed[key] if n <= c]
         return disclosed[key][max(known)] if known else set()
 
-    out = {"prefix": prefix, "checkpoints": checkpoints, "arms": {}}
+    out = {"prefix": prefix, "checkpoints": checkpoints, "arms": {}, "reliance_by_course": {}, "reliance_spot_checks": []}
+    seen_forks: set[str] = set()
     for (arm, k), run in trajs.items():
         s, rows, prev_met = trajectory_summary(run), [], None
         for c in checkpoints:
@@ -453,8 +464,8 @@ def growth_report(runs: Path, seed_dir: Path, prefix: str, arms: dict[str, list[
                 "checkpoint": c, "stated": share_met(v, lambda i: kinds.get(i) == "stated"),
                 "latent": share_met(v, lambda i: i in latent), "latent_disclosed_everywhere": common,
                 "keeping": (len(prev_met & met), len(prev_met & set(v))) if prev_met else None,
-                "reliance_regressions": (sum(r.get("regressed") is True for r in rel),
-                                         sum(r.get("regressed") is not None for r in rel)) if rel else None,
+                "reliance": {o: sum(r.get("outcome") == o for r in rel) for o in RELIANCE_OUTCOMES} if rel else None,
+                "displaced_rate": _displaced(rel) if rel else None,
                 "flips_behaving": (sum(bool(f.get("behaves")) for f in real_flips), len(real_flips)) if real_flips else None,
                 "anticipated": (sum(bool(f["anticipated"]) for f in anticipations), len(anticipations)) if anticipations else None,
                 "course_forks_behaving": (sum(f.get("behaves") is True for f in cforks),
@@ -468,6 +479,15 @@ def growth_report(runs: Path, seed_dir: Path, prefix: str, arms: dict[str, list[
                 "met_per_owner_hour": len(met) / hours if hours else None,
                 "met_per_dollar": len(met) / dollars if dollars else None})
             prev_met = met
+            for row in rel:  # each reliance fork once, under its course change and arm
+                if row.get("run") in seen_forks:
+                    continue
+                seen_forks.add(row.get("run"))
+                cell = out["reliance_by_course"].setdefault(str(row.get("course")), {}).setdefault(
+                    arm if k.isdigit() else f"{arm} ({k})", {o: 0 for o in RELIANCE_OUTCOMES})
+                cell[row.get("outcome") if row.get("outcome") in RELIANCE_OUTCOMES else "undetermined"] += 1
+                if row.get("outcome") == "both":
+                    out["reliance_spot_checks"].append(row.get("run"))
         label = arm if k.isdigit() else f"{arm} ({k})"
         out["arms"].setdefault(label, []).append({"id": run.name, "replicate": k, "checkpoints": rows})
     return out
@@ -492,9 +512,13 @@ def render_growth(r: dict) -> str:
              "- Flips: each retirement, reversal, re-reversal and rescope, the retired rule failing after it and the new "
              "rule before it. An emerging change's new rule, checked before it, counts as anticipated, never as a flip.",
              "- Course forks behave when the new rule holds and the retired one fails at the fork's end.",
+             "- Reliance forks run each course change's reliance request from the trajectory's snapshot after its lag. "
+             "Displaced-rule rate: forks that followed the displaced rule, of those that followed the current rule, "
+             "the displaced one, or neither. A fork that met both frozen outcomes is inconsistent: counted apart, "
+             "outside the rate, and listed for a spot-check.",
              "- Owner-hours at 238 words a minute; fidelity per owner-hour and per dollar count items met.", ""]
     for c in r["checkpoints"]:
-        lines += [f"## Change {c}", "", "| Arm | Stated | Latent | Latent disclosed in every arm | Keeping | Reliance regressions | "
+        lines += [f"## Change {c}", "", "| Arm | Stated | Latent | Latent disclosed in every arm | Keeping | Displaced-rule rate | "
                   "Flips behaving | Anticipated | Course forks behaving | Stale files (forks) | Cost per change | Owner-hours | "
                   "Met per owner-hour | Met per $ |", "|---|" + "---|" * 14]
         for arm, ts in r["arms"].items():
@@ -504,11 +528,23 @@ def render_growth(r: dict) -> str:
                 continue
             col = lambda k: [x[k] for x in rows]
             lines.append(f"| {arm} | {share(col('stated'))} | {share(col('latent'))} | {share(col('latent_disclosed_everywhere'))} | "
-                         f"{ratio(col('keeping'))} | {ratio(col('reliance_regressions'))} | {ratio(col('flips_behaving'))} | "
+                         f"{ratio(col('keeping'))} | {ratio(col('displaced_rate'))} | {ratio(col('flips_behaving'))} | "
                          f"{ratio(col('anticipated'))} | {ratio(col('course_forks_behaving'))} | {ratio(col('stale_files'))} "
                          f"({sum(x or 0 for x in col('course_fork_stale_files'))}) | ${num(col('cost_per_change'))} | {num(col('owner_hours'))} | "
                          f"{num(col('met_per_owner_hour'), '{:.1f}')} | {num(col('met_per_dollar'))} |")
         lines.append("")
+    if r.get("reliance_by_course"):
+        lines += ["## Reliance forks by course change", "", "| Course change | Arm | Current | Displaced | Neither | Both | "
+                  "Undetermined | Displaced-rule rate |", "|---|---|---|---|---|---|---|---|"]
+        for course, by_arm in sorted(r["reliance_by_course"].items(), key=lambda kv: int(kv[0])):
+            for arm, n in by_arm.items():
+                decided = n["current"] + n["displaced"] + n["neither"]
+                lines.append(f"| {course} | {arm} | {n['current']} | {n['displaced']} | {n['neither']} | {n['both']} | "
+                             f"{n['undetermined']} | {n['displaced']}/{decided} |")
+        lines.append("")
+    if r.get("reliance_spot_checks"):
+        lines += ["## Reliance forks to spot-check", "", "Each met both frozen outcomes, which can't both hold.", ""]
+        lines += [f"- {run}" for run in r["reliance_spot_checks"]] + [""]
     return "\n".join(lines)
 
 

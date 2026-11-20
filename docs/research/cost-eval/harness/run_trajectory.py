@@ -57,6 +57,12 @@ def owner_model_from_arg(value: str | None) -> simulator.OwnerModel:
 EMPTY_OWNER_STATE = {"record": [], "requests": [], "seen": {}, "disclosed": []}
 
 
+def change_done(meta: dict, n: int) -> bool:
+    """Whether change n has run to its end without an error (one that stopped runs again)."""
+    c = (meta.get("changes") or {}).get(str(n)) or {}
+    return c.get("finished") is not None and not c.get("error")
+
+
 def prepare_owner(owner: simulator.Owner, out: Path, n: int) -> None:
     """Set the owner as it stood before change n: empty for the first build, so a retried first build carries nothing
     from a failed attempt; otherwise as saved after change n - 1. A later change with no saved state can't start."""
@@ -199,7 +205,7 @@ def main(argv=None) -> int:
         return executor.run_turn(session, prompt, stream_path, resume=resume, permission_mode=permission_mode)
 
     for n in (int(x) for x in args.changes.split(",")):
-        if str(n) in meta["changes"] and meta["changes"][str(n)].get("finished") is not None and not meta["changes"][str(n)].get("error"):
+        if change_done(meta, n):
             print(f"change {n}: already run, skipping")
             continue
         try:

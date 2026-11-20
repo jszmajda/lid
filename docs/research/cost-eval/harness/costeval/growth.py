@@ -9,24 +9,40 @@ FLIP_KINDS = ("retirement", "reversal", "re-reversal", "rescope")  # a rescope r
 WPM = 238  # owner reading speed, words a minute
 
 
-def course_pairs(script: dict[int, simulator.Change], upto: int | None = None) -> list[tuple[int, int]]:
-    """(course change, a reliance change on it), for every pair whose reliance change is at or before `upto`. A reliance
-    change can serve several course changes."""
-    pairs = []
-    for n, c in script.items():
-        for t in c.reliance_for:
-            target = script.get(t)
-            if target is not None and target.course_change is not None and (upto is None or n <= upto):
-                pairs.append((t, n))
-    return sorted(pairs)
+def reliance_requests(script: dict[int, simulator.Change], upto: int | None = None) -> list[tuple[int, int]]:
+    """(course change, lag) for each course change whose reliance request runs at or before `upto`: after change
+    course + lag, as a fork."""
+    return [(n, c.reliance_request.lag) for n, c in sorted(script.items())
+            if c.course_change is not None and c.reliance_request is not None
+            and (upto is None or n + c.reliance_request.lag <= upto)]
 
 
-def reliance_changes(script: dict[int, simulator.Change], upto: int | None = None) -> dict[int, list[int]]:
-    """Each reliance change at or before `upto`, with the course changes it serves."""
-    out: dict[int, list[int]] = {}
-    for course, r in course_pairs(script, upto):
-        out.setdefault(r, []).append(course)
-    return dict(sorted(out.items()))
+def reliance_change(script: dict[int, simulator.Change], course: int) -> simulator.Change:
+    """The reliance request as a change the owner answers: a fork-only request at the snapshot after course + lag,
+    whose owner stands where the main line's does there (as a probe fork's does)."""
+    r = script[course].reliance_request
+    return simulator.Change(number=course + r.lag, title=f"Reliance request after change {course}", request=r.request,
+                            relies_on=simulator.ALL, probe=True)
+
+
+def reliance_probes(probes_text: str, script: dict[int, simulator.Change], course: int) -> tuple[str, list[str]]:
+    """The seed's probes with the reliance request's two frozen outcomes beside them, as probes sharing its setup and
+    scenario: P-RRnn-current (what the current rule gives) and P-RRnn-displaced (what the displaced rule would give)."""
+    r = script[course].reliance_request
+    ids = [f"P-RR{course:02d}-current", f"P-RR{course:02d}-displaced"]
+    blocks = [f"### RR-{course:02d}"]
+    for pid, expected in zip(ids, (r.current_outcome, r.displaced_outcome)):
+        blocks.append(f"#### {pid}\n- **Applies:** from change 0\n- **Needs:** none\n- **Setup:** {r.setup}\n"
+                      f"- **Scenario:** {r.scenario}\n- **Expected observation:** {expected}")
+    return probes_text.rstrip("\n") + "\n\n" + "\n\n".join(blocks) + "\n", ids
+
+
+def reliance_outcome(current: str | None, displaced: str | None) -> str:
+    """Which rule a reliance fork followed, from its two frozen outcomes' verdicts."""
+    if current not in ("met", "not met") or displaced not in ("met", "not met"):
+        return "undetermined"
+    return {("met", "not met"): "current", ("not met", "met"): "displaced", ("not met", "not met"): "neither",
+            ("met", "met"): "both"}[(current, displaced)]
 
 
 def item_id(name: str) -> str:
@@ -37,22 +53,6 @@ def probes_for(probeset: grading.ProbeSet, items) -> list[str]:
     """The probes that check these items, in the probe file's order."""
     want = set(items)
     return [p.id for p in probeset.probes if item_id(p.item) in want]
-
-
-def reliance_probes(script: dict[int, simulator.Change], probeset: grading.ProbeSet, course: int) -> list[str]:
-    """What a reliance change is graded on: the probes of the rule its course change put in force (it should hold)
-    and of the rule it retired (it should stay retired)."""
-    c = script[course]
-    return probes_for(probeset, set(c.introduces) | set(c.retires))
-
-
-def reliance_change_probes(script: dict[int, simulator.Change], probeset: grading.ProbeSet, reliance: int) -> list[str]:
-    """What a reliance change is graded on: every rule it relies on, across the course changes it serves."""
-    items = set()
-    for course in script[reliance].reliance_for:
-        if course in script:
-            items |= set(script[course].introduces) | set(script[course].retires)
-    return probes_for(probeset, items)
 
 
 def flip_plan(script: dict[int, simulator.Change], probeset: grading.ProbeSet, upto: int) -> list[dict]:

@@ -167,7 +167,7 @@ The first against the third is the falsification test. The second against the th
 
 The other four changes in a block come from the ordinary mix (local features, cross-cutting rules, symptom-only bugs, a refactor). Across the three blocks, three re-reversals return a rule toward what it was before.
 
-**Each course change has a reliance change.** Two to five changes later, a scripted change works in the overturned rule's area without mentioning it. Whether that later change regresses the current rule, or rebuilds the retired one, is the measured consequence of rot. Stale prose that never misleads anyone is reported, but not counted as harm.
+**Each course change has a reliance request.** It is an ordinary request in the overturned rule's area that never mentions the rule. It runs only as a fork from the trajectory's own snapshot, two to five changes after the course change, and is then discarded, so it never shapes the main line. Its expected outcome is frozen twice before any run: once under the current rule and once under the displaced one, and the two differ observably. Whether the fork follows the current rule or the displaced one is the measured consequence of rot. Stale prose that never misleads anyone is reported, but not counted as harm.
 
 **Authorship is blind to the hypotheses.** Sol drafts the thirty changes from counts by type and distance alone, without being told what the study tests. Each change records a predicted direction before any run, including course changes expected to cost LID through its cascade. Results are reported per change type, as for every seed.
 
@@ -175,7 +175,7 @@ The other four changes in a block come from the ordinary mix (local features, cr
 
 **Bare and LID Full run five trajectories each.** A third arm runs three: bare with one added instruction, "When a rule changes, update its tests and their names." It is the cheapest answer to the rot hypothesis: if one sentence buys most of LID's resistance to rot, that matters. Cheap discipline differed little from bare on BenchTime (93% against 95%), so it joins with the competitor arms. Within a replicate, the arms share a seed. Sessions are one per change with a fresh context, under the bounded owner at its central constants.
 
-**Course-change forks.** For each arm's first replicate, each course change is forked three times from the snapshot before it, to sample how the change is handled (flip checks and the stale-intent audit). Each reliance change is forked three times from the trajectory's own snapshot just before it, to sample the consequence given the codebase the trajectory actually has. Forks are discarded once graded.
+**Forks.** Every trajectory runs one reliance fork per course change, and each arm's first replicate runs three. Each arm's first replicate also forks every course change three times from the snapshot before it, to sample how the change is handled (flip checks and the stale-intent audit). Forks are discarded once graded.
 
 **A drift floor.** A sixth bare trajectory shares the first bare trajectory's replicate seed across all 40 changes, so their differences show how far a codebase drifts by chance alone.
 
@@ -185,7 +185,7 @@ Cheap discipline and the competitor arms (OpenSpec, Spec Kit, BMAD) join in mile
 
 - **Items met,** stated and latent. The latent lead is also reported on items disclosed in every arm of a replicate, because LID asks more and so hears more over 40 changes.
 - **Keeping:** items met at an earlier checkpoint that are still met.
-- **Regression on reliance changes:** whether each reliance change keeps the current rule.
+- **Reliance forks:** whether each reliance request follows the current rule, the displaced one, or neither.
 - **Flip checks:** for every retirement and reversal, the old rule's probe should pass before the change and fail after, and the new rule's probe should do the reverse. A rescope gives the item a new version, with its own probe.
 - **Intent from tests.** A fresh reader, working within a fixed search budget rather than a truncated input, sees only the arm's tests and writes the system's current rules. A judge maps each rule to the oracle: recovers an item in force, contradicts one, implies a retired one (stale), or matches nothing.
   - Recall counts only items the arm's build actually meets, so it measures how well the tests record intent the arm built, not whether it built it.
@@ -216,10 +216,12 @@ Cheap discipline and the competitor arms (OpenSpec, Spec Kit, BMAD) join in mile
 
 ### The trial, and its gate
 
-One bare and one LID trajectory run through change 20, with their course-change forks. The full run goes ahead only if:
-- bare shows stale claims above zero after its course changes;
-- the positive control fires;
-- the flip checks behave on a correct build.
+One bare and one LID trajectory run through change 20, with their forks. The full run goes ahead only if the instrument works:
+- the positive control's planted stale tests are caught;
+- the flip checks behave on a correct build;
+- the probes separate a correct build from a deliberately stale one.
+
+The gate never looks at the arms' results. The trial's stale claims, recall and costs are reported openly whatever they show.
 
 ### What it costs, roughly
 
