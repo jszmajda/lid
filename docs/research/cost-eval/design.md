@@ -208,7 +208,7 @@ Cheap discipline and the competitor arms (OpenSpec, Spec Kit, BMAD) join in mile
 
 **Predictions.** X and Y are fixed after the trial, from its replicate spread, and before the full run:
 
-1. LID's lead over bare in latent items met (paired by replicate) is at least X points higher at change 40 than at change 10, in every replicate. The same holds on probe forks.
+1. LID's lead over bare in winnable latent items met (paired by replicate) is at least X points higher at change 40 than at change 10, in every replicate. The same holds on probe forks. Winnable latent items are askable or recognised-on-sight rows that a cold panel rarely guesses, so a default build doesn't meet them by chance.
 2. Bare's intent-from-tests recall, above the baseline, falls at least Y points from change 10 to change 40, and LID's falls at most half as much. Stale claims per course-changed item are at least twice as high for bare. Reliance changes regress more often for bare.
 3. The probe forks' cost ratio (change 40 over change 10) is higher for bare in every replicate. No absolute crossover is claimed.
 
