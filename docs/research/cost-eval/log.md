@@ -4,6 +4,24 @@ Newest entries first. Each entry says what was done, what was decided, and who d
 
 Older entries move to [log-archive/](log-archive/) when this file passes about 2,000 words, and 'Earlier, in brief' at the bottom summarizes them.
 
+## 2026-11-19: The growth test is designed; tests as carriers of intent; a symptom-row leak
+
+**The growth test** (design.md, "The growth test"; plan.md M2d). The maintainer chose to test the scale and test-rot hypotheses on ReleaseDesk grown by each arm through 40 changes, not to replicate the Clowder pilot: on Clowder, bare on the full repository copied LID's artifacts. The design was revised after Claude Fable's methodology review. Sol drafted the thirty new changes blind to the hypotheses, Fable and GPT-6.2 Astra reviewed the draft, and Sol redrafted it. The second draft gives each course change a dedicated reliance request, run only as a fork (the maintainer's option A). Both reviewers' re-checks are under way.
+
+**Intent from tests, a first look.** A fresh reader saw only a system's tests (or docs) and wrote its rules; a judge scored them against the oracle. At BenchTime's change 10, recall over the items each build meets was:
+
+| Source | bare | cheap discipline | LID Full |
+|---|---|---|---|
+| Tests | 83% | 89% | 93% |
+| Docs | 80% | 87% | 94% |
+| Tests with names and comments neutralised | 76% | 82% | 84% |
+
+A reader given only the brief recovered 28%. Stale claims were near zero, as expected with almost no retirements.
+
+On Clowder's own snapshot, the kittens segment's tests implied 32% of its retired spec lines, through test names such as `the_roster_only_ever_grows`. With the names neutralised, that fell to 5%. Two caveats: recall credits a rule that matches part of an item (whole-item recall was 8–30%), and Clowder's segment tests were chosen because they cite the segment's specs.
+
+**A symptom-row leak, found and fixed.** The owner held a realized-on-symptom row from its change onward, even when its report never fired. In five stage 3b trajectories (bare-2, cheap discipline 1 and 2, LID 1 and 2), the owner recalled BT-41 once, at change 6 or 9, although change 5's report never fired. Every build already met BT-41 before the share. Leaving BT-41 out moves each arm's change-10 figure by at most 0.13 points, and no arm's standing changes. The owner now holds such a row only after its report fires on that trajectory. Symptom rows had also sat outside the report's latent column, which counted askable items only.
+
 ## 2026-11-18: The Clowder pilot
 
 **What ran:** three arms, each at a 1M and a 200k context window, twelve independent changes each, one run per cell, on Sonnet 5.5 under the bounded owner. The arms were bare on the stripped repository, bare on the full repository, and LID Full. These are pilot numbers, not evidence.
@@ -64,33 +82,12 @@ The pilot ends on probes version 5 for changes 5 and 10 and version 4 elsewhere;
 - **The room is there:** bare met 80% here, against 95% on BenchTime.
 - **The window may not be a dose.** No bare session came near 200k tokens. Bare agents search and read slices of the code rather than loading it, so a 200k window would not have changed what they saw. If that holds, the window cannot test the hypothesis as stated. The open question becomes whether agents read where the intent lives, which `context_telemetry.py` measures as intent reach. The pilot proper runs both windows as planned and measures whether any arm comes near the window: LID reads about four times as much as bare on BenchTime.
 
-## 2026-11-17: BenchTime under the rebuilt owner
-
-**What ran:** bare, cheap discipline, and LID Full on Sonnet 5.5, three trajectories each, under the bounded owner at the central constants. The three arms of each replicate share one draw seed. Then probe forks and grading at changes 2, 6, and 10 with probes version 5 (`harness/run_stage3b.sh`; `runs/stage3b/report.md`). Every trajectory completed. Pilot numbers, not evidence.
-
-| Arm | Items met at change 10 | Latent (askable) items met | Agent cost | Owner replies | Words shown to the owner |
-|---|---|---|---|---|---|
-| bare | 95% | 92% | $2.53 | 19.0 | 5,156 |
-| cheap discipline | 93% | 90% | $4.54 | 23.7 | 14,348 |
-| LID Full | 97% | 96% | $11.17 | 64.7 | 53,431 |
-
-**What the owner did:**
-- **Recall on review was about the same in every arm:** 8 to 10 unsaid items per trajectory. No broad question recalled anything.
-- **The bounded owner caught few contradictions in LID's long documents:** 0.3 kept of 4.0 drawn per trajectory, against 2.7 of 4.3 for bare and 2.7 of 7.0 for cheap discipline. A contradiction deep in a long plan is read near the attention floor.
-- **LID still met the most items,** so its lead here comes from its own asking and specification, not from the owner correcting it.
-
-**Keeping** (items met at change 2 that are still met at change 10) was 100%, 100%, and 98.8%: BenchTime has almost no regressions to measure.
-
-**Comparability:** stage 2's diligent-owner numbers were graded under probes version 4 and the earlier judge rules. These use version 5, and the rerun of executor-caused verdicts, which lifts every arm. The two stages can be compared arm against arm within a stage, not across.
-
-**Reading:** on BenchTime, with Sonnet, a realistic owner leaves the arms 2 to 4 points apart at change 10. LID costs about 4.4 times bare's agent spend and shows the owner about 10 times the words. The seed is near its ceiling for this executor. The latent-heavy seed, ReleaseDesk, is where the arms have room to differ.
-
 ## Earlier, in brief
 
-**The arc so far.** On 11-16, the simulated owner was rebuilt as an imperfect person on published attention and recall research, with separate seeded draws for attention and recall. On 11-11, three takes on the design converged on one core design, and mining old transcripts was dropped. On 11-12, the maintainer settled that graders are models, and BenchTime and ReleaseDesk were chosen as the pilot and second seeds. On 11-13, a grading protocol was written into design.md, about 25 throwaway sessions showed that LID's phase stops work headless, and the maintainer decided the harness stays outside LID's arrow. On 11-14, Claude Fable's review found the simulated owner not ready for counted runs, and pilot stage 0 ran the three arms through two changes. In the evening, grader calibration showed Haiku 5.5 flipping 9% of its verdicts on repeat, so Sonnet 5.5 judges and Haiku executes, and two Opus 5.5 trajectories met 90% in stage 1 under the diligent owner. Under a rubber-stamp owner, which shares only what direct questions ask for, Opus met 88%. Late that night, a Sonnet ceiling check started. On 11-15, it met 80% and 76%, so Sonnet became BenchTime's main executor. ReleaseDesk's owner brief was drafted by several models and checked by Claude Fable, and a six-model panel measured how guessable its candidate rules are. The maintainer then set the mix of eight latent rules by guessability band, and the rules within each band were drawn by lot. Later on 11-15, ReleaseDesk's oracle, change script, and probes were drafted, reviewed, and accepted. Stage 2 on BenchTime was graded. Its first numbers put LID Full at 96% of items met at about 5× bare's cost, and ReleaseDesk's ceiling check started. That night stage 2 passed all four of its thresholds, and a leak review found the owner adding what a plan left out; the owner's corrections were tightened.
+**The arc so far.** On 11-17, BenchTime ran under the rebuilt owner (pilot: bare 95%, cheap discipline 93%, LID Full 97% at change 10; LID's lead came from its own asking, not the owner's corrections). On 11-16, the simulated owner was rebuilt as an imperfect person on published attention and recall research, with separate seeded draws for attention and recall. On 11-11, three takes on the design converged on one core design, and mining old transcripts was dropped. On 11-12, the maintainer settled that graders are models, and BenchTime and ReleaseDesk were chosen as the pilot and second seeds. On 11-13, a grading protocol was written into design.md, about 25 throwaway sessions showed that LID's phase stops work headless, and the maintainer decided the harness stays outside LID's arrow. On 11-14, Claude Fable's review found the simulated owner not ready for counted runs, and pilot stage 0 ran the three arms through two changes. In the evening, grader calibration showed Haiku 5.5 flipping 9% of its verdicts on repeat, so Sonnet 5.5 judges and Haiku executes, and two Opus 5.5 trajectories met 90% in stage 1 under the diligent owner. Under a rubber-stamp owner, which shares only what direct questions ask for, Opus met 88%. Late that night, a Sonnet ceiling check started. On 11-15, it met 80% and 76%, so Sonnet became BenchTime's main executor. ReleaseDesk's owner brief was drafted by several models and checked by Claude Fable, and a six-model panel measured how guessable its candidate rules are. The maintainer then set the mix of eight latent rules by guessability band, and the rules within each band were drawn by lot. Later on 11-15, ReleaseDesk's oracle, change script, and probes were drafted, reviewed, and accepted. Stage 2 on BenchTime was graded. Its first numbers put LID Full at 96% of items met at about 5× bare's cost, and ReleaseDesk's ceiling check started. That night stage 2 passed all four of its thresholds, and a leak review found the owner adding what a plan left out; the owner's corrections were tightened.
 
 **Decisions.** Every decision that still stands, with its date and who made it, is in [decisions.md](decisions.md).
 
 **Archive.**
 
-- [2026-11.md](log-archive/2026-11.md): entries from 2026-11-11 to 2026-11-16 (twenty-two entries)
+- [2026-11.md](log-archive/2026-11.md): entries from 2026-11-11 to 2026-11-17 (twenty-three entries)
