@@ -7,8 +7,8 @@ Your only way to reach the service is the `gt` command at /work/bin/gt. Run `gt`
 
 For each setup in `/work/setups.md`, in order:
 
-1. Run `gt reset` to start from empty data.
-2. Set the setup's starting clock with `gt clock <time>`.
+1. Set the setup's starting clock with `gt clock <time>`, first, so the service starts and loads at that instant.
+2. Run `gt reset` to start from empty data. It keeps the clock you set.
 3. Load everything the setup describes, through the reference's setup mechanism, and nothing else.
 4. Check with the service's own operations that what you loaded is there.
 5. Run `gt snapshot <setup name>`, for example `gt snapshot S0`.
@@ -20,5 +20,7 @@ End `/work/ids.md` with a section headed `## Credentials`. If the service needs 
 If loading or operating the service needs an administrator that the setup doesn't describe, create one extra administrative account named "Grading admin" and record its credential. Never give a fixture person a role or permission the setup doesn't describe.
 
 If you can't load part of a setup through the reference at all, mark it with `gt mark 'CANNOT <setup>: <what, and what you tried>'`, load the rest, and still take the snapshot. If the service loads something but not exactly as described (for example, it creates a duplicate), don't mark it CANNOT: mark it with `gt mark 'DEVIATION <setup>: <what happened>'`, note it in `/work/ids.md`, and carry on. The service's own quirks are part of what gets graded. Reply with a short list of what you loaded for each setup and anything you couldn't.
+
+`gt http` never follows a redirect: a 3xx status and its Location are logged as the answer. Where the reference's path is redirected only to add or remove a trailing slash, send the request to the path the Location gives (or use `gt http --follow`).
 
 To give a setup command or a request a file, such as an import manifest, write it with `gt file <name> '<content>'`. It prints the file's path inside the service's container; pass that path to the command. You can't write files any other way.

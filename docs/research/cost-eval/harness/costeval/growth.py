@@ -149,10 +149,12 @@ def flip_plan(script: dict[int, simulator.Change], probeset: grading.ProbeSet, u
         if kind not in FLIP_KINDS:
             continue
         old_side, new_side = _sides(script, probeset, n)  # a rescope is checked on its reach's side only
+        widening = kind == "rescope" and rescope_reach(script, probeset, n)[0] == "widening"
         if c.retires and old_side:
             plan.append(entry(n, kind, "after", c.retires, "not met"))
         if c.introduces and c.introduces != simulator.ALL and new_side:
-            plan.append(entry(n, kind, "before", c.introduces, "not met"))
+            # a widening rescope's narrower build may already meet the new row: anticipated, recorded, not a flip
+            plan.append(entry(n, kind, "before", c.introduces, "anticipated?" if widening else "not met"))
     return plan
 
 

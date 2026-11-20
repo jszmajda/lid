@@ -74,7 +74,7 @@ class ProbeTest(unittest.TestCase):
         a, b, c = self.ps.probes
         self.assertEqual((a.id, a.item, a.setup, a.needs), ("P-BK01-a", "BK-01", "S0", ()))
         self.assertEqual((b.applies_from, b.applies_until, b.needs), (0, 1, ("restart",)))
-        self.assertTrue(c.deferred)
+        self.assertFalse(c.deferred)  # prior-data is provided now (costeval/prior.py)
         self.assertIn("2. Inspect it.", a.scenario)
 
     def test_applicability(self):
@@ -147,10 +147,13 @@ class SetupTest(unittest.TestCase):
         problems = ["no snapshot for S1", "CANNOT S2: no researchers yet", "CANNOT S0 qualifications missing"]
         self.assertEqual(grading.broken_setups(problems, ["S0", "S1", "S2", "S3"]), {"S0", "S1", "S2"})
         self.assertEqual(grading.broken_setups(["no identifier list"], ["S0"]), set())
+        # S37's zone, where it can't be set: only S37 is broken, never S3 by its prefix
+        self.assertEqual(grading.broken_setups(["CANNOT S37: zone can't be set here"], ["S3", "S37"]), {"S37"})
 
-    def test_needs_written_as_sentences_still_defer(self):
+    def test_needs_written_as_sentences_still_count(self):
+        from costeval import prior
         text = PROBES.replace("- **Needs:** prior-data, restart", "- **Needs:** prior-data: records made at change 0, restart")
-        self.assertTrue(grading.parse_probes(text).probes[2].deferred)
+        self.assertTrue(prior.needs_prior_data(grading.parse_probes(text).probes[2]))
 
     def test_conventions_reach_the_executor_and_the_judge(self):
         ps = grading.parse_probes(PROBES)
@@ -248,6 +251,12 @@ class JudgmentTest(unittest.TestCase):
         self.assertIn('{"x": "{PROBES}"}', p)
         with self.assertRaises(KeyError):
             grading._template("grade-judge.md", PROBES="x")
+
+
+class SetupPromptTest(unittest.TestCase):
+    def test_a_setup_sets_its_clock_before_resetting_so_its_timestamps_fall_at_the_intended_instants(self):
+        text = (Path(__file__).resolve().parent.parent / "prompts" / "grade-setup.md").read_text()
+        self.assertLess(text.index("gt clock <time>"), text.index("Run `gt reset`"))
 
 
 if __name__ == "__main__":

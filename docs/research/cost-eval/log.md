@@ -20,6 +20,8 @@ A reader given only the brief recovered 28%. Stale claims were near zero, as exp
 
 On Clowder's own snapshot, the kittens segment's tests implied 32% of its retired spec lines, through test names such as `the_roster_only_ever_grows`. With the names neutralised, that fell to 5%. Two caveats: recall credits a rule that matches part of an item (whole-item recall was 8–30%), and Clowder's segment tests were chosen because they cite the segment's specs.
 
+**Growth content in public files, found and fixed.** A sweep of tracked files for growth-seed text found harness test fixtures and a grading note that paraphrased growth rules. All were rewritten with synthetic content or moved to a hidden file. One fixture had been pushed: it paraphrased a search rule that every panel model guessed (high band), so it reveals nothing an arm would not build anyway. Growth runs use the same network isolation as Clowder's, so no arm can reach the repository.
+
 **A symptom-row leak, found and fixed.** The owner held a realized-on-symptom row from its change onward, even when its report never fired. In five stage 3b trajectories (bare-2, cheap discipline 1 and 2, LID 1 and 2), the owner recalled BT-41 once, at change 6 or 9, although change 5's report never fired. Every build already met BT-41 before the share. Leaving BT-41 out moves each arm's change-10 figure by at most 0.13 points, and no arm's standing changes. The owner now holds such a row only after its report fires on that trajectory. Symptom rows had also sat outside the report's latent column, which counted askable items only.
 
 ## 2026-11-18: The Clowder pilot

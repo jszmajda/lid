@@ -9,9 +9,11 @@ own tools merge them (hidden/prompts-growth/split_growth.py's merged_oracle; bui
   probe request;
 - hidden/probes.md: probes-growth.md, the full growth probe set;
 - hidden/owner-items.json: block 1's, with the growth rows' salience tiers and recall lines merged in from
-  salience-growth/hidden/salience/: the current round, round 2 for RD-104 alone, and round 1 for the rows it rated
-  (a later round wins). Nothing is invented: a row no round gave a tier or line is a gap that --check lists;
+  salience-growth/hidden/salience/: the current round, round 2 for the rows the current round didn't rate again,
+  and round 1 for the rows it rated (a later round wins). Nothing is invented: a row no round gave a tier or line is a gap that --check lists;
 - hidden/stale-audit-terms.json and reference-builds.json: as they are;
+- grading-notes.md: ReleaseDesk's, which the interface extraction reads, with hidden/grading-notes-growth.md's notes
+  (from its first bold paragraph on) appended;
 - hidden/assembled.json: each source file and its SHA-256.
 
     python3.12 assemble_growth_seed.py [--check]
@@ -39,7 +41,7 @@ SRC = HERE.parent / "seeds" / "releasedesk"
 DEST = HERE.parent / "seeds" / "releasedesk-growth"
 COPIED = ("stale-audit-terms.json", "reference-builds.json")
 SALIENCE = SRC / "hidden" / "salience-growth" / "hidden" / "salience"
-ROUND2_ONLY = {"RD-104"}  # round 2's other rows were rated again in the current round
+GROWTH_NOTES = "grading-notes-growth.md"  # private notes for the growth changes, appended to the public ones
 
 
 def _round(d: Path) -> tuple[dict, dict]:
@@ -48,9 +50,11 @@ def _round(d: Path) -> tuple[dict, dict]:
     return tiers, lines
 
 
-def merge_owner_items(base: dict, salience: Path = SALIENCE, round2_only=ROUND2_ONLY) -> dict:
-    """Block 1's owner items with the growth salience rounds over them: round 1, then round 2's named rows, then the
-    current round, each later one winning for the rows it rated or wrote a line for."""
+def merge_owner_items(base: dict, salience: Path = SALIENCE) -> dict:
+    """Block 1's owner items with the growth salience rounds over them: round 1, then round 2 for the rows the current
+    round didn't rate again, then the current round, each later one winning for the rows it rated or wrote a line for."""
+    current = _round(salience)
+    round2_only = (set(_round(salience / "round2")[0]) | set(_round(salience / "round2")[1])) - set(current[0]) - set(current[1])
     out = dict(base)
     items = {k: dict(v) for k, v in (base["items"] if "items" in base else base).items() if not k.startswith("_")}
     for d, only in ((salience / "round1", None), (salience / "round2", set(round2_only)), (salience, None)):
@@ -63,8 +67,8 @@ def merge_owner_items(base: dict, salience: Path = SALIENCE, round2_only=ROUND2_
                 entry["tier"] = tiers[row]
             if row in lines:
                 entry["recall"] = lines[row]
-    out["_growth"] = ("growth salience merged by assemble_growth_seed.py: round 1, round 2 for "
-                      + ", ".join(sorted(round2_only)) + ", then the current round")
+    out["_growth"] = ("growth salience merged by assemble_growth_seed.py: round 1, round 2 for the rows the current "
+                      "round didn't rate again, then the current round")
     if "items" in base:
         out["items"] = items
         return out
@@ -86,6 +90,17 @@ def owner_item_gaps(oracle: simulator.Oracle, items: dict) -> list[str]:
     return sorted(gaps, key=lambda g: int(g.split(":")[0].split("-")[1]))
 
 
+def merged_notes(public: str, growth: Path) -> str:
+    """The public grading notes, then the hidden growth notes from their first bold paragraph (their heading and the
+    line about where they go are for the reader of the file, not for the extraction)."""
+    if not growth.exists():
+        return public
+    text = growth.read_text(encoding="utf-8")
+    i = text.find("\n**")
+    body = text[i + 1:] if i >= 0 else text
+    return public.rstrip("\n") + "\n\n" + body.strip() + "\n"
+
+
 def merged_change_script(first: str, growth: str) -> str:
     head, sep, probe = first.partition("\n## Probe request")
     changes = growth[growth.index("\n## Delivery rules"):].partition("\n## Plan")[0]
@@ -102,6 +117,8 @@ def assemble(src: Path = SRC, dest: Path = DEST) -> dict[str, str]:
                                   (hidden / "change-script-growth.md").read_text(encoding="utf-8"))
     (dest / "hidden").mkdir(parents=True, exist_ok=True)
     shutil.copyfile(src / "brief.md", dest / "brief.md")
+    notes = (src / "grading-notes.md").read_text(encoding="utf-8") if (src / "grading-notes.md").exists() else ""
+    (dest / "grading-notes.md").write_text(merged_notes(notes, hidden / GROWTH_NOTES), encoding="utf-8")
     (dest / "hidden" / "oracle.md").write_text(oracle, encoding="utf-8")
     (dest / "hidden" / "change-script.md").write_text(script, encoding="utf-8")
     shutil.copyfile(hidden / "probes-growth.md", dest / "hidden" / "probes.md")
@@ -111,9 +128,9 @@ def assemble(src: Path = SRC, dest: Path = DEST) -> dict[str, str]:
     base = json.loads((hidden / "owner-items.json").read_text(encoding="utf-8"))
     (dest / "hidden" / "owner-items.json").write_text(json.dumps(merge_owner_items(base), indent=1, ensure_ascii=False),
                                                       encoding="utf-8")
-    sources = ["brief.md"] + [f"hidden/{n}" for n in ("oracle.md", "oracle-growth.md", "change-script.md",
+    sources = ["brief.md", "grading-notes.md"] + [f"hidden/{n}" for n in ("oracle.md", "oracle-growth.md", "change-script.md",
                                                       "change-script-growth.md", "probes-growth.md", "owner-items.json",
-                                                      *COPIED)]
+                                                      GROWTH_NOTES, *COPIED)]
     sources += [str(p.relative_to(src)) for d in (SALIENCE, SALIENCE / "round2", SALIENCE / "round1")
                 for p in (d / "ratings.json", d / "recall-lines.json") if p.exists()]
     record = {s: hashlib.sha256((src / s).read_bytes()).hexdigest() for s in sources if (src / s).exists()}
@@ -134,15 +151,14 @@ def check(dest: Path = DEST) -> list[str]:
     if (dest / "hidden" / reference.SPEC_FILE).exists():
         spec = reference.load_spec(dest)
         view = reference.owner_view(oracle, spec)
-        for n in range(41):
-            if [i.id for i in simulator.released_items(view, n)] != spec["correct"][str(n)]:
-                problems.append(f"R+'s owner at change {n} doesn't hold the spec's rows")
+        for n in range(41):  # the rows, then the reach statements stated there
+            if [i.id for i in simulator.released_items(view, n)] != reference.expected_ids(spec, n):
+                problems.append(f"R+'s owner at change {n} doesn't hold the spec's rows and statements")
         for c, e in spec["stale"].items():
             v = reference.owner_view(oracle, spec, int(c))
-            for n, rows in e["hold"].items():
-                want = rows + ([reference.stand_in_id(int(c))] if e["stand_in"] else [])
-                if [i.id for i in simulator.released_items(v, int(n))] != want:
-                    problems.append(f"S_{c}'s owner at change {n} doesn't hold the spec's rows")
+            for n in e["hold"]:
+                if [i.id for i in simulator.released_items(v, int(n))] != reference.expected_ids(spec, int(n), int(c)):
+                    problems.append(f"S_{c}'s owner at change {n} doesn't hold the spec's rows and statements")
     return problems
 
 

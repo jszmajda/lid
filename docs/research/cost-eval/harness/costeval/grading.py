@@ -36,8 +36,8 @@ TOOLS = HERE / "grading"
 VERDICTS = ("met", "not met", "couldn't exercise")
 MISSING = "missing"  # a probe the grader couldn't exercise even on a rerun: no verdict on the build, either way
 CONFLICT = "missing (conflict)"  # a "met" on an item the extraction found absent: out of the share, for a spot-check
-DEFERRED_NEEDS = ("prior-data", "prior-observations")
-MAX_JUDGE_BODY = 20000  # characters of one response body the judge sees; the full log stays on disk  # not implemented yet; such probes are reported as not run
+DEFERRED_NEEDS: tuple[str, ...] = ()  # needs the harness can't yet provide; prior-data and -observations: costeval/prior.py
+MAX_JUDGE_BODY = 20000  # characters of one response body the judge sees; the full log stays on disk
 
 
 # ---------------------------------------------------------------------------------------------- the probes
@@ -143,21 +143,57 @@ def setups_used(batch: list[Probe], setups: dict[str, str]) -> list[str]:
     return sorted(want, key=lambda s: int(s[1:]))
 
 
-def render_for_execution(batch: list[Probe], conventions: str = "", setups: dict[str, str] | None = None) -> str:
+def _scenario_for_execution(p: Probe, earlier: str | None) -> str:
+    """A probe's scenario as its executor runs it: with an earlier run's record where it has one, and for a prior-data
+    probe, its first step (the preparation, done already) left out."""
+    if not earlier:
+        return f"- **Scenario:**\n{p.scenario}"
+    from . import prior
+    rest = prior.check_steps(p) if prior.preparation(p) else p.scenario
+    lead = "  1. (Done at an earlier checkpoint: see the record below. Don't repeat it.)\n  " if prior.preparation(p) else ""
+    return f"- **Scenario:**\n{lead}{rest}\n- **Record of the earlier run:**\n\n{earlier.strip()}"
+
+
+def render_for_execution(batch: list[Probe], conventions: str = "", setups: dict[str, str] | None = None,
+                         earlier: dict[str, str] | None = None) -> str:
     """The probes as the executor sees them: the probe set's conventions, the full description of each setup the
-    batch uses (and of each setup those build on), then scenarios only, never expected observations."""
+    batch uses (and of each setup those build on), then scenarios only, never expected observations. A probe with an
+    earlier run (prior-data, prior-observations) carries that run's record for the checker."""
     head = f"## Conventions for every probe\n\n{conventions.strip()}\n\n" if conventions.strip() else ""
     used = setups_used(batch, setups or {})
     if used:
         head += "## Setups these probes use\n\n" + "\n\n".join(setups[s] for s in used) + "\n\n"
     return head + "\n\n".join(f"## {p.id}\n\n- **Setup:** {p.setup}\n- **Needs:** {', '.join(p.needs) or 'none'}\n"
-                       f"- **Scenario:**\n{p.scenario}" for p in batch)
+                       + _scenario_for_execution(p, (earlier or {}).get(p.id)) for p in batch)
 
 
-def render_for_judgment(batch: list[Probe], conventions: str = "") -> str:
+def render_for_preparation(p: Probe, conventions: str = "", setups: dict[str, str] | None = None) -> str:
+    """A prior-data probe's preparation as its executor runs it: the first step alone, retained by `gt retain`."""
+    from . import prior
     head = f"## Conventions for every probe\n\n{conventions.strip()}\n\n" if conventions.strip() else ""
-    return head + "\n\n".join(f"## {p.id}\n\n- **Setup:** {p.setup}\n- **Scenario:**\n{p.scenario}\n"
-                       f"- **Expected observation:** {p.expected}" for p in batch)
+    used = setups_used([p], setups or {})
+    if used:
+        head += "## Setups these probes use\n\n" + "\n\n".join(setups[s] for s in used) + "\n\n"
+    prep = prior.preparation(p)
+    return head + (f"## {p.id} (preparation)\n\n- **Setup:** {p.setup}\n- **Scenario:** only this step; a later "
+                   f"checkpoint does the rest.\n  {prep.step}\n\nThis is change {prep.change}'s checkpoint. Where the step "
+                   "says to retain the storage, run `gt retain` at that point: it keeps the data and the clock exactly as "
+                   "they are then. Whatever the step does afterwards runs on a copy, so carry on as written. Record every "
+                   "identifier, address, and request form the step asks you to record with `gt mark 'KEEP <what>: <value>'`, "
+                   "one mark each.")
+
+
+def render_for_judgment(batch: list[Probe], conventions: str = "", earlier: dict[str, str] | None = None) -> str:
+    head = f"## Conventions for every probe\n\n{conventions.strip()}\n\n" if conventions.strip() else ""
+
+    def one(p):
+        text = (f"## {p.id}\n\n- **Setup:** {p.setup}\n- **Scenario:**\n{p.scenario}\n"
+                f"- **Expected observation:** {p.expected}")
+        if (earlier or {}).get(p.id):
+            text += ("\n- **Earlier runs this probe compares with** (context: cite only the main log's `seq` as "
+                     f"evidence):\n\n{earlier[p.id].strip()}")
+        return text
+    return head + "\n\n".join(one(p) for p in batch)
 
 
 def item_verdicts(probe_verdicts: dict[str, str], probes: list[Probe]) -> dict[str, dict]:
@@ -288,6 +324,20 @@ class Checkpoint:
                     return bool((rec.get("response") or {}).get("ok"))
             time.sleep(1)
         return False
+
+    def tar_out(self, name: str) -> bytes:
+        """A named snapshot (its data and clock) from /work/snap, as a tar."""
+        p = self.runner(["docker", "run", "--rm", "-v", f"{executor._volume(self.volume)}:/work", self.image,
+                         "tar", "-C", "/work/snap", "-cf", "-", name], capture_output=True)
+        if p.returncode != 0:
+            raise RuntimeError(f"no snapshot {name} to take out: {p.stderr[-300:]!r}")
+        return p.stdout
+
+    def tar_in(self, name: str, data: bytes) -> None:
+        """A snapshot taken out with tar_out, put back as /work/snap/<name>, which `gt restore <name>` opens."""
+        _run(self.runner, ["docker", "run", "--rm", "-i", "-v", f"{executor._volume(self.volume)}:/work", self.image, "sh",
+                           "-c", f"rm -rf /work/snap/{name} && mkdir -p /work/snap/{name} && "
+                           f"tar -C /work/snap/{name} -xf - --strip-components=1"], stdin=data)
 
     def log_lines(self, worker: int, batch: str) -> list[dict]:
         text = self.get(self.volume, f"log/exec-{worker}.jsonl") or ""
@@ -517,9 +567,13 @@ def prepare_setups(ck: Checkpoint, g: Graders, probeset: ProbeSet, names: list[s
 
 
 def execute_batch(ck: Checkpoint, g: Graders, worker: int, bid: str, batch: list[Probe], out: Path,
-                  conventions: str = "", setups: dict[str, str] | None = None) -> list[dict]:
-    ck.put(ck.tools_volume, f"/work/probes-{bid}.md", render_for_execution(batch, conventions, setups))
-    ck.admin(worker, {"batch": bid})
+                  conventions: str = "", setups: dict[str, str] | None = None, earlier: dict[str, str] | None = None,
+                  text: str | None = None, retain: str | None = None) -> list[dict]:
+    """Run a batch: its probes as rendered (or `text`, such as a preparation), with `gt retain` keeping the data as
+    the snapshot `retain` names, where given."""
+    text = text if text is not None else render_for_execution(batch, conventions, setups, earlier)
+    ck.put(ck.tools_volume, f"/work/probes-{bid}.md", text)
+    ck.admin(worker, {"batch": bid, "retain": retain})
     role = g.role(g.execute_model, tools=("Bash", "Read"), workspace_volume=ck.tools_volume, network=ck.network,
                   env=(("GT_CONTROL", f"http://app{worker}:9000"), ("PATH", TOOL_PATH)), timeout_s=2400)
     prompt = _template("grade-execute.md").replace("/work/probes.md", f"/work/probes-{bid}.md")
@@ -528,19 +582,19 @@ def execute_batch(ck: Checkpoint, g: Graders, worker: int, bid: str, batch: list
         session = {"usage": _usage(rec), "reply": rec.text}
     except executor.RoleFailed as e:
         session = {"error": str(e)}
-    ck.admin(worker, {"batch": None})
+    ck.admin(worker, {"batch": None, "retain": None})
     lines = ck.log_lines(worker, bid)
     out.mkdir(parents=True, exist_ok=True)
-    (out / "probes.md").write_text(render_for_execution(batch, conventions, setups), encoding="utf-8")
+    (out / "probes.md").write_text(text, encoding="utf-8")
     (out / "log.jsonl").write_text("\n".join(json.dumps(r) for r in lines), encoding="utf-8")
     (out / "execution.json").write_text(json.dumps(session, indent=1), encoding="utf-8")
     return lines
 
 
 def judge_batch(g: Graders, batch: list[Probe], lines: list[dict], out: Path, attempts: int = 3,
-                conventions: str = "") -> dict[str, dict]:
+                conventions: str = "", earlier: dict[str, str] | None = None) -> dict[str, dict]:
     role = g.role(g.judge_model, timeout_s=1200)
-    prompt = _template("grade-judge.md", PROBES=render_for_judgment(batch, conventions), LOG=log_for_judge(lines))
+    prompt = _template("grade-judge.md", PROBES=render_for_judgment(batch, conventions, earlier), LOG=log_for_judge(lines))
     tries = []
     for _ in range(attempts):
         rec = executor.run_role(role, prompt, json_schema=json.dumps(JUDGE_SCHEMA, separators=(",", ":")))

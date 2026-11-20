@@ -24,6 +24,18 @@ class H(BaseHTTPRequestHandler):
     def send(self, code, obj):
         b = json.dumps(obj).encode(); self.send_response(code); self.send_header("content-length", str(len(b))); self.end_headers(); self.wfile.write(b)
     def do_GET(self):
+        if self.path in ("/old", "/hop"):  # a redirect, to a notice page by way of a second hop
+            self.send_response(302 if self.path == "/old" else 301)
+            self.send_header("location", "/hop" if self.path == "/old" else "/notice")
+            self.send_header("content-length", "0"); self.end_headers(); return
+        if self.path == "/loop":
+            self.send_response(307); self.send_header("location", "/loop"); self.send_header("content-length", "0"); self.end_headers(); return
+        if self.path == "/notice":
+            b = b"This letter was taken down."; self.send_response(200); self.send_header("content-type", "text/plain")
+            self.send_header("content-length", str(len(b))); self.end_headers(); self.wfile.write(b); return
+        if self.path == "/lead":
+            b = b"\xef\xbb\xbftitle,id\n"; self.send_response(200); self.send_header("content-type", "text/csv")
+            self.send_header("content-length", str(len(b))); self.end_headers(); self.wfile.write(b); return
         if self.path == "/bundle":
             import io, zipfile
             buf = io.BytesIO()
@@ -117,6 +129,49 @@ class ControlTest(unittest.TestCase):
         self.assertEqual(log[-1]["batch"], "b1")
         self.assertEqual(log[-1]["clock"], "2026-01-05 09:30:00")
         self.assertEqual([e["seq"] for e in log], list(range(len(log))))
+
+    def test_a_redirect_is_never_followed_unless_asked_and_every_hop_is_logged(self):
+        out = self.gt("http", "GET", "/old")
+        self.assertIn("status 302", out)
+        self.assertIn("location: /hop", out)
+        self.assertNotIn("taken down", out)  # not followed: the redirect itself is the answer
+        entry = [e for e in self.lines() if e.get("op") == "http"][-1]
+        self.assertEqual((entry["response"]["status"], entry["response"]["redirects"], entry["response"]["followed"]),
+                         (302, [{"status": 302, "location": "/hop"}], False))
+        out = self.gt("http", "--follow", "GET", "/old")
+        self.assertIn("redirected: 302 to /hop, 301 to /notice", out)
+        self.assertIn("status 200", out)
+        self.assertIn("taken down", out)
+        entry = [e for e in self.lines() if e.get("op") == "http"][-1]
+        self.assertTrue(entry["request"]["follow"])
+        self.assertEqual((entry["response"]["status"], entry["response"]["followed"], entry["response"]["redirects"]),
+                         (200, True, [{"status": 302, "location": "/hop"}, {"status": 301, "location": "/notice"}]))
+        self.assertIn("redirect loop", self.gt("http", "--follow", "GET", "/loop"))
+        self.gt("http", "GET", "/notice")
+        self.assertNotIn("redirects", [e for e in self.lines() if e.get("op") == "http"][-1]["response"])
+
+    def test_a_preparation_retains_its_storage_and_clock_where_it_says_to(self):
+        self.assertIn("only a preparation step", self.gt("retain"))
+        self.admin("admin", {"batch": "p00", "retain": "PREP-P-X"})
+        self.gt("reset")
+        self.gt("clock", "2026-01-05T08:00:00Z")
+        self.gt("http", "POST", "/items", '{"name": "kept"}')
+        self.assertIn('"retained_as": "PREP-P-X"', self.gt("retain"))
+        self.gt("clock", "2026-01-12T08:00:00Z")  # a baseline afterwards, on the live copy
+        self.gt("http", "POST", "/items", '{"name": "after"}')
+        self.admin("admin", {"batch": None, "retain": None})
+        snap = self.tmp / "snap" / "PREP-P-X"
+        self.assertEqual((snap / "clock").read_text().strip(), "2026-01-05 08:00:00")
+        self.assertIn("kept", (snap / "data" / "items.json").read_text())
+        self.assertNotIn("after", (snap / "data" / "items.json").read_text())
+        self.assertIn("only a preparation step", self.gt("retain"))
+
+    def test_a_body_that_starts_with_bytes_outside_ascii_shows_them(self):
+        out = self.gt("http", "GET", "/lead")
+        self.assertIn("the body's first bytes: ef bb bf 74", out)
+        self.assertEqual([e for e in self.lines() if e.get("op") == "http"][-1]["response"]["starts_with"], "ef bb bf 74")
+        self.gt("http", "GET", "/notice")
+        self.assertNotIn("starts_with", [e for e in self.lines() if e.get("op") == "http"][-1]["response"])
 
     def test_zip_responses_list_their_files_and_text(self):
         out = self.gt("http", "GET", "/bundle")

@@ -569,9 +569,12 @@ def render_growth(r: dict) -> str:
 
 # ------------------------------------------------------------------------------------------------ the instrument gate
 
-GATE_POINTS = {  # the spec's expectations: (old-row flip, new-row flip) or (current, displaced)
-    "R+ after C-1": ("met", "not met"), "R+ after C": ("not met", "met"), "S_C after C+L": ("met", "not met"),
-    "R+ reliance fork": ("met", "not met"), "S_C reliance fork": ("not met", "met")}
+GATE_POINTS = {  # each point's key in the spec's checks, and its expectation where the spec gives none:
+    "R+ after C-1": ("r_plus_before", ("met", "not met")),  # (old-row flip, new-row flip)
+    "R+ after C": ("r_plus_after", ("not met", "met")),
+    "S_C after C+L": ("stale_after_lag", ("met", "not met")),
+    "R+ reliance fork": ("rr_r_plus", ("met", "not met")),  # (current, displaced)
+    "S_C reliance fork": ("rr_stale", ("not met", "met"))}
 
 
 def instrument_report(runs: Path, seed_dir: Path, checkpoints=(10, 20, 30, 40), controls=(20, 40)) -> dict:
@@ -588,7 +591,12 @@ def instrument_report(runs: Path, seed_dir: Path, checkpoints=(10, 20, 30, 40), 
         checks = spec["checks"][str(c)]
         points = []
         for g in instrument.course_gradings(runs, spec, c):
-            first, second = GATE_POINTS[g["point"]]
+            key, (first, second) = GATE_POINTS[g["point"]]
+            if key in checks:  # the spec marks each check's expected verdicts; None: not graded at this point
+                if checks[key] is None:
+                    continue
+                first, second = (checks[key]["old"], checks[key]["new"]) if "reliance" not in g["point"] else (
+                    checks[key]["current"], checks[key]["displaced"])
             sides = (checks["flip_old"], checks["flip_new"]) if "reliance" not in g["point"] else (
                 [p for p in checks["rr"] if p.endswith("-current")], [p for p in checks["rr"] if p.endswith("-displaced")])
             expected = {p: first for p in sides[0]} | {p: second for p in sides[1]}

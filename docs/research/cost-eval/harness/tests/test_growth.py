@@ -252,6 +252,14 @@ class GrowthHelpersTest(unittest.TestCase):
         self.assertEqual(growth.course_fork_probes(s, ps, 16)[:2], (["P-RD10-flip16"], ["P-RD09-flip16"]))
         self.assertEqual(growth.rescope_reach(s, ps, 14), ("widening", "flip probes"))
 
+    def test_a_widening_rescopes_before_check_is_read_as_anticipated_not_as_an_expected_failure(self):
+        ps = grading.parse_probes(GROWTH_PROBES)
+        s = sm.parse_change_script(FLIP_SCRIPT)
+        plan = {(e["course"], e["when"]): e for e in growth.flip_plan(s, ps, upto=16)}
+        self.assertEqual(plan[14, "before"]["expect"], "anticipated?")  # widening: the narrower build may already pass
+        self.assertEqual(plan[15, "after"]["expect"], "not met")  # narrowing: the old row must fail after
+        self.assertEqual((plan[16, "after"]["expect"], plan[16, "before"]["expect"]), ("not met", "not met"))
+
     def test_the_change_scripts_word_for_a_rescope_wins_over_the_flip_probes(self):
         ps = grading.parse_probes(GROWTH_PROBES)
         s = sm.parse_change_script(FLIP_SCRIPT.replace("rescope of change 4 (distance 10)", "rescope of change 4 (distance 10), narrowing"))
@@ -773,6 +781,15 @@ class GrowthCheckpointTest(unittest.TestCase):
         self.assertFalse(any("grade_checkpoint.py" in " ".join(c) or "--discard" in c for c in self.commands))  # kept to grade later
         rows = json.loads((self.runs / "g-bare-1" / "growth" / "checkpoint-04" / "reliance.json").read_text())
         self.assertEqual([(r["course"], r["fork"], r["outcome"]) for r in rows], [(2, "1", "no probe")])
+
+    def test_the_current_rule_held_is_undetermined_where_a_probe_has_no_verdict(self):
+        f = gc.current_rule_held
+        self.assertTrue(f({"P-a": "met", "P-b": "met"}, ["P-a", "P-b"]))
+        self.assertIsNone(f({"P-a": "met"}, ["P-a", "P-b"]))  # P-b not run (prior-data, a broken setup): undetermined
+        self.assertIsNone(f({"P-a": "met", "P-b": "couldn't exercise"}, ["P-a", "P-b"]))
+        self.assertFalse(f({"P-a": "not met"}, ["P-a", "P-b"]))  # a decided failure is a failure whatever else
+        self.assertIsNone(f({}, ["P-a"]))
+        self.assertIsNone(f({"P-a": "met"}, []))
 
     def test_each_reliance_fork_is_graded_on_its_two_frozen_outcomes_and_the_current_rule(self):
         (self.seed / "hidden" / "probes.md").write_text(PROBES + self.RR02)

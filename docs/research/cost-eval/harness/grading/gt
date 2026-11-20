@@ -3,7 +3,9 @@
 
 Usage:
   gt clock <UTC time, e.g. 2026-01-05T08:00:00Z>        set the service's clock, frozen at that instant
-  gt http <METHOD> <PATH> [BODY] ['Header: value' ...]   make a request; BODY is JSON text, plain text, or '' for none.
+  gt http [--follow] <METHOD> <PATH> [BODY] ['Header: value' ...]   make a request; BODY is JSON text, plain text, or ''
+                       for none. A redirect is never followed: its status and Location are the answer. With --follow,
+                       every redirect is followed and each hop is shown and logged before the final response.
                        For a file upload, BODY is {"__multipart__": {"fields": {...}, "files": {"file": {"name": "a.txt", "content": "...", "type": "text/plain"}}}}
   gt concurrent '<JSON list of {"method","path","body","headers"}>'   send the requests at the same moment
   gt restart                                             restart the service on its existing data, keeping the clock
@@ -14,6 +16,8 @@ Usage:
                                                          prints its path, which you then give to the command or request
   gt mark '<text>'                                       write a marker line in the log
   gt snapshot <setup>                                    save the current data as a named setup (setup sessions only)
+  gt retain                                              keep the data and clock as they are now, as a preparation's
+                                                         retained storage (preparation steps only)
 """
 import json
 import os
@@ -34,8 +38,13 @@ def call(op, payload):
 
 
 def show(out):
+    hops = out.get("redirects") or []
+    if out.get("followed") and hops:
+        print("redirected: " + ", ".join(f"{h['status']} to {h['location']}" for h in hops))
     if "status" in out and "body" in out:
         print(f"status {out['status']}")
+        if out.get("starts_with"):
+            print(f"(the body's first bytes: {out['starts_with']})")
         for k, v in (out.get("headers") or {}).items():
             print(f"{k}: {v}")
         print(out["body"])
@@ -54,7 +63,9 @@ def main(a):
     cmd, rest = a[0], a[1:]
     if cmd == "clock" and len(rest) == 1:
         show(call("clock", {"utc": rest[0]}))
-    elif cmd == "http" and len(rest) >= 2:
+    elif cmd == "http" and len(rest) >= 2 and not (rest[0] == "--follow" and len(rest) < 3):
+        follow = rest[0] == "--follow"
+        rest = rest[1:] if follow else rest
         body = rest[2] if len(rest) > 2 else ""
         headers = dict(h.split(":", 1) for h in rest[3:] if ":" in h)
         headers = {k.strip(): v.strip() for k, v in headers.items()}
@@ -62,13 +73,14 @@ def main(a):
             body = json.loads(body) if body.strip() else None
         except json.JSONDecodeError:
             pass  # sent as given
-        show(call("http", {"method": rest[0], "path": rest[1], "body": body, "headers": headers}))
+        show(call("http", {"method": rest[0], "path": rest[1], "body": body, "headers": headers,
+                           **({"follow": True} if follow else {})}))
     elif cmd == "concurrent" and len(rest) == 1:
         out = call("concurrent", {"requests": json.loads(rest[0])})
         for i, r in enumerate(out.get("results") or []):
             print(f"--- request {i + 1}")
             show(r)
-    elif cmd in ("restart", "reset") and not rest:
+    elif cmd in ("restart", "reset", "retain") and not rest:
         show(call(cmd, {}))
     elif cmd in ("restore", "snapshot") and len(rest) == 1:
         show(call(cmd, {"name": rest[0]}))

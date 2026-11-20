@@ -41,3 +41,5 @@ The private record of each step is in `hidden/`.
 | 5 | 2026-11-20 | `hidden/change-script-growth.md` | `5a3d9882be1c7088f9d0394aa07339bcb3337eca727ef2a4a14a9248ac212ded` |
 | 5 | 2026-11-20 | `hidden/oracle-growth.md` | `b618d9d928a6283f52f1dd3ddada8572ee213f3bc8ac4e8b39eae1d48bd248cc` |
 | 6 | 2026-11-20 | `hidden/oracle-growth.md` | `d1a4d47341ce110a102e1800579bf9bb8be552957d99484e88245c226b1d5250` |
+| 1 | 2026-11-20 | `hidden/probes-growth.md` | `58114b9dcbe4118d60c825b38ff84abcbf5b47957017061a2f5f46a507c6138b` |
+| 1 | 2026-11-20 | `hidden/reference-builds.json` | `01489520c9dec6db8af0680cb023fc880a13098bc6b6b0133c65f0a5086546e0` |

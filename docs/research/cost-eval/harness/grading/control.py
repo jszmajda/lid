@@ -211,7 +211,48 @@ def describe_body(raw: bytes, content_type: str) -> dict:
     return out
 
 
+class _NoRedirects(urllib.request.HTTPRedirectHandler):
+    """Never follow a redirect: the 3xx response comes back as it is, so the log shows it."""
+
+    def redirect_request(self, *a, **kw):
+        return None
+
+
+_OPENER = urllib.request.build_opener(_NoRedirects)
+MAX_REDIRECTS = 10
+
+
 def forward(port: int, req: dict) -> dict:
+    """One request to the service. A redirect is never followed unless the request says `follow`: the 3xx response is
+    the answer, and `redirects` records it (its status and Location). With `follow`, each hop is followed by hand,
+    as a GET for 301, 302 and 303, and `redirects` lists every hop before the final response."""
+    hops: list[dict] = []
+    out = _forward_once(port, req)
+    while req.get("follow") and out.get("status") in (301, 302, 303, 307, 308) and (out.get("headers") or {}).get("location"):
+        hops.append({"status": out["status"], "location": out["headers"]["location"]})
+        if len(hops) > MAX_REDIRECTS:
+            return {"status": None, "error": f"redirect loop: more than {MAX_REDIRECTS} redirects", "redirects": hops,
+                    "followed": True}
+        nxt = dict(req, path=_local_path(out["headers"]["location"]))
+        if out["status"] in (301, 302, 303):
+            nxt.update(method="GET", body=None)
+        out = _forward_once(port, nxt)
+    if hops:
+        out.update(redirects=hops, followed=True)
+    elif 300 <= (out.get("status") or 0) < 400 and (out.get("headers") or {}).get("location"):
+        out.update(redirects=[{"status": out["status"], "location": out["headers"]["location"]}], followed=False)
+    return out
+
+
+def _local_path(location: str) -> str:
+    """A Location as a path on the service: an absolute URL loses its scheme and host."""
+    if "://" in location:
+        rest = location.split("://", 1)[1]
+        return "/" + rest.split("/", 1)[1] if "/" in rest else "/"
+    return location if location.startswith("/") else "/" + location
+
+
+def _forward_once(port: int, req: dict) -> dict:
     method = (req.get("method") or "GET").upper()
     path = req.get("path") or "/"
     if not path.startswith("/"):
@@ -233,7 +274,7 @@ def forward(port: int, req: dict) -> dict:
     for attempt in range(4):
         r = urllib.request.Request(f"http://127.0.0.1:{port}{path}", data=data, method=method, headers=headers)
         try:
-            with urllib.request.urlopen(r, timeout=60) as resp:
+            with _OPENER.open(r, timeout=60) as resp:
                 raw, rh = resp.read(MAX_BODY), resp.headers
                 code = resp.status
             break
@@ -247,6 +288,8 @@ def forward(port: int, req: dict) -> dict:
                 continue
             return {"status": None, "error": f"{type(e).__name__}: {e}"}
     out = {"status": code, **describe_body(raw, rh.get("content-type", "") if rh else "")}
+    if raw and raw[0] >= 0x80:  # bytes before any text, which a decoded body hides: shown as they are
+        out["starts_with"] = raw[:4].hex(" ")
     # Headers that can matter to a probe: where a download is named or redirected, and the type of anything not JSON.
     shown = {k: rh.get(k) for k in keep if rh and rh.get(k)}
     if str(out.get("body", "")).lstrip().startswith(("{", "[")):
@@ -290,7 +333,7 @@ def make_handler(service: Service, log_path: str, admin_token: str, state: dict)
             if op == "admin":
                 if not admin:
                     return self._reply({"ok": False, "error": "forbidden"}, 403)
-                state.update({k: req[k] for k in ("batch", "allow_snapshot") if k in req})
+                state.update({k: req[k] for k in ("batch", "allow_snapshot", "retain") if k in req})
                 return self._reply({"ok": True, "seq": state["seq"]})
             with service.lock:
                 if op == "clock":
@@ -326,6 +369,11 @@ def make_handler(service: Service, log_path: str, admin_token: str, state: dict)
                         out = {"ok": False, "error": "snapshots are not available now"}
                     else:
                         out = service.snapshot(str(req.get("name", "")))
+                elif op == "retain":  # a preparation keeps its storage, under the name the harness gave it
+                    if not state.get("retain"):
+                        out = {"ok": False, "error": "nothing to retain now: only a preparation step retains storage"}
+                    else:
+                        out = {**service.snapshot(state["retain"]), "retained_as": state["retain"]}
                 elif op == "run":
                     out = service.run(str(req.get("command", "")))
                 elif op == "file":
@@ -364,7 +412,7 @@ def main() -> None:
     service = Service(spec, args.snapshots, args.app_log)
     service.set_clock(args.clock)
     started = service.reset()
-    state = {"seq": 0, "batch": None, "allow_snapshot": False}
+    state = {"seq": 0, "batch": None, "allow_snapshot": False, "retain": None}
     handler = make_handler(service, args.log, os.environ.get("CONTROL_ADMIN_TOKEN", ""), state)
     with open(args.log, "a") as f:
         f.write(json.dumps({"seq": 0, "op": "start", "response": started}) + "\n")

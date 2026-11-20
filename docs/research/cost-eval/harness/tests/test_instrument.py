@@ -31,9 +31,9 @@ Embargoed letters show once their date passes.
 
 Exports list titles.
 
-### Learned at change 5: search
+### Learned at change 5: order
 
-Search ignores case.
+Letters list newest first.
 
 ## Item table
 
@@ -43,7 +43,7 @@ Search ignores case.
 | RD-02 | Embargoed letters never show. | Askable | Start | Change 3 | Sketch. |
 | RD-03 | Embargoed letters show once their date passes. | Stated in change 3 | Change 3 | — | Sketch. |
 | RD-04 | Exports list titles. See RD-01. | Stated in change 4 | Change 4 | — | Sketch. |
-| RD-05 | Search ignores case. | Realized on symptom | Change 5 | — | Sketch. |
+| RD-05 | Letters list newest first. | Realized on symptom | Change 5 | — | Sketch. |
 """
 
 RELIANCE = """### Reliance request
@@ -92,11 +92,11 @@ SCRIPT = f"""# Change script
 
 **Introduces:** RD-04.
 
-## Change 5 — Search is fussy
+## Change 5 — The list is upside down
 
 ### Owner symptom report
 
-> Searching "harbour" misses "Harbour".
+> The list shows the oldest letter first.
 
 **Introduces:** RD-05.
 
@@ -108,7 +108,7 @@ SCRIPT = f"""# Change script
 """
 
 OWNER_ITEMS = {"RD-02": {"tier": "medium", "recall": "Embargoed letters stay hidden."},
-               "RD-05": {"tier": "low", "recall": "Search shouldn't care about capitals."}}
+               "RD-05": {"tier": "low", "recall": "The newest letter should come first."}}
 
 
 def parsed():
@@ -117,7 +117,7 @@ def parsed():
 
 TEXT = {"RD-01": "A letter records its title.", "RD-02": "Embargoed letters never show.",
         "RD-03": "Embargoed letters show once their date passes.", "RD-04": "Exports list titles.",
-        "RD-05": "Search ignores case."}
+        "RD-05": "Letters list newest first."}
 SPEC = {
     "owner_text": TEXT,
     "correct": {**{str(n): ["RD-01", "RD-02"] for n in range(3)}, "3": ["RD-01", "RD-03"], "4": ["RD-01", "RD-03", "RD-04"],
@@ -129,9 +129,18 @@ SPEC = {
         "4": {"kind": "emerging", "fork_from": 3, "lag": 2, "decline": "stand-in", "stand_in": "Exports list nothing.",
               "drops": ["RD-04"], "keeps": [], "hold": {"4": ["RD-01", "RD-03"], "5": ["RD-01", "RD-03", "RD-05"],
                                                        "6": ["RD-01", "RD-03", "RD-05"]}}},
-    "checks": {"3": {"flip_old": ["P-RD02-flip03"], "flip_new": ["P-RD03-flip03"], "rr": ["P-RR03-current", "P-RR03-displaced"]},
-               "4": {"flip_old": [], "flip_new": [], "rr": ["P-RR04-current", "P-RR04-displaced"]}},
+    "checks": {"3": {"flip_old": ["P-RD02-flip03"], "flip_new": ["P-RD03-flip03"], "rr": ["P-RR03-current", "P-RR03-displaced"],
+                     "widening": False, "r_plus_before": {"old": "met", "new": "not met"},
+                     "r_plus_after": {"old": "not met", "new": "met"}, "stale_after_lag": {"old": "met", "new": "not met"},
+                     "rr_r_plus": {"current": "met", "displaced": "not met"}, "rr_stale": {"current": "not met", "displaced": "met"}},
+               "4": {"flip_old": [], "flip_new": [], "rr": ["P-RR04-current", "P-RR04-displaced"], "widening": False,
+                     "r_plus_before": None, "r_plus_after": None, "stale_after_lag": None,
+                     "rr_r_plus": {"current": "met", "displaced": "not met"}, "rr_stale": {"current": "not met", "displaced": "met"}}},
+    # R+ states the old reach of a later widening while the old rule is in force; S_3 goes on stating it
+    "correct_statements": {"1": ["Exports list titles only."], "2": ["Exports list titles only."]},
 }
+SPEC["stale"]["3"]["statements"] = {"3": ["Exports list titles only."], "4": ["Exports list titles only."],
+                                    "5": ["Exports list titles only."]}
 
 
 class ReferenceSpecTest(unittest.TestCase):
@@ -150,17 +159,34 @@ class ReferenceSpecTest(unittest.TestCase):
         o, _ = parsed()
         view = reference.owner_view(o, SPEC)
         for n in range(7):
-            self.assertEqual([i.id for i in sm.released_items(view, n)], SPEC["correct"][str(n)], n)
+            self.assertEqual([i.id for i in sm.released_items(view, n)], reference.expected_ids(SPEC, n), n)
         self.assertTrue(all(i.share == "Stated" for i in view.items))  # nothing latent: no recall, nothing withheld
         self.assertEqual(view.narrative, {})
         self.assertEqual(sm.recall_eligible(view), [])
         stale = reference.owner_view(o, SPEC, stale_of=3)
         for n in (3, 4, 5):
-            self.assertEqual([i.id for i in sm.released_items(stale, n)], SPEC["stale"]["3"]["hold"][str(n)], n)
+            self.assertEqual([i.id for i in sm.released_items(stale, n)], reference.expected_ids(SPEC, n, 3), n)
         stand = reference.owner_view(o, SPEC, stale_of=4)
         self.assertEqual([i.id for i in sm.released_items(stand, 5)], ["RD-01", "RD-03", "RD-05", "SI-04"])
         self.assertEqual(next(i for i in stand.items if i.id == "SI-04").behavior, "Exports list nothing.")
         self.assertEqual(next(i for i in view.items if i.id == "RD-04").behavior, "Exports list titles.")  # the spec's text
+
+    def test_reach_statements_are_stated_after_the_rows_and_held_by_the_owner(self):
+        o, _ = parsed()
+        self.assertTrue(reference.statement(SPEC, 2).endswith("- Exports list titles only."))
+        self.assertNotIn("titles only", reference.statement(SPEC, 3))  # R+ stops stating it at the rescope
+        self.assertTrue(reference.statement(SPEC, 4, stale_of=3).endswith("- Exports list titles only."))  # S_3 goes on
+        view = reference.owner_view(o, SPEC)
+        held = {n: [i.id for i in sm.released_items(view, n)] for n in (1, 2, 3)}
+        self.assertEqual(held[2], SPEC["correct"]["2"] + ["RS-01"])
+        self.assertEqual(held[3], SPEC["correct"]["3"])
+        self.assertEqual(next(i for i in view.items if i.id == "RS-01").behavior, "Exports list titles only.")
+        for n in range(7):
+            self.assertEqual([i.id for i in sm.released_items(view, n)], reference.expected_ids(SPEC, n))
+        stale = reference.owner_view(o, SPEC, stale_of=3)
+        for n in (3, 4, 5):
+            self.assertEqual([i.id for i in sm.released_items(stale, n)], reference.expected_ids(SPEC, n, stale_of=3))
+        self.assertIn("RS-01", reference.expected_ids(SPEC, 4, stale_of=3))
 
     def test_what_each_reference_runs_at_a_change(self):
         _, s = parsed()
@@ -210,12 +236,12 @@ class ReferenceSpecTest(unittest.TestCase):
         o = sm.parse_oracle((seed / "hidden" / "oracle.md").read_text())
         view = reference.owner_view(o, spec)
         for n in range(41):
-            self.assertEqual([i.id for i in sm.released_items(view, n)], spec["correct"][str(n)], n)
+            self.assertEqual([i.id for i in sm.released_items(view, n)], reference.expected_ids(spec, n), n)
         for c, entry in spec["stale"].items():
             v = reference.owner_view(o, spec, stale_of=int(c))
-            for n, rows in entry["hold"].items():
-                si = [f"SI-{int(c):02d}"] if entry["stand_in"] else []
-                self.assertEqual([i.id for i in sm.released_items(v, int(n))], rows + si, (c, n))
+            for n in entry["hold"]:
+                self.assertEqual([i.id for i in sm.released_items(v, int(n))],
+                                 reference.expected_ids(spec, int(n), stale_of=int(c)), (c, n))
 
 
 from test_growth import EMPTY_STATE, subprocess_ok  # noqa: E402
@@ -324,7 +350,7 @@ class ReferenceForkTest(unittest.TestCase):
             prompts[kind] = turns.calls[0]["prompt"]
             self.assertTrue(rcf.LAST_OWNER.full_oracle)
             held = [i.id for i in sm.released_items(rcf.LAST_OWNER.oracle, 5)]
-            self.assertEqual(held, SPEC["correct"]["5"] if kind == "correct" else SPEC["stale"]["3"]["hold"]["5"])
+            self.assertEqual(held, reference.expected_ids(SPEC, 5, stale_of))
         self.assertIn("Can I get this week's export?", prompts["correct"])
         self.assertIn(reference.statement(SPEC, 5), prompts["correct"])
         self.assertIn(reference.statement(SPEC, 5, stale_of=3), prompts["stale"])
@@ -488,6 +514,17 @@ class InstrumentReportTest(RefRuns):
                      "| 6 | 2 | P-RD03-flip03 (couldn't exercise) |", "| 20 | assertions | as written | 1 | 100% |"):
             self.assertIn(line, text)
 
+    def test_each_points_expectation_comes_from_the_spec(self):
+        import report
+        import copy
+        spec = copy.deepcopy(SPEC)
+        spec["checks"]["3"]["stale_after_lag"] = {"old": "met", "new": "met"}  # as if the spec said so
+        (self.seed / "hidden" / "reference-builds.json").write_text(json.dumps(spec))
+        self.grade("course", "--course", "3")
+        r = report.instrument_report(self.runs, self.seed, checkpoints=[], controls=[])
+        self.assertTrue(r["courses"][0]["separates"])  # S_3 meeting both now matches what the spec expects
+        self.assertEqual(r["courses"][0]["points"][2]["expected"], {"P-RD02-flip03": "met", "P-RD03-flip03": "met"})
+
     def test_a_grading_not_yet_recorded_leaves_the_course_undecided(self):
         import report
         self.grade("course", "--course", "4")
@@ -520,6 +557,19 @@ class FollowUpProbesTest(unittest.TestCase):
         self.assertEqual([p.id for p in gck.applicable(ps, 6, {"P-RR03-current"})], ["P-RR03-current"])  # when named
 
 
+class AssembledSeedTest(unittest.TestCase):
+    def test_grading_reads_the_assembled_growth_files_under_the_seeds_usual_names(self):
+        seed = Path(__file__).resolve().parent.parent.parent / "seeds" / "releasedesk-growth"
+        src = seed.parent / "releasedesk"
+        if not (seed / "hidden" / "probes.md").exists():
+            self.skipTest("no assembled growth seed")
+        self.assertEqual((seed / "hidden" / "probes.md").read_bytes(), (src / "hidden" / "probes-growth.md").read_bytes())
+        self.assertTrue((seed / "grading-notes.md").read_text().startswith((src / "grading-notes.md").read_text().rstrip("\n")))
+        self.assertEqual(sorted(sm.parse_change_script((seed / "hidden" / "change-script.md").read_text())), list(range(1, 41)))
+        merged = sm.parse_oracle((seed / "hidden" / "oracle.md").read_text()).ids()
+        self.assertGreater(len(merged), len(sm.parse_oracle((src / "hidden" / "oracle.md").read_text()).ids()))  # grown
+
+
 class GrowthOwnerItemsTest(unittest.TestCase):
     """assemble_growth_seed.py: block 1's owner items with the growth salience rounds merged in, and the gaps."""
 
@@ -527,7 +577,7 @@ class GrowthOwnerItemsTest(unittest.TestCase):
         sal = root / "salience"
         for d, tiers, lines in ((sal, {"RD-06": "low"}, {"RD-06": "Exports stay quiet."}),                    # current
                                 (sal / "round2", {"RD-04": "medium", "RD-06": "high"}, {"RD-04": "Old line.", "RD-06": "Old."}),
-                                (sal / "round1", {"RD-05": "high", "RD-07": "low"}, {"RD-05": "Case never matters."})):
+                                (sal / "round1", {"RD-05": "high", "RD-07": "low"}, {"RD-05": "Newest first."})):
             d.mkdir(parents=True, exist_ok=True)
             (d / "ratings.json").write_text(json.dumps({"tier": tiers}))
             (d / "recall-lines.json").write_text(json.dumps({"lines": lines, "missing": []}))
@@ -537,15 +587,35 @@ class GrowthOwnerItemsTest(unittest.TestCase):
         import assemble_growth_seed as ags
         sal = self.rounds(Path(tempfile.mkdtemp()))
         base = {"_note": "block 1", "items": {"RD-02": {"tier": "medium", "recall": "Embargoes hold."}}}
-        merged = ags.merge_owner_items(base, sal, round2_only={"RD-04"})
+        merged = ags.merge_owner_items(base, sal)
         self.assertEqual(merged["_note"], "block 1")
         self.assertEqual(merged["items"], {
             "RD-02": {"tier": "medium", "recall": "Embargoes hold."},
             "RD-06": {"tier": "low", "recall": "Exports stay quiet."},     # the current round wins over round 2
             "RD-04": {"tier": "medium", "recall": "Old line."},
-            "RD-05": {"tier": "high", "recall": "Case never matters."},
+            "RD-05": {"tier": "high", "recall": "Newest first."},
             "RD-07": {"tier": "low"}})                                       # rated, but no recall line: left as it is
         self.assertIn("growth salience", merged["_growth"])
+
+    def test_the_hidden_growth_notes_follow_the_public_ones_without_their_heading(self):
+        import assemble_growth_seed as ags
+        d = Path(tempfile.mkdtemp())
+        (d / "notes.md").write_text("# Notes for the growth seed\n\nAppended by the assembler. Private.\n\n**A rule.** Set X.\n\n"
+                                    "**Another.** Set Y.\n")
+        merged = ags.merged_notes("**Public.** Set Z.\n", d / "notes.md")
+        self.assertEqual(merged, "**Public.** Set Z.\n\n**A rule.** Set X.\n\n**Another.** Set Y.\n")
+        self.assertEqual(ags.merged_notes("**Public.** Set Z.\n", d / "absent.md"), "**Public.** Set Z.\n")
+
+    def test_the_assembled_notes_and_their_hashes_include_the_hidden_growth_notes(self):
+        seed = Path(__file__).resolve().parent.parent.parent / "seeds" / "releasedesk-growth"
+        src = seed.parent / "releasedesk"
+        if not (src / "hidden" / "grading-notes-growth.md").exists() or not (seed / "grading-notes.md").exists():
+            self.skipTest("no growth notes or no assembled seed")
+        import assemble_growth_seed as ags
+        notes = (seed / "grading-notes.md").read_text()
+        self.assertTrue(notes.startswith((src / "grading-notes.md").read_text().rstrip("\n")))
+        self.assertIn(ags.merged_notes("", src / "hidden" / "grading-notes-growth.md").strip(), notes)
+        self.assertIn("hidden/grading-notes-growth.md", json.loads((seed / "hidden" / "assembled.json").read_text())["sources"])
 
     def test_every_recall_eligible_row_without_a_tier_or_recall_line_is_a_gap(self):
         import assemble_growth_seed as ags

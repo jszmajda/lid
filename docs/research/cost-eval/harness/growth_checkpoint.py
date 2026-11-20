@@ -49,6 +49,16 @@ STEPS = ("grade", "flips", "reliance", "intent", "stale")
 PY = sys.executable
 
 
+def current_rule_held(got: dict[str, str], current: list[str]) -> bool | None:
+    """Whether the current rule's probes held on a reliance fork: false once one is decidedly not met; true when every
+    one is met; otherwise (a probe not run, or not decided) undetermined."""
+    if not current:
+        return None
+    if any(got.get(x) == "not met" for x in current):
+        return False
+    return True if all(got.get(x) == "met" for x in current) else None
+
+
 def pending(runs: Path, trajectory_id: str, c: int, steps=STEPS) -> bool:
     """Whether checkpoint c still has work for these steps: one hasn't been done (run, leaving nothing ungraded), or a
     fork one of them grades (a course fork of a change up to c, for flips; a reliance fork whose request ran by c, for
@@ -229,7 +239,7 @@ def main(argv=None, *, run: Callable[[list[str]], int] | None = None, volume: Ca
                 rows.append({"course": course, "kind": script[course].course_change.kind, "lag": lag, "run": fid, "fork": k,
                              "outcome": growth.reliance_outcome(got.get(f"P-RR{course:02d}-current"),
                                                                 got.get(f"P-RR{course:02d}-displaced")),
-                             "current_rule_held": all(got.get(x) == "met" for x in current) if got and current else None,
+                             "current_rule_held": current_rule_held(got, current),
                              "verdicts": got})
         (out / "reliance.json").write_text(json.dumps(rows, indent=1))
 
