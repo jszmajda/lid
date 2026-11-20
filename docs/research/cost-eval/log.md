@@ -4,6 +4,39 @@ Newest entries first. Each entry says what was done, what was decided, and who d
 
 Older entries move to [log-archive/](log-archive/) when this file passes about 2,000 words, and 'Earlier, in brief' at the bottom summarizes them.
 
+## 2026-11-21: The growth test's instrument gate passes
+
+The gate asks whether the probes tell a correct build from a stale one, before any arm runs. It never looks at arm results.
+- **The correct build (R+):** a bare agent told every rule in force at each change, through change 40.
+- **The stale builds:** one fork per course change, declining that change and carrying the displaced rule through its reliance request.
+
+**First run: 13 of 18 course changes separated.** The failures traced to:
+- **Harness faults, fixed:**
+  - code exported afresh lacked its installed environment, so every probe on earlier-prepared data, and two preparations, failed;
+  - the judge never saw which identifier was which fixture;
+  - names-only planted tests leaked their rule through file names and assertion messages;
+  - a grading that ran nothing reported success.
+- **Probe faults, fixed:**
+  - one probe graded JSON field names, which the change explicitly keeps;
+  - one never asked for the record's text;
+  - one depended on how same-day renames are grouped;
+  - change 27's reliance request read as a request for a written answer. It was reworded to ask for a page in the service, an instrument fix made before any arm ran.
+
+**After the fixes: 17 of 17 course changes separate, with no mismatches.** Every probe that applies to R+ is met at changes 10, 20, 30 and 40. Change 38 is outside the gate and is reported descriptively (decisions.md, 2026-11-20).
+
+**The positive control:**
+
+| Change | Planted kind | Reader sees tests as written | Reader sees names and comments replaced |
+|---|---|---|---|
+| 20 | names only | 83% | 33% |
+| 20 | assertions | 83% | 83% |
+| 40 | names only | 72% | 17% |
+| 40 | assertions | 72% | 47% |
+
+The readers catch most planted stale tests. With names and comments replaced, they lose most of the names-only plants, as they should. The 17–33% they still name is probably inferred from the build itself; that's unconfirmed. R+ wrote a single test file, so the plants outnumber its own tests.
+
+The probe set is frozen at version 3, the change script at version 6, and the reference spec at version 2, with their hashes in the seed's README. **Next:** the trial, one bare and one LID trajectory through change 20.
+
 ## 2026-11-19: The growth test is designed; tests as carriers of intent; a symptom-row leak
 
 **The growth test** (design.md, "The growth test"; plan.md M2d). The maintainer chose to test the scale and test-rot hypotheses on ReleaseDesk grown by each arm through 40 changes, not to replicate the Clowder pilot: on Clowder, bare on the full repository copied LID's artifacts. The design was revised after Claude Fable's methodology review. Sol drafted the thirty new changes blind to the hypotheses, Fable and GPT-6.2 Astra reviewed the draft, and Sol redrafted it. The second draft gives each course change a dedicated reliance request, run only as a fork (the maintainer's option A). Both reviewers' re-checks are under way.
@@ -60,36 +93,12 @@ The pilot ends on probes version 5 for changes 5 and 10 and version 4 elsewhere;
 - **A stratified sample of 20 met verdicts:** 19 were upheld. One, change 7 in bare stripped at 1M, was overturned because the build shows "Cuddles “Professor Fluff”" where the item asks for the nickname as the display name. Every other build shows the nickname alone.
 - **A pattern the readers noted:** executors often build setup S1 with housing 6 rather than 2. That rarely touches a deciding reading, but the judge ruled it a fixture fault once (LID at 200k, change 7, the one missing item). The next probe version fixes S1, and the judge counts a broken witness only when it could change the deciding reading.
 
-## 2026-11-18: Clowder's grading checked on a null arm, and the ceiling check
-
-**The null arm** grades Clowder's untouched snapshot as if an arm had changed nothing, so every new-intent item should come back not met.
-- **The first pass found a false met.** The probe executor wrote the missing feature into its own test, and the judge credited it. Since then:
-  - executors must perform every step under test through the build's own API;
-  - a stand-in reading counts as a grader fault;
-  - a met on an item the extraction recorded as absent is a conflict, counted as missing and flagged.
-- **Over all twelve changes, no new-intent item was met.** The conflict check caught three probes that could pass without the feature (one by coincidence, two from the journal). Those probes were fixed, and a recheck scored them not met.
-- **Held-out retention was 323 of 323** at every change, and the planted bug's repair was not met.
-- **Grading cost about $5 of subscription quota** for twelve changes.
-
-**The ceiling check** (pilot): bare on the stripped repository, 1M window, bounded owner, one fork per change.
-
-| Measure | Result |
-|---|---|
-| New-intent items met | 24 of 30 graded (80%); 2 more missing (grader observation faults) |
-| Planted bug (change 5) | repaired |
-| Held-out tests kept | 99.4% to 100% per change; 5 tests lost across the twelve changes |
-| Agent cost | $4.31 for the twelve changes |
-| Peak context per session | 14k to 98k tokens, under 10% of the window |
-
-- **The room is there:** bare met 80% here, against 95% on BenchTime.
-- **The window may not be a dose.** No bare session came near 200k tokens. Bare agents search and read slices of the code rather than loading it, so a 200k window would not have changed what they saw. If that holds, the window cannot test the hypothesis as stated. The open question becomes whether agents read where the intent lives, which `context_telemetry.py` measures as intent reach. The pilot proper runs both windows as planned and measures whether any arm comes near the window: LID reads about four times as much as bare on BenchTime.
-
 ## Earlier, in brief
 
-**The arc so far.** On 11-17, BenchTime ran under the rebuilt owner (pilot: bare 95%, cheap discipline 93%, LID Full 97% at change 10; LID's lead came from its own asking, not the owner's corrections). On 11-16, the simulated owner was rebuilt as an imperfect person on published attention and recall research, with separate seeded draws for attention and recall. On 11-11, three takes on the design converged on one core design, and mining old transcripts was dropped. On 11-12, the maintainer settled that graders are models, and BenchTime and ReleaseDesk were chosen as the pilot and second seeds. On 11-13, a grading protocol was written into design.md, about 25 throwaway sessions showed that LID's phase stops work headless, and the maintainer decided the harness stays outside LID's arrow. On 11-14, Claude Fable's review found the simulated owner not ready for counted runs, and pilot stage 0 ran the three arms through two changes. In the evening, grader calibration showed Haiku 5.5 flipping 9% of its verdicts on repeat, so Sonnet 5.5 judges and Haiku executes, and two Opus 5.5 trajectories met 90% in stage 1 under the diligent owner. Under a rubber-stamp owner, which shares only what direct questions ask for, Opus met 88%. Late that night, a Sonnet ceiling check started. On 11-15, it met 80% and 76%, so Sonnet became BenchTime's main executor. ReleaseDesk's owner brief was drafted by several models and checked by Claude Fable, and a six-model panel measured how guessable its candidate rules are. The maintainer then set the mix of eight latent rules by guessability band, and the rules within each band were drawn by lot. Later on 11-15, ReleaseDesk's oracle, change script, and probes were drafted, reviewed, and accepted. Stage 2 on BenchTime was graded. Its first numbers put LID Full at 96% of items met at about 5× bare's cost, and ReleaseDesk's ceiling check started. That night stage 2 passed all four of its thresholds, and a leak review found the owner adding what a plan left out; the owner's corrections were tightened.
+**The arc so far.** On 11-18, a null arm checked Clowder's grading (no new-intent item met on an untouched snapshot once stand-in readings were ruled out), and the ceiling check showed room (bare on the stripped repository met 80%). On 11-17, BenchTime ran under the rebuilt owner (pilot: bare 95%, cheap discipline 93%, LID Full 97% at change 10; LID's lead came from its own asking, not the owner's corrections). On 11-16, the simulated owner was rebuilt as an imperfect person on published attention and recall research, with separate seeded draws for attention and recall. On 11-11, three takes on the design converged on one core design, and mining old transcripts was dropped. On 11-12, the maintainer settled that graders are models, and BenchTime and ReleaseDesk were chosen as the pilot and second seeds. On 11-13, a grading protocol was written into design.md, about 25 throwaway sessions showed that LID's phase stops work headless, and the maintainer decided the harness stays outside LID's arrow. On 11-14, Claude Fable's review found the simulated owner not ready for counted runs, and pilot stage 0 ran the three arms through two changes. In the evening, grader calibration showed Haiku 5.5 flipping 9% of its verdicts on repeat, so Sonnet 5.5 judges and Haiku executes, and two Opus 5.5 trajectories met 90% in stage 1 under the diligent owner. Under a rubber-stamp owner, which shares only what direct questions ask for, Opus met 88%. Late that night, a Sonnet ceiling check started. On 11-15, it met 80% and 76%, so Sonnet became BenchTime's main executor. ReleaseDesk's owner brief was drafted by several models and checked by Claude Fable, and a six-model panel measured how guessable its candidate rules are. The maintainer then set the mix of eight latent rules by guessability band, and the rules within each band were drawn by lot. Later on 11-15, ReleaseDesk's oracle, change script, and probes were drafted, reviewed, and accepted. Stage 2 on BenchTime was graded. Its first numbers put LID Full at 96% of items met at about 5× bare's cost, and ReleaseDesk's ceiling check started. That night stage 2 passed all four of its thresholds, and a leak review found the owner adding what a plan left out; the owner's corrections were tightened.
 
 **Decisions.** Every decision that still stands, with its date and who made it, is in [decisions.md](decisions.md).
 
 **Archive.**
 
-- [2026-11.md](log-archive/2026-11.md): entries from 2026-11-11 to 2026-11-17 (twenty-three entries)
+- [2026-11.md](log-archive/2026-11.md): entries from 2026-11-11 to 2026-11-18 (twenty-four entries)

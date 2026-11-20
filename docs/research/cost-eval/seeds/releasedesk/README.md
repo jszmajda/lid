@@ -43,3 +43,8 @@ The private record of each step is in `hidden/`.
 | 6 | 2026-11-20 | `hidden/oracle-growth.md` | `d1a4d47341ce110a102e1800579bf9bb8be552957d99484e88245c226b1d5250` |
 | 1 | 2026-11-20 | `hidden/probes-growth.md` | `58114b9dcbe4118d60c825b38ff84abcbf5b47957017061a2f5f46a507c6138b` |
 | 1 | 2026-11-20 | `hidden/reference-builds.json` | `01489520c9dec6db8af0680cb023fc880a13098bc6b6b0133c65f0a5086546e0` |
+| 6 | 2026-11-20 | `hidden/change-script-growth.md` | `4c55d8e1599f575d73849a4ba8cc99a230c10fc26da7365b61d399640cb3854d` |
+| 2 | 2026-11-20 | `hidden/probes-growth.md` | `35c9d33c1c596ee74c5a1d8d1ad4f0ba6af818e3d5d26d592cfb2f3e2f211a81` |
+| 3 | 2026-11-20 | `hidden/probes.md` | `881d2700c793c515c281077a72e5ce32c975adeb3d495f8e3d38b84d74c7bb5f` |
+| 3 | 2026-11-20 | `hidden/probes-growth.md` | `a36ed04a9698f3997500bbdb75c1f8b49bc284c2b285ad117cc9e9b0efe5856b` |
+| 2 | 2026-11-20 | `hidden/reference-builds.json` | `4ad6d0028cdd84dffb32d62ee1ec7b906ebca9f629682ca85af12d34eff214b3` |

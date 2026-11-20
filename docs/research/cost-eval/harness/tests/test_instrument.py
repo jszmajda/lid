@@ -546,6 +546,26 @@ class InstrumentReportTest(RefRuns):
         self.assertIn("P-RD02-x (not run: its preparation didn't complete)", text)
         self.assertIn("not run (change 3's build couldn't be started)", text)
 
+    def test_a_change_outside_the_gate_is_graded_and_reported_but_not_counted(self):
+        import report
+        import copy
+        spec = copy.deepcopy(SPEC)
+        spec["checks"]["3"].update(gate=False, gate_note="No build in the gate can fail its before-check.")
+        (self.seed / "hidden" / "reference-builds.json").write_text(json.dumps(spec))
+        for c in (3, 4):
+            self.grade("course", "--course", str(c))
+        r = report.instrument_report(self.runs, self.seed, checkpoints=[], controls=[])
+        self.assertEqual([c["course"] for c in r["courses"]], [4])  # only the gate's changes count
+        (out,) = r["outside"]
+        self.assertEqual((out["course"], out["note"]), (3, "No build in the gate can fail its before-check."))
+        self.assertEqual(len(out["points"]), 5)  # still graded at every point, described
+        self.assertFalse(any(m["course"] == 3 for m in r["mismatches"]))
+        text = report.render_instrument(r)
+        self.assertIn("Separating: 1 of 1 course changes", text)
+        self.assertIn("## Outside the gate", text)
+        self.assertIn("No build in the gate can fail its before-check.", text)
+        self.assertIn("| 3 | R+ after C | P-RD03-flip03 | met | met |", text)  # descriptive: expected and verdict
+
     def test_a_grading_not_yet_recorded_leaves_the_course_undecided(self):
         import report
         self.grade("course", "--course", "4")

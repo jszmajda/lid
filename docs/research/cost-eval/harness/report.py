@@ -586,9 +586,10 @@ def instrument_report(runs: Path, seed_dir: Path, checkpoints=(10, 20, 30, 40), 
     import instrument
     from costeval import reference
     spec = reference.load_spec(seed_dir)
-    out = {"courses": [], "mismatches": [], "checkpoints": [], "control": []}
+    out = {"courses": [], "outside": [], "mismatches": [], "checkpoints": [], "control": []}
     for c in sorted(int(x) for x in spec["checks"]):
         checks = spec["checks"][str(c)]
+        inside = checks.get("gate", True) is not False  # a change the spec puts outside the gate: run, described
         points = []
         for g in instrument.course_gradings(runs, spec, c):
             key, (first, second) = GATE_POINTS[g["point"]]
@@ -606,14 +607,17 @@ def instrument_report(runs: Path, seed_dir: Path, checkpoints=(10, 20, 30, 40), 
             points.append({"point": g["point"], "run": g["id"], "expected": expected, "verdicts": got, "holds": holds,
                            "not_run": {p: why[p] for p in expected if p in why}})
             for p, e in expected.items():
-                if got is not None and got.get(p) != e:
+                if inside and got is not None and got.get(p) != e:
                     out["mismatches"].append({"course": c, "point": g["point"], "probe": p, "expected": e,
                                               "verdict": "not run" if p in why and p not in got else got.get(p),
                                               "why": why.get(p)})
         held = [x["holds"] for x in points]
         separates = False if False in held else (None if None in held else True)
-        out["courses"].append({"course": c, "kind": spec["stale"][str(c)]["kind"], "lag": spec["stale"][str(c)]["lag"],
-                               "points": points, "separates": separates})
+        row = {"course": c, "kind": spec["stale"][str(c)]["kind"], "lag": spec["stale"][str(c)]["lag"], "points": points}
+        if inside:
+            out["courses"].append({**row, "separates": separates})
+        else:
+            out["outside"].append({**row, "note": checks.get("gate_note") or ""})
     for n in checkpoints:
         got = instrument.verdicts(runs / instrument.CORRECT / "grading" / f"change-{n:02d}")
         if got is not None:
@@ -651,6 +655,19 @@ def render_instrument(r: dict) -> str:
         pts = "; ".join(f"{p['point']}: {'ok' if p['holds'] else '–' if p['holds'] is None else 'MISMATCH'}" for p in c["points"])
         lines.append(f"| {c['course']} | {c['kind']} | {c['lag']} | {pts} | "
                      f"{'yes' if c['separates'] else 'not yet' if c['separates'] is None else 'NO'} |")
+    if r.get("outside"):
+        lines += ["", "## Outside the gate", "",
+                  "Changes the reference spec leaves out of the gate. Their probes and reliance pairs still run; the "
+                  "verdicts are described here and count toward nothing.", ""]
+        for c in r["outside"]:
+            lines += [f"**Change {c['course']}** ({c['kind']}, lag {c['lag']}). {c['note']}", "",
+                      "| C | Point | Probe | Expected | Verdict |", "|---|---|---|---|---|"]
+            for p in c["points"]:
+                for pid, e in p["expected"].items():
+                    v = (p["verdicts"] or {}).get(pid)
+                    v = v or ("not run (" + p["not_run"][pid] + ")" if pid in p.get("not_run", {}) else "none")
+                    lines.append(f"| {c['course']} | {p['point']} | {pid} | {e} | {v} |")
+            lines.append("")
     lines += ["", "## Mismatches, for probe review", ""]
     if r["mismatches"]:
         lines += ["| C | Point | Probe | Expected | Verdict |", "|---|---|---|---|---|"]

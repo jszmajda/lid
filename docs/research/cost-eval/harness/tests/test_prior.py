@@ -183,9 +183,13 @@ class RenderTest(unittest.TestCase):
         self.assertIn("At change 22, prepare S0", judged)  # the judge reads the whole scenario
         prep = grading.render_for_preparation(p)
         self.assertIn("1. At change 22, prepare S0.", prep)
-        self.assertNotIn("2. Open the retained storage", prep)
         self.assertIn("gt retain", prep)
         self.assertIn("gt mark 'KEEP", prep)
+        self.assertIn("change 22's build", prep)  # "At change 22" is here: the service gt reaches
+        self.assertIn("gt restore S0", prep)
+        # the later steps, which a baseline in step 1 may need, for reference only
+        ref = prep.split("for reference", 1)[1]
+        self.assertIn("2. Open the retained storage", ref)
 
 
 class JudgeIdentifiersTest(unittest.TestCase):
@@ -230,6 +234,10 @@ class NothingToRunTest(unittest.TestCase):
         summary = {"change": 27, "not_run": ["P-1"], "not_run_why": {"P-1": "change 27's build couldn't be started"}}
         injected = {"P-XX01-b": {"verdict": "not met", "cause": "none", "evidence": [], "reason": "didn't come up"}}
         by_id = {p.id: p for p in grading.parse_probes(PROBES).probes}
+        rc = gck.finish_without_runs(out, summary, injected, [by_id["P-XX01-b"]])
+        self.assertEqual(rc, 1)  # a probe left unrun: not a success, so a caller doesn't discard the fork
+        self.assertEqual(gck.finish_without_runs(out, {"not_run": [], "not_run_why": {}}, injected,
+                                                 [by_id["P-XX01-b"]]), 0)  # every probe decided
         gck.finish_without_runs(out, summary, injected, [by_id["P-XX01-b"]])
         v = json.loads((out / "verdicts.json").read_text())
         self.assertEqual((v["not_run"], v["probes"], "error" in v), (["P-1"], injected, False))
@@ -372,6 +380,17 @@ class EarlierRunTest(unittest.TestCase):
                         execute=self.execute(), seed="rd", run=lambda cmd: 0)
         self.assertEqual([e["bid"] for e in self.executed], ["p-P-XX01-b", "p-P-XX02-b"])  # batch folders apart
         self.assertEqual(json.loads((out / "earlier.json").read_text())["prepared"], ["P-XX01-b", "P-XX02-b"])
+
+    def test_a_preparation_that_couldnt_do_its_step_and_kept_nothing_is_a_failure_not_a_storage(self):
+        import grade_checkpoint as gck
+        out = prior.earlier_dir(self.runs, "g-ref-correct", 22)
+
+        def cannot(bid, batch, *, text=None, earlier=None, retain=None):
+            return [{"seq": 1, "op": "mark", "clock": "2026-01-05 08:00:00", "request": {"text": "CANNOT P-XX01-b: no change 22"}}], "notes"
+        s = gck.run_earlier(self.ck, out, self.runs, "g-ref-correct", 22, "r22", self.ps, ["P-XX01-b"], [],
+                            execute=cannot, seed="rd", run=lambda cmd: 0)
+        self.assertIn("P-XX01-b", s["failed"])
+        self.assertFalse((prior.prep_dir(self.runs, "g-ref-correct", 22, "P-XX01-b") / "record.json").exists())
 
     def test_without_a_retain_the_harness_keeps_the_storage_at_the_end(self):
         import grade_checkpoint as gck
@@ -572,6 +591,22 @@ class HopOnDockerTest(unittest.TestCase):
         self.assertIn(("export", "ce-g-bare-1-ws"), self.ops)
         self.assertEqual([o for o in self.ops if o[0] in ("restore", "snapshot")], [("restore", "HOP-P-1"), ("snapshot", "HOP-P-1")])
         self.assertEqual(got["P-1"], {"came_up": True, "error": None, "storage": b"s+opened", "spec_from": "b"})
+
+    def test_every_environment_source_fills_what_the_export_lacks_own_extraction_first(self):
+        self.gck.grading.Checkpoint = self.fake_checkpoint({"own"}, restore_ok=True)
+        g = self.runs / "g-bare-1" / "grading" / "earlier-c24"
+        g.mkdir(parents=True)
+        (g / "extraction.json").write_text(json.dumps({"spec": self.spec("own"), "problems": []}))
+        saved = self.gck._volume_exists
+        self.gck._volume_exists = lambda name: True
+        try:
+            self.gck.make_hop(self.runs, [("a", self.spec("fallback-a"))], env_volume="ce-under-test-ckpt")(
+                24, "g-bare-1", "b24", {"P-1": b"s"})
+        finally:
+            self.gck._volume_exists = saved
+        envs = [o[1] for o in self.ops if o[0] == "env"]
+        self.assertEqual(len(envs), 2)  # its own extraction's volume first, then the build under test's
+        self.assertEqual(envs[1], "ce-under-test-ckpt")
 
     def test_a_service_that_starts_empty_but_not_on_the_storage_didnt_come_up(self):
         self.gck.grading.Checkpoint = self.fake_checkpoint({"fallback-a"}, restore_ok=False)

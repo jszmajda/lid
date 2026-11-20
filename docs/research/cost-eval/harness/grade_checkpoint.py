@@ -90,6 +90,10 @@ def run_earlier(ck, out: Path, runs: Path, tid: str, change: int, commit: str, p
             summary["failed"][pid] = "the preparation session failed"
             continue
         by = "the executor" if any(r.get("op") == "retain" and (r.get("response") or {}).get("ok") for r in lines) else None
+        cannot = [r for r in lines if r.get("op") == "mark" and str((r.get("request") or {}).get("text", "")).startswith("CANNOT")]
+        if by is None and cannot and not prior.keep_marks(lines):  # it couldn't do the step and kept nothing
+            summary["failed"][pid] = "the preparation couldn't be done: " + str(cannot[0]["request"]["text"])[:200]
+            continue
         if by is None:
             ck.admin(0, {"_op": "snapshot", "name": name})
             by = "the harness, at the end"
@@ -182,8 +186,9 @@ def make_hop(runs: Path, fallback: list[tuple[str, dict]], env_volume: str | Non
         ck = grading.Checkpoint(trajectory=checkpoint_name(owner, "hop"), change=k, commit=commit, image=IMAGE)
         try:
             ck.export(meta["volumes"]["workspace"])
-            source = own_vol if own_vol and _volume_exists(own_vol) else env_volume
-            if source:
+            # every source in turn fills what the export still lacks: an extraction's volume can lack what its run
+            # never installed (one that reused another's extraction), so the build under test's follows it
+            for source in [v for v in (own_vol, env_volume) if v and (v == env_volume or _volume_exists(v))]:
                 ck.copy_environment(source)
             for _, spec in specs[:1]:
                 ck.install(spec)
@@ -259,7 +264,7 @@ def finish_without_runs(out: Path, summary: dict, injected: dict, probes: list) 
     out.mkdir(parents=True, exist_ok=True)
     (out / "verdicts.json").write_text(json.dumps(summary, indent=1))
     print(f"nothing to run: not run {summary.get('not_run')}; decided without a session {sorted(injected)}")
-    return 0
+    return 1 if summary.get("not_run") else 0  # probes left unrun aren't graded: callers mustn't treat it as done
 
 
 def broken_ids(by_id: dict, ids: list[str], broken: set[str]) -> set[str]:
@@ -352,6 +357,8 @@ def main(argv=None) -> int:
         ck.put(ck.volume, "/work/out/start.json", (out / "start.json").read_text())
         ck.copy_environment(ckpt_volume(args.id, reused, args.change))
         ck.install(ex["spec"])
+        if not ck.has_command(ex["spec"]):  # the reused volume lacked what the command needs: extract afresh
+            ex = grading.extract(ck, g, out, notes)
     else:
         ex = grading.extract(ck, g, out, notes)
     if ex["problems"]:

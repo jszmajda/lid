@@ -175,12 +175,18 @@ def render_for_preparation(p: Probe, conventions: str = "", setups: dict[str, st
     if used:
         head += "## Setups these probes use\n\n" + "\n\n".join(setups[s] for s in used) + "\n\n"
     prep = prior.preparation(p)
+    later = prior.check_steps(p)
     return head + (f"## {p.id} (preparation)\n\n- **Setup:** {p.setup}\n- **Scenario:** only this step; a later "
-                   f"checkpoint does the rest.\n  {prep.step}\n\nThis is change {prep.change}'s checkpoint. Where the step "
-                   "says to retain the storage, run `gt retain` at that point: it keeps the data and the clock exactly as "
-                   "they are then. Whatever the step does afterwards runs on a copy, so carry on as written. Record every "
-                   "identifier, address, and request form the step asks you to record with `gt mark 'KEEP <what>: <value>'`, "
-                   "one mark each.")
+                   f"checkpoint does the rest.\n  {prep.step}\n\n"
+                   f"This is change {prep.change}'s checkpoint: the service `gt` reaches is change {prep.change}'s build, so "
+                   f"\"At change {prep.change}\" and \"the change-{prep.change} build\" mean here and now. Begin with "
+                   f"`gt restore {prep.setup}`. Where the step says to retain the storage, or to save its starting data, run "
+                   "`gt retain` at that point: it keeps the data and the clock exactly as they are then. Whatever the step "
+                   "does after that (a baseline run on a copy, say) you do on the service as it then is, which serves as "
+                   "the copy, so carry on as written. Record every identifier, address, and request form the step asks you "
+                   "to record with `gt mark 'KEEP <what>: <value>'`, one mark each."
+                   + (f"\n\nThe probe's later steps, for reference only: a later checkpoint runs them. Run any of their "
+                      f"requests here only where step 1 tells you to (such as a baseline).\n\n  {later}" if later else ""))
 
 
 def render_for_judgment(batch: list[Probe], conventions: str = "", earlier: dict[str, str] | None = None) -> str:
@@ -337,6 +343,15 @@ class Checkpoint:
         if spec.get("install"):
             _run(self.runner, ["docker", "run", "--rm", "-v", f"{executor._volume(self.volume)}:/work", self.image, "sh",
                                "-c", f"cd {spec.get('workdir', '/work/app')} && {spec['install']}"])
+
+    def has_command(self, spec: dict) -> bool:
+        """Whether the start command's program is there, where it is a path inside the workdir (`.venv/bin/python`)."""
+        prog = str(spec.get("command", "")).split()[0] if spec.get("command") else ""
+        if not prog or "/" not in prog or prog.startswith("/"):
+            return True
+        p = _run(self.runner, ["docker", "run", "--rm", "-v", f"{executor._volume(self.volume)}:/work", self.image, "sh",
+                               "-c", f"test -e {spec.get('workdir', '/work/app')}/{prog}"], check=False)
+        return p.returncode == 0
 
     def tar_out(self, name: str) -> bytes:
         """A named snapshot (its data and clock) from /work/snap, as a tar."""
