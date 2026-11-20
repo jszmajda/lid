@@ -51,6 +51,12 @@ CHANGELOG = "plugins/linked-intent-dev/CHANGELOG.md"
 CORE_SKILL = "plugins/linked-intent-dev/skills/linked-intent-dev"
 WORKFLOW_DOC = "plugins/linked-intent-dev/skills/update-lid/references/workflow-doc.md"
 MARKETPLACES = (".claude-plugin/marketplace.json", ".cursor-plugin/marketplace.json")
+AGENT_MANIFEST = "plugin.json"
+AGENT_SCHEMA = "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json"
+# The Agent Plugins 1.0.0 manifest's closed field set and each field's type.
+AGENT_FIELDS = {"$schema": str, "name": str, "version": str, "description": str, "author": dict,
+                "homepage": str, "repository": str, "license": str, "keywords": list, "extensions": dict}
+AGENT_AUTHOR_FIELDS = ("name", "email", "url")
 LINK_CHECKED = ("CONTRIBUTING.md", "docs/setup.md")
 HOST_TRIGGERS = ("tools/packaging-checks/", "tools/alt-model-evals/Dockerfile",
                  "tools/alt-model-evals/run_eval.py")
@@ -381,12 +387,19 @@ def local_version_findings(tree):
         manifest = plugin / ".claude-plugin" / "plugin.json"
         if manifest.exists():
             versions[plugin.name] = json.loads(manifest.read_text()).get("version")
+        agent = plugin / AGENT_MANIFEST
+        try:
+            data = json.loads(agent.read_text())
+        except (OSError, ValueError):
+            data = None  # reported by the structure checks
+        if isinstance(data, dict):
+            versions[str(agent.relative_to(tree))] = data.get("version")
         cursor = plugin / ".cursor-plugin" / "plugin.json"
         if cursor.exists() and "version" in json.loads(cursor.read_text()):
             bad(str(cursor.relative_to(tree)), "carries a version; Cursor manifests carry none")
     if len(set(versions.values())) != 1 or not _parse(version):
-        bad("plugins/*/.claude-plugin/plugin.json",
-            "the three plugins must carry the same version X.Y.Z; found %s"
+        bad("plugins/*/.claude-plugin/plugin.json, plugins/*/plugin.json",
+            "the three plugins' manifests must carry the same version X.Y.Z; found %s"
             % ", ".join("%s %s" % kv for kv in sorted(versions.items())))
     for rel in MARKETPLACES:
         try:
@@ -424,7 +437,9 @@ def local_version_findings(tree):
 # @spec PKG-CHECK-014, PKG-CHECK-015, PKG-CHECK-016
 def _version_only(tree, main, rel):
     """True when a plugin.json differs from main's only in its version."""
-    if not rel.endswith("/.claude-plugin/plugin.json"):
+    parts = Path(rel).parts
+    agent = len(parts) == 3 and parts[0] == "plugins" and parts[2] == AGENT_MANIFEST
+    if not (rel.endswith("/.claude-plugin/plugin.json") or agent):
         return False
     try:
         ours = json.loads((Path(tree) / rel).read_text())
@@ -548,10 +563,63 @@ def structure_findings(tree):
             if not (normalized.startswith("plugins/") and (tree / normalized).is_dir()):
                 findings.append(Finding("structure", rel, "plugin source %s does not resolve to a directory "
                                         "under plugins/" % source))
+    findings += agent_manifest_findings(tree)
     claude = tree / "CLAUDE.md"
     if not claude.is_symlink() or claude.resolve() != (tree / "AGENTS.md").resolve():
         findings.append(Finding("structure", "CLAUDE.md", "must be a symlink resolving to AGENTS.md"))
     findings += tour_reference_findings(tree)
+    return findings
+
+
+# @spec PKG-CHECK-040
+def agent_manifest_findings(tree):
+    """Each plugin's Agent Plugins 1.0.0 manifest, from which Kiro installs it as a Power."""
+    tree = Path(tree)
+    findings = []
+    for plugin in plugin_dirs(tree):
+        rel = str((plugin / AGENT_MANIFEST).relative_to(tree))
+
+        def bad(reason):
+            findings.append(Finding("structure", rel, reason))
+
+        try:
+            data = json.loads((plugin / AGENT_MANIFEST).read_text())
+        except OSError:
+            bad("missing; each plugin needs an Agent Plugins manifest for Kiro to install it")
+            continue
+        except ValueError as e:
+            bad("not valid JSON: %s" % e)
+            continue
+        if not isinstance(data, dict):
+            bad("must be a JSON object")
+            continue
+        if data.get("$schema") != AGENT_SCHEMA:
+            bad("$schema must be %s; found %r" % (AGENT_SCHEMA, data.get("$schema")))
+        for field, value in data.items():
+            want = AGENT_FIELDS.get(field)
+            if want is None:
+                bad("field %s is not an Agent Plugins 1.0.0 manifest field" % field)
+            elif not isinstance(value, want):
+                bad("field %s must be a JSON %s" % (field, {str: "string", dict: "object", list: "array"}[want]))
+        author = data.get("author")
+        if isinstance(author, dict):
+            for key, value in author.items():
+                if key not in AGENT_AUTHOR_FIELDS or not isinstance(value, str):
+                    bad("author field %s: author holds only name, email, and url strings" % key)
+        keywords = data.get("keywords")
+        if isinstance(keywords, list) and not all(isinstance(k, str) for k in keywords):
+            bad("keywords must all be strings")
+        extensions = data.get("extensions")
+        if isinstance(extensions, dict) and not all(isinstance(v, dict) for v in extensions.values()):
+            bad("extensions: each namespace's value must be a JSON object")
+        if data.get("name") != plugin.name:
+            bad("name %r must equal the plugin's directory name %s" % (data.get("name"), plugin.name))
+        if not (isinstance(data.get("description"), str) and data["description"].strip()):
+            bad("description must be a non-empty string; Kiro requires it")
+        if not (isinstance(author, dict) and isinstance(author.get("name"), str) and author["name"].strip()):
+            bad("author must carry a non-empty name; Kiro requires it")
+        if not (isinstance(keywords, list) and keywords):
+            bad("keywords must be a non-empty list; Kiro requires it")
     return findings
 
 

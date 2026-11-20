@@ -7,14 +7,14 @@ Project instructions for coding agents working in this repository. The file is n
 This is the **Linked-Intent Development (LID)** project — a methodology for keeping intent and code coherent in agentic codebases. The repo ships:
 
 - The methodology itself (this document plus `docs/`).
-- **Three Claude Code plugins** under `plugins/` (two core, one opt-in experimental) — richest integration, with auto-invoking skills and slash commands. Cursor reads the same plugins through its own manifests.
+- **Three Claude Code plugins** under `plugins/` (two core, one opt-in experimental) — richest integration, with auto-invoking skills and slash commands. Cursor reads the same plugins through its own manifests, and Kiro installs each one as a Power from the Agent Plugins manifest (`plugin.json`) at its root.
 - Rule-file adapters for other agentic coding tools (Cursor, Windsurf, GitHub Copilot, Aider, Continue, JetBrains Junie, Zed, Codex, and any tool that reads `AGENTS.md`). See `docs/setup.md` for per-tool setup.
 
 There is no build system or application code. The plugins are prose (skills, references, templates); the only executable code is maintainer tooling under `tools/` (the alternate-model eval runner, the packaging checks, and the cascade recorder), which ships in no plugin. The repo is simultaneously the distribution source for the plugins and the canonical LID-on-LID reference — its own `docs/` tree is LID applied to LID.
 
 ## Structure
 
-- **`plugins/`**: Three installable plugins (Claude Code and Cursor)
+- **`plugins/`**: Three installable plugins (Claude Code, Cursor, and Kiro)
   - **`linked-intent-dev/`**: Core LID workflow skill (`/linked-intent-dev`), configuration skill (`/update-lid`), and principle-review coach (`/lid-coach`)
   - **`arrow-maintenance/`**: Arrow tracking overlay skill (`/arrow-maintenance`) and brownfield bootstrap skill (`/map-codebase`)
   - **`lid-experimental/`**: Opt-in experiments under evaluation (`review-depth`, `bidirectional-differential`)
@@ -52,7 +52,7 @@ The methodology is identical across tools — only the invocation differs. Claud
 
 ## Editing Guidelines
 
-- Each plugin lives in `plugins/<name>/` with `.claude-plugin/plugin.json` manifest
+- Each plugin lives in `plugins/<name>/` with `.claude-plugin/plugin.json`, `.cursor-plugin/plugin.json`, and Agent Plugins `plugin.json` manifests
 - Skills follow the SKILL.md frontmatter format (`name`, `description` in YAML front matter); a skill's `name` equals its directory name
 - The skill `description` field is critical — it determines when Claude Code auto-invokes the skill. Use specific trigger words, not vague descriptions
 - Write each `description` as one double-quoted line, `description: "…"`, with no `"` inside it — reword a literal quote rather than escaping it

@@ -34,9 +34,9 @@ These cover every `plugins/<plugin>/skills/<skill>/SKILL.md` and every `plugins/
 
 "The version" is the `version` in `plugins/linked-intent-dev/.claude-plugin/plugin.json`, in the checked commit or on `main`, even when the plugins disagree.
 
-- `[x]` **PKG-CHECK-012**: The run SHALL fail unless the three `.claude-plugin/plugin.json` files carry the same `version` of the form `X.Y.Z`, and SHALL fail when any `.cursor-plugin/plugin.json`, or any plugin entry in either marketplace manifest, carries a `version`.
+- `[x]` **PKG-CHECK-012**: The run SHALL fail unless the three `.claude-plugin/plugin.json` files and the three Agent Plugins manifests (`plugins/<plugin>/plugin.json`) carry the same `version` of the form `X.Y.Z`, and SHALL fail when any `.cursor-plugin/plugin.json`, or any plugin entry in either marketplace manifest, carries a `version`.
 - `[x]` **PKG-CHECK-013**: The run SHALL fail unless every `## ` heading of `plugins/linked-intent-dev/CHANGELOG.md` is `## [X.Y.Z]`, optionally followed by ` — YYYY-MM-DD`, the headings run in descending version order with none repeated, and the first is the version.
-- `[x]` **PKG-CHECK-014**: When any plugin's shipped files — its tracked files under `plugins/<plugin>/` other than any `evals/` directory — differ from `main`, the run SHALL fail unless the version is the next patch, minor, or major after `main`'s; when none differ, it SHALL fail unless the version equals `main`'s.
+- `[x]` **PKG-CHECK-014**: When any plugin's shipped files — its tracked files under `plugins/<plugin>/` other than any `evals/` directory — differ from `main`, the run SHALL fail unless the version is the next patch, minor, or major after `main`'s; when none differ, it SHALL fail unless the version equals `main`'s. A `.claude-plugin/plugin.json` or Agent Plugins manifest that differs from `main`'s only in its `version` SHALL NOT count as a changed shipped file.
 - `[x]` **PKG-CHECK-015**: When the version's major.minor differs from `main`'s, the run SHALL fail unless the top CHANGELOG entry holds exactly one `### Migration` heading and it reads `### Migration (v<main major.minor> → v<new major.minor>)`; when only the patch differs, the run SHALL fail if the top entry holds a `### Migration` heading.
 - `[x]` **PKG-CHECK-016**: The run SHALL fail unless the shipped workflow doc, apart from its stamp line, equals a fresh assembly of the current core skill source (`PKG-CHECK-036`), and unless its stamp names the new version when the assembled content differs from the doc on `main`, and `main`'s stamp otherwise.
 - `[x]` **PKG-CHECK-017**: The run SHALL fail when `main`'s version has no `v<version>` tag on `github.com/jszmajda/lid`.
@@ -45,6 +45,7 @@ These cover every `plugins/<plugin>/skills/<skill>/SKILL.md` and every `plugins/
 
 - `[x]` **PKG-CHECK-018**: The run SHALL fail when an internal markdown link in `CONTRIBUTING.md` or `docs/setup.md` resolves to a missing file or anchor.
 - `[x]` **PKG-CHECK-019**: The run SHALL fail when either `.claude-plugin/marketplace.json` or `.cursor-plugin/marketplace.json` is not valid JSON, or when a plugin `source` in it does not resolve to a directory under `plugins/`.
+- `[x]` **PKG-CHECK-040**: The run SHALL fail a plugin whose `plugins/<plugin>/plugin.json` is missing or is not a JSON object; whose `$schema` is not `https://agent-plugins.org/schemas/1.0.0/plugin.schema.json`; which carries a field other than `$schema`, `name`, `version`, `description`, `author`, `homepage`, `repository`, `license`, `keywords`, and `extensions`, or a field of a type other than the one the 1.0.0 schema sets; whose `name` differs from the plugin's directory name; or which lacks a non-empty `description`, an `author` with a non-empty `name`, or a non-empty `keywords` list.
 - `[x]` **PKG-CHECK-020**: The run SHALL fail unless `CLAUDE.md` is a symlink resolving to `AGENTS.md`.
 
 ## Host Loading: Claude Code
