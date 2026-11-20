@@ -2,6 +2,14 @@
 
 All notable changes to LID (Linked-Intent Development) are recorded here. The format follows [Keep a Changelog](https://keepachangelog.com/); LID uses [Semantic Versioning](https://semver.org/). It records what the plugins ship, one entry per version. The three plugins share one version, carried in each plugin's manifest; it is also the "LID conventions" version a project records as the `- Version:` bullet in the `## LID` block. A minor or major entry carries the migration steps `/update-lid` walks a project through; a patch asks nothing of a project.
 
+## [1.4.7] — 2026-11-20
+
+A patch that adds three Gemini 4 configurations to the capability flags.
+
+### Changed
+- **Capability flags: three Gemini 4 configurations**, each at `medium`. `google/gemini-4-carbon`, `google/gemini-4-hydrogen`, and `google/gemini-4-neon` carry no flag and no tendency: each scored 9 or 10 of 10 on every test project. `google/gemini-4-carbon` now has a row of its own in place of the listing that had it take the `google/gemini-4-argon` row, and its runs agree with that row. All three were measured on the same copy of the skills, with the capability subsystem removed, as the configurations added in 1.4.1. Unlike `google/gemini-4-argon`, all three reasoned in every run; `google/gemini-4-carbon` generates the second-most output per run of any configuration on the list.
+- **The workflow doc carries the new rows.** Projects that vendor `docs/lid/workflow.md` can re-sync it. Nothing else asks for action.
+
 ## [1.4.6] — 2026-11-11
 
 A patch to the capability flags (four more model configurations, cover for untested releases on a vendor's evidence, and what each configuration's output costs) and a fix to two links in `map-codebase`.
