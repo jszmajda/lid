@@ -520,6 +520,41 @@ class FollowUpProbesTest(unittest.TestCase):
         self.assertEqual([p.id for p in gck.applicable(ps, 6, {"P-RR03-current"})], ["P-RR03-current"])  # when named
 
 
+class GrowthOwnerItemsTest(unittest.TestCase):
+    """assemble_growth_seed.py: block 1's owner items with the growth salience rounds merged in, and the gaps."""
+
+    def rounds(self, root: Path) -> Path:
+        sal = root / "salience"
+        for d, tiers, lines in ((sal, {"RD-06": "low"}, {"RD-06": "Exports stay quiet."}),                    # current
+                                (sal / "round2", {"RD-04": "medium", "RD-06": "high"}, {"RD-04": "Old line.", "RD-06": "Old."}),
+                                (sal / "round1", {"RD-05": "high", "RD-07": "low"}, {"RD-05": "Case never matters."})):
+            d.mkdir(parents=True, exist_ok=True)
+            (d / "ratings.json").write_text(json.dumps({"tier": tiers}))
+            (d / "recall-lines.json").write_text(json.dumps({"lines": lines, "missing": []}))
+        return sal
+
+    def test_the_rounds_merge_by_precedence_and_round_2_gives_only_its_named_row(self):
+        import assemble_growth_seed as ags
+        sal = self.rounds(Path(tempfile.mkdtemp()))
+        base = {"_note": "block 1", "items": {"RD-02": {"tier": "medium", "recall": "Embargoes hold."}}}
+        merged = ags.merge_owner_items(base, sal, round2_only={"RD-04"})
+        self.assertEqual(merged["_note"], "block 1")
+        self.assertEqual(merged["items"], {
+            "RD-02": {"tier": "medium", "recall": "Embargoes hold."},
+            "RD-06": {"tier": "low", "recall": "Exports stay quiet."},     # the current round wins over round 2
+            "RD-04": {"tier": "medium", "recall": "Old line."},
+            "RD-05": {"tier": "high", "recall": "Case never matters."},
+            "RD-07": {"tier": "low"}})                                       # rated, but no recall line: left as it is
+        self.assertIn("growth salience", merged["_growth"])
+
+    def test_every_recall_eligible_row_without_a_tier_or_recall_line_is_a_gap(self):
+        import assemble_growth_seed as ags
+        o = sm.parse_oracle(ORACLE.replace("| RD-04 | Exports list titles. See RD-01. | Stated in change 4 |",
+                                           "| RD-04 | Exports list titles. See RD-01. | Askable |"))
+        items = {"RD-02": {"tier": "medium", "recall": "Embargoes hold."}, "RD-05": {"tier": "high"}}
+        self.assertEqual(ags.owner_item_gaps(o, items), ["RD-04: no tier or recall line", "RD-05: no recall line"])
+
+
 class PlantRetiredTest(unittest.TestCase):
     def test_the_control_plants_every_row_retired_by_the_change(self):
         import plant_stale_tests as pst
