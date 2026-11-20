@@ -208,6 +208,33 @@ class GrowthReportTest(unittest.TestCase):
         for c, pv in verdicts_by_c.items():
             write(runs / tid / "grading" / f"change-{c:02d}" / "verdicts.json", {"probes": {p: {"verdict": v} for p, v in pv.items()}})
 
+    def test_a_symptom_row_is_graded_in_force_from_its_change_and_its_report_firing_is_reported_apart(self):
+        root = Path(tempfile.mkdtemp())
+        runs, seed = root / "runs", root / "seeds" / "bk"
+        write(seed / "hidden" / "oracle.md", ORACLE)
+        write(seed / "hidden" / "change-script.md", CHANGES)
+        write(seed / "hidden" / "probes.md", PROBES + "\n### BK-07\n\n#### P-BK07-a\n- **Applies:** from change 5\n"
+              "- **Setup:** S0\n- **Needs:** none\n- **Scenario:**\n  1. Refund an order.\n"
+              "- **Expected observation:** The refund goes to the original card.\n")
+        for tid, arm, symptom, verdict in (("g-bare-1", "bare", "not fired: diagnostic passed", "met"),
+                                           ("g-lid-full-1", "lid-full", "fired", "not met")):
+            changes = {str(n): {"agent_cost_usd": 1.0, "owner_cost_usd": 0.5, "rounds": 1} for n in range(5)}
+            changes["5"] = {"symptom": symptom, "finished": True}
+            write(runs / tid / "trajectory.json", {"id": tid, "arm": arm, "replicate": "g-r1", "changes": changes})
+            write(runs / tid / "grading" / "change-05" / "verdicts.json",
+                  {"probes": {"P-BK01-a": {"verdict": "met"}, "P-BK07-a": {"verdict": verdict}}})
+        r = report.growth_report(runs, seed, "g", {"bare": ["1"], "lid-full": ["1"]}, [5])
+        bare, lid = r["arms"]["bare"][0]["checkpoints"][0], r["arms"]["lid-full"][0]["checkpoints"][0]
+        # graded in force from change 5 either way, as the oracle's lifetime says
+        self.assertEqual((bare["latent"], lid["latent"]), ((1, 1), (0, 1)))
+        # whether the report fired, apart
+        self.assertEqual((bare["symptom_reports"], lid["symptom_reports"]), ((0, 1), (1, 1)))
+        self.assertEqual((bare["graded_unreported"], lid["graded_unreported"]), (["BK-07"], []))
+        text = report.render_growth(r)
+        self.assertIn("## Symptom reports", text)
+        self.assertIn("| bare | 5 | 0/1 | BK-07 |", text)
+        self.assertIn("graded in force from its change", text)
+
     def test_growth_figures_per_arm_and_checkpoint(self):
         root = Path(tempfile.mkdtemp())
         runs, seed = root / "runs", root / "seeds" / "bk"

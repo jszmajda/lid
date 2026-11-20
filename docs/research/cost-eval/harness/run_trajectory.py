@@ -230,6 +230,7 @@ def main(argv=None) -> int:
                 (out / f"owner-state-{n:02d}.json").write_text(json.dumps(trajectory.owner_state(owner), indent=1))
                 print(f"change {n}: diagnostic {fired}, so no symptom report and no change", flush=True)
                 continue
+        symptom = {"symptom": "fired"} if change.request is None and change.symptom is not None else {}
         start = time.monotonic()
         before = len(owner_costs)
         res = trajectory.run_change(arm=arm, change=change, owner=owner, turn=turn, workspace=workspace,
@@ -238,7 +239,7 @@ def main(argv=None) -> int:
         meta["changes"][str(n)] = {"title": res.title, "rounds": res.rounds, "finished": res.finished, "capped": res.capped,
                                    "error": res.error, "commit": res.commit, "redirect": res.redirect,
                                    "agent_cost_usd": round(agent_cost, 4), "owner_cost_usd": round(sum(owner_costs[before:]), 4),
-                                   "minutes": round((time.monotonic() - start) / 60, 1)}
+                                   "minutes": round((time.monotonic() - start) / 60, 1), **symptom}
         meta_path.write_text(json.dumps(meta, indent=1))
         state_path.write_text(json.dumps(trajectory.owner_state(owner), indent=1))
         (out / f"owner-state-{n:02d}.json").write_text(state_path.read_text())  # for forks from this checkpoint

@@ -136,6 +136,8 @@ class CourseChangeFieldsTest(unittest.TestCase):
 
 # ----------------------------------------------------------------------------------------- course and reliance forks
 
+import contextlib  # noqa: E402
+import io  # noqa: E402
 import json  # noqa: E402
 import tempfile  # noqa: E402
 
@@ -334,6 +336,95 @@ class PendingTest(unittest.TestCase):
         g.mkdir(parents=True)
         (g / "status.json").write_text(json.dumps({"finished": True, "left": [], "forks": ["c02-reliance-1"]}))
         self.assertFalse(self.left("checkpoint", "--id", "g-bare-1", "--change", "4"))
+
+
+# ------------------------------------------------------------------------------------- rows realized on a symptom
+
+from test_simulator import CHANGES as SYMPTOM_SCRIPT  # noqa: E402  (change 5: a symptom report bringing BK-07)
+
+LATER = sm.Change(number=6, title="Gift cards", request="Add gift cards.")
+
+
+class SymptomRealizationTest(unittest.TestCase):
+    """A row realized on a symptom (BK-07, change 5) comes into force for the owner only once its report was delivered
+    on that trajectory: the report fires only if the build gets the rule wrong."""
+
+    def owner(self, delivered):
+        o = sm.parse_oracle(ORACLE)
+        owner = sm.Owner(oracle=o, brief=BRIEF, policy="bounded", replicate="g-r1", ask=FakeAsk(),
+                         touch=lambda p: {"touches": []}, owner_items=sm.parse_owner_items(OWNER_ITEMS, o))
+        tj.restore_owner_state(owner, {**EMPTY_STATE, "requests": [[n, f"request {n}"] for n in delivered]})
+        return owner
+
+    def held(self, owner, change=LATER):
+        owner.start_change(change)
+        prompt = owner._prompt("Done.", [], None)
+        touchable = sm.touch_items(owner.oracle, change, disclosed=set(), realized=owner.realized)
+        return "[BK-07]" in prompt, "original card" in prompt, "BK-07" in touchable
+
+    def test_an_owner_holds_a_symptom_row_only_once_its_report_was_delivered(self):
+        self.assertEqual(self.held(self.owner([1, 2, 3, 4])), (False, False, False))  # change 5's diagnostic passed
+        self.assertEqual(self.held(self.owner([1, 2, 3, 4, 5])), (True, True, True))  # its report was delivered
+
+    def test_the_report_brings_the_row_in_force_while_it_is_delivered_and_after(self):
+        owner = self.owner([1, 2, 3, 4])
+        self.assertEqual(self.held(owner, sm.parse_change_script(SYMPTOM_SCRIPT)[5]), (True, True, True))
+        owner.end_change()
+        self.assertEqual(self.held(owner), (True, True, True))
+
+    def test_a_reliance_forks_owner_never_gets_a_symptom_row_whose_report_had_not_fired_by_its_snapshot(self):
+        import run_course_forks as rcf
+        seed = Path(tempfile.mkdtemp())
+        (seed / "hidden").mkdir()
+        (seed / "brief.md").write_text(BRIEF)
+        (seed / "hidden" / "oracle.md").write_text(ORACLE)
+        (seed / "hidden" / "owner-items.json").write_text(json.dumps(OWNER_ITEMS))
+        symptom = "## Change 5" + SYMPTOM_SCRIPT.split("## Change 5", 1)[1].split("## Probe request", 1)[0]
+        (seed / "hidden" / "change-script.md").write_text(GROWTH_SCRIPT.replace("**Lag:** 2", "**Lag:** 3") + "\n" + symptom)
+        for fired in (False, True):
+            runs = Path(tempfile.mkdtemp())
+            base = runs / "g-bare-1"
+            base.mkdir()
+            changes = {str(n): {"commit": f"c-after-{n}"} for n in range(1, 6)}
+            changes["5"]["symptom"] = "fired" if fired else "not fired: diagnostic passed"
+            (base / "trajectory.json").write_text(json.dumps({
+                "id": "g-bare-1", "arm": "bare", "seed": "seed", "model": "m", "effort": "medium", "policy": "bounded",
+                "owner_model": "o", "replicate": "g-r1", "isolation": {"window": "1m"}, "round_cap": 6,
+                "volumes": {"workspace": "ce-g-bare-1-ws", "config": "ce-g-bare-1-cfg"}, "changes": changes}))
+            (base / "owner-state-05.json").write_text(json.dumps(
+                {**EMPTY_STATE, "requests": [[n, "r"] for n in (range(1, 6) if fired else range(1, 5))]}))
+            ws = FakeWorkspace()
+            turns = FakeTurns(ws, ("Done: the file is ready.", None, ["src/app.py"]))
+            ask = FakeAsk(out("completion"))
+            deps = rcf.Deps(docker=lambda cmd, **kw: subprocess_ok(cmd), turn_for=lambda s: turns,
+                            workspace_for=lambda image, vol: ws, ask=ask, touch=ask.touch, trim=None)
+            rc = rcf.main(["--id", "g-bare-1", "--kind", "reliance", "--course", "2", "--fork", "1", "--runs", str(runs),
+                           "--seed-dir", str(seed)], deps=deps)
+            self.assertEqual(rc, 0)
+            meta = json.loads((base / "course-forks" / "c02-reliance-1" / "trajectory.json").read_text())
+            self.assertEqual((meta["at"], meta["commit"]), (5, "c-after-5"))
+            self.assertEqual(("[BK-07]" in ask.prompts[0], "original card" in ask.prompts[0]), (fired, fired))
+            self.assertEqual("BK-07" in rcf.LAST_OWNER.realized, fired)
+
+    def test_a_symptom_report_never_runs_as_a_course_fork(self):
+        # a report is delivered only after its diagnostic fires, on the main line; a fork would deliver it regardless
+        import run_course_forks as rcf
+        root = Path(tempfile.mkdtemp())
+        (root / "seed" / "hidden").mkdir(parents=True)
+        for name, text in (("brief.md", BRIEF), ("hidden/oracle.md", ORACLE), ("hidden/owner-items.json", json.dumps(OWNER_ITEMS))):
+            (root / "seed" / name).write_text(text)
+        symptom = "## Change 5" + SYMPTOM_SCRIPT.split("## Change 5", 1)[1].split("## Probe request", 1)[0].replace(
+            "**Introduces:** BK-07.", "**Introduces:** BK-07.  \n**Course change:** reversal of change 1 (distance 4)")
+        (root / "seed" / "hidden" / "change-script.md").write_text(script(change(1)) + "\n" + symptom)
+        (root / "runs" / "g-bare-1").mkdir(parents=True)
+        (root / "runs" / "g-bare-1" / "trajectory.json").write_text(json.dumps({"seed": "seed", "changes": {"4": {"commit": "c4"}}}))
+        (root / "runs" / "g-bare-1" / "owner-state-04.json").write_text(json.dumps(EMPTY_STATE))
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            rc = rcf.main(["--id", "g-bare-1", "--kind", "course", "--course", "5", "--fork", "1", "--runs", str(root / "runs"),
+                           "--seed-dir", str(root / "seed")], deps=rcf.Deps(docker=lambda cmd, **kw: subprocess_ok(cmd)))
+        self.assertEqual(rc, 2)
+        self.assertIn("symptom report", out.getvalue())
 
 
 def subprocess_ok(cmd):

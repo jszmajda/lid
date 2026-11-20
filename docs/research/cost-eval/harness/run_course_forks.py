@@ -103,6 +103,9 @@ def main(argv=None, *, deps: Deps | None = None) -> int:
     if c is None or c.course_change is None:
         print(f"change {args.course} isn't a course change")
         return 2
+    if c.request is None:  # delivered only after its diagnostic fires on the main line; a fork would deliver it anyway
+        print(f"change {args.course} is a symptom report, which runs only on the main line")
+        return 2
     if args.kind == "course":  # the course change itself, from the snapshot just before it
         change, at, key = c, args.course - 1, str(args.course)
     else:  # the reliance request, from the snapshot after the lag

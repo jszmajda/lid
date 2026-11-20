@@ -421,6 +421,8 @@ def growth_report(runs: Path, seed_dir: Path, prefix: str, arms: dict[str, list[
     kinds = {i.id: kind_of(i) for i in oracle.items}
     latent = {i for i, k in kinds.items() if k != "stated"}
     probes = grading.parse_probes((seed_dir / "hidden" / "probes.md").read_text(encoding="utf-8")).probes
+    script = simulator.parse_change_script((seed_dir / "hidden" / "change-script.md").read_text(encoding="utf-8"))
+    symptom_changes = [n for n, ch in sorted(script.items()) if ch.request is None and ch.symptom is not None]
     trajs = {(arm, k): runs / f"{prefix}-{arm}-{k}" for arm, ks in arms.items() for k in ks
              if (runs / f"{prefix}-{arm}-{k}" / "trajectory.json").exists()}
     disclosed: dict[tuple, dict[int, set]] = {}
@@ -460,7 +462,12 @@ def growth_report(runs: Path, seed_dir: Path, prefix: str, arms: dict[str, list[
             spent = [x for n, x in s["changes"].items() if n <= c]
             dollars = sum(x["agent_usd"] + x["owner_usd"] for x in spent)
             hours = growth.owner_hours(sum(x["words_shown"] for x in spent))
+            # symptom rows are graded in force from their change whatever happened; whether each report fired is apart
+            ran = [n for n in symptom_changes if n <= c and n in s["changes"]]
+            unfired = [n for n in ran if s["changes"][n]["skipped"]]
             rows.append({
+                "symptom_reports": (len(ran) - len(unfired), len(ran)) if ran else None,
+                "graded_unreported": sorted(i for n in unfired for i in simulator.symptom_items(oracle, n) if i in v),
                 "checkpoint": c, "stated": share_met(v, lambda i: kinds.get(i) == "stated"),
                 "latent": share_met(v, lambda i: i in latent), "latent_disclosed_everywhere": common,
                 "keeping": (len(prev_met & met), len(prev_met & set(v))) if prev_met else None,
@@ -506,7 +513,8 @@ def render_growth(r: dict) -> str:
         vals = [x for x in xs if x is not None]
         return f.format(mean(vals)) if vals else "–"
     lines = [f"# Growth: {r['prefix']}", "", "Means over trajectories (per trajectory in brackets); counts summed.", "",
-             "- Latent: every kind of item that isn't stated (askable, recognized on sight, emerging). \"Latent disclosed "
+             "- Latent: every kind of item that isn't stated (askable, recognized on sight, emerging, realized on a "
+             "symptom). \"Latent disclosed "
              "in every arm\" keeps to the latent items every arm of the replicate had heard by then.",
              "- Keeping: items met at the previous checkpoint that are still graded and still met.",
              "- Flips: each retirement, reversal, re-reversal and rescope, the retired rule failing after it and the new "
@@ -516,7 +524,10 @@ def render_growth(r: dict) -> str:
              "Displaced-rule rate: forks that followed the displaced rule, of those that followed the current rule, "
              "the displaced one, or neither. A fork that met both frozen outcomes is inconsistent: counted apart, "
              "outside the rate, and listed for a spot-check.",
-             "- Owner-hours at 238 words a minute; fidelity per owner-hour and per dollar count items met.", ""]
+             "- Owner-hours at 238 words a minute; fidelity per owner-hour and per dollar count items met.",
+             "- A row realized on a symptom is graded in force from its change, as the oracle's lifetime says, whether "
+             "or not its report fired; the owner holds it only once the report was delivered. Symptom reports: the "
+             "scheduled reports that fired by each checkpoint, and the rows graded though their report never fired.", ""]
     for c in r["checkpoints"]:
         lines += [f"## Change {c}", "", "| Arm | Stated | Latent | Latent disclosed in every arm | Keeping | Displaced-rule rate | "
                   "Flips behaving | Anticipated | Course forks behaving | Stale files (forks) | Cost per change | Owner-hours | "
@@ -532,6 +543,14 @@ def render_growth(r: dict) -> str:
                          f"{ratio(col('anticipated'))} | {ratio(col('course_forks_behaving'))} | {ratio(col('stale_files'))} "
                          f"({sum(x or 0 for x in col('course_fork_stale_files'))}) | ${num(col('cost_per_change'))} | {num(col('owner_hours'))} | "
                          f"{num(col('met_per_owner_hour'), '{:.1f}')} | {num(col('met_per_dollar'))} |")
+        lines.append("")
+    symptoms = [(arm, c, rows) for c in r["checkpoints"] for arm, ts in r["arms"].items()
+                if (rows := [x for t in ts for x in t["checkpoints"] if x["checkpoint"] == c and x.get("symptom_reports")])]
+    if symptoms:
+        lines += ["## Symptom reports", "", "| Arm | Checkpoint | Reports fired | Graded though never reported |", "|---|---|---|---|"]
+        for arm, c, rows in symptoms:
+            unreported = sorted({i for x in rows for i in x.get("graded_unreported") or []})
+            lines.append(f"| {arm} | {c} | {ratio([x['symptom_reports'] for x in rows])} | {', '.join(unreported) or '–'} |")
         lines.append("")
     if r.get("reliance_by_course"):
         lines += ["## Reliance forks by course change", "", "| Course change | Arm | Current | Displaced | Neither | Both | "
