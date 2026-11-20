@@ -82,6 +82,19 @@ All sources were gathered on 2026-11-11 unless marked otherwise.
   - The lesson for us is narrow: a deterministic test can't grade output whose names the agent chooses. That is one reason our graders are models.
 - **DeepSWE** (arXiv 2607.07946, 2026-07). [link](https://arxiv.org/abs/2607.07946), skim. Hand-written verifiers disagreed with an LLM judge 1.4% of the time, against 32.4% for tests inherited from upstream repositories.
 
+## Specification explicitness
+
+- **Onagh and Nayebi, "How Specification Explicitness Shapes Failure in LLM-Generated Code"** (York University; authors' preprint of an ICSE 2026 paper, arXiv 2611.20195v1; added 2026-11-20). [arXiv](https://arxiv.org/abs/2611.20195), raw (the PDF's body text, pages 1–11, read in full by a side session; the numbers below come from the PDF).
+  - Setup: 72 participants (students with requirements-engineering coursework) used ChatGPT-4o in chat on two one-hour Python tasks with 33 hidden tests each, under three conditions:
+    - G1: no spec;
+    - G2: a light template (goal, inputs and outputs, Given/When/Then acceptance criteria, constraints, assumptions);
+    - G3: G2 plus functional requirements, invariants, negative requirements, edge cases and tie-breaking rules.
+    A requirement change, short to state but global in effect, followed.
+  - Failures fell 8.7% under G2 and 47.2% under G3 (from 21.54 to 11.38 of 33). Against G1, G3 cut invariant violations from 93% to 31%, unsupported assumptions from 58% to 24%, edge-case failures from 48% to 31%, and constraint omissions from 76% to 51%. The spec elements most associated with passing tests were functional requirements, invariants and negative requirements.
+  - Under the requirement change, G3 had more regressions but shallower ones: 4 of 24 submissions against G2's 2 of 24, losing 0.17 tests each against 0.38.
+  - Calibration: without explicit obligations, participants overestimated their correctness by about 23 points; with them, they were about 20 points underconfident.
+  - Weight: chat rather than agents, and human-written specs. The ANOVA is strong (eta squared 0.44), but the adjusted G3-against-G1 model isn't significant after Holm correction (p = 0.205), and the regression and adherence results are exploratory (8 of 72 participants regressed). It's a source of design ideas, not evidence about LID either way. Ideas it suggests are deferred until the growth test finishes (plan.md, "After the growth test").
+
 ## Measuring cost
 
 - **"Token Reduction Is Not Cost Reduction"** (arXiv 2607.12161, 2026). [link](https://arxiv.org/abs/2607.12161), skim.

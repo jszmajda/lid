@@ -97,6 +97,21 @@ ReleaseDesk grown by each arm through 40 changes (design.md, "The growth test").
 - `[ ]` Fix X and Y for the predictions from the trial's spread, and record them.
 - `[ ]` Full run: bare ×5 (plus the drift floor), LID Full ×5, one-line bare ×3.
 
+## After the growth test: ideas to review with the maintainer `[ ]`
+
+Suggested by Onagh and Nayebi's specification-explicitness paper (sources.md, "Specification explicitness"). The maintainer asked that they change nothing in the growth test, and be reviewed with her once it finishes.
+
+- `[ ]` **A checklist arm.** A few lines of AGENTS.md: before each change, write or update a spec listing functional requirements, constraints, invariants, negative requirements, edge cases and tie-breaking rules; ask the owner about anything unsettled; update the spec before the code. No design-doc hierarchy, no `@spec` links, no phase stops.
+  - If it gets most of LID's latent-item lead at a fraction of the cost and owner reading, that answers where LID isn't worth the spend. If LID beats it on reliance forks and rot, that isolates the value of linking and the cascade.
+  - It leans on the simulated owner's broad-question rules.
+- `[ ]` **Tag each oracle item by kind of obligation** (invariant, negative requirement, edge case, tie-break, constraint, assumption), done blind, and report fidelity by kind. This gives H2 a second axis beyond change type, and shows which kinds LID's questions bring out.
+- `[ ]` **A calibration measure,** for the unmeasured "how easy changes are to review":
+  - agent overclaiming: what each completion report says was handled, against the graded verdicts;
+  - a cold reviewer model that sees the diff and the arm's artifacts, predicts which items are met, and is scored against the grader.
+
+  Not the simulated owner, whose calibration would only measure the simulator.
+- `[ ]` **Report keeping as two numbers:** how often a change breaks anything, and how much it breaks. One keeping rate hides a more-but-shallower tradeoff.
+
 ## M2b: Check against SlopCodeBench `[ ]`
 
 - `[ ]` Find out whether SlopCodeBench can run Claude Code with a plugin or a project instruction file.
