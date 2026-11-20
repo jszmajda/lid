@@ -33,7 +33,7 @@ On Clowder's own snapshot, the kittens segment's tests implied 32% of its retire
 | Arm | 1M | 200k | Latent items, 1M / 200k | Agent cost, 1M / 200k | Words shown to the owner, 1M / 200k |
 |---|---|---|---|---|---|
 | bare, stripped repository | 26 (79%) | 28 (85%) | 15 / 16 of 20 | $4.30 / $4.03 | 7,699 / 13,791 |
-| bare, full repository | 29 (88%) | 30 (91%) | 17 / 18 of 20 | $12.48 / $13.61 | 5,316 / 39,494 |
+| bare, full repository (an inheritance check: a bare agent on a repository LID built, not a baseline) | 29 (88%) | 30 (91%) | 17 / 18 of 20 | $12.48 / $13.61 | 5,316 / 39,494 |
 | LID Full | 32 (97%) | 27 of 32 (84%), 1 missing | 19 / 16 of 20 | $18.55 / $15.74 | 195,044 / 105,323 |
 | null (untouched snapshot) | | 0 | | | |
 
