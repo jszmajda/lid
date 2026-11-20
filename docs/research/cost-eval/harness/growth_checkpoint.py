@@ -5,14 +5,17 @@
 Steps, each skipped where its record exists:
 
 - grade: grade_checkpoint.py at the change, every applicable probe;
-- flips: for every retirement, reversal, re-reversal, and rescope so far, the retired item's probes once after it and
-  the new item's probes once before it, beyond their ranges (grading/flip-cNN-after|before/), each expected not met; an
-  emerging change's new item once before it, recorded as anticipated or not (not a flip). Then each course fork
-  (course-forks/cNN-course-K/), graded at its end on the new rule (should hold) and the retired one (should not),
+- flips: for every retirement, reversal, re-reversal, and rescope so far, the retired row once after it and the new
+  row once before it, beyond their ranges (grading/flip-cNN-after|before/), each expected not met, by the row's flip
+  probe P-RDxx-flipCC where the seed has one and otherwise by every probe of the row in force beside the change (which
+  way, recorded per row); an emerging change's new row once before it, recorded as anticipated or not (not a flip). Then each course fork
+  (course-forks/cNN-course-K/), graded at its end on the new rule (should hold) and the retired one (should not), by
+  the flip pair where the seed has one and otherwise as the flip checks fall back (which way, recorded per row),
   audited for stale intent, and discarded;
 - reliance: each reliance fork whose request has run (course-forks/cNN-reliance-K/, the request at change course +
-  lag, never on the main line), graded on its two frozen outcomes and the current rule's probes, and recorded as
-  following the current rule, the displaced one, neither, or both; then discarded;
+  lag, never on the main line), graded on its two frozen outcomes (the seed's P-RRCC-current and P-RRCC-displaced) and
+  the current rule's probes in force there, and recorded as following the current rule, the displaced one, neither,
+  or both; then discarded. Where the seed has no P-RRCC pair, the fork is recorded as "no probe" and kept;
 - intent: intent from tests and docs, by intent_from_tests.py (another module): a plan of the tests as written, the
   tests with names and comments replaced, the docs where the build keeps any, and the brief as the baseline, read from
   a volume of the checkpoint's commit. If that tool can't run, the plan is left ready and the step marked pending;
@@ -159,8 +162,7 @@ def main(argv=None, *, run: Callable[[list[str]], int] | None = None, volume: Ca
         for n, ch in sorted(script.items()):
             if n > c or ch.course_change is None:
                 continue
-            new = growth.probes_for(probeset, ch.introduces)
-            old = [x for x in growth.probes_for(probeset, ch.retires) if x not in new]
+            new, old, choice = growth.course_fork_probes(script, probeset, n)  # the flip pair where the seed has one
             for fork in sorted((args.runs / t / "course-forks").glob(f"c{n:02d}-course-*")):
                 fm = json.loads((fork / "trajectory.json").read_text()) if (fork / "trajectory.json").exists() else {}
                 if str(n) not in fm.get("changes", {}):
@@ -182,28 +184,30 @@ def main(argv=None, *, run: Callable[[list[str]], int] | None = None, volume: Ca
                 else:
                     forks_seen.append(fork.name)
                 got = _verdicts(where) or {}
-                forks.append({"course": n, "kind": ch.course_change.kind, "run": fid, "verdicts": got,
+                forks.append({"course": n, "kind": ch.course_change.kind, "run": fid, "choice": choice, "verdicts": got,
                               "behaves": (all(got.get(x) == "met" for x in new) and all(got.get(x) == "not met" for x in old))
                               if got else None, "stale": json.loads(audit_path.read_text()).get("stale")})
         (out / "course-forks.json").write_text(json.dumps(forks, indent=1))
 
     if "reliance" in steps:  # reliance forks: the request at course + lag, on its two frozen outcomes and the current rule
         rows = []
-        probes_text = (seed_dir / "hidden" / "probes.md").read_text(encoding="utf-8")
         for course, lag in growth.reliance_requests(script, upto=c):
-            current = growth.probes_for(probeset, script[course].introduces)
+            outcomes = growth.reliance_probes(probeset, course)  # the seed's P-RRCC pair, or None
+            current = growth.current_rule_probes(script, probeset, course)
             for fork in sorted((args.runs / t / "course-forks").glob(f"c{course:02d}-reliance-*")):
                 fm = json.loads((fork / "trajectory.json").read_text()) if (fork / "trajectory.json").exists() else {}
                 done = (fm.get("changes") or {}).get("reliance")
                 if not done or not done.get("commit"):
                     continue
                 fid, where, k = f"{t}/course-forks/{fork.name}", fork / "grading" / "reliance", fork.name.rsplit("-", 1)[1]
+                if outcomes is None:  # nothing to grade it on: kept (not discarded) for the seed's probes to come
+                    forks_seen.append(fork.name)
+                    rows.append({"course": course, "kind": script[course].course_change.kind, "lag": lag, "run": fid,
+                                 "fork": k, "outcome": "no probe", "current_rule_held": None, "verdicts": {}})
+                    continue
                 if _verdicts(where) is None:
-                    text, ids = growth.reliance_probes(probes_text, script, course)
-                    probes_file = fork / "reliance-probes.md"
-                    probes_file.write_text(text, encoding="utf-8")
-                    if grade(fid, course + lag, "--probes", ",".join(ids + current), "--out-name", "reliance",
-                             "--probes-file", str(probes_file.resolve()), "--commit", done["commit"]) == 0:
+                    if grade(fid, course + lag, "--probes", ",".join(outcomes + current), "--out-name", "reliance",
+                             "--commit", done["commit"]) == 0:
                         run([PY, "run_course_forks.py", "--id", t, "--kind", "reliance", "--course", str(course),
                              "--fork", k, "--discard"])
                 if _verdicts(where) is None:

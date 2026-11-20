@@ -403,7 +403,7 @@ def _json(path: Path):
     return json.loads(path.read_text()) if path.exists() else None
 
 
-RELIANCE_OUTCOMES = ("current", "displaced", "neither", "both", "undetermined")
+RELIANCE_OUTCOMES = ("current", "displaced", "neither", "both", "undetermined", "no probe")
 
 
 def _displaced(rows: list[dict]) -> tuple[int, int]:
@@ -554,12 +554,12 @@ def render_growth(r: dict) -> str:
         lines.append("")
     if r.get("reliance_by_course"):
         lines += ["## Reliance forks by course change", "", "| Course change | Arm | Current | Displaced | Neither | Both | "
-                  "Undetermined | Displaced-rule rate |", "|---|---|---|---|---|---|---|---|"]
+                  "Undetermined | No probe | Displaced-rule rate |", "|---|---|---|---|---|---|---|---|---|"]
         for course, by_arm in sorted(r["reliance_by_course"].items(), key=lambda kv: int(kv[0])):
             for arm, n in by_arm.items():
                 decided = n["current"] + n["displaced"] + n["neither"]
                 lines.append(f"| {course} | {arm} | {n['current']} | {n['displaced']} | {n['neither']} | {n['both']} | "
-                             f"{n['undetermined']} | {n['displaced']}/{decided} |")
+                             f"{n['undetermined']} | {n['no probe']} | {n['displaced']}/{decided} |")
         lines.append("")
     if r.get("reliance_spot_checks"):
         lines += ["## Reliance forks to spot-check", "", "Each met both frozen outcomes, which can't both hold.", ""]

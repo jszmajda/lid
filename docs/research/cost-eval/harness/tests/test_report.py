@@ -251,7 +251,8 @@ class GrowthReportTest(unittest.TestCase):
         write(g / "reliance.json", [{"course": 2, "run": "g-bare-1/course-forks/c02-reliance-1", "outcome": "current"},
                                     {"course": 2, "run": "g-bare-1/course-forks/c02-reliance-2", "outcome": "displaced"},
                                     {"course": 2, "run": "g-bare-1/course-forks/c02-reliance-3", "outcome": "undetermined"},
-                                    {"course": 2, "run": "g-bare-1/course-forks/c02-reliance-4", "outcome": "both"}])
+                                    {"course": 2, "run": "g-bare-1/course-forks/c02-reliance-4", "outcome": "both"},
+                                    {"course": 2, "run": "g-bare-1/course-forks/c02-reliance-5", "outcome": "no probe"}])
         write(g / "stale-audit.json", {"courses": {"2": {"stale": 1, "current": 2, "mixed": 0, "unrelated": 0, "no_ruling": 0}}})
         r = report.growth_report(runs, seed, "g", {"bare": ["1"], "lid-full": ["1"]}, [1, 2])
         bare = {row["checkpoint"]: row for row in r["arms"]["bare"][0]["checkpoints"]}
@@ -261,10 +262,11 @@ class GrowthReportTest(unittest.TestCase):
         self.assertEqual(bare[2]["latent_disclosed_everywhere"], (1, 1))
         self.assertEqual(lid[2]["keeping"], (1, 2))  # BK-01, met at change 1, no longer is
         self.assertEqual((bare[2]["reliance"], bare[2]["flips_behaving"], bare[2]["stale_files"]),
-                         ({"current": 1, "displaced": 1, "neither": 0, "both": 1, "undetermined": 1}, (1, 2), (1, 3)))
+                         ({"current": 1, "displaced": 1, "neither": 0, "both": 1, "undetermined": 1, "no probe": 1},
+                          (1, 2), (1, 3)))
         self.assertEqual(bare[2]["displaced_rate"], (1, 2))  # the rot consequence: displaced, of current/displaced/neither
         self.assertEqual(r["reliance_by_course"]["2"]["bare"], {"current": 1, "displaced": 1, "neither": 0, "both": 1,
-                                                               "undetermined": 1})
+                                                               "undetermined": 1, "no probe": 1})
         self.assertEqual(r["reliance_spot_checks"], ["g-bare-1/course-forks/c02-reliance-4"])  # "both" is inconsistent
         self.assertEqual(bare[2]["anticipated"], (1, 1))  # an emerging change's check, never a flip
         self.assertEqual((bare[2]["course_forks_behaving"], bare[2]["course_fork_stale_files"]), ((1, 2), 2))
@@ -275,7 +277,7 @@ class GrowthReportTest(unittest.TestCase):
         text = report.render_growth(r)
         self.assertIn("## Change 2", text)
         self.assertIn("## Reliance forks by course change", text)
-        self.assertIn("| 2 | bare | 1 | 1 | 0 | 1 | 1 | 1/2 |", text)
+        self.assertIn("| 2 | bare | 1 | 1 | 0 | 1 | 1 | 1 | 1/2 |", text)
         self.assertIn("## Reliance forks to spot-check", text)
         self.assertIn("- g-bare-1/course-forks/c02-reliance-4", text)
         for definition in ("Latent: every kind of item that isn't stated", "Keeping: items met at the previous checkpoint",

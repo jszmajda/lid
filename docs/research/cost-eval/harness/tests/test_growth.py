@@ -155,23 +155,76 @@ GROWTH_SCRIPT = script(
     "## Change 4 — Receipts\n\n### Owner request\n\n> Receipts.\n\n**Introduces:** BK-08.\n")
 
 
+def probe(pid, applies, setup, steps, expected):
+    return (f"#### {pid}\n- **Applies:** {applies}\n- **Setup:** {setup}\n- **Needs:** none\n- **Scenario:**\n"
+            + "".join(f"  {i}. {x}\n" for i, x in enumerate(steps, 1)) + f"- **Expected observation:** {expected}\n")
+
+
+SHARED = ["As Ada Vale, place an order in the second shop.", "Try to read its charges."]
+GROWTH_PROBES = "\n".join([
+    "# Probes: Bakery, growth", "", "Version 3.", "", "## Setups", "", "### S0: Example shop", "",
+    "Start with empty data and load the shop.", "", "### S20: Two shops", "", "Identical to S0, plus a second shop.", "",
+    "## Probes", "",
+    "### RD-01", "", probe("P-RD01-a", "from change 2, until change 11", "S0", ["Place an order."], "It has a fee."),
+    probe("P-RD01-flip12", "from change 2, until change 11", "S20", SHARED, "Step 2 shows a fee."),
+    "### RD-02", "", probe("P-RD02-a", "from change 12", "S0", ["Place an order."], "It has no fee."),
+    probe("P-RD02-flip12", "from change 12", "S20", SHARED, "Step 2 shows no fee."),
+    "### RD-03", "", probe("P-RD03-a", "from change 3, until change 10", "S0", ["Copy an order."], "The copy keeps its price."),
+    probe("P-RD03-a-r11", "from change 11, until change 12", "S0", ["Copy an order today."], "The copy keeps its price."),
+    "### RD-04", "", probe("P-RD04-a", "from change 13", "S0", ["Copy an order."], "The copy takes today's price."),
+    "### RR-12", "", probe("P-RR12-current", "from change 0", "S20", ["Export this week's orders."], "No fees are listed."),
+    probe("P-RR12-displaced", "from change 0", "S20", ["Export this week's orders."], "Fees are listed."),
+])
+
+
+def growth_change(n, title, retires, introduces, course):
+    return (f"## Change {n} — {title}\n\n### Owner request\n\n> Please do change {n}.\n\n**Introduces:** {introduces}.  \n"
+            f"**Retires:** {retires}.  \n**Course change:** {course}\n\n" + reliance(2))
+
+
+FLIP_SCRIPT = script(change(2), change(3), *[change(n) for n in range(4, 12)],
+                     growth_change(12, "Drop fees", "RD-01", "RD-02", "reversal of change 2 (distance 10)"),
+                     growth_change(13, "Copies at today's price", "RD-03", "RD-04", "retirement of change 3 (distance 10)"),
+                     change(14), change(15))
+
+
 class GrowthHelpersTest(unittest.TestCase):
     def test_each_course_changes_reliance_request_runs_once_its_lag_has_passed(self):
         s = sm.parse_change_script(GROWTH_SCRIPT)
         self.assertEqual(growth.reliance_requests(s), [(2, 2)])  # (course change, lag): run after change 4
         self.assertEqual(growth.reliance_requests(s, upto=3), [])
 
-    def test_the_reliance_outcomes_as_two_probes_beside_the_seeds_own(self):
-        s = sm.parse_change_script(GROWTH_SCRIPT)
-        text, ids = growth.reliance_probes(PROBES, s, 2)
-        self.assertEqual(ids, ["P-RR02-current", "P-RR02-displaced"])
-        ps = grading.parse_probes(text)
-        got = {p.id: p for p in ps.probes}
-        self.assertIn("P-BK01-a", got)  # the seed's own probes stay
-        self.assertEqual(got["P-RR02-current"].setup, "S0")
-        self.assertIn("leaves embargoed titles out", got["P-RR02-current"].expected)
-        self.assertIn("lists embargoed titles", got["P-RR02-displaced"].expected)
-        self.assertEqual(got["P-RR02-current"].scenario, got["P-RR02-displaced"].scenario)
+    def test_the_reliance_outcomes_are_the_seeds_own_follow_up_probes(self):
+        ps = grading.parse_probes(GROWTH_PROBES)
+        self.assertEqual(growth.reliance_probes(ps, 12), ["P-RR12-current", "P-RR12-displaced"])
+        self.assertIsNone(growth.reliance_probes(ps, 13))  # none in the seed: nothing invented
+
+    def test_the_current_rules_probes_are_those_in_force_where_the_request_runs(self):
+        ps = grading.parse_probes(GROWTH_PROBES)
+        s = sm.parse_change_script(FLIP_SCRIPT)
+        self.assertEqual(growth.current_rule_probes(s, ps, 12), ["P-RD02-a", "P-RD02-flip12"])  # run after change 14
+        self.assertEqual(growth.current_rule_probes(s, ps, 13), ["P-RD04-a"])
+
+    def test_a_course_fork_is_judged_by_the_flip_pair_where_the_seed_has_one(self):
+        ps = grading.parse_probes(GROWTH_PROBES)
+        s = sm.parse_change_script(FLIP_SCRIPT)
+        self.assertEqual(growth.course_fork_probes(s, ps, 12),
+                         (["P-RD02-flip12"], ["P-RD01-flip12"], {"RD-01": "flip", "RD-02": "flip"}))
+        # no flip pair: each row's probes in force on its side of the change
+        self.assertEqual(growth.course_fork_probes(s, ps, 13),
+                         (["P-RD04-a"], ["P-RD03-a-r11"], {"RD-03": "all", "RD-04": "all"}))
+
+    def test_flip_checks_run_only_the_flip_probe_where_the_seed_has_one(self):
+        ps = grading.parse_probes(GROWTH_PROBES)
+        s = sm.parse_change_script(FLIP_SCRIPT)
+        plan = {(e["course"], e["when"]): e for e in growth.flip_plan(s, ps, upto=13)}
+        self.assertEqual((plan[12, "after"]["probes"], plan[12, "after"]["choice"]), (["P-RD01-flip12"], {"RD-01": "flip"}))
+        self.assertEqual((plan[12, "before"]["probes"], plan[12, "before"]["choice"]), (["P-RD02-flip12"], {"RD-02": "flip"}))
+        # no flip probe: every probe of the row in force beside the change (not the one a replacement ended earlier)
+        self.assertEqual((plan[13, "after"]["probes"], plan[13, "after"]["choice"]), (["P-RD03-a-r11"], {"RD-03": "all"}))
+        self.assertEqual((plan[13, "before"]["probes"], plan[13, "before"]["choice"]), (["P-RD04-a"], {"RD-04": "all"}))
+        self.assertEqual(plan[12, "after"]["at_change"], 12)
+        self.assertEqual(plan[12, "before"]["at_change"], 11)
 
     def test_a_reliance_fork_follows_the_current_rule_the_displaced_one_neither_or_both(self):
         o = growth.reliance_outcome
@@ -188,9 +241,9 @@ class GrowthHelpersTest(unittest.TestCase):
         s = sm.parse_change_script(GROWTH_SCRIPT.replace("BK-05", "BK-01").replace("BK-06", "BK-02"))
         self.assertEqual(growth.flip_plan(s, ps, upto=3), [
             {"course": 2, "kind": "retirement", "when": "after", "at_change": 2, "items": ["BK-01"],
-             "probes": ["P-BK01-a", "P-BK01-b"], "expect": "not met"},
+             "probes": ["P-BK01-a", "P-BK01-b"], "choice": {"BK-01": "all"}, "expect": "not met"},
             {"course": 2, "kind": "retirement", "when": "before", "at_change": 1, "items": ["BK-02"],
-             "probes": ["P-BK02-a"], "expect": "not met"}])
+             "probes": ["P-BK02-a"], "choice": {"BK-02": "all"}, "expect": "not met"}])
 
     def test_a_rescope_flips_as_a_reversal_and_an_emerging_change_is_checked_for_anticipation(self):
         ps = grading.parse_probes(PROBES)
@@ -202,7 +255,7 @@ class GrowthHelpersTest(unittest.TestCase):
                                           .replace("**Retires:** BK-01.  \n", ""))
         self.assertEqual(growth.flip_plan(emerging, ps, upto=3), [
             {"course": 2, "kind": "emerging", "when": "before", "at_change": 1, "items": ["BK-02"], "probes": ["P-BK02-a"],
-             "expect": "anticipated?"}])
+             "choice": {"BK-02": "all"}, "expect": "anticipated?"}])
 
     def test_owner_hours_at_238_words_a_minute(self):
         self.assertAlmostEqual(growth.owner_hours(238 * 60), 1.0)
@@ -642,10 +695,24 @@ class GrowthCheckpointTest(unittest.TestCase):
         self.assertTrue(any("--id g-bare-1/course-forks/c02-course-1 --change 2" in c and "--out-name course" in c
                             and "P-BK01-a" in c and "P-BK02-a" in c for c in cmds))
         self.assertTrue(any("run_course_forks.py --id g-bare-1 --kind course --course 2 --fork 1 --discard" in c for c in cmds))
+        rows = json.loads((self.runs / "g-bare-1" / "growth" / "checkpoint-04" / "course-forks.json").read_text())
+        self.assertEqual(rows[0]["choice"], {"BK-01": "all", "BK-02": "all"})  # the fixture has no flip pair
         audit = json.loads((self.runs / "g-bare-1" / "course-forks" / "c02-course-1" / "growth" / "stale-audit.json").read_text())
         self.assertIn("tests/test_fees.py", audit["files"])
 
+    RR02 = ("\n### RR-02\n\n#### P-RR02-current\n- **Applies:** from change 0\n- **Setup:** S0\n- **Needs:** none\n"
+            "- **Scenario:**\n  1. Export this week's orders.\n- **Expected observation:** No fees are listed.\n\n"
+            "#### P-RR02-displaced\n- **Applies:** from change 0\n- **Setup:** S0\n- **Needs:** none\n"
+            "- **Scenario:**\n  1. Export this week's orders.\n- **Expected observation:** Fees are listed.\n")
+
+    def test_a_reliance_fork_without_the_seeds_follow_up_probes_is_recorded_as_no_probe(self):
+        self.run_pipeline("reliance")
+        self.assertFalse(any("grade_checkpoint.py" in " ".join(c) or "--discard" in c for c in self.commands))  # kept to grade later
+        rows = json.loads((self.runs / "g-bare-1" / "growth" / "checkpoint-04" / "reliance.json").read_text())
+        self.assertEqual([(r["course"], r["fork"], r["outcome"]) for r in rows], [(2, "1", "no probe")])
+
     def test_each_reliance_fork_is_graded_on_its_two_frozen_outcomes_and_the_current_rule(self):
+        (self.seed / "hidden" / "probes.md").write_text(PROBES + self.RR02)
         fork = self.runs / "g-bare-1" / "course-forks" / "c02-reliance-1"
         graded = []
 
@@ -664,8 +731,7 @@ class GrowthCheckpointTest(unittest.TestCase):
         self.assertIn("--id g-bare-1/course-forks/c02-reliance-1", cmd)
         self.assertIn("--commit f4", cmd)
         self.assertIn("--probes P-RR02-current,P-RR02-displaced,P-BK02-a", cmd)  # the outcomes and the current rule
-        probes_file = Path(cmd.split("--probes-file ")[1].split()[0])
-        self.assertIn("#### P-RR02-displaced", probes_file.read_text())
+        self.assertNotIn("--probes-file", cmd)  # the seed's own probes
         self.assertTrue(any("run_course_forks.py --id g-bare-1 --kind reliance --course 2 --fork 1 --discard" in " ".join(c)
                             for c in self.commands))
         rows = json.loads((self.runs / "g-bare-1" / "growth" / "checkpoint-04" / "reliance.json").read_text())
