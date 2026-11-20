@@ -73,30 +73,62 @@ def transition_probes(probeset: grading.ProbeSet, items, course: int, side_of: i
     return probes, choice
 
 
+def rescope_reach(script: dict[int, simulator.Change], probeset: grading.ProbeSet, course: int) -> tuple[str, str]:
+    """Which way a rescope goes, and where that came from. A widening rescope keeps the old row's behaviour inside the
+    new one, so only the new row can fail across the change; a narrowing one, only the old row. The change script's
+    word wins ("change script"); without one, the seed's flip probes say it ("flip probes"): on the new row only,
+    widening; on the old row only, narrowing; on both, "both" (two-sided). With neither, "unknown", checked on both
+    sides ("no flip probes")."""
+    c = script[course]
+    if c.course_change.reach:
+        return c.course_change.reach, "change script"
+    flipped = {item_id(p.item) for p in probeset.probes if p.id.endswith(f"-flip{course:02d}")}
+    old = bool(flipped & set(c.retires))
+    new = bool(flipped & (set(c.introduces) if c.introduces != simulator.ALL else set()))
+    if old and new:
+        return "both", "flip probes"
+    if new or old:
+        return ("widening" if new else "narrowing"), "flip probes"
+    return "unknown", "no flip probes"
+
+
+def _sides(script: dict[int, simulator.Change], probeset: grading.ProbeSet, course: int) -> tuple[bool, bool]:
+    """Whether a course change is checked on the old row's side (after it) and on the new row's (before it)."""
+    if script[course].course_change.kind != "rescope":
+        return True, True
+    reach, _ = rescope_reach(script, probeset, course)
+    return reach != "widening", reach != "narrowing"
+
+
 def course_fork_probes(script: dict[int, simulator.Change], probeset: grading.ProbeSet,
                        course: int) -> tuple[list[str], list[str], dict[str, str]]:
     """What a course fork is judged by at its end: the new rule's probes (should hold) and the retired rule's (should
     fail), each row by its flip probe where the seed has one and otherwise by its probes in force on its side of the
     change (transition_probes). Returns the new, the retired (less any shared with the new), and the choice per row."""
     c = script[course]
-    introduces = c.introduces if c.introduces != simulator.ALL else ()
+    old_side, new_side = _sides(script, probeset, course)  # a rescope's reach leaves one side unchecked
+    introduces = c.introduces if c.introduces != simulator.ALL and new_side else ()
     new, new_choice = transition_probes(probeset, introduces, course, course)
-    old, old_choice = transition_probes(probeset, c.retires, course, course - 1)
+    old, old_choice = transition_probes(probeset, c.retires if old_side else (), course, course - 1)
     return new, [x for x in old if x not in new], {**old_choice, **new_choice}
 
 
 def flip_plan(script: dict[int, simulator.Change], probeset: grading.ProbeSet, upto: int) -> list[dict]:
     """The flip checks for every retirement, reversal, re-reversal, and rescope up to `upto`, beyond the probes' own
     ranges: the retired row once after the course change, and the new row once before it, both expected not met,
-    each by its flip probe where the seed has one (transition_probes). An emerging change's new row is checked once
-    before it for anticipation: it isn't expected to fail, so it isn't a flip."""
+    each by its flip probe where the seed has one (transition_probes). A rescope is checked on one side only, as its
+    reach says (rescope_reach), and records its reach and where that came from. An emerging change's new row is
+    checked once before it for anticipation: it isn't expected to fail, so it isn't a flip."""
     plan = []
 
     def entry(n, kind, when, items, expect):
         at = n if when == "after" else n - 1
         probes, choice = transition_probes(probeset, items, n, n - 1 if when == "after" else n)
-        return {"course": n, "kind": kind, "when": when, "at_change": at, "items": list(items), "probes": probes,
-                "choice": choice, "expect": expect}
+        e = {"course": n, "kind": kind, "when": when, "at_change": at, "items": list(items), "probes": probes,
+             "choice": choice, "expect": expect}
+        if kind == "rescope":
+            e["reach"], e["reach_source"] = rescope_reach(script, probeset, n)
+        return e
     for n, c in sorted(script.items()):
         if n > upto or c.course_change is None:
             continue
@@ -107,9 +139,10 @@ def flip_plan(script: dict[int, simulator.Change], probeset: grading.ProbeSet, u
             continue
         if kind not in FLIP_KINDS:
             continue
-        if c.retires:
+        old_side, new_side = _sides(script, probeset, n)  # a rescope is checked on its reach's side only
+        if c.retires and old_side:
             plan.append(entry(n, kind, "after", c.retires, "not met"))
-        if c.introduces and c.introduces != simulator.ALL:
+        if c.introduces and c.introduces != simulator.ALL and new_side:
             plan.append(entry(n, kind, "before", c.introduces, "not met"))
     return plan
 

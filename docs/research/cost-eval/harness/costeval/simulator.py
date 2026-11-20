@@ -523,10 +523,12 @@ class Redirect:
 
 @dataclass(frozen=True)
 class CourseChange:
-    """A change of course in the growth test's script: `retirement of change N (distance D)`."""
+    """A change of course in the growth test's script: `retirement of change N (distance D)`, and for a rescope
+    optionally `, widening` or `, narrowing`."""
     kind: str  # retirement, reversal, rescope, emerging, or re-reversal
     of_change: int  # the change whose intent it overturns
     distance: int  # how many changes back that intent was set
+    reach: str | None = None  # a rescope's: widening or narrowing, where the script says
 
 
 @dataclass(frozen=True)
@@ -681,10 +683,13 @@ def parse_change_script(text: str) -> dict[int, Change]:
 def _growth_fields(n: int, body: str) -> dict:
     out: dict = {}
     if (v := _field(body, "Course change")) is not None:
-        m = re.fullmatch(rf"({'|'.join(COURSE_KINDS)}) of change (\d+) \(distance (\d+)\)\.?", v.strip())
+        m = re.fullmatch(rf"({'|'.join(COURSE_KINDS)}) of change (\d+) \(distance (\d+)\)(?:,\s*(widening|narrowing))?\.?",
+                         v.strip())
         if not m:
             raise ValueError(f"change {n}: can't read **Course change:** {v!r}")
-        out["course_change"] = CourseChange(m.group(1), int(m.group(2)), int(m.group(3)))
+        if m.group(4) and m.group(1) != "rescope":
+            raise ValueError(f"change {n}: only a rescope widens or narrows, not a {m.group(1)}")
+        out["course_change"] = CourseChange(m.group(1), int(m.group(2)), int(m.group(3)), m.group(4))
     if (v := _field(body, "Reliance for")) is not None:
         if not re.fullmatch(r"change \d+(?:,\s*change \d+)*\.?", v.strip()):
             raise ValueError(f"change {n}: can't read **Reliance for:** {v!r}")

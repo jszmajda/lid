@@ -184,7 +184,9 @@ def main(argv=None, *, run: Callable[[list[str]], int] | None = None, volume: Ca
                 else:
                     forks_seen.append(fork.name)
                 got = _verdicts(where) or {}
-                forks.append({"course": n, "kind": ch.course_change.kind, "run": fid, "choice": choice, "verdicts": got,
+                reach = growth.rescope_reach(script, probeset, n) if ch.course_change.kind == "rescope" else None
+                forks.append({"course": n, "kind": ch.course_change.kind, "run": fid, "choice": choice,
+                              "reach": reach and {"reach": reach[0], "source": reach[1]}, "verdicts": got,
                               "behaves": (all(got.get(x) == "met" for x in new) and all(got.get(x) == "not met" for x in old))
                               if got else None, "stale": json.loads(audit_path.read_text()).get("stale")})
         (out / "course-forks.json").write_text(json.dumps(forks, indent=1))

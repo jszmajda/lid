@@ -172,6 +172,14 @@ GROWTH_PROBES = "\n".join([
     "### RD-03", "", probe("P-RD03-a", "from change 3, until change 10", "S0", ["Copy an order."], "The copy keeps its price."),
     probe("P-RD03-a-r11", "from change 11, until change 12", "S0", ["Copy an order today."], "The copy keeps its price."),
     "### RD-04", "", probe("P-RD04-a", "from change 13", "S0", ["Copy an order."], "The copy takes today's price."),
+    "### RD-05", "", probe("P-RD05-a", "from change 4, until change 13", "S0", ["Refund a cake."], "Cakes are refunded."),
+    "### RD-06", "", probe("P-RD06-a", "from change 14", "S0", ["Refund a cake."], "Cakes are refunded."),
+    probe("P-RD06-flip14", "from change 14", "S20", ["Try to refund bread."], "Bread is refunded."),
+    "### RD-07", "", probe("P-RD07-a", "from change 5, until change 14", "S0", ["Refund an order."], "Orders are refunded."),
+    probe("P-RD07-flip15", "from change 5, until change 14", "S20", ["Try to refund a gift card."], "The gift card is refunded."),
+    "### RD-08", "", probe("P-RD08-a", "from change 15", "S0", ["Refund an order."], "Orders are refunded."),
+    "### RD-09", "", probe("P-RD09-flip16", "from change 6, until change 15", "S20", ["Try a late return."], "It is taken."),
+    "### RD-10", "", probe("P-RD10-flip16", "from change 16", "S20", ["Try a late return."], "It is refused."),
     "### RR-12", "", probe("P-RR12-current", "from change 0", "S20", ["Export this week's orders."], "No fees are listed."),
     probe("P-RR12-displaced", "from change 0", "S20", ["Export this week's orders."], "Fees are listed."),
 ])
@@ -185,7 +193,10 @@ def growth_change(n, title, retires, introduces, course):
 FLIP_SCRIPT = script(change(2), change(3), *[change(n) for n in range(4, 12)],
                      growth_change(12, "Drop fees", "RD-01", "RD-02", "reversal of change 2 (distance 10)"),
                      growth_change(13, "Copies at today's price", "RD-03", "RD-04", "retirement of change 3 (distance 10)"),
-                     change(14), change(15))
+                     growth_change(14, "Refund every item", "RD-05", "RD-06", "rescope of change 4 (distance 10)"),
+                     growth_change(15, "No refunds on gift cards", "RD-07", "RD-08", "rescope of change 5 (distance 10)"),
+                     growth_change(16, "Late returns", "RD-09", "RD-10", "rescope of change 6 (distance 10)"),
+                     change(17), change(18))
 
 
 class GrowthHelpersTest(unittest.TestCase):
@@ -213,6 +224,48 @@ class GrowthHelpersTest(unittest.TestCase):
         # no flip pair: each row's probes in force on its side of the change
         self.assertEqual(growth.course_fork_probes(s, ps, 13),
                          (["P-RD04-a"], ["P-RD03-a-r11"], {"RD-03": "all", "RD-04": "all"}))
+
+    def test_a_rescope_states_whether_it_widens_or_narrows(self):
+        s = sm.parse_change_script(script(change(2), change(9, ("Course change", "rescope of change 2 (distance 7), widening"))))
+        self.assertEqual((s[9].course_change.kind, s[9].course_change.reach), ("rescope", "widening"))
+        s = sm.parse_change_script(script(change(2), change(9, ("Course change", "rescope of change 2 (distance 7)"))))
+        self.assertIsNone(s[9].course_change.reach)
+        with self.assertRaisesRegex(ValueError, "widens or narrows"):
+            sm.parse_change_script(script(change(2), change(9, ("Course change", "retirement of change 2 (distance 7), narrowing"))))
+
+    def test_a_rescopes_flip_is_one_sided_by_its_reach_inferred_from_the_flip_probes_when_unstated(self):
+        ps = grading.parse_probes(GROWTH_PROBES)
+        s = sm.parse_change_script(FLIP_SCRIPT)
+        plan = growth.flip_plan(s, ps, upto=16)
+        sides = lambda n: [(e["when"], e["probes"], e["reach"], e["reach_source"]) for e in plan if e["course"] == n]  # noqa: E731
+        # widening: the narrower old row still holds after it, so only the new row is checked, before the change
+        self.assertEqual(sides(14), [("before", ["P-RD06-flip14"], "widening", "flip probes")])
+        # narrowing: only the old row, after the change
+        self.assertEqual(sides(15), [("after", ["P-RD07-flip15"], "narrowing", "flip probes")])
+        # flip probes on both sides: two-sided
+        self.assertEqual(sides(16), [("after", ["P-RD09-flip16"], "both", "flip probes"),
+                                     ("before", ["P-RD10-flip16"], "both", "flip probes")])
+        self.assertTrue(all("reach" not in e for e in plan if e["kind"] != "rescope"))
+        # the course fork: the same sides
+        self.assertEqual(growth.course_fork_probes(s, ps, 14)[:2], (["P-RD06-flip14"], []))
+        self.assertEqual(growth.course_fork_probes(s, ps, 15)[:2], ([], ["P-RD07-flip15"]))
+        self.assertEqual(growth.course_fork_probes(s, ps, 16)[:2], (["P-RD10-flip16"], ["P-RD09-flip16"]))
+        self.assertEqual(growth.rescope_reach(s, ps, 14), ("widening", "flip probes"))
+
+    def test_the_change_scripts_word_for_a_rescope_wins_over_the_flip_probes(self):
+        ps = grading.parse_probes(GROWTH_PROBES)
+        s = sm.parse_change_script(FLIP_SCRIPT.replace("rescope of change 4 (distance 10)", "rescope of change 4 (distance 10), narrowing"))
+        plan = [e for e in growth.flip_plan(s, ps, upto=14) if e["course"] == 14]
+        # narrowing as stated: the old row, after; it has no flip probe, so its probes in force at change 13
+        self.assertEqual([(e["when"], e["probes"], e["choice"], e["reach"], e["reach_source"]) for e in plan],
+                         [("after", ["P-RD05-a"], {"RD-05": "all"}, "narrowing", "change script")])
+
+    def test_a_rescope_without_flip_probes_or_a_stated_reach_stays_two_sided(self):
+        ps = grading.parse_probes(PROBES)
+        s = sm.parse_change_script(GROWTH_SCRIPT.replace("BK-05", "BK-01").replace("BK-06", "BK-02")
+                                   .replace("retirement of change 1", "rescope of change 1"))
+        self.assertEqual([(e["when"], e["reach"], e["reach_source"]) for e in growth.flip_plan(s, ps, upto=3)],
+                         [("after", "unknown", "no flip probes"), ("before", "unknown", "no flip probes")])
 
     def test_flip_checks_run_only_the_flip_probe_where_the_seed_has_one(self):
         ps = grading.parse_probes(GROWTH_PROBES)

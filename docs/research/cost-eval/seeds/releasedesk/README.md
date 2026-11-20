@@ -38,3 +38,6 @@ The private record of each step is in `hidden/`.
 | 1 | 2026-11-20 | `hidden/panel-growth-rest/hidden/bands.json` | `7eeca2d952d8a7300165aed4801791af26678277ee8036e88eaa9a12b65c654b` |
 | 1 | 2026-11-20 | `hidden/panel-growth-candidates/hidden/bands.json` | `ef9e88bf3e0effdaac045e422a30e6e5928da156689bb0f1dd5c0dde562d7575` |
 | 1 | 2026-11-20 | `hidden/panel-growth-candidates/hidden/selection.json` | `c8656f37b2da22d1f43bcd4f94837110e7fba0a4d0987e07365608fbefbe7b2d` |
+| 5 | 2026-11-20 | `hidden/change-script-growth.md` | `5a3d9882be1c7088f9d0394aa07339bcb3337eca727ef2a4a14a9248ac212ded` |
+| 5 | 2026-11-20 | `hidden/oracle-growth.md` | `b618d9d928a6283f52f1dd3ddada8572ee213f3bc8ac4e8b39eae1d48bd248cc` |
+| 6 | 2026-11-20 | `hidden/oracle-growth.md` | `d1a4d47341ce110a102e1800579bf9bb8be552957d99484e88245c226b1d5250` |
