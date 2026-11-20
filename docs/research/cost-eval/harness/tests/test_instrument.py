@@ -502,8 +502,9 @@ class InstrumentReportTest(RefRuns):
                                                               "S_C reliance fork"])
         self.assertEqual([p["point"] for p in c4["points"]], ["R+ reliance fork", "S_C reliance fork"])  # emerging: no flips
         self.assertEqual(r["mismatches"], [{"course": 3, "point": "S_C after C+L", "probe": "P-RD03-flip03",
-                                            "expected": "not met", "verdict": "met"}])
-        self.assertEqual(r["checkpoints"], [{"change": 6, "graded": 2, "unmet": {"P-RD03-flip03": "couldn't exercise"}}])
+                                            "expected": "not met", "verdict": "met", "why": None}])
+        self.assertEqual(r["checkpoints"], [{"change": 6, "graded": 2, "unmet": {"P-RD03-flip03": "couldn't exercise"},
+                                             "not_run": {}}])
         ctl = {(x["kind"], x["neutral"]): x for x in r["control"]}
         self.assertEqual(ctl["names", False]["catch"], 0.75)  # 1/2, then 2/2
         self.assertEqual(ctl["names", True]["catch"], 0.0)
@@ -524,6 +525,26 @@ class InstrumentReportTest(RefRuns):
         r = report.instrument_report(self.runs, self.seed, checkpoints=[], controls=[])
         self.assertTrue(r["courses"][0]["separates"])  # S_3 meeting both now matches what the spec expects
         self.assertEqual(r["courses"][0]["points"][2]["expected"], {"P-RD02-flip03": "met", "P-RD03-flip03": "met"})
+
+    def test_probes_not_run_are_shown_with_why_at_points_and_checkpoints(self):
+        import report
+        self.grade("course", "--course", "3")
+        g = self.runs / "g-ref-correct" / "grading" / "pair-c03-after"
+        (g / "verdicts.json").write_text(json.dumps({"probes": {}, "not_run": ["P-RD02-flip03", "P-RD03-flip03"],
+                                                     "not_run_why": {"P-RD02-flip03": "change 3's build couldn't be started",
+                                                                     "P-RD03-flip03": "change 3's build couldn't be started"}}))
+        c6 = self.runs / "g-ref-correct" / "grading" / "change-06"
+        c6.mkdir(parents=True)
+        (c6 / "verdicts.json").write_text(json.dumps({"probes": {"P-RD01-a": {"verdict": "met"}}, "not_run": ["P-RD02-x"],
+                                                      "not_run_why": {"P-RD02-x": "its preparation didn't complete"}}))
+        r = report.instrument_report(self.runs, self.seed, checkpoints=[6], controls=[])
+        m = [x for x in r["mismatches"] if x["point"] == "R+ after C"]
+        self.assertEqual({x["verdict"] for x in m}, {"not run"})
+        self.assertIn("couldn't be started", m[0]["why"])
+        self.assertEqual(r["checkpoints"][0]["not_run"], {"P-RD02-x": "its preparation didn't complete"})
+        text = report.render_instrument(r)
+        self.assertIn("P-RD02-x (not run: its preparation didn't complete)", text)
+        self.assertIn("not run (change 3's build couldn't be started)", text)
 
     def test_a_grading_not_yet_recorded_leaves_the_course_undecided(self):
         import report

@@ -54,20 +54,32 @@ def _slug(text: str, words: int = 7) -> str:
     return "_".join(re.findall(r"[a-z0-9]+", text.lower())[:words]) or "rule"
 
 
-def _test_file(lang: str, behavior: str) -> tuple[str, str]:
-    """(file name, text) of a stale test for one retired rule."""
+NEUTRAL_STEMS = ("checks", "cases", "behaviour", "regressions", "scenarios", "rules", "edge_cases", "more", "extra",
+                 "followups", "coverage", "examples")
+
+
+def neutral_stem(seed: str, item: str) -> str:
+    """A file name stem that says nothing of the rule: the readers see file names whatever variant they read."""
+    r = random.Random(f"{seed}|{item}|name")
+    return f"{r.choice(NEUTRAL_STEMS)}_{r.randrange(100, 1000)}"
+
+
+def _test_file(lang: str, behavior: str, stem: str = "checks") -> tuple[str, str]:
+    """(file name, text) of a stale test for one retired rule: the rule in the test's name, docstring and comment
+    only, never in its file name or a string literal, so a reader with names, comments and docstrings replaced sees
+    nothing of it."""
     slug, rule = _slug(behavior), behavior.strip().rstrip(".")
-    if lang in ("js", "ts"):
-        name = f"{slug.replace('_', '-')}.test.{lang}"
+    if lang in ("js", "ts"):  # the test's name is its string argument: JS has no other place for one
+        name = f"{stem.replace('_', '-')}.test.{lang}"
         return name, (f"test('{rule.replace(chr(39), chr(92) + chr(39))}', () => {{\n"
                       f"  // {rule}.\n  expect(true).toBe(true);\n}});\n")
     if lang == "go":
         camel = "".join(w.capitalize() for w in slug.split("_"))
-        return f"{slug}_test.go", (f"package main\n\nimport \"testing\"\n\n// {rule}.\nfunc Test{camel}(t *testing.T) {{\n"
-                                    f"\tif false {{\n\t\tt.Fatal(\"{rule}\")\n\t}}\n}}\n")
+        return f"{stem}_test.go", (f"package main\n\nimport \"testing\"\n\n// {rule}.\nfunc Test{camel}(t *testing.T) {{\n"
+                                    f"\t_ = t\n}}\n")
     if lang == "rust":
-        return f"{slug}.rs", f"/// {rule}.\n#[test]\nfn {slug}() {{\n    assert!(true, \"{rule}\");\n}}\n"
-    return f"test_{slug}.py", f'def test_{slug}():\n    """{rule}."""\n    assert True, "{rule}"\n'
+        return f"{stem}.rs", f"/// {rule}.\n#[test]\nfn {slug}() {{\n    assert!(true);\n}}\n"
+    return f"test_{stem}.py", f'def test_{slug}():\n    """{rule}."""\n    assert True\n'
 
 
 def plant(tests: dict[str, str], retired: dict[str, str], *, seed: str) -> tuple[dict[str, str], dict]:
@@ -77,7 +89,7 @@ def plant(tests: dict[str, str], retired: dict[str, str], *, seed: str) -> tuple
     where = dirs.most_common(1)[0][0] if dirs else "tests"
     out, index = dict(tests), {"kind": "names", "seed": seed, "language": lang, "planted": {}}
     for item in sorted(retired, key=lambda i: random.Random(f"{seed}|{i}").random()):
-        name, text = _test_file(lang, retired[item])
+        name, text = _test_file(lang, retired[item], neutral_stem(seed, item))
         path = f"{where}/{name}" if where != "." else name
         k = 2
         while path in out:
@@ -135,11 +147,15 @@ def plant_assertions(tests: dict[str, str], retired: dict[str, str], *, seed: st
         if answer is None:
             index["failed"].append(item)
             continue
-        path = f"{where}/{answer['file_name']}" if where != "." else answer["file_name"]
+        # the file name the model chose may name the rule; readers see file names in every variant, so it is replaced
+        ext = Path(answer["file_name"]).suffix or ".py"
+        lead = "test_" if Path(answer["file_name"]).name.startswith("test_") else ""
+        fname = f"{lead}{neutral_stem(seed, item)}{'.test' if answer['file_name'].endswith(('.test' + ext,)) else ''}{ext}"
+        path = f"{where}/{fname}" if where != "." else fname
         k = 2
         while path in out:
-            stem, dot, ext = answer["file_name"].partition(".")
-            path = f"{where}/{stem}_{k}{dot}{ext}"
+            stem, dot, rest = fname.partition(".")
+            path = f"{where}/{stem}_{k}{dot}{rest}"
             k += 1
         out[path] = answer["text"]
         index["planted"][path] = {"item": item, "behavior": retired[item]}

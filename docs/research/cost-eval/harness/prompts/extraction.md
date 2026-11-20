@@ -15,6 +15,7 @@ The reference says how to call things, never what they are for or what rules app
 
 - `workdir`: the folder to start from, inside /work/app.
 - `command`: the exact shell command that starts the service in the foreground, as the README gives it, with its dependencies already installed.
+- `install`: the exact shell commands, run in `workdir` on a fresh copy of the same code, that install the dependencies `command` needs, as you installed them (for example `python3 -m venv .venv && .venv/bin/pip install -r requirements.txt`). Leave it empty if nothing needs installing.
 - `env`: environment variables the command needs, as an object (may be empty).
 - `port`: the port the service listens on. It must listen on 0.0.0.0 or 127.0.0.1 inside the container.
 - `data_path`: the folder or file where the service keeps all its data.

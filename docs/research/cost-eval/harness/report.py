@@ -601,11 +601,15 @@ def instrument_report(runs: Path, seed_dir: Path, checkpoints=(10, 20, 30, 40), 
                 [p for p in checks["rr"] if p.endswith("-current")], [p for p in checks["rr"] if p.endswith("-displaced")])
             expected = {p: first for p in sides[0]} | {p: second for p in sides[1]}
             got = instrument.verdicts(instrument.where(runs, g))
+            why = (_json(instrument.where(runs, g) / "verdicts.json") or {}).get("not_run_why") or {}
             holds = None if got is None else all(got.get(p) == e for p, e in expected.items())
-            points.append({"point": g["point"], "run": g["id"], "expected": expected, "verdicts": got, "holds": holds})
+            points.append({"point": g["point"], "run": g["id"], "expected": expected, "verdicts": got, "holds": holds,
+                           "not_run": {p: why[p] for p in expected if p in why}})
             for p, e in expected.items():
                 if got is not None and got.get(p) != e:
-                    out["mismatches"].append({"course": c, "point": g["point"], "probe": p, "expected": e, "verdict": got.get(p)})
+                    out["mismatches"].append({"course": c, "point": g["point"], "probe": p, "expected": e,
+                                              "verdict": "not run" if p in why and p not in got else got.get(p),
+                                              "why": why.get(p)})
         held = [x["holds"] for x in points]
         separates = False if False in held else (None if None in held else True)
         out["courses"].append({"course": c, "kind": spec["stale"][str(c)]["kind"], "lag": spec["stale"][str(c)]["lag"],
@@ -613,7 +617,9 @@ def instrument_report(runs: Path, seed_dir: Path, checkpoints=(10, 20, 30, 40), 
     for n in checkpoints:
         got = instrument.verdicts(runs / instrument.CORRECT / "grading" / f"change-{n:02d}")
         if got is not None:
-            out["checkpoints"].append({"change": n, "graded": len(got), "unmet": {p: v for p, v in got.items() if v != "met"}})
+            summary = _json(runs / instrument.CORRECT / "grading" / f"change-{n:02d}" / "verdicts.json") or {}
+            out["checkpoints"].append({"change": n, "graded": len(got), "unmet": {p: v for p, v in got.items() if v != "met"},
+                                       "not_run": dict(summary.get("not_run_why") or {})})
     for n in controls:
         base = runs / instrument.CORRECT / "growth" / f"positive-control-c{n:02d}"
         res = runs / "intent-from-tests" / f"pc-{instrument.CORRECT}-c{n:02d}"
@@ -648,7 +654,8 @@ def render_instrument(r: dict) -> str:
     lines += ["", "## Mismatches, for probe review", ""]
     if r["mismatches"]:
         lines += ["| C | Point | Probe | Expected | Verdict |", "|---|---|---|---|---|"]
-        lines += [f"| {m['course']} | {m['point']} | {m['probe']} | {m['expected']} | {m['verdict'] or 'none'} |"
+        lines += [f"| {m['course']} | {m['point']} | {m['probe']} | {m['expected']} | "
+                  f"{(m['verdict'] or 'none') + (' (' + m['why'] + ')' if m.get('why') else '')} |"
                   for m in r["mismatches"]]
     else:
         lines.append("None.")
@@ -656,7 +663,9 @@ def render_instrument(r: dict) -> str:
               "Every probe that applies to R+ should be met. An unmet one is a probe a correct build fails, or an R+ "
               "build that missed a stated row: read the run to tell which.", "",
               "| Change | Probes graded | Unmet |", "|---|---|---|"]
-    lines += [f"| {x['change']} | {x['graded']} | {', '.join(f'{p} ({v})' for p, v in sorted(x['unmet'].items())) or '–'} |"
+    lines += [f"| {x['change']} | {x['graded']} | "
+              + (", ".join([f"{p} ({v})" for p, v in sorted(x["unmet"].items())]
+                           + [f"{p} (not run: {w})" for p, w in sorted((x.get("not_run") or {}).items())]) or "–") + " |"
               for x in r["checkpoints"]]
     lines += ["", "## Positive control", "",
               "Stale tests planted in R+'s tests; the share of planted rules each intent reader named as stale.", "",

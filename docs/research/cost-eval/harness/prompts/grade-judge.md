@@ -4,6 +4,12 @@ The probes, with each one's scenario and expected observation:
 
 {PROBES}
 
+The identifier list the setup session wrote after loading the setups: which identifier the service gave each fixture (letters, people, groupings) and any credentials. Use it to tell which identifier in the log belongs to which fixture named in a probe; judge the service only by the log.
+
+<identifiers>
+{IDS}
+</identifiers>
+
 The execution log, one JSON object per line. `seq` numbers each entry; markers such as `PROBE P-XX01-a START` and `CANNOT ...` appear as `mark` entries; `clock` is the service's clock (UTC) when the entry was made.
 
 <log>

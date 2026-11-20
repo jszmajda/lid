@@ -188,6 +188,104 @@ class RenderTest(unittest.TestCase):
         self.assertIn("gt mark 'KEEP", prep)
 
 
+class JudgeIdentifiersTest(unittest.TestCase):
+    def test_the_judge_reads_which_identifier_is_which_fixture(self):
+        ps = grading.parse_probes(PROBES)
+        ids = "| Morris | REC-000008 |\n| Harbour Morris | REC-000009 |"
+        prompt = grading.judge_prompt(ps.probes[:1], [{"seq": 1, "op": "mark", "request": {"text": "x"}}], ids=ids)
+        self.assertIn("REC-000009", prompt)
+        self.assertIn("identifier list", prompt)
+        self.assertIn("(none)", grading.judge_prompt(ps.probes[:1], [], ids=""))
+
+
+class EnvironmentTest(unittest.TestCase):
+    def test_a_fresh_export_gets_the_dependencies_an_extraction_installed(self):
+        calls = []
+
+        class P:
+            returncode, stdout, stderr = 0, "", ""
+
+        ck = grading.Checkpoint(trajectory="t", change=27, commit="c", image="img",
+                                runner=lambda cmd, **kw: calls.append(cmd) or P())
+        ck.copy_environment("ce-g-src-c26-ckpt")
+        cmd = " ".join(calls[0])
+        self.assertIn("-v ce-g-src-c26-ckpt:/src:ro", cmd)
+        self.assertIn("-v ce-g-t-c27-ckpt:/work", cmd)
+        self.assertIn('[ -e "/work/app/$f" ] || cp -a "/src/app/$f" /work/app/', cmd)  # only what the export lacks
+        ck.install({"workdir": "/work/app", "install": "python3 -m venv .venv && .venv/bin/pip install -e ."})
+        self.assertIn("cd /work/app && python3 -m venv .venv && .venv/bin/pip install -e .", " ".join(calls[1]))
+
+    def test_a_reused_extractions_volume_is_named_as_its_grading_named_it(self):
+        import grade_checkpoint as gck
+        self.assertEqual(gck.ckpt_volume("g-ref-correct", "change-30", 30), "ce-g-g-ref-correct-c30-ckpt")
+        self.assertEqual(gck.ckpt_volume("g-ref-correct", "pair-c36-before", 35), "ce-g-g-ref-correct-pair-c36-before-c35-ckpt")
+        self.assertEqual(gck.ckpt_volume("g-ref-correct/course-forks/c27-reliance-1", "reliance", 30),
+                         "ce-g-g-ref-correct-course-forks-c27-reliance-1-reliance-c30-ckpt")
+
+
+class NothingToRunTest(unittest.TestCase):
+    def test_a_grading_left_with_nothing_to_run_records_why_without_preparing_setups(self):
+        import grade_checkpoint as gck
+        out = Path(tempfile.mkdtemp())
+        summary = {"change": 27, "not_run": ["P-1"], "not_run_why": {"P-1": "change 27's build couldn't be started"}}
+        injected = {"P-XX01-b": {"verdict": "not met", "cause": "none", "evidence": [], "reason": "didn't come up"}}
+        by_id = {p.id: p for p in grading.parse_probes(PROBES).probes}
+        gck.finish_without_runs(out, summary, injected, [by_id["P-XX01-b"]])
+        v = json.loads((out / "verdicts.json").read_text())
+        self.assertEqual((v["not_run"], v["probes"], "error" in v), (["P-1"], injected, False))
+        self.assertEqual(v["items"]["XX-01"]["verdict"], "not met")
+
+
+class RejudgeTest(unittest.TestCase):
+    def test_a_rejudge_with_the_identifier_list_replaces_only_the_named_probes_verdicts(self):
+        import rejudge
+        runs = Path(tempfile.mkdtemp())
+        g = runs / "g-ref-correct" / "grading" / "pair-c03-after"
+        b = g / "batches" / "b00"
+        b.mkdir(parents=True)
+        (b / "probes.md").write_text("## Conventions\n\n## P-XX01-b\n\n## P-XX03-a\n")
+        (b / "log.jsonl").write_text(json.dumps({"seq": 1, "op": "mark", "request": {"text": "x"}}) + "\n")
+        (g / "ids.md").write_text("| Quill | REC-000008 |")
+        (g / "verdicts.json").write_text(json.dumps({"change": 3, "probes": {
+            "P-XX01-b": {"verdict": "couldn't exercise", "reason": "no mapping"}, "P-XX03-a": {"verdict": "met", "reason": "ok"}}}))
+        seen = {}
+
+        def judge(gr, batch, lines, out, conventions="", earlier=None, ids=""):
+            seen.update(ids=ids, batch=[p.id for p in batch])
+            return {"P-XX01-b": {"verdict": "met", "reason": "REC-000008 is Quill, from the identifier list."},
+                    "P-XX03-a": {"verdict": "not met", "reason": "changed"}}
+        seed = Path(tempfile.mkdtemp())
+        (seed / "hidden").mkdir()
+        (seed / "hidden" / "probes.md").write_text(PROBES)
+        rc = rejudge.main(["--id", "g-ref-correct", "--out-name", "pair-c03-after", "--model", "m", "--name", "ids",
+                           "--seed-dir", str(seed), "--runs", str(runs), "--only", "P-XX01-b", "--replace"], judge=judge)
+        self.assertEqual(rc, 0)
+        self.assertIn("REC-000008", seen["ids"])
+        v = json.loads((g / "verdicts.json").read_text())
+        self.assertEqual(v["probes"]["P-XX01-b"]["verdict"], "met")  # replaced
+        self.assertEqual(v["probes"]["P-XX03-a"]["verdict"], "met")  # not named: kept
+        self.assertEqual(v["rejudged"]["P-XX01-b"]["was"]["verdict"], "couldn't exercise")
+        self.assertEqual(v["items"]["XX-01"]["verdict"], "met")
+
+
+class MergeTest(unittest.TestCase):
+    def test_named_probes_graded_apart_are_merged_into_the_checkpoints_verdicts(self):
+        import grade_checkpoint as gck
+        target = Path(tempfile.mkdtemp()) / "change-30"
+        target.mkdir()
+        (target / "verdicts.json").write_text(json.dumps({
+            "change": 30, "probes": {"P-XX03-a": {"verdict": "met"}}, "not_run": ["P-XX01-b"],
+            "not_run_why": {"P-XX01-b": "change 23's build couldn't be started"}}))
+        by_id = {p.id: p for p in grading.parse_probes(PROBES).probes}
+        gck.merge_into(target, {"probes": {"P-XX01-b": {"verdict": "met", "reason": "same as the baseline"}},
+                                "prior_hops": {"P-XX01-b": [{"change": 23, "came_up": True}]}}, "change-30-prior", by_id)
+        v = json.loads((target / "verdicts.json").read_text())
+        self.assertEqual((v["probes"]["P-XX01-b"]["verdict"], v["not_run"], v["not_run_why"]), ("met", [], {}))
+        self.assertEqual(v["merged"], {"P-XX01-b": "change-30-prior"})
+        self.assertEqual(v["prior_hops"]["P-XX01-b"][0]["change"], 23)
+        self.assertEqual((v["items"]["XX-01"]["verdict"], v["items"]["XX-03"]["verdict"]), ("met", "met"))
+
+
 class CheckpointStorageTest(unittest.TestCase):
     def test_retained_storage_goes_out_as_a_tar_and_comes_back_under_its_prior_name(self):
         calls = []
@@ -264,6 +362,16 @@ class EarlierRunTest(unittest.TestCase):
         self.assertEqual((rec["retained"], rec["keep"], rec["clock"]), ("the executor", ["Quill id: 17"], "2026-01-05 08:00:00"))
         self.assertTrue(any(r.get("op") == "http" and r["response"]["body"] == "baseline" for r in rec["log"]))  # the baseline
         self.assertEqual(s["prepared"], ["P-XX01-b"])
+
+    def test_two_earlier_runs_on_one_build_keep_each_others_batches_and_record(self):
+        import grade_checkpoint as gck
+        out = prior.earlier_dir(self.runs, "g-ref-correct", 22)
+        gck.run_earlier(self.ck, out, self.runs, "g-ref-correct", 22, "r22", self.ps, ["P-XX01-b"], [],
+                        execute=self.execute(), seed="rd", run=lambda cmd: 0)
+        gck.run_earlier(self.ck, out, self.runs, "g-ref-correct", 22, "r22", self.ps, ["P-XX02-b"], [],
+                        execute=self.execute(), seed="rd", run=lambda cmd: 0)
+        self.assertEqual([e["bid"] for e in self.executed], ["p-P-XX01-b", "p-P-XX02-b"])  # batch folders apart
+        self.assertEqual(json.loads((out / "earlier.json").read_text())["prepared"], ["P-XX01-b", "P-XX02-b"])
 
     def test_without_a_retain_the_harness_keeps_the_storage_at_the_end(self):
         import grade_checkpoint as gck
@@ -404,6 +512,12 @@ class HopOnDockerTest(unittest.TestCase):
             def export(self, ws):
                 test.ops.append(("export", ws))
 
+            def copy_environment(self, vol):
+                test.ops.append(("env", vol))
+
+            def install(self, spec):
+                test.ops.append(("install", spec.get("install")))
+
             def sh(self, vol, script, **kw):
                 return ""
 
@@ -450,8 +564,10 @@ class HopOnDockerTest(unittest.TestCase):
 
     def test_the_first_spec_that_brings_the_build_up_opens_each_storage(self):
         self.gck.grading.Checkpoint = self.fake_checkpoint({"fallback-b"}, restore_ok=True)
-        hop = self.gck.make_hop(self.runs, [("a", self.spec("fallback-a")), ("b", self.spec("fallback-b"))])
+        hop = self.gck.make_hop(self.runs, [("a", self.spec("fallback-a")), ("b", self.spec("fallback-b"))],
+                                env_volume="ce-under-test-ckpt")
         got = hop(24, "g-bare-1", "b24", {"P-1": b"s"})
+        self.assertIn(("env", "ce-under-test-ckpt"), self.ops)  # the dependencies a fresh export lacks
         self.assertEqual(self.made[0][1:], (24, "b24"))
         self.assertIn(("export", "ce-g-bare-1-ws"), self.ops)
         self.assertEqual([o for o in self.ops if o[0] in ("restore", "snapshot")], [("restore", "HOP-P-1"), ("snapshot", "HOP-P-1")])

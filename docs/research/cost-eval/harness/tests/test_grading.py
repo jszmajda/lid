@@ -246,7 +246,7 @@ class JudgmentTest(unittest.TestCase):
         self.assertEqual(grading.execution_faults(v), ["P-1"])
 
     def test_prompts_fill_in_one_pass(self):
-        p = grading._template("grade-judge.md", PROBES="P {LOG}", LOG='{"x": "{PROBES}"}')
+        p = grading._template("grade-judge.md", PROBES="P {LOG}", LOG='{"x": "{PROBES}"}', IDS="(none)")
         self.assertIn('P {LOG}', p)
         self.assertIn('{"x": "{PROBES}"}', p)
         with self.assertRaises(KeyError):

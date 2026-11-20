@@ -644,6 +644,29 @@ class PositiveControlTest(unittest.TestCase):
         self.assertEqual(sorted(index["planted"]), new)
         self.assertEqual({v["item"] for v in index["planted"].values()}, {"RD-12", "RD-19"})
 
+    def test_a_names_only_plant_leaves_nothing_of_its_rule_once_names_comments_and_docstrings_are_replaced(self):
+        from costeval import intent_recall as ir
+        tests = {"tests/test_publish.py": "def test_publish():\n    assert True\n"}
+        rule = "Embargoed releases show their title."
+        planted, index = pst.plant(tests, {"RD-19": rule}, seed="pc-1")
+        (path,) = set(planted) - set(tests)
+        words = {"embargoed", "releases", "show", "title"}
+        self.assertFalse(words & set(Path(path).stem.lower().split("_")), path)  # the file name says nothing of it
+        self.assertIn("embargoed releases show their title", planted[path].lower())  # as written, the reader can see it
+        (neutral,), _ = ir.neutralize([ir.InputFile(path=path, text=planted[path])])
+        self.assertFalse(any(w in neutral.text.lower() for w in words), neutral.text)  # names replaced: nothing left
+
+    def test_an_assertions_plant_gets_a_file_name_that_says_nothing_of_its_rule(self):
+        tests = {"tests/test_publish.py": "def test_publish():\n    assert True\n"}
+
+        def write(prompt):
+            return {"file_name": "test_embargoed_titles_show.py",
+                    "text": "def test_embargoed():\n    assert listing(embargoed=True).titles == ['Reed']\n"}, 0.0
+        planted, index = pst.plant_assertions(tests, {"RD-19": "Embargoed releases show their title."}, seed="pc-1",
+                                              write=write)
+        (path,) = set(planted) - set(tests)
+        self.assertNotIn("embargoed", path)
+
     def test_the_language_follows_the_builds_tests(self):
         js = {"test/publish.test.js": "test('publishes', () => { expect(1).toBe(1) })\n"}
         planted, _ = pst.plant(js, {"RD-12": "A release may be published without review."}, seed="pc-1")
@@ -899,10 +922,11 @@ class PositiveControlAssertionsTest(unittest.TestCase):
         self.assertNotIn("RD-12", prompts[0])
         self.assertEqual(len(prompts), 2)
         new = sorted(set(planted) - set(self.TESTS))
-        self.assertEqual(new, ["tests/test_review.py"])
-        self.assertIn("reviewed=False", planted["tests/test_review.py"])
+        self.assertEqual(len(new), 1)
+        self.assertTrue(new[0].startswith("tests/test_") and new[0].endswith(".py") and "review" not in new[0])
+        self.assertIn("reviewed=False", planted[new[0]])
         self.assertEqual(index["kind"], "assertions")
-        self.assertEqual(index["planted"]["tests/test_review.py"]["item"], "RD-12")
+        self.assertEqual(index["planted"][new[0]]["item"], "RD-12")
         self.assertAlmostEqual(index["cost_usd"], 0.02)
 
     def test_an_item_with_no_valid_answer_is_left_out_and_recorded(self):

@@ -325,6 +325,19 @@ class Checkpoint:
             time.sleep(1)
         return False
 
+    def copy_environment(self, src_volume: str) -> None:
+        """Give a fresh export what an extraction installed beside the code in another checkpoint volume (a `.venv`,
+        `node_modules`): every top-level entry of that /work/app the export lacks."""
+        _run(self.runner, ["docker", "run", "--rm", "-v", f"{executor._volume(src_volume)}:/src:ro",
+                           "-v", f"{executor._volume(self.volume)}:/work", self.image, "sh", "-c",
+                           'for f in $(ls -A /src/app); do [ -e "/work/app/$f" ] || cp -a "/src/app/$f" /work/app/; done'])
+
+    def install(self, spec: dict) -> None:
+        """Run the start spec's install commands, where it has them, in its workdir on this export."""
+        if spec.get("install"):
+            _run(self.runner, ["docker", "run", "--rm", "-v", f"{executor._volume(self.volume)}:/work", self.image, "sh",
+                               "-c", f"cd {spec.get('workdir', '/work/app')} && {spec['install']}"])
+
     def tar_out(self, name: str) -> bytes:
         """A named snapshot (its data and clock) from /work/snap, as a tar."""
         p = self.runner(["docker", "run", "--rm", "-v", f"{executor._volume(self.volume)}:/work", self.image,
@@ -594,10 +607,18 @@ def execute_batch(ck: Checkpoint, g: Graders, worker: int, bid: str, batch: list
     return lines
 
 
+def judge_prompt(batch: list[Probe], lines: list[dict], conventions: str = "", earlier: dict[str, str] | None = None,
+                 ids: str = "") -> str:
+    """The judge's prompt: the probes, the setup session's identifier list (which service identifier is which fixture),
+    and the log."""
+    return _template("grade-judge.md", PROBES=render_for_judgment(batch, conventions, earlier),
+                     IDS=ids.strip() or "(none)", LOG=log_for_judge(lines))
+
+
 def judge_batch(g: Graders, batch: list[Probe], lines: list[dict], out: Path, attempts: int = 3,
-                conventions: str = "", earlier: dict[str, str] | None = None) -> dict[str, dict]:
+                conventions: str = "", earlier: dict[str, str] | None = None, ids: str = "") -> dict[str, dict]:
     role = g.role(g.judge_model, timeout_s=1200)
-    prompt = _template("grade-judge.md", PROBES=render_for_judgment(batch, conventions, earlier), LOG=log_for_judge(lines))
+    prompt = judge_prompt(batch, lines, conventions, earlier, ids)
     tries = []
     for _ in range(attempts):
         rec = executor.run_role(role, prompt, json_schema=json.dumps(JUDGE_SCHEMA, separators=(",", ":")))

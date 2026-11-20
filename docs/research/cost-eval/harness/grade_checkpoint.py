@@ -84,7 +84,7 @@ def run_earlier(ck, out: Path, runs: Path, tid: str, change: int, commit: str, p
         p = by_id[pid]
         prep = prior.preparation(p)
         name = f"PREP-{pid}"
-        lines, reply = execute(f"p{n:02d}", [p], text=grading.render_for_preparation(p, probeset.setup_notes, probeset.setups),
+        lines, reply = execute(f"p-{pid}", [p], text=grading.render_for_preparation(p, probeset.setup_notes, probeset.setups),
                                retain=name)
         if reply is None:
             summary["failed"][pid] = "the preparation session failed"
@@ -118,7 +118,7 @@ def run_earlier(ck, out: Path, runs: Path, tid: str, change: int, commit: str, p
                 summary["failed"][pid] = why or "no retained storage to observe on"
                 continue
             ck.tar_in(f"PRIOR-{pid}", data)
-        lines, reply = execute(f"o{n:02d}", [p], earlier={pid: prior.for_checker(rec, None)} if rec else None)
+        lines, reply = execute(f"o-{pid}", [p], earlier={pid: prior.for_checker(rec, None)} if rec else None)
         if reply is None:
             summary["failed"][pid] = "the observation session failed"
             continue
@@ -128,15 +128,32 @@ def run_earlier(ck, out: Path, runs: Path, tid: str, change: int, commit: str, p
                                  "log": [r for r in lines if not r.get("admin")]}, indent=1))
         summary["observed"].append(pid)
     out.mkdir(parents=True, exist_ok=True)
-    (out / "earlier.json").write_text(json.dumps(summary, indent=1))
+    f = out / "earlier.json"  # cumulative: several earlier runs may share this build's folder
+    kept = json.loads(f.read_text()) if f.exists() else {"prepared": [], "observed": [], "failed": {}}
+    for key in ("prepared", "observed"):
+        kept[key] = kept.get(key, []) + [x for x in summary[key] if x not in kept.get(key, [])]
+    kept["failed"] = {**{k: v for k, v in kept.get("failed", {}).items() if k not in summary["prepared"] + summary["observed"]},
+                      **summary["failed"]}
+    f.write_text(json.dumps(kept, indent=1))
     return summary
 
 
 HOP_LOCK = HERE.parent / "runs" / ".hops.lock"  # one build's hop at a time: hops share Docker names per build
 
 
-def _spec_of(run_dir: Path, change: int) -> dict | None:
-    """The start spec an extraction of this build already found, if any grading of it has one."""
+def ckpt_volume(tid: str, out_name: str, change: int) -> str:
+    """The checkpoint volume a grading of tid at change, in grading/<out_name>/, left its export in."""
+    return grading.Checkpoint(trajectory=checkpoint_name(tid, None if out_name == f"change-{change:02d}" else out_name),
+                              change=change, commit="", image=IMAGE).volume
+
+
+def _volume_exists(name: str) -> bool:
+    return subprocess.run(["docker", "volume", "inspect", name], capture_output=True).returncode == 0
+
+
+def _spec_of(run_dir: Path, change: int) -> tuple[dict, str] | None:
+    """The start spec an extraction of this build already found, if any grading of it has one, and the folder name of
+    that grading (whose checkpoint volume holds what the extraction installed)."""
     for d in sorted((run_dir / "grading").glob("*/")):
         ex = d / "extraction.json"
         if not ex.exists():
@@ -146,22 +163,30 @@ def _spec_of(run_dir: Path, change: int) -> dict | None:
             f"change-{change:02d}", f"earlier-c{change:02d}")
         e = json.loads(ex.read_text())
         if same and e.get("spec") and not e.get("problems"):
-            return e["spec"]
+            return e["spec"], d.name
     return None
 
 
-def make_hop(runs: Path, fallback: list[tuple[str, dict]]) -> Callable:
-    """prior.open_in_turn's hop on Docker: change k's build exported from its trajectory's workspace, its service
-    started with its own extracted start spec where one exists, or else the fallbacks (the build under test's, the
+def make_hop(runs: Path, fallback: list[tuple[str, dict]], env_volume: str | None = None) -> Callable:
+    """prior.open_in_turn's hop on Docker: change k's build exported from its trajectory's workspace, given the
+    dependencies an extraction installed (its own extraction's checkpoint volume where one exists, else
+    `env_volume`, the build under test's; and the spec's install commands where it has them), its service started
+    with its own extracted start spec where one exists, or else the fallbacks (the build under test's, the
     preparation's), each storage restored on it (the service comes up on it at the retained clock, upgrading it if
     it does), then saved as it stands."""
     def hop(k: int, owner: str, commit: str, storages: dict[str, bytes]) -> dict[str, dict]:
         meta = json.loads((runs / owner / "trajectory.json").read_text())
         own = _spec_of(runs / owner, k)
-        specs = ([("its own extraction", own)] if own else []) + fallback
+        specs = ([("its own extraction", own[0])] if own else []) + fallback
+        own_vol = ckpt_volume(owner, own[1], k) if own else None
         ck = grading.Checkpoint(trajectory=checkpoint_name(owner, "hop"), change=k, commit=commit, image=IMAGE)
         try:
             ck.export(meta["volumes"]["workspace"])
+            source = own_vol if own_vol and _volume_exists(own_vol) else env_volume
+            if source:
+                ck.copy_environment(source)
+            for _, spec in specs[:1]:
+                ck.install(spec)
             started = None
             for name, spec in specs:
                 ck.sh(ck.volume, "rm -f /work/log/exec-0.jsonl")
@@ -210,25 +235,53 @@ def _open_one(runs: Path, tid: str, change: int, probe, hop: Callable) -> tuple[
     return r["storage"], None
 
 
+def merge_into(target: Path, summary: dict, source: str, by_id: dict) -> None:
+    """Put a grading's probe verdicts into another grading of the same build (a checkpoint whose prior-data probes
+    were graded apart): each one replaces any earlier verdict or not-run entry, and the item verdicts are redone."""
+    t = json.loads((target / "verdicts.json").read_text())
+    for pid, v in (summary.get("probes") or {}).items():
+        t.setdefault("probes", {})[pid] = v
+        t["not_run"] = [x for x in t.get("not_run") or [] if x != pid]
+        (t.get("not_run_why") or {}).pop(pid, None)
+        t.setdefault("merged", {})[pid] = source
+        if pid in (summary.get("prior_hops") or {}):
+            t.setdefault("prior_hops", {})[pid] = summary["prior_hops"][pid]
+    graded = [by_id[pid] for pid in t["probes"] if pid in by_id]
+    t["items"] = grading.item_verdicts({pid: v["verdict"] for pid, v in t["probes"].items()}, graded)
+    (target / "verdicts.json").write_text(json.dumps(t, indent=1))
+
+
+def finish_without_runs(out: Path, summary: dict, injected: dict, probes: list) -> int:
+    """A grading left with no probe to execute (every one not run, or failed before any session) records why, and the
+    verdicts given without a session, and stops before preparing any setup."""
+    summary.update({"probes": injected, "items": grading.item_verdicts({p: v["verdict"] for p, v in injected.items()},
+                                                                        probes), "setup": []})
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "verdicts.json").write_text(json.dumps(summary, indent=1))
+    print(f"nothing to run: not run {summary.get('not_run')}; decided without a session {sorted(injected)}")
+    return 0
+
+
 def broken_ids(by_id: dict, ids: list[str], broken: set[str]) -> set[str]:
     """The probes whose setup couldn't be loaded."""
     return {x for x in ids if by_id[x].setup in broken}
 
 
-def _reuse_extraction(run_dir: Path, change: int, out: Path) -> bool:
-    """Copy an extraction already made for this build (another grading of the same change) into out."""
+def _reuse_extraction(run_dir: Path, change: int, out: Path, tid: str) -> str | None:
+    """Copy an extraction already made for this build (another grading of the same change) into out, where its
+    checkpoint volume, which holds what the extraction installed, still exists. Returns that grading's folder name."""
     for d in sorted((run_dir / "grading").glob("*/")):
         ex = d / "extraction.json"
         if d == out or not ex.exists():
             continue
         v = d / "verdicts.json"
         same = json.loads(v.read_text()).get("change") == change if v.exists() else d.name == f"change-{change:02d}"
-        if same and not json.loads(ex.read_text()).get("problems"):
+        if same and not json.loads(ex.read_text()).get("problems") and _volume_exists(ckpt_volume(tid, d.name, change)):
             out.mkdir(parents=True, exist_ok=True)
             for name in ("extraction.json", "reference.md", "start.json"):
                 shutil.copyfile(d / name, out / name)
-            return True
-    return False
+            return d.name
+    return None
 
 
 def main(argv=None) -> int:
@@ -245,6 +298,8 @@ def main(argv=None) -> int:
     ap.add_argument("--judge-model", default="claude-sonnet-5-5")
     ap.add_argument("--keep", action="store_true", help="leave the app containers running afterwards")
     ap.add_argument("--no-rerun", action="store_true", help="don't run probes again after an execution fault")
+    ap.add_argument("--merge-into", default=None,
+                    help="also put these verdicts into this grading folder's verdicts.json (the same build's checkpoint)")
     ap.add_argument("--prepare", default="", help="earlier mode: prior-data probes whose preparation runs on this build")
     ap.add_argument("--observe", default="", help="earlier mode: prior-observations probes to run on this build")
     args = ap.parse_args(argv)
@@ -284,14 +339,19 @@ def main(argv=None) -> int:
                           "judge": g.judge_model},
                "not_run": [p.id for p in selected if p.deferred] + sorted(pi["missing"]), "not_run_why": pi["missing"]}
 
+    if not earlier_mode and not runnable:  # every probe lacks its earlier run: nothing to grade on this build
+        return finish_without_runs(out, summary, {}, [])
     print(f"exporting {commit[:10]} and extracting the interface", flush=True)
     ck.export(meta["volumes"]["workspace"])
     notes_path = HERE.parent / "seeds" / args.seed / "grading-notes.md"
     notes = notes_path.read_text(encoding="utf-8") if notes_path.exists() else ""
-    if earlier_mode and _reuse_extraction(run_dir, args.change, out):  # the build's interface, as already extracted
+    reused = _reuse_extraction(run_dir, args.change, out, args.id) if earlier_mode else None
+    if reused:  # the build's interface as already extracted, with what that extraction installed beside the code
         ex = json.loads((out / "extraction.json").read_text())
         ck.put(ck.volume, "/work/out/reference.md", (out / "reference.md").read_text())
         ck.put(ck.volume, "/work/out/start.json", (out / "start.json").read_text())
+        ck.copy_environment(ckpt_volume(args.id, reused, args.change))
+        ck.install(ex["spec"])
     else:
         ex = grading.extract(ck, g, out, notes)
     if ex["problems"]:
@@ -308,10 +368,10 @@ def main(argv=None) -> int:
     for p in runnable:
         prep = prior.preparation(p)
         o = prior.lineage_owner(runs, args.id, prep.change) if prep else None
-        spec = _spec_of(runs / o[0], prep.change) if o else None
-        if spec and all(spec != s for _, s in fallback):
-            fallback.append((f"change {prep.change}'s, where {p.id} was prepared", spec))
-    hop = make_hop(runs, fallback)
+        found = _spec_of(runs / o[0], prep.change) if o else None
+        if found and all(found[0] != s for _, s in fallback):
+            fallback.append((f"change {prep.change}'s, where {p.id} was prepared", found[0]))
+    hop = make_hop(runs, fallback, env_volume=ck.volume)
     opened, injected = {}, {}
     if not earlier_mode:
         chain = opened_in_turn(runs, args.id, args.change, [p for p in runnable if prior.preparation(p)], hop)
@@ -325,6 +385,8 @@ def main(argv=None) -> int:
             else:
                 opened[pid] = r["storage"]
         runnable = [p for p in runnable if p.id not in injected and p.id not in summary["not_run_why"]]
+        if not runnable:
+            return finish_without_runs(out, summary, injected, [by_id[pid] for pid in injected])
     workers = 1 if earlier_mode else max(1, min(args.workers, len(runnable) // args.batch_size + 1))
     for k in range(workers):
         ck.put(ck.volume, f"/work/out/start-{k}.json", json.dumps(grading.worker_spec(ex["spec"], k)))
@@ -389,7 +451,8 @@ def main(argv=None) -> int:
                     bdir = out / "batches" / bid
                     lines = grading.execute_batch(ck, g, k, bid, batch, bdir, probeset.setup_notes, setups=probeset.setups,
                                                   earlier=pi["checker"])
-                v = grading.judge_batch(g, batch, lines, bdir, conventions=probeset.setup_notes, earlier=pi["judge"])
+                v = grading.judge_batch(g, batch, lines, bdir, conventions=probeset.setup_notes, earlier=pi["judge"],
+                                        ids=(out / "ids.md").read_text() if (out / "ids.md").exists() else "")
                 verdicts.update(v)
                 print(f"{bid} on worker {k}: " + ", ".join(f"{p.id} {v.get(p.id, {}).get('verdict', '?')}" for p in batch), flush=True)
 
@@ -418,6 +481,8 @@ def main(argv=None) -> int:
     summary.update({"probes": verdicts, "items": grading.item_verdicts(probe_verdicts, runnable),
                     "setup": st["problems"], "minutes": round((time.monotonic() - started) / 60, 1)})
     (out / "verdicts.json").write_text(json.dumps(summary, indent=1))
+    if args.merge_into:
+        merge_into(run_dir / "grading" / args.merge_into, summary, out.name, by_id)
     items = summary["items"]
     counts = {v: sum(1 for i in items.values() if i["verdict"] == v) for v in (*grading.VERDICTS, None)}
     print(f"items: {counts}; not run: {summary['not_run']}; {summary['minutes']} min")
