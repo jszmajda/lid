@@ -147,12 +147,18 @@ def plant_assertions(tests: dict[str, str], retired: dict[str, str], *, seed: st
     return out, index
 
 
+def retired_by(oracle: simulator.Oracle, change: int) -> list[str]:
+    """Every row retired at or before this change: what `--items retired` plants."""
+    return [i.id for i in oracle.items if i.retired is not None and i.retired <= change]
+
+
 def main(argv=None) -> int:
     from costeval import rust_grading
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--id", required=True)
     ap.add_argument("--change", type=int, required=True)
-    ap.add_argument("--items", required=True, help="the retired items to plant, comma-separated")
+    ap.add_argument("--items", required=True, help="the retired items to plant, comma-separated, or `retired` for "
+                                                    "every row retired by the change")
     ap.add_argument("--runs", type=Path, default=HERE.parent / "runs")
     ap.add_argument("--seed", default="pc-1")
     ap.add_argument("--names-only", action="store_true", help="plant only the names kind (no model call)")
@@ -160,7 +166,8 @@ def main(argv=None) -> int:
     meta = json.loads((args.runs / args.id / "trajectory.json").read_text())
     oracle = simulator.parse_oracle((HERE.parent / "seeds" / meta["seed"] / "hidden" / "oracle.md").read_text(encoding="utf-8"))
     behaviors = {i.id: i.behavior for i in oracle.items}
-    items = [i.strip() for i in args.items.split(",") if i.strip()]
+    items = (retired_by(oracle, args.change) if args.items == "retired"
+             else [i.strip() for i in args.items.split(",") if i.strip()])
     commit = meta["changes"][str(args.change)]["commit"]
     src = VolumeShell(meta["volumes"]["workspace"])
     listed = src.sh(f"cd /work && git ls-tree -r --name-only {commit}", check=False).split()

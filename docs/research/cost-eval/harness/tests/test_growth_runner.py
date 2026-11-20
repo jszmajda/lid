@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import re
 import subprocess
@@ -58,6 +59,7 @@ def dry(*args: str) -> list[str]:
     seed = Path(tempfile.mkdtemp())
     (seed / "hidden").mkdir()
     (seed / "hidden" / "change-script.md").write_text(SCRIPT)
+    (seed / "hidden" / "reference-builds.json").write_text(json.dumps(SPEC))
     env = {**os.environ, "DRY": "1", "RUNS": tempfile.mkdtemp(), "SEED_DIR": str(seed), "PY": sys.executable, "JOBS": "1"}
     p = subprocess.run(["sh", "run_growth.sh", *args], cwd=HARNESS, env=env, capture_output=True, text=True)
     assert p.returncode == 0, p.stderr
@@ -113,6 +115,52 @@ class GrowthRunnerTest(unittest.TestCase):
         self.assertFalse(any("--id g-bare-drift --kind course" in c for c in course))
         checks = [c for c in cmds if "growth_checkpoint.py" in c]
         self.assertEqual(len(checks), 14 * 4)
+
+
+# the stale forks of the reference spec (seed's reference-builds.json): course changes 11 (lag 2) and 25 (lag 3)
+SPEC = {"stale": {"11": {"lag": 2, "decline": "skip"}, "25": {"lag": 3, "decline": "stand-in"}}}
+
+
+class InstrumentRunnerTest(unittest.TestCase):
+    """run_growth.sh instrument: R+ through change 40, a stale fork S_C per course change, every reliance fork, the
+    spec's gradings, the positive control on R+ at 20 and 40, and the gate report."""
+
+    def test_r_plus_its_stale_forks_their_reliance_forks_the_gradings_the_control_and_the_report(self):
+        cmds = dry("instrument")
+        trajs = {re.search(r"--id (\S+)", c).group(1): c for c in cmds if "run_trajectory.py" in c}
+        self.assertEqual(sorted(trajs), ["g-ref-correct", "g-ref-stale-c11", "g-ref-stale-c25"])
+        r = trajs["g-ref-correct"]
+        self.assertIn("--arm ref-correct ", r)
+        self.assertIn("--replicate g-ref --policy diligent", r)
+        self.assertEqual(r.count("sh pace.sh"), 4)  # batches to 10, 20, 30 and 40
+        self.assertIn("--changes " + ",".join(str(n) for n in range(31, 41)) + " ", r)
+        s11 = trajs["g-ref-stale-c11"]
+        self.assertTrue(s11.startswith(f"if {sys.executable} pending.py batch --id g-ref-stale-c11 --changes 11,12,13; then sh pace.sh"))
+        for part in ("--arm ref-stale ", "--stale-of 11 --fork-of g-ref-correct", "--changes 11,12,13 "):
+            self.assertIn(part, s11)
+        self.assertIn("--changes 25,26,27,28 ", trajs["g-ref-stale-c25"])
+        forks = sorted(re.search(r"run_course_forks.py --id (\S+) --kind reliance --course (\d+) --fork 1", c).groups()
+                       for c in cmds if "run_course_forks.py" in c)
+        self.assertEqual(forks, [("g-ref-correct", "11"), ("g-ref-correct", "25"), ("g-ref-stale-c11", "11"),
+                                 ("g-ref-stale-c25", "25")])
+        grades = [c for c in cmds if "instrument.py" in c]
+        self.assertEqual(sorted(re.search(r"instrument.py (\w+) --\w+ (\d+)", c).groups() for c in grades),
+                         [("checkpoint", "10"), ("checkpoint", "20"), ("checkpoint", "30"), ("checkpoint", "40"),
+                          ("course", "11"), ("course", "25")])
+        self.assertTrue(all(re.match(rf"if {re.escape(sys.executable)} pending.py gate --\w+ \d+; then sh pace.sh", c) for c in grades))
+        controls = [c for c in cmds if "plant_stale_tests.py" in c]
+        self.assertEqual(len(controls), 2)
+        for n, c in zip((20, 40), controls):
+            self.assertTrue(c.startswith(f"if {sys.executable} pending.py control --id g-ref-correct --change {n}; then sh pace.sh"))
+            self.assertIn(f"plant_stale_tests.py --id g-ref-correct --change {n} --items retired", c)
+            self.assertIn(f"intent_from_tests.py batch --plan runs/intent-from-tests/pc-g-ref-correct-c{n}/plan.json", c)
+            self.assertIn(f"intent_from_tests.py summarize --name pc-g-ref-correct-c{n}", c)
+        self.assertTrue(any("report.py --instrument" in c for c in cmds))
+        first = lambda k: next(i for i, c in enumerate(cmds) if k in c)  # noqa: E731
+        self.assertLess(first("--id g-ref-correct --replicate"), first("--id g-ref-stale-c11"))  # R+ before its forks
+        order = [first(k) for k in ("run_trajectory.py", "run_course_forks.py", "instrument.py", "plant_stale_tests.py",
+                                    "report.py")]
+        self.assertEqual(order, sorted(order))
 
 
 class PacingTest(unittest.TestCase):

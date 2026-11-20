@@ -34,6 +34,15 @@ def checkpoint_name(run_id: str, out_name: str | None = None) -> str:
     return run_id.replace("/", "-") + (f"-{out_name}" if out_name else "")
 
 
+def applicable(probeset: grading.ProbeSet, change: int, chosen: set[str]) -> list:
+    """The probes a grading runs: the named ones whatever their range (so a symptom diagnostic can run a later item's
+    probes on the incoming version), or else every probe in range at the change except the follow-up pairs under
+    `### RR-CC`, which run only on a reliance fork's build and only when named."""
+    if chosen:
+        return [p for p in probeset.probes if p.id in chosen]
+    return [p for p in probeset.probes if p.applies(change) and not p.item.startswith("RR-")]
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--id", required=True)
@@ -57,9 +66,8 @@ def main(argv=None) -> int:
     out.mkdir(parents=True, exist_ok=True)
     probeset = grading.parse_probes((HERE.parent / "seeds" / args.seed / "hidden" / "probes.md").read_text(encoding="utf-8"))
     chosen = set(filter(None, args.probes.split(",")))
-    # Named probes run whatever their range, so a symptom diagnostic can run a later item's probes on the incoming version.
-    applicable = [p for p in probeset.probes if (p.id in chosen if chosen else p.applies(args.change))]
-    runnable = [p for p in applicable if not p.deferred]
+    selected = applicable(probeset, args.change, chosen)
+    runnable = [p for p in selected if not p.deferred]
     g = grading.Graders(image=IMAGE, roles_volume="ce-roles-cfg", claude_code=CLAUDE_CODE,
                         execute_model=args.execute_model, judge_model=args.judge_model)
     ck = grading.Checkpoint(trajectory=checkpoint_name(args.id, args.out_name), change=args.change,
@@ -68,7 +76,7 @@ def main(argv=None) -> int:
     summary = {"trajectory": args.id, "change": args.change, "commit": commit, "workers": args.workers,
                "models": {"extraction": g.extraction_model, "setup": g.setup_model, "execute": g.execute_model,
                           "judge": g.judge_model},
-               "not_run": [p.id for p in applicable if p.deferred]}
+               "not_run": [p.id for p in selected if p.deferred]}
 
     print(f"exporting {commit[:10]} and extracting the interface", flush=True)
     ck.export(meta["volumes"]["workspace"])

@@ -1,0 +1,10 @@
+{
+  "name": "ref-stale",
+  "description": "Not a study arm: the instrument gate's stale fork S_C, one per course change (the seed's reference-builds.md). Forked from R+ before C, it declines C, then runs to C+lag with an owner holding R+'s rows less C's new rows plus C's retired ones (costeval/reference.py).",
+  "plugins": [],
+  "lid_release": null,
+  "workspace_files": {},
+  "first_turn_mode": "bypassPermissions",
+  "first_prompt_prefix": {},
+  "reference": "stale"
+}

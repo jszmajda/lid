@@ -30,7 +30,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
-from costeval import executor, simulator, trajectory  # noqa: E402
+from costeval import executor, reference, simulator, trajectory  # noqa: E402
 
 IMAGE = "lid-cost-eval-executor:2.1.323"
 CLAUDE_CODE = "2.1.323"
@@ -61,6 +61,18 @@ def change_done(meta: dict, n: int) -> bool:
     """Whether change n has run to its end without an error (one that stopped runs again)."""
     c = (meta.get("changes") or {}).get(str(n)) or {}
     return c.get("finished") is not None and not c.get("error")
+
+
+def fork_start(runs: Path, fork_of: str, first: int) -> tuple[str, dict, str]:
+    """Where a trajectory forked from another starts: that trajectory's commit and owner state after change first - 1,
+    and its workspace volume (an instrument gate's stale fork S_C starts from R+ after C - 1)."""
+    src = runs / fork_of
+    meta = json.loads((src / "trajectory.json").read_text())
+    commit = (meta["changes"].get(str(first - 1)) or {}).get("commit")
+    state = src / f"owner-state-{first - 1:02d}.json"
+    if not commit or not state.exists():
+        raise RuntimeError(f"{fork_of} has no snapshot and owner state after change {first - 1}")
+    return commit, json.loads(state.read_text()), meta["volumes"]["workspace"]
 
 
 def prepare_owner(owner: simulator.Owner, out: Path, n: int) -> None:
@@ -116,6 +128,10 @@ def build_parser() -> argparse.ArgumentParser:
                     help="the owner's attention and recall constants: a preset (central, pilot), a JSON object, or a JSON file")
     ap.add_argument("--window", choices=sorted(executor.WINDOWS), default="1m",
                     help="the agent's context window: 1m (the model's own) or 200k (CLAUDE_CODE_DISABLE_1M_CONTEXT=1)")
+    ap.add_argument("--stale-of", type=int, default=None,
+                    help="ref-stale only: the course change C this stale fork S_C declines (seed's reference-builds.json)")
+    ap.add_argument("--fork-of", default=None,
+                    help="start from this trajectory's snapshot and owner state just before the first change listed")
     ap.add_argument("--isolate", action="store_true",
                     help="block GitHub's hosts and deny web search and fetch, for a seed whose repository is public")
     return ap
@@ -149,13 +165,19 @@ def main(argv=None) -> int:
     oracle = simulator.parse_oracle(oracle_path.read_text(encoding="utf-8"))
     script = simulator.parse_change_script(script_path.read_text(encoding="utf-8"))
     brief = brief_path.read_text(encoding="utf-8")
-    owner_items = simulator.load_owner_items(items_path, oracle)  # every askable item needs one: no default
+    if (args.stale_of is not None) != (arm.reference == "stale"):
+        ap.error("--stale-of goes with the ref-stale arm, and it needs one")
+    spec = reference.load_spec(seed_dir) if arm.reference else None
+    # every askable item needs one, with no default; a reference owner states every row, so needs none
+    owner_items = {} if arm.reference else simulator.load_owner_items(items_path, oracle)
     out.mkdir(parents=True, exist_ok=True)
     meta = {
         "id": args.id, "arm": arm.name, "seed": args.seed, "model": args.model, "effort": args.effort,
         "claude_code": CLAUDE_CODE, "image": IMAGE, "policy": args.policy, "owner_model": args.owner_model,
         "replicate": replicate, "owner_model_config": asdict(owner_model), "isolation": isolation_from_args(args).record(),
-        "lid_release": arm.lid_release, "round_cap": args.round_cap, "neutral_sentence": trajectory.NEUTRAL_SENTENCE,
+        "lid_release": arm.lid_release, "reference": arm.reference, "stale_of": args.stale_of, "fork_of": args.fork_of,
+        "round_cap": args.round_cap,
+        "neutral_sentence": trajectory.NEUTRAL_SENTENCE,
         "hashes": {"brief": sha256(brief_path), "oracle": sha256(oracle_path), "change_script": sha256(script_path),
                    "owner_items": sha256(items_path), "simulator_template": sha256(simulator.TEMPLATE_PATH),
                    "touch_template": sha256(simulator.TOUCH_TEMPLATE_PATH), "trim_template": sha256(simulator.TRIM_TEMPLATE_PATH)},
@@ -170,8 +192,20 @@ def main(argv=None) -> int:
         meta = old
     else:
         meta["started"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
-        files = {dest: (trajectory.ARMS_DIR / src).read_text(encoding="utf-8") for dest, src in arm.workspace_files.items()}
-        meta["start_commit"] = workspace.init(files)
+        if args.fork_of:  # a copy of another trajectory's snapshot, its owner as it stood there
+            first = min(int(x) for x in args.changes.split(","))
+            try:
+                commit, state, src_vol = fork_start(HERE.parent / "runs", args.fork_of, first)
+            except RuntimeError as e:
+                ap.error(str(e))
+            p = subprocess.run(trajectory.clone_command(src_vol, ws_vol, commit, IMAGE), capture_output=True, text=True)
+            if p.returncode != 0:
+                raise RuntimeError(f"copying {args.fork_of}'s snapshot failed: {(p.stderr or '')[-500:]}")
+            (out / f"owner-state-{first - 1:02d}.json").write_text(json.dumps(state, indent=1))
+            meta["start_commit"], meta["from_change"] = commit, first - 1
+        else:
+            files = {dest: (trajectory.ARMS_DIR / src).read_text(encoding="utf-8") for dest, src in arm.workspace_files.items()}
+            meta["start_commit"] = workspace.init(files)
         if arm.lid_release:
             repo = args.lid_repo or Path(subprocess.run(["git", "-C", str(HERE), "rev-parse", "--show-toplevel"],
                                                         capture_output=True, text=True, check=True).stdout.strip())
@@ -196,7 +230,9 @@ def main(argv=None) -> int:
             return r.structured, cost
         return run
 
-    owner = simulator.Owner(oracle=oracle, brief=brief, policy=args.policy, replicate=meta["replicate"],
+    # a reference run (the instrument gate's, never a study arm): its owner holds the spec's rows and states them all
+    view = reference.owner_view(oracle, spec, args.stale_of) if arm.reference else oracle
+    owner = simulator.Owner(oracle=view, brief=brief, policy=args.policy, replicate=meta["replicate"], full_oracle=bool(arm.reference),
                             ask=call(simulator.schema_json()), touch=call(simulator.touch_schema_json()),
                             trim=call(simulator.trim_schema_json()), check=call(simulator.completion_schema_json()),
                             model=simulator.OwnerModel.from_config(meta["owner_model_config"]), owner_items=owner_items)
@@ -216,7 +252,19 @@ def main(argv=None) -> int:
             print(f"change {n}: {e}", flush=True)
             return 1
         change = simulator.first_build(brief) if n == 0 else script[n]
-        if change.request is None and change.symptom is not None:
+        rules = None
+        if arm.reference:
+            if n > 0:
+                what, change = reference.plan_change(spec, script, n, args.stale_of)
+                if what == "skip":  # S_C declines its course change: no session, the snapshot unchanged
+                    meta["changes"][str(n)] = {"title": script[n].title, "declined": "skip", "finished": True,
+                                               "error": None, "commit": workspace.head()}
+                    meta_path.write_text(json.dumps(meta, indent=1))
+                    (out / f"owner-state-{n:02d}.json").write_text(json.dumps(trajectory.owner_state(owner), indent=1))
+                    print(f"change {n}: declined, so no session", flush=True)
+                    continue
+            rules = reference.statement(spec, n, args.stale_of)
+        if change.request is None and change.symptom is not None and not arm.reference:  # a reference always reports
             fired = diagnose(args.id, n, change, args.seed)
             if fired == "inconclusive":
                 # Grading can fail for its own reasons (a lost credential, say); try once more before deciding.
@@ -230,11 +278,12 @@ def main(argv=None) -> int:
                 (out / f"owner-state-{n:02d}.json").write_text(json.dumps(trajectory.owner_state(owner), indent=1))
                 print(f"change {n}: diagnostic {fired}, so no symptom report and no change", flush=True)
                 continue
-        symptom = {"symptom": "fired"} if change.request is None and change.symptom is not None else {}
+        symptom = ({"symptom": "delivered (reference)" if arm.reference else "fired"}
+                   if change.request is None and change.symptom is not None else {})
         start = time.monotonic()
         before = len(owner_costs)
         res = trajectory.run_change(arm=arm, change=change, owner=owner, turn=turn, workspace=workspace,
-                                    out_dir=out / f"change-{n:02d}", round_cap=args.round_cap)
+                                    out_dir=out / f"change-{n:02d}", round_cap=args.round_cap, rules=rules)
         agent_cost = sum((t["usage"] or {}).get("reported_cost_usd") or 0 for t in res.turns)
         meta["changes"][str(n)] = {"title": res.title, "rounds": res.rounds, "finished": res.finished, "capped": res.capped,
                                    "error": res.error, "commit": res.commit, "redirect": res.redirect,

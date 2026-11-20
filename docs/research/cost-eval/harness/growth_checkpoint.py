@@ -49,16 +49,20 @@ STEPS = ("grade", "flips", "reliance", "intent", "stale")
 PY = sys.executable
 
 
-def pending(runs: Path, trajectory_id: str, c: int) -> bool:
-    """Whether checkpoint c still has work: it hasn't finished (every step run, nothing left ungraded), or a fork it
-    should grade (a course fork of a change up to c, a reliance fork whose request ran by c) was recorded since."""
+def pending(runs: Path, trajectory_id: str, c: int, steps=STEPS) -> bool:
+    """Whether checkpoint c still has work for these steps: one hasn't been done (run, leaving nothing ungraded), or a
+    fork one of them grades (a course fork of a change up to c, for flips; a reliance fork whose request ran by c, for
+    reliance) was recorded since."""
     f = runs / trajectory_id / "growth" / f"checkpoint-{c:02d}" / "status.json"
     status = json.loads(f.read_text()) if f.exists() else {}
-    if not status.get("finished"):
+    done = set(status.get("done") or (STEPS if status.get("finished") else ()))
+    if not set(steps) <= done:
         return True
     seen = set(status.get("forks") or [])
     for meta_path in (runs / trajectory_id / "course-forks").glob("c*-*-*/trajectory.json"):
         m = json.loads(meta_path.read_text())
+        if ("flips" if m.get("kind") == "course" else "reliance") not in steps:
+            continue
         due = m.get("course", 99_999) <= c if m.get("kind") == "course" else (m.get("at") or 99_999) <= c
         if m.get("changes") and due and meta_path.parent.name not in seen:
             return True
@@ -110,7 +114,12 @@ def main(argv=None, *, run: Callable[[list[str]], int] | None = None, volume: Ca
     status = json.loads(status_path.read_text()) if status_path.exists() else {}
     grading_dir = args.runs / t / "grading"
     left: list[str] = []  # what this run left ungraded or pending
+    left_steps: set[str] = set()  # the steps that left it
     forks_seen: list[str] = []  # the forks this run graded
+
+    def leave(step: str, what: str) -> None:
+        left.append(what)
+        left_steps.add(step)
 
     def grade(fid: str, n: int, *extra: str) -> int:
         return run([PY, "grade_checkpoint.py", "--id", fid, "--change", str(n), "--seed", seed, *extra])
@@ -119,7 +128,7 @@ def main(argv=None, *, run: Callable[[list[str]], int] | None = None, volume: Ca
         if _verdicts(grading_dir / f"change-{c:02d}") is None:
             status["grade"] = {"exit": grade(t, c)}
         if _verdicts(grading_dir / f"change-{c:02d}") is None:
-            left.append("grade")
+            leave("grade", "grade")
 
     terms_file = seed_dir / "hidden" / "stale-audit-terms.json"
     terms = json.loads(terms_file.read_text()) if terms_file.exists() else {}
@@ -148,7 +157,7 @@ def main(argv=None, *, run: Callable[[list[str]], int] | None = None, volume: Ca
             if e["probes"] and _verdicts(grading_dir / name) is None:
                 grade(t, e["at_change"], "--probes", ",".join(e["probes"]), "--out-name", name)
             if e["probes"] and _verdicts(grading_dir / name) is None:
-                left.append(name)
+                leave("flips", name)
             got = _verdicts(grading_dir / name) or {}
             row = {**e, "verdicts": {p: got.get(p) for p in e["probes"]}}
             if e["expect"] == "anticipated?":  # an emerging change: did the build already do it? Not a flip
@@ -180,7 +189,7 @@ def main(argv=None, *, run: Callable[[list[str]], int] | None = None, volume: Ca
                     run([PY, "run_course_forks.py", "--id", t, "--kind", "course", "--course", str(n), "--fork",
                          fork.name.rsplit("-", 1)[1], "--discard"])
                 if new + old and _verdicts(where) is None:
-                    left.append(fork.name)
+                    leave("flips", fork.name)
                 else:
                     forks_seen.append(fork.name)
                 got = _verdicts(where) or {}
@@ -213,7 +222,7 @@ def main(argv=None, *, run: Callable[[list[str]], int] | None = None, volume: Ca
                         run([PY, "run_course_forks.py", "--id", t, "--kind", "reliance", "--course", str(course),
                              "--fork", k, "--discard"])
                 if _verdicts(where) is None:
-                    left.append(fork.name)
+                    leave("reliance", fork.name)
                 else:
                     forks_seen.append(fork.name)
                 got = _verdicts(where) or {}
@@ -253,7 +262,7 @@ def main(argv=None, *, run: Callable[[list[str]], int] | None = None, volume: Ca
             rc = run([PY, "intent_from_tests.py", "summarize", "--name", name])
         status["intent"] = {"state": "done" if rc == 0 else "pending", "plan": rel, "exit": rc, "name": name}
         if rc != 0:
-            left.append("intent")
+            leave("intent", "intent")
         if rc == 0:  # the checkpoint's copy is only the readers' input; a pending one stays for the rerun
             run(["docker", "volume", "rm", "-f", vol])
 
@@ -268,8 +277,12 @@ def main(argv=None, *, run: Callable[[list[str]], int] | None = None, volume: Ca
                 courses[str(n)] = audit_course(n, ch, ws, before, after, at=commit)
         (out / "stale-audit.json").write_text(json.dumps({"checkpoint": c, "courses": courses}, indent=1))
 
+    done = set(status.get("done") or (STEPS if status.get("finished") else ()))
+    done = (done | set(steps)) - left_steps  # a step is done once a run of it leaves nothing
+    status["done"] = sorted(done)
+    status["forks"] = sorted(set(status.get("forks") or []) | set(forks_seen))
     if set(STEPS) <= set(steps):  # a full run says whether the checkpoint is finished; a partial one only unsettles it
-        status.update(finished=not left, left=left, forks=sorted(forks_seen))
+        status.update(finished=not left, left=left)
     elif left:
         status.update(finished=False, left=sorted(set(status.get("left") or []) | set(left)))
     status_path.write_text(json.dumps(status, indent=1))

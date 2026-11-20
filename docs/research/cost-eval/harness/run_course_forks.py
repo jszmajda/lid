@@ -35,7 +35,7 @@ from typing import Callable
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
-from costeval import executor, growth, simulator, trajectory  # noqa: E402
+from costeval import executor, growth, reference, simulator, trajectory  # noqa: E402
 from run_trajectory import CLAUDE_CODE, IMAGE, ROLES_VOLUME  # noqa: E402
 
 
@@ -143,7 +143,9 @@ def main(argv=None, *, deps: Deps | None = None) -> int:
         deps.install_lid(IMAGE, cfg_vol, repo, arm.lid_release)
 
     oracle = simulator.parse_oracle((seed_dir / "hidden" / "oracle.md").read_text(encoding="utf-8"))
-    owner_items = simulator.load_owner_items(seed_dir / "hidden" / "owner-items.json", oracle)
+    spec = reference.load_spec(seed_dir) if arm.reference else None
+    # a reference owner states every row it holds, so nothing is askable and no recall line is needed
+    owner_items = {} if arm.reference else simulator.load_owner_items(seed_dir / "hidden" / "owner-items.json", oracle)
     owner_model = (simulator.OwnerModel.from_config(base["owner_model_config"]) if base.get("owner_model_config")
                    else simulator.OwnerModel())
     costs: list[float] = []
@@ -151,9 +153,13 @@ def main(argv=None, *, deps: Deps | None = None) -> int:
     if ask is None:
         ask, touch, trim, check = _role_calls(base["owner_model"], costs)
     replicate = f"{base['replicate']}-{tag}-fork-{args.fork}"
-    owner = simulator.Owner(oracle=oracle, brief=(seed_dir / "brief.md").read_text(encoding="utf-8"), policy=base["policy"],
+    # a reference build's fork: its owner holds the reference's view, and its prompt states that view's rules
+    stale_of = base.get("stale_of")
+    view = reference.owner_view(oracle, spec, stale_of) if arm.reference else oracle
+    rules = reference.statement(spec, change.number, stale_of) if arm.reference else None
+    owner = simulator.Owner(oracle=view, brief=(seed_dir / "brief.md").read_text(encoding="utf-8"), policy=base["policy"],
                             replicate=replicate, ask=ask, touch=touch, trim=trim, model=owner_model,
-                            owner_items=owner_items, check=check)
+                            owner_items=owner_items, check=check, full_oracle=bool(arm.reference))
     trajectory.restore_owner_state(owner, json.loads(state_path.read_text()))
     global LAST_OWNER
     LAST_OWNER = owner
@@ -180,7 +186,7 @@ def main(argv=None, *, deps: Deps | None = None) -> int:
     began = time.monotonic()
     res = trajectory.run_change(arm=arm, change=change, owner=owner, turn=turn, workspace=workspace,
                                 out_dir=out / f"change-{key}" if key == "reliance" else out / f"change-{change.number:02d}",
-                                round_cap=meta["round_cap"])
+                                round_cap=meta["round_cap"], rules=rules)
     agent_cost = sum((t["usage"] or {}).get("reported_cost_usd") or 0 for t in res.turns)
     meta["changes"][key] = {"title": res.title, "rounds": res.rounds, "finished": res.finished, "capped": res.capped,
                                "error": res.error, "commit": res.commit, "agent_cost_usd": round(agent_cost, 4),

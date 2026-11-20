@@ -5,6 +5,11 @@
 #   trial   bare-1 and lid-full-1 through change 20, their course-change forks, and checkpoints at 10 and 20
 #   full    bare-1..5, the drift floor (g-bare-drift, on bare-1's replicate seed), lid-full-1..5 and
 #           bare-one-line-1..3 through change 40, the course-change forks, and checkpoints at 10, 20, 30 and 40
+#   instrument  the instrument gate (design.md, "The trial, and its gate"), as the seed's reference-builds.md says
+#           it (costeval/reference.py; arms ref-correct and ref-stale, never study arms): R+ (g-ref-correct) through
+#           change 40; a stale fork S_C (g-ref-stale-cNN) per course change, from R+ after C-1 through C+lag; each
+#           one's reliance fork; the spec's gradings (instrument.py); the positive control planted in R+'s tests at 20
+#           and 40 and read by the intent readers; then the gate report (report.py --instrument, runs/growth/instrument.md)
 #
 # Replicate k's trajectories share the replicate seed g-rk; a trajectory runs in batches ending at each checkpoint. Each
 # course change's reliance request runs only as a fork, from the trajectory's snapshot after its lag: one from every
@@ -20,7 +25,7 @@
 # DRY=1 prints what would run instead of running it.
 PY=${PY:-python3.12}
 RUNS=${RUNS:-../runs}
-SEED=${SEED:-releasedesk}
+SEED=${SEED:-releasedesk-growth}  # assembled by assemble_growth_seed.py
 SEED_DIR=${SEED_DIR:-../seeds/$SEED}
 JOBS=${JOBS:-2}
 FORKS=${FORKS:-3}
@@ -30,7 +35,7 @@ export PACE_LOG=${PACE_LOG:-$LOG/pacing.log} PACE_MARK=${PACE_MARK:-$LOG/.pacing
 PACE="sh pace.sh"
 
 usage() {
-  echo "usage: sh run_growth.sh trial | full" >&2
+  echo "usage: sh run_growth.sh trial | full | instrument" >&2
   exit 2
 }
 
@@ -61,13 +66,13 @@ print(' '.join(str(c) for c, lag in growth.reliance_requests(s, upto=$1)))"
 }
 
 batches() {  # a trajectory's changes in batches ending at each checkpoint, with the pacing gate before each
-  id=$1; arm=$2; rep=$3; upto=$4
+  id=$1; arm=$2; rep=$3; upto=$4; policy=${5:-bounded}
   from=0; out=""
   for end in 10 20 30 40; do
     [ "$end" -gt "$upto" ] && break
     list=$from; i=$from
     while [ $i -lt $end ]; do i=$((i + 1)); list="$list,$i"; done
-    cmd="if $PY pending.py batch --id $id --changes $list; then $PACE && $PY run_trajectory.py --arm $arm --seed $SEED --id $id --replicate $rep --policy bounded --owner-model-config central --changes $list >> $LOG/$id.log 2>&1; fi"
+    cmd="if $PY pending.py batch --id $id --changes $list; then $PACE && $PY run_trajectory.py --arm $arm --seed $SEED --id $id --replicate $rep --policy $policy --owner-model-config central --changes $list >> $LOG/$id.log 2>&1; fi"
     out="${out:+$out && }$cmd"
     from=$((end + 1))
   done
@@ -122,8 +127,51 @@ grow() {  # phase, last change, checkpoints
   done | run_queue "$JOBS"
 }
 
+stale_forks() {  # "C lag" for each stale fork in the seed's reference spec
+  $PY -c "
+import json
+for c, e in sorted(json.load(open('$SEED_DIR/hidden/reference-builds.json'))['stale'].items(), key=lambda kv: int(kv[0])):
+    print(c, e['lag'])"
+}
+
+instrument() {  # R+, the stale forks, their reliance forks, the spec's gradings, the positive control, the report
+  mkdir -p "$LOG"
+  rm -f "$PACE_MARK"
+  batches g-ref-correct ref-correct g-ref 40 diligent | run_queue 1
+  forks=$(stale_forks | tr ' ' ':')
+  for f in $forks; do  # S_C: from R+ after C-1, C (declined) through C+lag
+    c=${f%%:*}; lag=${f##*:}
+    id=g-ref-stale-c$(printf %02d "$c")
+    list=$c; i=$c
+    while [ $i -lt $((c + lag)) ]; do i=$((i + 1)); list="$list,$i"; done
+    echo "if $PY pending.py batch --id $id --changes $list; then $PACE && $PY run_trajectory.py --arm ref-stale --seed $SEED --id $id --replicate g-ref --policy diligent --owner-model-config central --stale-of $c --fork-of g-ref-correct --changes $list >> $LOG/$id.log 2>&1; fi"
+  done | run_queue "$JOBS"
+  for f in $forks; do  # each reference's reliance fork after C+lag
+    c=${f%%:*}
+    for id in g-ref-correct g-ref-stale-c$(printf %02d "$c"); do
+      echo "if $PY pending.py fork --id $id --kind reliance --course $c --fork 1; then $PACE && $PY run_course_forks.py --id $id --kind reliance --course $c --fork 1 > $LOG/$id-reliance$c-1.log 2>&1; fi"
+    done
+  done | run_queue "$JOBS"
+  {
+    for c in 10 20 30 40; do
+      echo "if $PY pending.py gate --change $c; then $PACE && $PY instrument.py checkpoint --change $c > $LOG/gate-checkpoint-$c.log 2>&1; fi"
+    done
+    for f in $forks; do
+      c=${f%%:*}
+      echo "if $PY pending.py gate --course $c; then $PACE && $PY instrument.py course --course $c > $LOG/gate-course-$c.log 2>&1; fi"
+    done
+  } | run_queue "$JOBS"
+  for c in 20 40; do  # the positive control: stale tests planted in ref-correct's own, read by the intent readers
+    name=pc-g-ref-correct-c$c
+    echo "if $PY pending.py control --id g-ref-correct --change $c; then $PACE && { { [ -f $RUNS/g-ref-correct/growth/positive-control-c$c/assertions/index.json ] || $PY plant_stale_tests.py --id g-ref-correct --change $c --items retired; } && $PY intent_from_tests.py batch --plan runs/intent-from-tests/$name/plan.json && $PY intent_from_tests.py summarize --name $name; } > $LOG/$name.log 2>&1; fi"
+  done | run_queue 1
+  if [ -n "$DRY" ]; then echo "$PY report.py --instrument --seed $SEED --out $LOG/instrument.md"
+  else $PY report.py --instrument --seed "$SEED" --out "$LOG/instrument.md"; fi
+}
+
 case "$1" in
   trial) grow trial 20 "10 20"; echo "trial done" ;;
+  instrument) instrument; echo "instrument done" ;;
   full) grow full 40 "10 20 30 40"; echo "full run done" ;;
   *) usage ;;
 esac

@@ -63,13 +63,22 @@ def transition_probes(probeset: grading.ProbeSet, items, course: int, side_of: i
     """The probes a flip check runs for these rows at course change `course`: each row's flip probe P-RDxx-flipCC where
     the seed has one (it shares its setup and scenario with its partner on the other row, so it fails across the change
     only because the rule did), and otherwise every probe of the row in force at change `side_of`, the row's side of
-    the change. Returns the probes and, per row, which way was used ("flip" or "all")."""
+    the change. Where any row on the side has a flip probe, the side's rows without one are skipped: their probes can't
+    flip (the seed says why under their headings). Returns the probes and, per row, which way was used ("flip", "all"
+    or "skipped")."""
+    flipped = {item: [p.id for p in probeset.probes if item_id(p.item) == item and p.id.endswith(f"-flip{course:02d}")]
+               for item in items}
+    any_flip = any(flipped.values())
     probes, choice = [], {}
     for item in items:
-        row = [p for p in probeset.probes if item_id(p.item) == item]
-        flips = [p.id for p in row if p.id.endswith(f"-flip{course:02d}")]
-        choice[item] = "flip" if flips else "all"
-        probes += flips or [p.id for p in row if p.applies(side_of)]
+        if flipped[item]:
+            choice[item] = "flip"
+            probes += flipped[item]
+        elif any_flip:
+            choice[item] = "skipped"
+        else:
+            choice[item] = "all"
+            probes += [p.id for p in probeset.probes if item_id(p.item) == item and p.applies(side_of)]
     return probes, choice
 
 

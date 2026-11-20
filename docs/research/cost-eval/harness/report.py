@@ -567,8 +567,111 @@ def render_growth(r: dict) -> str:
     return "\n".join(lines)
 
 
+# ------------------------------------------------------------------------------------------------ the instrument gate
+
+GATE_POINTS = {  # the spec's expectations: (old-row flip, new-row flip) or (current, displaced)
+    "R+ after C-1": ("met", "not met"), "R+ after C": ("not met", "met"), "S_C after C+L": ("met", "not met"),
+    "R+ reliance fork": ("met", "not met"), "S_C reliance fork": ("not met", "met")}
+
+
+def instrument_report(runs: Path, seed_dir: Path, checkpoints=(10, 20, 30, 40), controls=(20, 40)) -> dict:
+    """The instrument gate (the seed's reference-builds.md, "How to grade"): for each course change, every grading
+    instrument.py makes, each probe's verdict against what the spec expects there; a course change separates the
+    builds only when every expectation holds (undecided while a grading is missing). Then R+'s unmet probes at each
+    checkpoint, and the positive control's catch rate: of the stale tests planted in R+'s tests, the share each
+    reader named as stale, averaged over repeats, per kind and as written or with names replaced."""
+    import instrument
+    from costeval import reference
+    spec = reference.load_spec(seed_dir)
+    out = {"courses": [], "mismatches": [], "checkpoints": [], "control": []}
+    for c in sorted(int(x) for x in spec["checks"]):
+        checks = spec["checks"][str(c)]
+        points = []
+        for g in instrument.course_gradings(runs, spec, c):
+            first, second = GATE_POINTS[g["point"]]
+            sides = (checks["flip_old"], checks["flip_new"]) if "reliance" not in g["point"] else (
+                [p for p in checks["rr"] if p.endswith("-current")], [p for p in checks["rr"] if p.endswith("-displaced")])
+            expected = {p: first for p in sides[0]} | {p: second for p in sides[1]}
+            got = instrument.verdicts(instrument.where(runs, g))
+            holds = None if got is None else all(got.get(p) == e for p, e in expected.items())
+            points.append({"point": g["point"], "run": g["id"], "expected": expected, "verdicts": got, "holds": holds})
+            for p, e in expected.items():
+                if got is not None and got.get(p) != e:
+                    out["mismatches"].append({"course": c, "point": g["point"], "probe": p, "expected": e, "verdict": got.get(p)})
+        held = [x["holds"] for x in points]
+        separates = False if False in held else (None if None in held else True)
+        out["courses"].append({"course": c, "kind": spec["stale"][str(c)]["kind"], "lag": spec["stale"][str(c)]["lag"],
+                               "points": points, "separates": separates})
+    for n in checkpoints:
+        got = instrument.verdicts(runs / instrument.CORRECT / "grading" / f"change-{n:02d}")
+        if got is not None:
+            out["checkpoints"].append({"change": n, "graded": len(got), "unmet": {p: v for p, v in got.items() if v != "met"}})
+    for n in controls:
+        base = runs / instrument.CORRECT / "growth" / f"positive-control-c{n:02d}"
+        res = runs / "intent-from-tests" / f"pc-{instrument.CORRECT}-c{n:02d}"
+        for kind in ("names", "assertions"):
+            idx = _json(base / kind / "index.json")
+            if not idx:
+                continue
+            planted = {v["item"] for v in idx["planted"].values()}
+            for neutral in (False, True):
+                r = _json(res / (f"pc-{kind}" + ("-neutral" if neutral else "")) / "result.json")
+                if not r or not planted:
+                    continue
+                caught = [len(set(x.get("stale_items") or []) & planted) / len(planted) for x in r.get("repeats") or []]
+                out["control"].append({"change": n, "kind": kind, "neutral": neutral, "planted": len(planted),
+                                       "catch": sum(caught) / len(caught) if caught else None, "repeats": caught})
+    return out
+
+
+def render_instrument(r: dict) -> str:
+    decided = [c for c in r["courses"] if c["separates"] is not None]
+    lines = ["# Instrument gate", "",
+             "From the seed's reference-builds.md: R+ is the correct build; S_C declines course change C and runs to "
+             "C+lag. Each course change separates the builds only when every expected verdict holds at every point. "
+             "Any other verdict, \"couldn't exercise\" included, goes to probe review with its execution logs.", "",
+             f"Separating: {sum(c['separates'] for c in decided)} of {len(r['courses'])} course changes"
+             + (f" ({len(r['courses']) - len(decided)} not yet graded)" if len(decided) < len(r["courses"]) else "") + ".", "",
+             "## Course changes", "", "| C | Kind | Lag | Points | Separates |", "|---|---|---|---|---|"]
+    for c in r["courses"]:
+        pts = "; ".join(f"{p['point']}: {'ok' if p['holds'] else '–' if p['holds'] is None else 'MISMATCH'}" for p in c["points"])
+        lines.append(f"| {c['course']} | {c['kind']} | {c['lag']} | {pts} | "
+                     f"{'yes' if c['separates'] else 'not yet' if c['separates'] is None else 'NO'} |")
+    lines += ["", "## Mismatches, for probe review", ""]
+    if r["mismatches"]:
+        lines += ["| C | Point | Probe | Expected | Verdict |", "|---|---|---|---|---|"]
+        lines += [f"| {m['course']} | {m['point']} | {m['probe']} | {m['expected']} | {m['verdict'] or 'none'} |"
+                  for m in r["mismatches"]]
+    else:
+        lines.append("None.")
+    lines += ["", "## R+ at the checkpoints", "",
+              "Every probe that applies to R+ should be met. An unmet one is a probe a correct build fails, or an R+ "
+              "build that missed a stated row: read the run to tell which.", "",
+              "| Change | Probes graded | Unmet |", "|---|---|---|"]
+    lines += [f"| {x['change']} | {x['graded']} | {', '.join(f'{p} ({v})' for p, v in sorted(x['unmet'].items())) or '–'} |"
+              for x in r["checkpoints"]]
+    lines += ["", "## Positive control", "",
+              "Stale tests planted in R+'s tests; the share of planted rules each intent reader named as stale.", "",
+              "| Change | Kind | Reader | Planted | Caught |", "|---|---|---|---|---|"]
+    lines += [f"| {x['change']} | {x['kind']} | {'names replaced' if x['neutral'] else 'as written'} | {x['planted']} | "
+              f"{pct(x['catch'])} |" for x in r["control"]]
+    return "\n".join(lines) + "\n"
+
+
 def main(argv=None) -> int:
     argv = sys.argv[1:] if argv is None else argv
+    if "--instrument" in argv:  # report.py --instrument --seed releasedesk-growth --out ../runs/growth/instrument.md
+        ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+        ap.add_argument("--instrument", action="store_true")
+        ap.add_argument("--seed", default="releasedesk-growth")
+        ap.add_argument("--out", required=True)
+        args = ap.parse_args(argv)
+        r = instrument_report(HERE.parent / "runs", HERE.parent / "seeds" / args.seed)
+        out = Path(args.out)
+        out.write_text(render_instrument(r), encoding="utf-8")
+        out.with_suffix(".json").write_text(json.dumps(r, indent=1), encoding="utf-8")
+        print(out.read_text())
+        return 0
     if "--growth" in argv:  # report.py --growth --prefix g --seed releasedesk --arms bare:1,2 lid-full:1,2 --checkpoints 10,20
         ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
         ap.add_argument("--growth", action="store_true")

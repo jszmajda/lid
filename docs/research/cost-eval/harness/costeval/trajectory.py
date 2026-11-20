@@ -44,6 +44,7 @@ class Arm:
     workspace_files: dict[str, str]  # path in the project -> file beside the arm's JSON
     first_turn_mode: str
     first_prompt_prefix: dict[int, str]
+    reference: str | None = None  # the instrument gate's references only: "correct" or "stale" (costeval/reference.py)
 
     @property
     def plugin_dirs(self) -> tuple[str, ...]:
@@ -58,14 +59,23 @@ def load_arm(name: str, arms_dir: Path = ARMS_DIR) -> Arm:
         raise ValueError(f"{name}: plugins need a pinned release")
     return Arm(name=d["name"], description=d["description"], plugins=tuple(d["plugins"]), lid_release=d["lid_release"],
                workspace_files=dict(d["workspace_files"]), first_turn_mode=d["first_turn_mode"],
-               first_prompt_prefix={int(k): v for k, v in d["first_prompt_prefix"].items()})
+               first_prompt_prefix={int(k): v for k, v in d["first_prompt_prefix"].items()}, reference=d.get("reference"))
 
 
-def change_prompt(arm: Arm, change: simulator.Change, owner_request: str) -> str:
-    """The first prompt of a change: any prefix the arm gives this change, the owner's request, and the
-    neutral sentence."""
+def change_prompt(arm: Arm, change: simulator.Change, owner_request: str, rules: str | None = None) -> str:
+    """The first prompt of a change: any prefix the arm gives this change, the owner's request, for a reference
+    build every rule in force stated outright, and the neutral sentence."""
     prefix = "" if change.probe else arm.first_prompt_prefix.get(change.number, "")
-    return f"{prefix}{owner_request.strip()}\n\n{NEUTRAL_SENTENCE}"
+    stated = f"{rules.strip()}\n\n" if rules else ""
+    return f"{prefix}{owner_request.strip()}\n\n{stated}{NEUTRAL_SENTENCE}"
+
+
+def clone_command(src_volume: str, dest_volume: str, commit: str, image: str = "lid-cost-eval-executor:2.1.323") -> list[str]:
+    """The docker command that makes dest_volume a working copy of src_volume's repository at commit, on main."""
+    return ["docker", "run", "--rm", "-v", f"{src_volume}:/src:ro", "-v", f"{dest_volume}:/work", image,
+            "sh", "-c", f"find /work -mindepth 1 -delete; git clone -q /src /work && cd /work && "
+            f"git checkout -q -B main {commit} && git config user.name '{GIT_IDENTITY[0]}' && "
+            f"git config user.email '{GIT_IDENTITY[1]}'"]
 
 
 def is_code_path(path: str) -> bool:
@@ -247,12 +257,12 @@ def usage_dict(u: usage.Usage) -> dict:
 
 
 def run_change(*, arm: Arm, change: simulator.Change, owner: simulator.Owner, turn: TurnFn, workspace: Workspace,
-               out_dir: Path, round_cap: int = ROUND_CAP, commit: bool = True) -> ChangeResult:
+               out_dir: Path, round_cap: int = ROUND_CAP, commit: bool = True, rules: str | None = None) -> ChangeResult:
     """Run one change: the first prompt, then owner replies until the owner accepts or the cap is reached."""
     out_dir.mkdir(parents=True, exist_ok=True)
     base = workspace.head()
     request = owner.start_change(change)
-    prompt = change_prompt(arm, change, request)
+    prompt = change_prompt(arm, change, request, rules)
     res = ChangeResult(change=change.number, title=change.title, rounds=0, finished=False, capped=False,
                        session_id=None, base=base)
     (out_dir / "prompt-00.txt").write_text(prompt, encoding="utf-8")

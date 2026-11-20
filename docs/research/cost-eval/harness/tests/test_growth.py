@@ -267,6 +267,16 @@ class GrowthHelpersTest(unittest.TestCase):
         self.assertEqual([(e["when"], e["reach"], e["reach_source"]) for e in growth.flip_plan(s, ps, upto=3)],
                          [("after", "unknown", "no flip probes"), ("before", "unknown", "no flip probes")])
 
+    def test_a_row_without_a_flip_probe_is_skipped_when_another_row_on_its_side_has_one(self):
+        # change 27 retires three rows and only one has a flip probe: the other two, which can't flip, aren't run
+        ps = grading.parse_probes(GROWTH_PROBES.replace("### RD-04", "### RD-11\n\n" + probe(
+            "P-RD11-a", "from change 2, until change 11", "S0", ["Count orders."], "Counted.") + "\n### RD-04"))
+        s = sm.parse_change_script(FLIP_SCRIPT.replace("**Retires:** RD-01.", "**Retires:** RD-01, RD-11."))
+        after = next(e for e in growth.flip_plan(s, ps, upto=12) if e["course"] == 12 and e["when"] == "after")
+        self.assertEqual((after["probes"], after["choice"]), (["P-RD01-flip12"], {"RD-01": "flip", "RD-11": "skipped"}))
+        self.assertEqual(growth.course_fork_probes(s, ps, 12)[1:], (["P-RD01-flip12"], {"RD-01": "flip", "RD-11": "skipped",
+                                                                                       "RD-02": "flip"}))
+
     def test_flip_checks_run_only_the_flip_probe_where_the_seed_has_one(self):
         ps = grading.parse_probes(GROWTH_PROBES)
         s = sm.parse_change_script(FLIP_SCRIPT)

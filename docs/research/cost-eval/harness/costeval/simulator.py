@@ -1469,7 +1469,8 @@ class Owner:
                  model: OwnerModel | None = None, owner_items: Mapping[str, OwnerItem] | None = None,
                  default_owner_item: OwnerItem | None = None, touch: Callable[[str], dict] | None = None,
                  touch_template: str | None = None, only_change: bool = False,
-                 check: Callable[[str], dict] | None = None, check_template: str | None = None):
+                 check: Callable[[str], dict] | None = None, check_template: str | None = None,
+                 full_oracle: bool = False):
         if policy not in POLICIES:
             raise ValueError(f"policy must be one of {POLICIES}, not {policy!r}")
         if owner_items is None and default_owner_item is None:
@@ -1477,6 +1478,7 @@ class Owner:
         self.oracle, self.brief, self.policy, self.replicate, self.ask, self.trim = oracle, brief, policy, replicate, ask, trim
         self.touch = touch
         self.only_change = only_change  # a fork's owner: the start and the change being run, and nothing else
+        self.full_oracle = full_oracle  # a reference build's owner: every row by its lifetime, symptom rows included
         self.check = check  # the completion check: does a "completion" report the change done, or announce work?
         self.check_template = check_template
         self.touch_template = touch_template if touch_template is not None else TOUCH_TEMPLATE_PATH.read_text(encoding="utf-8")
@@ -1499,10 +1501,13 @@ class Owner:
         self.redirect_point: str | None = None
 
     @property
-    def realized(self) -> set[str]:
+    def realized(self) -> set[str] | None:
         """The symptom items this owner holds: those whose report was delivered on its trajectory, at a change it has
         run (its requests, which a fork inherits with the owner state) or the one under way. A symptom change whose
-        diagnostic passed never reaches the owner, so its items and its narrative section stay unknown."""
+        diagnostic passed never reaches the owner, so its items and its narrative section stay unknown. A reference
+        build's owner holds every row by its lifetime: None."""
+        if self.full_oracle:
+            return None
         delivered = {n for n, _ in self.requests}
         if self.change is not None and not self.change.probe:
             delivered.add(self.change.number)
