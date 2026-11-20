@@ -163,6 +163,19 @@ class InstrumentRunnerTest(unittest.TestCase):
         self.assertEqual(order, sorted(order))
 
 
+class IsolationTest(unittest.TestCase):
+    """Every growth session runs isolated, as Clowder's do: GitHub's hosts blocked, web search and fetch denied."""
+
+    def test_every_trajectory_and_fork_the_runner_queues_is_isolated(self):
+        for phase in ("trial", "full", "instrument"):
+            cmds = dry(phase)
+            sessions = [part for c in cmds for part in c.split(" && ")
+                        if "run_trajectory.py" in part or "run_course_forks.py" in part]
+            self.assertTrue(sessions, phase)
+            for part in sessions:
+                self.assertIn(" --isolate", part, (phase, part[:120]))
+
+
 class PacingTest(unittest.TestCase):
     """pace.sh: before each job, wait while the subscription's weekly usage is at or above USAGE_PAUSE, until it falls
     below USAGE_RESUME; with no reading, log once and carry on."""

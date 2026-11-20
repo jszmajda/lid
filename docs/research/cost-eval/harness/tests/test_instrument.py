@@ -625,6 +625,46 @@ class GrowthOwnerItemsTest(unittest.TestCase):
         self.assertEqual(ags.owner_item_gaps(o, items), ["RD-04: no tier or recall line", "RD-05: no recall line"])
 
 
+class GrowthIsolationTest(unittest.TestCase):
+    def test_a_growth_seeds_trajectory_is_isolated_even_without_the_flag(self):
+        import argparse
+        import run_trajectory as rt
+        from costeval import executor
+        iso = rt.isolation_from_args(argparse.Namespace(isolate=False, window="1m", seed="releasedesk-growth"))
+        self.assertEqual((iso.blocked_hosts, iso.denied_tools), (executor.GITHUB_HOSTS, executor.WEB_TOOLS))
+        self.assertEqual(rt.isolation_from_args(argparse.Namespace(isolate=False, window="1m", seed="benchtime")).blocked_hosts, ())
+
+    def test_graders_with_tools_cant_reach_github_or_the_web(self):
+        from costeval import executor
+        g = grading.Graders(image="img", roles_volume="roles", claude_code="2.1.323")
+        for role in (g.role(g.execute_model, tools=("Bash", "Read")), g.role(g.extraction_model, tools=("Bash",)),
+                     g.role(g.judge_model)):
+            cmd = " ".join(executor.role_command(role, container_name="x"))
+            self.assertIn("--add-host github.com:0.0.0.0", cmd)
+            self.assertIn("--disallowedTools WebFetch,WebSearch", cmd)
+
+    def test_a_growth_fork_is_isolated_by_default(self):
+        import run_course_forks as rcf
+        from costeval import executor
+        root = Path(tempfile.mkdtemp())
+        seed = seed_dir(root)
+        tid = "g-ref-correct"
+        (root / "runs" / tid).mkdir(parents=True)
+        (root / "runs" / tid / "trajectory.json").write_text(json.dumps(ref_meta(tid, "correct")))
+        (root / "runs" / tid / "owner-state-05.json").write_text(json.dumps(EMPTY_STATE))
+        ws, sessions = FakeWorkspace(), []
+        turns = FakeTurns(ws, ("Done.", None, ["src/app.py"]))
+        ask = FakeAsk(out("completion"))
+        deps = rcf.Deps(docker=lambda cmd, **kw: subprocess_ok(cmd), turn_for=lambda s: sessions.append(s) or turns,
+                        workspace_for=lambda image, vol: ws, ask=ask, touch=ask.touch, trim=None)
+        rcf.main(["--id", tid, "--kind", "reliance", "--course", "3", "--fork", "1", "--runs", str(root / "runs"),
+                  "--seed-dir", str(seed)], deps=deps)
+        self.assertEqual((sessions[0].isolation.blocked_hosts, sessions[0].isolation.denied_tools),
+                         (executor.GITHUB_HOSTS, executor.WEB_TOOLS))
+        meta = json.loads((root / "runs" / tid / "course-forks" / "c03-reliance-1" / "trajectory.json").read_text())
+        self.assertEqual(meta["isolation"]["denied_tools"], sorted(executor.WEB_TOOLS))
+
+
 class PlantRetiredTest(unittest.TestCase):
     def test_the_control_plants_every_row_retired_by_the_change(self):
         import plant_stale_tests as pst

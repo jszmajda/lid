@@ -138,7 +138,9 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def isolation_from_args(args) -> executor.Isolation:
-    if args.isolate:
+    """Isolated (GitHub's hosts blocked, web search and fetch denied) with --isolate, and always for a growth seed
+    (a name ending -growth), whose rules the public repository must not give away."""
+    if args.isolate or str(getattr(args, "seed", "")).endswith("-growth"):
         return executor.Isolation.for_public_seed(window=args.window)
     return executor.Isolation(window=args.window)
 

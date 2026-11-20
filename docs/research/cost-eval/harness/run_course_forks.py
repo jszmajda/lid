@@ -88,6 +88,8 @@ def main(argv=None, *, deps: Deps | None = None) -> int:
     ap.add_argument("--seed-dir", type=Path, help="default: ../seeds/<the trajectory's seed>")
     ap.add_argument("--lid-repo", type=Path, default=None)
     ap.add_argument("--discard", action="store_true", help="only remove the fork's volumes (after grading)")
+    ap.add_argument("--isolate", action="store_true", help="isolated (the default): GitHub's hosts blocked, web tools denied")
+    ap.add_argument("--no-isolate", action="store_true", help="lift the isolation")
     args = ap.parse_args(argv)
     tag = f"{args.kind}{args.course:02d}"
     ws_vol, cfg_vol = f"ce-{args.id}-{tag}-{args.fork}-ws", f"ce-{args.id}-{tag}-{args.fork}-cfg"
@@ -163,7 +165,10 @@ def main(argv=None, *, deps: Deps | None = None) -> int:
     trajectory.restore_owner_state(owner, json.loads(state_path.read_text()))
     global LAST_OWNER
     LAST_OWNER = owner
-    isolation = executor.Isolation(window=(base.get("isolation") or {}).get("window", "1m"))
+    # a growth fork is isolated, as its trajectory is: GitHub's hosts blocked, web search and fetch denied
+    window = (base.get("isolation") or {}).get("window", "1m")
+    isolation = (executor.Isolation(window=window) if args.no_isolate
+                 else executor.Isolation.for_public_seed(window=window))
     session = executor.ContainerSession(image=IMAGE, workspace_volume=ws_vol, config_volume=cfg_vol, model=base["model"],
                                         claude_code_version=CLAUDE_CODE, expected_plugins=frozenset(arm.plugins),
                                         effort=base["effort"], plugin_dirs=arm.plugin_dirs, isolation=isolation)

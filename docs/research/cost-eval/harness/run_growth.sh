@@ -16,6 +16,8 @@
 # trajectory, and three (FORKS) from the first replicate of each arm (FORK_REPLICATES). That first replicate also forks
 # every course change three times from the snapshot before it. The checkpoint that follows grades each fork (the
 # reliance outcome, or flips and the stale-intent audit) and discards it.
+# Isolation: every session (trajectories, R+ and its stale forks, course and reliance forks) runs with GitHub's hosts
+# blocked and web search and fetch denied (--isolate), and so do the graders that have tools.
 # Pacing (pace.sh): before each batch, fork, and grading with work left (pending.py), the job waits while the
 # subscription's weekly usage is at or above USAGE_PAUSE (90%) until it falls below USAGE_RESUME (50%); a job with
 # nothing left is skipped without waiting, and a running job is never interrupted. Resumable: run_trajectory skips recorded changes (a trial trajectory carries on to
@@ -72,7 +74,7 @@ batches() {  # a trajectory's changes in batches ending at each checkpoint, with
     [ "$end" -gt "$upto" ] && break
     list=$from; i=$from
     while [ $i -lt $end ]; do i=$((i + 1)); list="$list,$i"; done
-    cmd="if $PY pending.py batch --id $id --changes $list; then $PACE && $PY run_trajectory.py --arm $arm --seed $SEED --id $id --replicate $rep --policy $policy --owner-model-config central --changes $list >> $LOG/$id.log 2>&1; fi"
+    cmd="if $PY pending.py batch --id $id --changes $list; then $PACE && $PY run_trajectory.py --arm $arm --seed $SEED --id $id --replicate $rep --policy $policy --owner-model-config central --isolate --changes $list >> $LOG/$id.log 2>&1; fi"
     out="${out:+$out && }$cmd"
     from=$((end + 1))
   done
@@ -106,7 +108,7 @@ grow() {  # phase, last change, checkpoints
       for c in $courses; do  # course forks: the course change, from the snapshot just before it
         f=1
         while [ $f -le "$FORKS" ]; do
-          echo "if $PY pending.py fork --id $id --kind course --course $c --fork $f; then $PACE && $PY run_course_forks.py --id $id --kind course --course $c --fork $f > $LOG/$id-course$c-$f.log 2>&1; fi"
+          echo "if $PY pending.py fork --id $id --kind course --course $c --fork $f; then $PACE && $PY run_course_forks.py --id $id --kind course --course $c --fork $f --isolate > $LOG/$id-course$c-$f.log 2>&1; fi"
           f=$((f + 1))
         done
       done
@@ -115,7 +117,7 @@ grow() {  # phase, last change, checkpoints
       n=1; [ $first = yes ] && n=$FORKS
       f=1
       while [ $f -le "$n" ]; do
-        echo "if $PY pending.py fork --id $id --kind reliance --course $c --fork $f; then $PACE && $PY run_course_forks.py --id $id --kind reliance --course $c --fork $f > $LOG/$id-reliance$c-$f.log 2>&1; fi"
+        echo "if $PY pending.py fork --id $id --kind reliance --course $c --fork $f; then $PACE && $PY run_course_forks.py --id $id --kind reliance --course $c --fork $f --isolate > $LOG/$id-reliance$c-$f.log 2>&1; fi"
         f=$((f + 1))
       done
     done
@@ -144,12 +146,12 @@ instrument() {  # R+, the stale forks, their reliance forks, the spec's gradings
     id=g-ref-stale-c$(printf %02d "$c")
     list=$c; i=$c
     while [ $i -lt $((c + lag)) ]; do i=$((i + 1)); list="$list,$i"; done
-    echo "if $PY pending.py batch --id $id --changes $list; then $PACE && $PY run_trajectory.py --arm ref-stale --seed $SEED --id $id --replicate g-ref --policy diligent --owner-model-config central --stale-of $c --fork-of g-ref-correct --changes $list >> $LOG/$id.log 2>&1; fi"
+    echo "if $PY pending.py batch --id $id --changes $list; then $PACE && $PY run_trajectory.py --arm ref-stale --seed $SEED --id $id --replicate g-ref --policy diligent --owner-model-config central --stale-of $c --fork-of g-ref-correct --isolate --changes $list >> $LOG/$id.log 2>&1; fi"
   done | run_queue "$JOBS"
   for f in $forks; do  # each reference's reliance fork after C+lag
     c=${f%%:*}
     for id in g-ref-correct g-ref-stale-c$(printf %02d "$c"); do
-      echo "if $PY pending.py fork --id $id --kind reliance --course $c --fork 1; then $PACE && $PY run_course_forks.py --id $id --kind reliance --course $c --fork 1 > $LOG/$id-reliance$c-1.log 2>&1; fi"
+      echo "if $PY pending.py fork --id $id --kind reliance --course $c --fork 1; then $PACE && $PY run_course_forks.py --id $id --kind reliance --course $c --fork 1 --isolate > $LOG/$id-reliance$c-1.log 2>&1; fi"
     done
   done | run_queue "$JOBS"
   {

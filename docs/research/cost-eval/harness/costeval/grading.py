@@ -493,8 +493,11 @@ class Graders:
     execute_model: str = "claude-haiku-5-5"
     judge_model: str = "claude-sonnet-5-5"
     effort: str = "medium"
+    # Graders with Bash could reach the web from the build's container: GitHub's hosts blocked, web tools denied
+    isolation: executor.Isolation = field(default_factory=executor.Isolation.for_public_seed)
 
     def role(self, model: str, **kw) -> executor.RoleSession:
+        kw.setdefault("isolation", self.isolation)
         return executor.RoleSession(image=self.image, config_volume=self.roles_volume, model=model,
                                     claude_code_version=self.claude_code, effort=self.effort, **kw)
 
