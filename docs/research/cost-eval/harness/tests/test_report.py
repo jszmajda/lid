@@ -257,7 +257,11 @@ class GrowthReportTest(unittest.TestCase):
         repair("g-bare-1", "BK-02", True, 0.5)
         repair("g-bare-1", "BK-03", False, 1.5, broken=["BK-01"])
         repair("g-lid-full-1", "BK-03", True, 0.8)
-        r = report.growth_report(runs, seed, "g", {"bare": ["1"], "lid-full": ["1"], "checklist": ["1"]}, [2])
+        # a repair set aside by a redo (graded on probes since revised) is no longer one of the run's repairs
+        write(runs / "g-lid-full-1" / "repair-forks" / "c02-BK-03.v3" / "repair.json",
+              {"item": "BK-03", "fixed": False, "agent_cost_usd": 9.0, "keeping": {"broken": ["BK-01"]}})
+        r = report.growth_report(runs, seed, "g", {"bare": ["1"], "lid-full": ["1"], "checklist": ["1"]}, [2],
+                                 notes=["The instrument gate validated probes version 3."])
         bare = r["repairs"]["bare"][0]
         self.assertEqual((bare["missed"], bare["graded"], bare["fixed"]), (["BK-02", "BK-03"], 2, 1))
         self.assertEqual((bare["fix_cost_mean"], bare["fix_cost_median"], bare["breaks"], bare["forks_breaking"]),
@@ -274,6 +278,7 @@ class GrowthReportTest(unittest.TestCase):
         self.assertIn("| lid-full | 2 | 1 | 1 | $0.80 | $9.00 | $6.00 | $1.20 |", text)
         self.assertIn("| checklist | 2 | 0 | 0 | $0.00 | $3.00 | $0.00 | $2.00 |", text)
         self.assertIn("full regrade", text)
+        self.assertIn("- The instrument gate validated probes version 3.", text.split("## Change", 1)[0])  # a definitions note
         # the checklist arm is in every table bare and LID are in
         change_table = text.split("## Change 2", 1)[1].split("\n## ", 1)[0]
         for arm in ("bare", "lid-full", "checklist"):

@@ -48,3 +48,5 @@ The private record of each step is in `hidden/`.
 | 3 | 2026-11-20 | `hidden/probes.md` | `881d2700c793c515c281077a72e5ce32c975adeb3d495f8e3d38b84d74c7bb5f` |
 | 3 | 2026-11-20 | `hidden/probes-growth.md` | `a36ed04a9698f3997500bbdb75c1f8b49bc284c2b285ad117cc9e9b0efe5856b` |
 | 2 | 2026-11-20 | `hidden/reference-builds.json` | `4ad6d0028cdd84dffb32d62ee1ec7b906ebca9f629682ca85af12d34eff214b3` |
+| 4 | 2026-11-21 | `hidden/probes.md` | `f25c0948e1e9c325ab26d512104ecbef66db97369cc5be1f27be10d80cd2a623` |
+| 4 | 2026-11-21 | `hidden/probes-growth.md` | `223235537d3ffe956da9ded9e6fae909d312ef6a3afc0d204c3a0569b0601f77` |

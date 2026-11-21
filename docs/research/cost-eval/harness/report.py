@@ -470,7 +470,8 @@ def repair_rows(run: Path, oracle: simulator.Oracle, probes: list[grading.Probe]
             continue
         missed = repair.latent_misses(items, oracle)
         recs = [x for p in sorted((run / "repair-forks").glob(f"c{c:02d}-*/repair.json"))
-                if (x := json.loads(p.read_text())).get("item") in missed]
+                if re.fullmatch(rf"c{c:02d}-[A-Z]+-\d+[a-z]?", p.parent.name)  # never a folder a redo set aside
+                and (x := json.loads(p.read_text())).get("item") in missed]
         fixed = [x for x in recs if x.get("fixed")]
         costs = [x["agent_cost_usd"] for x in fixed if x.get("agent_cost_usd") is not None]
         broken = [len((x.get("keeping") or {}).get("broken") or []) for x in recs]
@@ -509,7 +510,7 @@ def break_even(repairs: dict[str, list[dict]], costs: dict[tuple[str, int], floa
 
 
 def growth_report(runs: Path, seed_dir: Path, prefix: str, arms: dict[str, list[str]], checkpoints: list[int],
-                  reference: str | None = None) -> dict:
+                  reference: str | None = None, notes: list[str] = ()) -> dict:
     """The growth test per trajectory and checkpoint (design.md, "The growth test"). Trajectories are
     <prefix>-<arm>-<k>; a replicate k that isn't a number (the drift floor, g-bare-drift) is its own row and joins no
     replicate's intersection. `reference` is R+'s trajectory (default <prefix>-ref-correct), whose reliance forks are
@@ -538,7 +539,7 @@ def growth_report(runs: Path, seed_dir: Path, prefix: str, arms: dict[str, list[
 
     out = {"prefix": prefix, "checkpoints": checkpoints, "arms": {}, "reliance_by_course": {}, "reliance_spot_checks": [],
            "rot": {}, "rot_reference_id": reference or f"{prefix}-ref-correct", "rot_reference": {}, "repairs": {},
-           "break_even": []}
+           "break_even": [], "notes": list(notes)}
     agent_to: dict[tuple[str, int], float] = {}  # (trajectory, checkpoint) -> agent cost through it
     replicate_of: dict[str, str] = {}
     ref_run = runs / out["rot_reference_id"]
@@ -653,7 +654,8 @@ def render_growth(r: dict) -> str:
              "- Owner-hours at 238 words a minute; fidelity per owner-hour and per dollar count items met.",
              "- A row realized on a symptom is graded in force from its change, as the oracle's lifetime says, whether "
              "or not its report fired; the owner holds it only once the report was delivered. Symptom reports: the "
-             "scheduled reports that fired by each checkpoint, and the rows graded though their report never fired.", ""]
+             "scheduled reports that fired by each checkpoint, and the rows graded though their report never fired.",
+             *[f"- {n}" for n in r.get("notes") or []], ""]
     for c in r["checkpoints"]:
         lines += [f"## Change {c}", "", "| Arm | Stated | Latent | Latent disclosed in every arm | Keeping | Displaced-rule rate | "
                   "Flips behaving | Anticipated | Course forks behaving | Stale files (forks) | Cost per change | Owner-hours | "
@@ -971,6 +973,7 @@ def main(argv=None) -> int:
         ap.add_argument("--arms", nargs="+", required=True, help="arm:k1,k2 (run ids are <prefix>-<arm>-<k>)")
         ap.add_argument("--checkpoints", default="10,20,30,40")
         ap.add_argument("--reference", help="R+'s trajectory, for working around rot (default <prefix>-ref-correct)")
+        ap.add_argument("--note", action="append", default=[], help="a line added to the report's definitions")
         ap.add_argument("--out", required=True)
         args = ap.parse_args(argv)
         arms: dict[str, list[str]] = {}
@@ -978,7 +981,7 @@ def main(argv=None) -> int:
             name, ks = a.split(":")
             arms.setdefault(name, []).extend(ks.split(","))
         r = growth_report(HERE.parent / "runs", HERE.parent / "seeds" / args.seed, args.prefix, arms,
-                          [int(x) for x in args.checkpoints.split(",")], reference=args.reference)
+                          [int(x) for x in args.checkpoints.split(",")], reference=args.reference, notes=args.note)
         out = Path(args.out)
         out.write_text(render_growth(r), encoding="utf-8")
         out.with_suffix(".json").write_text(json.dumps(r, indent=1), encoding="utf-8")
