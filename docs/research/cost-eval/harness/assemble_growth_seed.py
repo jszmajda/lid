@@ -11,7 +11,7 @@ own tools merge them (hidden/prompts-growth/split_growth.py's merged_oracle; bui
 - hidden/owner-items.json: block 1's, with the growth rows' salience tiers and recall lines merged in from
   salience-growth/hidden/salience/: the current round, round 2 for the rows the current round didn't rate again,
   and round 1 for the rows it rated (a later round wins). Nothing is invented: a row no round gave a tier or line is a gap that --check lists;
-- hidden/stale-audit-terms.json and reference-builds.json: as they are;
+- hidden/stale-audit-terms.json, reference-builds.json and repair-reports.json (when written): as they are;
 - grading-notes.md: ReleaseDesk's, which the interface extraction reads, with hidden/grading-notes-growth.md's notes
   (from its first bold paragraph on) appended;
 - hidden/assembled.json: each source file and its SHA-256.
@@ -39,7 +39,7 @@ from costeval import grading, reference, simulator  # noqa: E402
 
 SRC = HERE.parent / "seeds" / "releasedesk"
 DEST = HERE.parent / "seeds" / "releasedesk-growth"
-COPIED = ("stale-audit-terms.json", "reference-builds.json")
+COPIED = ("stale-audit-terms.json", "reference-builds.json", "repair-reports.json")
 SALIENCE = SRC / "hidden" / "salience-growth" / "hidden" / "salience"
 GROWTH_NOTES = "grading-notes-growth.md"  # private notes for the growth changes, appended to the public ones
 

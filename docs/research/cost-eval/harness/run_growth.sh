@@ -5,6 +5,11 @@
 #   trial   bare-1 and lid-full-1 through change 20, their course-change forks, and checkpoints at 10 and 20
 #   full    bare-1..5, the drift floor (g-bare-drift, on bare-1's replicate seed), lid-full-1..5 and
 #           bare-one-line-1..3 through change 40, the course-change forks, and checkpoints at 10, 20, 30 and 40
+#   m2e     the checklist arm (plan.md, M2e; landscape.md, "The checklist arm"): checklist-1 on replicate g-r1
+#           through change 20, with the trial's replicate-1 forks and its checkpoints at 10 and 20
+#   repairs repair forks (plan.md, M2e; run_repair_forks.py): for each latent item a checkpoint's grading of
+#           REPAIR_IDS (bare-1, lid-full-1, checklist-1) has as not met, at REPAIR_CHECKPOINTS (10 and 20), one fork
+#           from that checkpoint's snapshot opened by the owner's repair report, then regraded in full
 #   instrument  the instrument gate (design.md, "The trial, and its gate"), as the seed's reference-builds.md says
 #           it (costeval/reference.py; arms ref-correct and ref-stale, never study arms): R+ (g-ref-correct) through
 #           change 40; a stale fork S_C (g-ref-stale-cNN) per course change, from R+ after C-1 through C+lag; each
@@ -33,11 +38,13 @@ JOBS=${JOBS:-2}
 FORKS=${FORKS:-3}
 FORK_REPLICATES=${FORK_REPLICATES:-1}
 LOG=$RUNS/growth
+REPAIR_IDS=${REPAIR_IDS:-"g-bare-1 g-lid-full-1 g-checklist-1"}
+REPAIR_CHECKPOINTS=${REPAIR_CHECKPOINTS:-"10 20"}
 export PACE_LOG=${PACE_LOG:-$LOG/pacing.log} PACE_MARK=${PACE_MARK:-$LOG/.pacing-unread}
 PACE="sh pace.sh"
 
 usage() {
-  echo "usage: sh run_growth.sh trial | full | instrument" >&2
+  echo "usage: sh run_growth.sh trial | m2e | repairs | full | instrument" >&2
   exit 2
 }
 
@@ -84,6 +91,7 @@ batches() {  # a trajectory's changes in batches ending at each checkpoint, with
 trajectories() {  # id arm replicate, one per line, for a phase
   case "$1" in
     trial) printf '%s\n' "g-bare-1 bare g-r1" "g-lid-full-1 lid-full g-r1" ;;
+    m2e) echo "g-checklist-1 checklist g-r1" ;;
     full)
       for k in 1 2 3 4 5; do echo "g-bare-$k bare g-r$k"; done
       echo "g-bare-drift bare g-r1"
@@ -126,6 +134,16 @@ grow() {  # phase, last change, checkpoints
     for c in $checkpoints; do
       echo "if $PY pending.py checkpoint --id $id --change $c; then $PACE && $PY growth_checkpoint.py --id $id --change $c > $LOG/$id-checkpoint-$c.log 2>&1; fi"
     done
+  done | run_queue "$JOBS"
+}
+
+repairs() {  # one repair fork per latent miss of each run at each checkpoint, run then regraded in the same job
+  mkdir -p "$LOG"
+  rm -f "$PACE_MARK"
+  # shellcheck disable=SC2086
+  $PY run_repair_forks.py plan --ids $REPAIR_IDS --checkpoints $REPAIR_CHECKPOINTS --runs "$RUNS" --seed-dir "$SEED_DIR" |
+  while read -r id at item; do
+    echo "if $PY pending.py repair --id $id --at $at --item $item; then $PACE && $PY run_repair_forks.py run --id $id --at $at --item $item --isolate > $LOG/$id-repair$at-$item.log 2>&1 && $PY run_repair_forks.py grade --id $id --at $at --item $item >> $LOG/$id-repair$at-$item.log 2>&1; fi"
   done | run_queue "$JOBS"
 }
 
@@ -173,6 +191,8 @@ instrument() {  # R+, the stale forks, their reliance forks, the spec's gradings
 
 case "$1" in
   trial) grow trial 20 "10 20"; echo "trial done" ;;
+  m2e) grow m2e 20 "10 20"; echo "m2e done" ;;
+  repairs) repairs; echo "repairs done" ;;
   instrument) instrument; echo "instrument done" ;;
   full) grow full 40 "10 20 30 40"; echo "full run done" ;;
   *) usage ;;

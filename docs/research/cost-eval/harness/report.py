@@ -28,7 +28,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
-from costeval import grading, growth, rot_cost, rust_grading, simulator  # noqa: E402
+from costeval import grading, growth, repair, rot_cost, rust_grading, simulator  # noqa: E402
 
 KINDS = ("stated", "askable", "recognized on sight", "emerging")
 
@@ -460,6 +460,54 @@ def rot_records(runs: Path, run: Path, checkpoints: list[int], reference: Path) 
     return rel, course
 
 
+def repair_rows(run: Path, oracle: simulator.Oracle, probes: list[grading.Probe], checkpoints: list[int]) -> list[dict]:
+    """Repair forks (run_repair_forks.py) per checkpoint: the latent items its grading has as not met, the forks graded
+    for them, how many fixed their item, the cost of each fix, the keeping breaks, and the cost of every repair."""
+    rows = []
+    for c in checkpoints:
+        items = repair.item_verdicts(run / "grading" / f"change-{c:02d}", probes)
+        if items is None:
+            continue
+        missed = repair.latent_misses(items, oracle)
+        recs = [x for p in sorted((run / "repair-forks").glob(f"c{c:02d}-*/repair.json"))
+                if (x := json.loads(p.read_text())).get("item") in missed]
+        fixed = [x for x in recs if x.get("fixed")]
+        costs = [x["agent_cost_usd"] for x in fixed if x.get("agent_cost_usd") is not None]
+        broken = [len((x.get("keeping") or {}).get("broken") or []) for x in recs]
+        rows.append({"id": run.name, "checkpoint": c, "missed": missed, "graded": len(recs), "fixed": len(fixed),
+                     "decided": sum(x.get("fixed") is not None for x in recs),
+                     "fix_cost_mean": mean(costs), "fix_cost_median": st.median(costs) if costs else None,
+                     "breaks": sum(broken), "forks_breaking": sum(b > 0 for b in broken),
+                     "repair_cost": round(sum(x.get("agent_cost_usd") or 0 for x in recs), 4),
+                     "regrade": sorted({x.get("regrade") or "?" for x in recs}),
+                     "forks": [{k: x.get(k) for k in ("run", "item", "kind", "fixed", "agent_cost_usd", "keeping")}
+                               for x in recs]})
+    return rows
+
+
+def break_even(repairs: dict[str, list[dict]], costs: dict[tuple[str, int], float], replicate: dict[str, str]) -> list[dict]:
+    """Per arm and checkpoint: the cost of repairing all its misses against its agent cost to the checkpoint, its
+    premium over bare's (the same replicate), and bare's repair cost less its own."""
+    out = []
+    for label, rows in repairs.items():
+        for row in rows:
+            k = replicate.get(row["id"])
+            bare_id = next((i for i, kk in replicate.items() if kk == k and i.endswith(f"-bare-{k}")), None) if k else None
+            bare = next((x for x in repairs.get("bare", []) if x["id"] == bare_id and x["checkpoint"] == row["checkpoint"]),
+                        None)
+            own = costs.get((row["id"], row["checkpoint"]))
+            base = costs.get((bare_id, row["checkpoint"])) if bare_id else None
+            is_bare = row["id"] == bare_id
+            out.append({"arm": label, "id": row["id"], "checkpoint": row["checkpoint"], "misses": len(row["missed"]),
+                        "graded": row["graded"], "fixed": row["fixed"], "repair_cost": row["repair_cost"],
+                        "cost_to_checkpoint": own,
+                        "premium": None if is_bare or own is None or base is None else round(own - base, 4),
+                        # only once both sides have repaired every miss: a partial sum would understate one side
+                        "bare_repair_less": None if is_bare or bare is None or bare["graded"] < len(bare["missed"])
+                        or row["graded"] < len(row["missed"]) else round(bare["repair_cost"] - row["repair_cost"], 4)})
+    return out
+
+
 def growth_report(runs: Path, seed_dir: Path, prefix: str, arms: dict[str, list[str]], checkpoints: list[int],
                   reference: str | None = None) -> dict:
     """The growth test per trajectory and checkpoint (design.md, "The growth test"). Trajectories are
@@ -489,7 +537,10 @@ def growth_report(runs: Path, seed_dir: Path, prefix: str, arms: dict[str, list[
         return disclosed[key][max(known)] if known else set()
 
     out = {"prefix": prefix, "checkpoints": checkpoints, "arms": {}, "reliance_by_course": {}, "reliance_spot_checks": [],
-           "rot": {}, "rot_reference_id": reference or f"{prefix}-ref-correct", "rot_reference": {}}
+           "rot": {}, "rot_reference_id": reference or f"{prefix}-ref-correct", "rot_reference": {}, "repairs": {},
+           "break_even": []}
+    agent_to: dict[tuple[str, int], float] = {}  # (trajectory, checkpoint) -> agent cost through it
+    replicate_of: dict[str, str] = {}
     ref_run = runs / out["rot_reference_id"]
     rot: dict[str, dict[str, list]] = {}
     seen_forks: set[str] = set()
@@ -550,6 +601,12 @@ def growth_report(runs: Path, seed_dir: Path, prefix: str, arms: dict[str, list[
                     out["reliance_spot_checks"].append(row.get("run"))
         label = arm if k.isdigit() else f"{arm} ({k})"
         out["arms"].setdefault(label, []).append({"id": run.name, "replicate": k, "checkpoints": rows})
+        replicate_of[run.name] = k if k.isdigit() else None
+        for c in checkpoints:
+            agent_to[(run.name, c)] = round(sum(x["agent_usd"] for n, x in s["changes"].items() if n <= c), 4)
+        reps = repair_rows(run, oracle, probes, checkpoints)
+        if reps:
+            out["repairs"].setdefault(label, []).extend(reps)
         rel_recs, course_recs = rot_records(runs, run, checkpoints, ref_run)
         rot.setdefault(label, {"reliance": [], "course": []})
         rot[label]["reliance"] += rel_recs
@@ -560,6 +617,7 @@ def growth_report(runs: Path, seed_dir: Path, prefix: str, arms: dict[str, list[
                 "reliance": {cut: rot_cost.groups(x["reliance"], rot_cost.RELIANCE_OUTCOMES, cut) for cut in rot_cost.CUTS},
                 "course": {cut: rot_cost.groups(x["course"], rot_cost.COURSE_OUTCOMES, cut) for cut in rot_cost.CUTS},
                 "forks": x["reliance"] + x["course"]}
+    out["break_even"] = break_even(out["repairs"], agent_to, replicate_of)
     for course in sorted({rec["course"] for x in rot.values() for rec in x["reliance"]}):
         m = rot_cost.measures(ref_run / "course-forks" / f"c{course:02d}-reliance-1")
         if m:
@@ -650,9 +708,47 @@ def render_growth(r: dict) -> str:
     if r.get("reliance_spot_checks"):
         lines += ["## Reliance forks to spot-check", "", "Each met both frozen outcomes, which can't both hold.", ""]
         lines += [f"- {run}" for run in r["reliance_spot_checks"]] + [""]
+    if r.get("repairs"):
+        lines += render_repairs(r)
     if r.get("rot"):
         lines += render_rot(r)
     return "\n".join(lines)
+
+
+def render_repairs(r: dict) -> list[str]:
+    """The "Repair forks" section of the growth report, with the break-even comparison."""
+    money = lambda x: f"${x:.2f}" if x is not None else "–"  # noqa: E731
+    regrades = sorted({g for rows in r["repairs"].values() for row in rows for g in row["regrade"]})
+    lines = ["## Repair forks", "",
+             "For each latent item (any kind but stated) a checkpoint's grading has as not met, one fork from that "
+             "checkpoint's snapshot, with the trajectory's owner as it stood there, opened by the owner's repair report "
+             "for the item (run_repair_forks.py). An item the grader couldn't exercise isn't counted as missed.", "",
+             f"- Each fork is graded again by a full regrade at the checkpoint's change: every probe in force there "
+             f"(recorded: {', '.join(regrades) or '–'}).",
+             "- Fixed: the item is met in that regrade. Share fixed: of the forks with a decided verdict for the item.",
+             "- Cost per fix: the agent cost of each fork that fixed its item.",
+             "- Keeping breaks: items met at the checkpoint and not met in the fork's regrade.",
+             "- Break-even: the agent cost of every repair fork at the checkpoint, fixed or not, against the arm's agent "
+             "cost to the checkpoint and its premium over bare on the same replicate. The arm's premium is paid back on "
+             "rework when bare's repair cost less the arm's is at least the premium; that difference is left blank until "
+             "both have repaired every miss. Agent costs only, on both sides; the simulated owner's cost is left out.", "",
+             "| Arm | Checkpoint | Missed | Repaired | Fixed | Share fixed | Cost per fix, mean | Cost per fix, median | "
+             "Keeping breaks |", "|---|---|---|---|---|---|---|---|---|"]
+    for arm, rows in r["repairs"].items():
+        for row in rows:
+            share = pct(row["fixed"] / row["decided"]) if row["decided"] else "–"
+            breaks = ("none" if not row["breaks"] else
+                      f"{row['breaks']} item{'s' if row['breaks'] != 1 else ''} in {row['forks_breaking']} of {row['graded']} forks")
+            lines.append(f"| {arm} | {row['checkpoint']} | {len(row['missed'])} | {row['graded']} | {row['fixed']} | {share} | "
+                         f"{money(row['fix_cost_mean'])} | {money(row['fix_cost_median'])} | {breaks} |")
+    lines += ["", "| Arm | Checkpoint | Misses | Fixed | Repair cost, all misses | Agent cost to checkpoint | Premium over bare | "
+              "Bare's repair cost less the arm's |", "|---|---|---|---|---|---|---|---|"]
+    for x in r["break_even"]:
+        cost = money(x["repair_cost"]) + (f" ({x['graded']} of {x['misses']} run)" if x["graded"] < x["misses"] else "")
+        lines.append(f"| {x['arm']} | {x['checkpoint']} | {x['misses']} | {x['fixed']} | {cost} | "
+                     f"{money(x['cost_to_checkpoint'])} | {money(x['premium'])} | {money(x['bare_repair_less'])} |")
+    lines.append("")
+    return lines
 
 
 DIDNT = rot_cost.COURSE_OUTCOMES[False]
@@ -867,7 +963,7 @@ def main(argv=None) -> int:
         out.with_suffix(".json").write_text(json.dumps(r, indent=1), encoding="utf-8")
         print(out.read_text())
         return 0
-    if "--growth" in argv:  # report.py --growth --prefix g --seed releasedesk --arms bare:1,2 lid-full:1,2 --checkpoints 10,20
+    if "--growth" in argv:  # report.py --growth --prefix g --seed releasedesk-growth --arms bare:1 lid-full:1 checklist:1 --checkpoints 10,20
         ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
         ap.add_argument("--growth", action="store_true")
         ap.add_argument("--prefix", default="g")

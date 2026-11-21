@@ -80,9 +80,9 @@ def lineage_owner(runs: Path, tid: str, change: int) -> tuple[str, str] | None:
     itself where the change is its own, else its parent's (a course or reliance fork's earlier changes, or a forked
     trajectory's changes up to the one it was forked after)."""
     meta = _meta(runs, tid)
-    if meta.get("kind") in ("course", "reliance"):  # a fork of one change (run_course_forks.py)
+    if meta.get("kind") in ("course", "reliance", "repair"):  # a fork of one change (run_course_forks.py, run_repair_forks.py)
         if change == meta.get("change"):
-            key = "reliance" if meta["kind"] == "reliance" else str(change)
+            key = str(change) if meta["kind"] == "course" else meta["kind"]
             commit = (meta.get("changes", {}).get(key) or {}).get("commit")
             return (tid, commit) if commit else None
         return lineage_owner(runs, meta["fork_of"], change)

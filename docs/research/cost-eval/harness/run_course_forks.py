@@ -73,8 +73,16 @@ LAST_OWNER = None  # the last fork's owner, for tests to inspect
 def recorded(runs: Path, trajectory_id: str, kind: str, course: int, fork: int | str) -> bool:
     """Whether this fork has run to its record (a fork that stopped partway hasn't)."""
     meta_path = runs / trajectory_id / "course-forks" / f"c{course:02d}-{kind}-{fork}" / "trajectory.json"
-    key = str(course) if kind == "course" else "reliance"
+    return has_change(meta_path, str(course) if kind == "course" else "reliance")
+
+
+def has_change(meta_path: Path, key: str) -> bool:
     return meta_path.exists() and key in json.loads(meta_path.read_text()).get("changes", {})
+
+
+def fork_volumes(trajectory_id: str, tag: str, fork: int | str) -> tuple[str, str]:
+    """A fork's workspace and configuration volumes."""
+    return f"ce-{trajectory_id}-{tag}-{fork}-ws", f"ce-{trajectory_id}-{tag}-{fork}-cfg"
 
 
 def main(argv=None, *, deps: Deps | None = None) -> int:
@@ -92,7 +100,7 @@ def main(argv=None, *, deps: Deps | None = None) -> int:
     ap.add_argument("--no-isolate", action="store_true", help="lift the isolation")
     args = ap.parse_args(argv)
     tag = f"{args.kind}{args.course:02d}"
-    ws_vol, cfg_vol = f"ce-{args.id}-{tag}-{args.fork}-ws", f"ce-{args.id}-{tag}-{args.fork}-cfg"
+    ws_vol, cfg_vol = fork_volumes(args.id, tag, args.fork)
     if args.discard:
         deps.docker(["docker", "volume", "rm", "-f", ws_vol, cfg_vol], capture_output=True, text=True)
         return 0
@@ -116,16 +124,34 @@ def main(argv=None, *, deps: Deps | None = None) -> int:
             return 2
         change, key = growth.reliance_change(script, args.course), "reliance"
         at = change.number
+    reliance = args.kind == "reliance"
+    return run_fork(deps, runs=args.runs, trajectory_id=args.id, kind=args.kind, change=change, at=at, key=key,
+                    folder="course-forks", name=f"c{args.course:02d}-{args.kind}-{args.fork}", tag=tag, fork=args.fork,
+                    seed_dir=seed_dir, lid_repo=args.lid_repo, no_isolate=args.no_isolate,
+                    meta_extra={"course": args.course, "at": at if reliance else None,
+                                "lag": c.reliance_request.lag if reliance else None})
+
+
+def run_fork(deps: Deps, *, runs: Path, trajectory_id: str, kind: str, change: simulator.Change, at: int, key: str,
+             folder: str, name: str, tag: str, fork: int | str, seed_dir: Path | None = None, lid_repo: Path | None = None,
+             no_isolate: bool = False, meta_extra: dict | None = None, prepare_owner: Callable | None = None) -> int:
+    """Run one change (`change`, recorded under `key`) from the trajectory's snapshot and owner state after change
+    `at`, as the fork runs/<trajectory>/<folder>/<name>. A course or reliance fork comes from main(); a repair fork
+    (run_repair_forks.py) uses it too. prepare_owner, given, adjusts the restored owner before the change starts."""
+    base_dir = runs / trajectory_id
+    base = json.loads((base_dir / "trajectory.json").read_text())
+    seed_dir = seed_dir or HERE.parent / "seeds" / base["seed"]
+    script_path = seed_dir / "hidden" / "change-script.md"
+    ws_vol, cfg_vol = fork_volumes(trajectory_id, tag, fork)
     start = base["changes"].get(str(at), {}).get("commit") if at > 0 else base.get("start_commit")
     state_path = base_dir / f"owner-state-{at:02d}.json"
     if not start or not state_path.exists():
-        print(f"{args.id} has no snapshot or owner state after change {at}")
+        print(f"{trajectory_id} has no snapshot or owner state after change {at}")
         return 2
-    name = f"c{args.course:02d}-{args.kind}-{args.fork}"
-    fid = f"{args.id}/course-forks/{name}"
-    out = args.runs / fid
+    fid = f"{trajectory_id}/{folder}/{name}"
+    out = runs / fid
     meta_path = out / "trajectory.json"
-    if recorded(args.runs, args.id, args.kind, args.course, args.fork):
+    if has_change(meta_path, key):
         print(f"{fid} already recorded")
         return 0
     if meta_path.exists():
@@ -140,7 +166,7 @@ def main(argv=None, *, deps: Deps | None = None) -> int:
     if p.returncode != 0:
         raise RuntimeError(f"copying the snapshot failed: {(p.stderr or '')[-500:]}")
     if arm.lid_release:
-        repo = args.lid_repo or Path(subprocess.run(["git", "-C", str(HERE), "rev-parse", "--show-toplevel"],
+        repo = lid_repo or Path(subprocess.run(["git", "-C", str(HERE), "rev-parse", "--show-toplevel"],
                                                     capture_output=True, text=True, check=True).stdout.strip())
         deps.install_lid(IMAGE, cfg_vol, repo, arm.lid_release)
 
@@ -154,7 +180,7 @@ def main(argv=None, *, deps: Deps | None = None) -> int:
     ask, touch, trim, check = deps.ask, deps.touch, deps.trim, deps.check
     if ask is None:
         ask, touch, trim, check = _role_calls(base["owner_model"], costs)
-    replicate = f"{base['replicate']}-{tag}-fork-{args.fork}"
+    replicate = f"{base['replicate']}-{tag}-fork-{fork}"
     # a reference build's fork: its owner holds the reference's view, and its prompt states that view's rules
     stale_of = base.get("stale_of")
     view = reference.owner_view(oracle, spec, stale_of) if arm.reference else oracle
@@ -163,11 +189,13 @@ def main(argv=None, *, deps: Deps | None = None) -> int:
                             replicate=replicate, ask=ask, touch=touch, trim=trim, model=owner_model,
                             owner_items=owner_items, check=check, full_oracle=bool(arm.reference))
     trajectory.restore_owner_state(owner, json.loads(state_path.read_text()))
+    if prepare_owner is not None:
+        prepare_owner(owner, oracle)
     global LAST_OWNER
     LAST_OWNER = owner
     # a growth fork is isolated, as its trajectory is: GitHub's hosts blocked, web search and fetch denied
     window = (base.get("isolation") or {}).get("window", "1m")
-    isolation = (executor.Isolation(window=window) if args.no_isolate
+    isolation = (executor.Isolation(window=window) if no_isolate
                  else executor.Isolation.for_public_seed(window=window))
     session = executor.ContainerSession(image=IMAGE, workspace_volume=ws_vol, config_volume=cfg_vol, model=base["model"],
                                         claude_code_version=CLAUDE_CODE, expected_plugins=frozenset(arm.plugins),
@@ -178,9 +206,8 @@ def main(argv=None, *, deps: Deps | None = None) -> int:
         def turn(prompt, stream_path, *, resume=None, permission_mode="bypassPermissions"):
             return executor.run_turn(session, prompt, stream_path, resume=resume, permission_mode=permission_mode)
     workspace = (deps.workspace_for or trajectory.DockerWorkspace)(IMAGE, ws_vol)
-    meta = {"id": fid, "kind": args.kind, "fork_of": args.id, "course": args.course, "change": change.number,
-            "at": at if args.kind == "reliance" else None, "lag": c.reliance_request.lag if args.kind == "reliance" else None,
-            "fork": args.fork, "commit": start, "arm": arm.name, "seed": base["seed"], "model": base["model"],
+    meta = {"id": fid, "kind": kind, "fork_of": trajectory_id, **(meta_extra or {}), "change": change.number,
+            "fork": fork, "commit": start, "arm": arm.name, "seed": base["seed"], "model": base["model"],
             "effort": base["effort"], "policy": base["policy"], "owner_model": base["owner_model"], "replicate": replicate,
             "owner_model_config": asdict(owner_model), "isolation": isolation.record(), "lid_release": arm.lid_release,
             "round_cap": base.get("round_cap", trajectory.ROUND_CAP),
@@ -190,7 +217,7 @@ def main(argv=None, *, deps: Deps | None = None) -> int:
     meta_path.write_text(json.dumps(meta, indent=1))
     began = time.monotonic()
     res = trajectory.run_change(arm=arm, change=change, owner=owner, turn=turn, workspace=workspace,
-                                out_dir=out / f"change-{key}" if key == "reliance" else out / f"change-{change.number:02d}",
+                                out_dir=out / (f"change-{key}" if not key.isdigit() else f"change-{change.number:02d}"),
                                 round_cap=meta["round_cap"], rules=rules)
     agent_cost = sum((t["usage"] or {}).get("reported_cost_usd") or 0 for t in res.turns)
     meta["changes"][key] = {"title": res.title, "rounds": res.rounds, "finished": res.finished, "capped": res.capped,

@@ -32,8 +32,8 @@ CUTS = ("stale", "stale or mixed")
 
 
 def _change_dir(fork: Path, meta: dict) -> tuple[str, Path]:
-    if meta.get("kind") == "reliance":
-        return "reliance", fork / "change-reliance"
+    if meta.get("kind") in ("reliance", "repair"):  # a fork-only change, recorded under its kind
+        return meta["kind"], fork / f"change-{meta['kind']}"
     return str(meta["change"]), fork / f"change-{int(meta['change']):02d}"
 
 

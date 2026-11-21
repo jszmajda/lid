@@ -47,6 +47,31 @@ class OneLineArmTest(unittest.TestCase):
         self.assertEqual(text.strip(), "When a rule changes, update its tests and their names.")
 
 
+CHECKLIST = ("Before each change, write or update SPEC.md: the system's functional requirements, constraints, invariants, "
+             "negative requirements (what it must never do), edge cases, and tie-breaking rules. Before you write code, "
+             "ask the owner about anything the spec leaves unsettled. Update the spec before the code, and keep it current "
+             "as the system changes.")
+
+
+class ChecklistArmTest(unittest.TestCase):
+    def test_bare_with_the_landscapes_checklist_as_its_agents_md(self):
+        # landscape.md, "The checklist arm": exactly the quoted text, nothing else
+        arm = tj.load_arm("checklist")
+        bare = tj.load_arm("bare")
+        self.assertEqual(arm.name, "checklist")
+        self.assertEqual((arm.plugins, arm.lid_release, arm.first_turn_mode, arm.first_prompt_prefix),
+                         (bare.plugins, None, bare.first_turn_mode, bare.first_prompt_prefix))
+        self.assertEqual(list(arm.workspace_files), ["AGENTS.md"])
+        text = (tj.ARMS_DIR / arm.workspace_files["AGENTS.md"]).read_text()
+        self.assertEqual(text, CHECKLIST + "\n")
+
+    def test_the_text_is_the_one_landscape_md_quotes(self):
+        landscape = (Path(__file__).resolve().parents[2] / "landscape.md").read_text()
+        section = landscape.split("## The checklist arm", 1)[1].split("\n## ", 1)[0]
+        quoted = " ".join(line[1:].strip() for line in section.splitlines() if line.startswith(">"))
+        self.assertEqual(quoted, CHECKLIST)
+
+
 class CourseChangeFieldsTest(unittest.TestCase):
     def test_the_growth_fields_parse(self):
         s = sm.parse_change_script(script(

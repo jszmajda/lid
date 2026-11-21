@@ -1,0 +1,9 @@
+{
+  "name": "checklist",
+  "description": "Bare, plus an AGENTS.md at the repository root holding only the checklist in landscape.md, \"The checklist arm\": keep SPEC.md listing the system's functional requirements, constraints, invariants, negative requirements, edge cases and tie-breaking rules; ask the owner about anything it leaves unsettled; update it before the code. No design-doc hierarchy, spec links or phase stops (plan.md, M2e).",
+  "plugins": [],
+  "lid_release": null,
+  "workspace_files": {"AGENTS.md": "checklist-AGENTS.md"},
+  "first_turn_mode": "bypassPermissions",
+  "first_prompt_prefix": {}
+}

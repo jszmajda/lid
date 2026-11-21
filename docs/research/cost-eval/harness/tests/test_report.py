@@ -199,8 +199,8 @@ class GrowthReportTest(unittest.TestCase):
     replicate), keeping, reliance regressions, flip checks, the stale-intent audit, cost, owner time, and fidelity per
     owner-hour and per dollar."""
 
-    def traj(self, runs, tid, arm, verdicts_by_c, shared_by_change, words=2380):
-        changes = {str(n): {"agent_cost_usd": 1.0, "owner_cost_usd": 0.5, "rounds": 1} for n in range(3)}
+    def traj(self, runs, tid, arm, verdicts_by_c, shared_by_change, words=2380, agent=1.0):
+        changes = {str(n): {"agent_cost_usd": agent, "owner_cost_usd": 0.5, "rounds": 1} for n in range(3)}
         write(runs / tid / "trajectory.json", {"id": tid, "arm": arm, "replicate": "g-r1", "changes": changes})
         for n in range(3):
             write(runs / tid / f"change-{n:02d}" / "owner-00.json",
@@ -234,6 +234,60 @@ class GrowthReportTest(unittest.TestCase):
         self.assertIn("## Symptom reports", text)
         self.assertIn("| bare | 5 | 0/1 | BK-07 |", text)
         self.assertIn("graded in force from its change", text)
+
+    def test_repair_forks_per_arm_and_the_break_even_against_each_arms_premium_over_bare(self):
+        root = Path(tempfile.mkdtemp())
+        runs, seed = root / "runs", root / "seeds" / "bk"
+        write(seed / "hidden" / "oracle.md", ORACLE)
+        write(seed / "hidden" / "change-script.md", CHANGES)
+        write(seed / "hidden" / "probes.md", PROBES + "\n### BK-03\n\n#### P-BK03-a\n- **Applies:** from change 0\n"
+              "- **Setup:** S0\n- **Needs:** none\n- **Scenario:**\n  1. Look for last year's order.\n"
+              "- **Expected observation:** It is still there.\n")
+        self.traj(runs, "g-bare-1", "bare", {2: {"P-BK01-a": "met", "P-BK02-a": "not met", "P-BK03-a": "not met"}}, {})
+        self.traj(runs, "g-lid-full-1", "lid-full", {2: {"P-BK01-a": "met", "P-BK02-a": "met", "P-BK03-a": "not met"}}, {},
+                  agent=3.0)
+        self.traj(runs, "g-checklist-1", "checklist", {2: {"P-BK01-a": "met", "P-BK02-a": "met", "P-BK03-a": "met"}}, {})
+
+        def repair(tid, item, fixed, cost, broken=()):
+            write(runs / tid / "repair-forks" / f"c02-{item}" / "repair.json", {
+                "trajectory": tid, "run": f"{tid}/repair-forks/c02-{item}", "at": 2, "item": item, "kind": "askable",
+                "fixed": fixed, "regrade": "full", "agent_cost_usd": cost, "owner_cost_usd": 0.1,
+                "keeping": {"met_before": 1, "held": 1 - len(broken), "broken": list(broken), "undetermined": []},
+                "measures": {"agent_cost_usd": cost, "turns": 2, "model_calls": 9, "minutes": 3.0, "files_read": ["a.py"]}})
+        repair("g-bare-1", "BK-02", True, 0.5)
+        repair("g-bare-1", "BK-03", False, 1.5, broken=["BK-01"])
+        repair("g-lid-full-1", "BK-03", True, 0.8)
+        r = report.growth_report(runs, seed, "g", {"bare": ["1"], "lid-full": ["1"], "checklist": ["1"]}, [2])
+        bare = r["repairs"]["bare"][0]
+        self.assertEqual((bare["missed"], bare["graded"], bare["fixed"]), (["BK-02", "BK-03"], 2, 1))
+        self.assertEqual((bare["fix_cost_mean"], bare["fix_cost_median"], bare["breaks"], bare["forks_breaking"]),
+                         (0.5, 0.5, 1, 1))
+        lid = next(x for x in r["break_even"] if x["arm"] == "lid-full")
+        self.assertEqual((lid["repair_cost"], lid["cost_to_checkpoint"], lid["premium"], lid["bare_repair_less"]),
+                         (0.8, 9.0, 6.0, 1.2))
+        text = report.render_growth(r)
+        self.assertIn("## Repair forks", text)
+        self.assertIn("| bare | 2 | 2 | 2 | 1 | 50% | $0.50 | $0.50 | 1 item in 1 of 2 forks |", text)
+        self.assertIn("| lid-full | 2 | 1 | 1 | 1 | 100% | $0.80 | $0.80 | none |", text)
+        self.assertIn("| checklist | 2 | 0 | 0 | 0 | – | – | – | none |", text)
+        self.assertIn("| bare | 2 | 2 | 1 | $2.00 | $3.00 | – | – |", text)
+        self.assertIn("| lid-full | 2 | 1 | 1 | $0.80 | $9.00 | $6.00 | $1.20 |", text)
+        self.assertIn("| checklist | 2 | 0 | 0 | $0.00 | $3.00 | $0.00 | $2.00 |", text)
+        self.assertIn("full regrade", text)
+        # the checklist arm is in every table bare and LID are in
+        change_table = text.split("## Change 2", 1)[1].split("\n## ", 1)[0]
+        for arm in ("bare", "lid-full", "checklist"):
+            self.assertIn(f"| {arm} |", change_table)
+
+    def test_the_break_even_waits_until_both_sides_have_repaired_every_miss(self):
+        row = lambda tid, missed, graded, cost: {"id": tid, "checkpoint": 10, "missed": missed, "graded": graded,  # noqa: E731
+                                                 "fixed": graded, "repair_cost": cost}
+        costs = {("g-bare-1", 10): 3.0, ("g-lid-full-1", 10): 9.0}
+        replicate = {"g-bare-1": "1", "g-lid-full-1": "1"}
+        rows = report.break_even({"bare": [row("g-bare-1", ["A", "B"], 1, 0.5)], "lid-full": [row("g-lid-full-1", ["A"], 1, 0.4)]},
+                                 costs, replicate)
+        lid = next(x for x in rows if x["arm"] == "lid-full")
+        self.assertEqual((lid["premium"], lid["bare_repair_less"]), (6.0, None))  # bare's second miss not yet repaired
 
     def test_working_around_rot_per_arm_with_r_plus_as_a_clean_build_on_its_own_codebase(self):
         import test_rot_cost as rc

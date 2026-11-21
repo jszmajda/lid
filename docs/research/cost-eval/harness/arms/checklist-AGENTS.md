@@ -1,0 +1,1 @@
+Before each change, write or update SPEC.md: the system's functional requirements, constraints, invariants, negative requirements (what it must never do), edge cases, and tie-breaking rules. Before you write code, ask the owner about anything the spec leaves unsettled. Update the spec before the code, and keep it current as the system changes.

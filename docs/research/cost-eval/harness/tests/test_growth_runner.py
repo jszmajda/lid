@@ -55,12 +55,15 @@ SCRIPT = """# Change script
 """ + RELIANCE.format(lag=3)
 
 
-def dry(*args: str) -> list[str]:
+def dry(*args: str, runs: str | None = None, files: dict | None = None) -> list[str]:
     seed = Path(tempfile.mkdtemp())
     (seed / "hidden").mkdir()
     (seed / "hidden" / "change-script.md").write_text(SCRIPT)
     (seed / "hidden" / "reference-builds.json").write_text(json.dumps(SPEC))
-    env = {**os.environ, "DRY": "1", "RUNS": tempfile.mkdtemp(), "SEED_DIR": str(seed), "PY": sys.executable, "JOBS": "1"}
+    for name, text in (files or {}).items():
+        (seed / name).write_text(text)
+    env = {**os.environ, "DRY": "1", "RUNS": runs or tempfile.mkdtemp(), "SEED_DIR": str(seed), "PY": sys.executable,
+           "JOBS": "1"}
     p = subprocess.run(["sh", "run_growth.sh", *args], cwd=HARNESS, env=env, capture_output=True, text=True)
     assert p.returncode == 0, p.stderr
     return [l for l in p.stdout.splitlines() if ".py" in l]
@@ -117,6 +120,51 @@ class GrowthRunnerTest(unittest.TestCase):
         self.assertEqual(len(checks), 14 * 4)
 
 
+class M2eRunnerTest(unittest.TestCase):
+    def test_m2e_is_the_checklist_arm_on_replicate_1_through_change_20_with_the_trials_forks_and_checkpoints(self):
+        cmds = dry("m2e")
+        trajs = [c for c in cmds if "run_trajectory.py" in c]
+        self.assertEqual(len(trajs), 1)
+        for part in ("--arm checklist", "--id g-checklist-1", "--replicate g-r1", "--policy bounded --owner-model-config central",
+                     "--isolate", "--changes " + ",".join(str(n) for n in range(11)) + " ",
+                     "--changes " + ",".join(str(n) for n in range(11, 21)) + " "):
+            self.assertIn(part, trajs[0])
+        self.assertEqual(trajs[0].count("sh pace.sh"), 2)
+        forks = [c for c in cmds if "run_course_forks.py" in c]
+        self.assertTrue(all("--id g-checklist-1 " in c and " --isolate" in c for c in forks))
+        # as the trial's replicate 1: three course forks of each course change, and three reliance forks
+        self.assertEqual(sorted(re.search(r"--kind (\w+) --course (\d+)", c).groups() for c in forks),
+                         [("course", "11")] * 3 + [("reliance", "11")] * 3)
+        checks = [c for c in cmds if "growth_checkpoint.py" in c]
+        self.assertEqual(sorted(re.search(r"--id (\S+) --change (\d+)", c).groups() for c in checks),
+                         [("g-checklist-1", "10"), ("g-checklist-1", "20")])
+        self.assertTrue(all("growth_checkpoint.py --id g-checklist-1 --change" in c and "--steps" not in c for c in checks))
+
+
+class RepairRunnerTest(unittest.TestCase):
+    def test_repairs_queue_one_fork_per_latent_miss_of_each_runs_checkpoints_paced_isolated_then_graded(self):
+        from test_grading import PROBES
+        from test_simulator import ORACLE
+        runs = Path(tempfile.mkdtemp())
+        for tid, c, verdicts in (("g-bare-1", 10, {"P-BK01-a": "met", "P-BK02-a": "not met"}),
+                                 ("g-bare-1", 20, {"P-BK01-a": "not met", "P-BK02-a": "not met"}),  # BK-01 is stated
+                                 ("g-lid-full-1", 10, {"P-BK01-a": "met", "P-BK02-a": "met"}),
+                                 ("g-checklist-1", 20, {"P-BK01-a": "met", "P-BK02-a": "not met"})):
+            g = runs / tid / "grading" / f"change-{c:02d}"
+            g.mkdir(parents=True)
+            (g / "verdicts.json").write_text(json.dumps({"probes": {p: {"verdict": v} for p, v in verdicts.items()}}))
+        cmds = dry("repairs", runs=str(runs), files={"hidden/oracle.md": ORACLE, "hidden/probes.md": PROBES,
+                                                     "hidden/repair-reports.json": json.dumps({"BK-02": "Orders came in late."})})
+        jobs = [c for c in cmds if "run_repair_forks.py run" in c]
+        self.assertEqual(sorted(re.search(r"repair_forks.py run --id (\S+) --at (\d+) --item (\S+)", c).groups() for c in jobs),
+                         [("g-bare-1", "10", "BK-02"), ("g-bare-1", "20", "BK-02"), ("g-checklist-1", "20", "BK-02")])
+        for c in jobs:
+            self.assertTrue(re.match(r"if \S+ pending.py repair --id \S+ --at \d+ --item \S+; then sh pace.sh && ", c), c)
+            self.assertIn(" --isolate", c.split("run_repair_forks.py run", 1)[1].split("&&")[0])
+            self.assertIn("run_repair_forks.py grade --id", c)  # graded in the same job, after the fork
+            self.assertLess(c.index("run_repair_forks.py run"), c.index("run_repair_forks.py grade"))
+
+
 # the stale forks of the reference spec (seed's reference-builds.json): course changes 11 (lag 2) and 25 (lag 3)
 SPEC = {"stale": {"11": {"lag": 2, "decline": "skip"}, "25": {"lag": 3, "decline": "stand-in"}}}
 
@@ -167,7 +215,7 @@ class IsolationTest(unittest.TestCase):
     """Every growth session runs isolated, as Clowder's do: GitHub's hosts blocked, web search and fetch denied."""
 
     def test_every_trajectory_and_fork_the_runner_queues_is_isolated(self):
-        for phase in ("trial", "full", "instrument"):
+        for phase in ("trial", "full", "instrument", "m2e"):
             cmds = dry(phase)
             sessions = [part for c in cmds for part in c.split(" && ")
                         if "run_trajectory.py" in part or "run_course_forks.py" in part]
