@@ -1,0 +1,16 @@
+{
+  "capability": {
+    "description": "The runs behind a capability-flag row and its tested_with entries: the test projects the linked-intent-dev sub-HLD's Capability Flags names, at 10 runs each, plus one update-lid run per eval.",
+    "batches": [
+      {"skill": "linked-intent-dev", "evals": [0, 1], "runs": 10},
+      {"skill": "linked-intent-dev", "evals": [2, 3], "runs": 10},
+      {"skill": "lid-coach", "evals": [10, 11], "runs": 10},
+      {"skill": "lid-coach", "evals": [15, 16], "runs": 10},
+      {"skill": "update-lid", "evals": "all", "runs": 1}
+    ],
+    "probe": [
+      {"skill": "linked-intent-dev", "eval": 0},
+      {"skill": "lid-coach", "eval": 15}
+    ]
+  }
+}
