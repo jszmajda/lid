@@ -103,9 +103,9 @@ ReleaseDesk grown by each arm through 40 changes (design.md, "The growth test").
 
 On ReleaseDesk's growth seed through change 20, paired with the trial's bare and LID runs (replicate g-r1).
 
-- `[ ]` The checklist arm: a bare agent whose AGENTS.md asks it to keep a spec of the system's obligations and ask the owner about anything unsettled (landscape.md, "The checklist arm"). One trajectory through change 20 on replicate g-r1, with the same forks, checkpoints, intent readers and stale-intent audit as the trial's replicate 1.
-- `[ ]` Repair forks: for every latent rule a run missed at changes 10 and 20, fork from that snapshot, deliver the owner's report of the wrong behaviour, and measure what the fix costs and whether it holds without breaking other rules. For all three runs, from their existing snapshots.
-- `[ ]` From data already collected: module count and coupling at every snapshot; LID's spend by phase; owner reading by review depth.
+- `[x]` The checklist arm: a bare agent whose AGENTS.md asks it to keep a spec of the system's obligations and ask the owner about anything unsettled (landscape.md, "The checklist arm"). One trajectory through change 20 on replicate g-r1, with the same forks, checkpoints, intent readers and stale-intent audit as the trial's replicate 1.
+- `[x]` Repair forks: for every latent rule a run missed at changes 10 and 20, fork from that snapshot, deliver the owner's report of the wrong behaviour, and measure what the fix costs and whether it holds without breaking other rules. For all three runs, from their existing snapshots.
+- `[x]` From data already collected: module count and coupling at every snapshot; LID's spend by phase; owner reading by review depth.
 - `[ ]` Then decide: if the checklist arm lands near LID on latent rules at a fraction of the cost, add replicates 2 and 3 for all three arms (the trial's runs are replicate 1).
 
 ## After the growth test: ideas to review with the maintainer `[ ]`
