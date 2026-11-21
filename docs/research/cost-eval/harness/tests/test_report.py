@@ -235,6 +235,51 @@ class GrowthReportTest(unittest.TestCase):
         self.assertIn("| bare | 5 | 0/1 | BK-07 |", text)
         self.assertIn("graded in force from its change", text)
 
+    def test_working_around_rot_per_arm_with_r_plus_as_a_clean_build_on_its_own_codebase(self):
+        import test_rot_cost as rc
+        root = Path(tempfile.mkdtemp())
+        runs, seed = root / "runs", root / "seeds" / "bk"
+        write(seed / "hidden" / "oracle.md", ORACLE)
+        write(seed / "hidden" / "change-script.md", CHANGES)
+        write(seed / "hidden" / "probes.md", PROBES)
+        self.traj(runs, "g-bare-1", "bare", {2: {"P-BK01-a": "met"}}, {})
+        g = runs / "g-bare-1" / "growth" / "checkpoint-02"
+        write(g / "stale-audit.json", {"checkpoint": 2, "courses": {"2": rc.audit_of(README_md="stale", docs__a_md="mixed")}})
+        rc.reliance_fork(runs, "g-bare-1", 2, 1, at=4, cost=0.6, streams=[rc.stream(*rc.read("t1", "/work/README.md"))])
+        rc.reliance_fork(runs, "g-bare-1", 2, 2, at=4, cost=0.2, streams=[rc.stream(*rc.read("t1", "/work/docs/a.md"))])
+        rc.course_fork(runs, "g-bare-1", 2, 1, cost=2.0, streams=[rc.stream(*rc.read("t1", "/work/README.md"))],
+                       audit=rc.audit_of(README_md="stale"))
+        write(g / "reliance.json", [{"course": 2, "run": "g-bare-1/course-forks/c02-reliance-1", "outcome": "displaced"},
+                                    {"course": 2, "run": "g-bare-1/course-forks/c02-reliance-2", "outcome": "current"}])
+        write(g / "course-forks.json", [{"course": 2, "run": "g-bare-1/course-forks/c02-course-1", "behaves": False,
+                                         "stale": 1}])
+        rc.reliance_fork(runs, "g-ref-correct", 2, 1, at=4, cost=0.1, streams=[rc.stream(*rc.read("t1", "/work/a.md"))])
+        r = report.growth_report(runs, seed, "g", {"bare": ["1"]}, [2])
+        rot = r["rot"]["bare"]
+        stale, either = rot["reliance"]["stale"], rot["reliance"]["stale or mixed"]  # both cuts, neither picked
+        self.assertEqual(stale["read flagged"]["n"], 1)
+        self.assertEqual(stale["read flagged"]["outcomes"], {"current": 0, "displaced": 1, "neither": 0, "other": 0})
+        self.assertAlmostEqual(stale["read flagged"]["r_plus_ratio_median"], 6.0)
+        self.assertEqual(stale["read none"]["outcomes"]["current"], 1)
+        self.assertEqual((either["read flagged"]["n"], "read none" in either), (2, False))  # the second read a mixed file
+        self.assertEqual(rot["course"]["stale"]["read flagged"]["outcomes"], {"behaved": 0, "didn't": 1, "undetermined": 0})
+        self.assertEqual(r["rot_reference"]["2"]["agent_cost_usd"], 0.1)
+        text = report.render_growth(r)
+        self.assertIn("## Working around rot", text)
+        self.assertIn("a different codebase", text)
+        self.assertIn("several changes after the fork's snapshot", text)  # the audit is of the files at the checkpoint
+        self.assertIn("| Turns, mean | Turns, median | Model calls, mean | Model calls, median |", text)
+        self.assertIn("| read a stale file | 1 | $0.60 | $0.60 | 1.0 | 1.0 | 1.0 | 1.0 | 1.0 | 1.0 | 6.0× | 0 | 1 | 0 | 0 |", text)
+        self.assertIn("| read no stale file | 1 | $0.20 | $0.20 | 1.0 | 1.0 | 1.0 | 1.0 | 1.0 | 1.0 | 2.0× | 1 | 0 | 0 | 0 |", text)
+        self.assertIn("| read a stale or mixed file | 2 | $0.40 | $0.40 | 1.0 | 1.0 | 1.0 | 1.0 | 1.0 | 1.0 | 4.0× | 1 | 1 | 0 | 0 |",
+                      text)
+        self.assertIn("| read a stale file | 1 | $2.00 | $2.00 | 1.0 | 1.0 | 1.0 | 1.0 | 1.0 | 1.0 | 0 | 1 | 0 |", text)  # course forks
+        self.assertIn("| g-bare-1/c02-reliance-1 | 2 | checkpoint 2 (2 away) | 1 | 1 | 0 | $0.60 | 6.0× | 1 | 1 | 2.5 | 3 | "
+                      "1,000 | displaced |", text)
+        self.assertIn("| g-bare-1/c02-reliance-2 | 2 | checkpoint 2 (2 away) | 1 | 0 | 1 | $0.20 | 2.0× | 1 | 1 | 2.5 | 3 | "
+                      "1,000 | current |", text)
+        self.assertIn("| 2 | $0.10 | 1 | 1 |", text)  # R+'s own reliance fork per course change
+
     def test_intent_from_tests_and_docs_per_arm_and_checkpoint(self):
         root = Path(tempfile.mkdtemp())
         runs, seed = root / "runs", root / "seeds" / "bk"

@@ -1,6 +1,6 @@
 # Research notebook: what LID costs, compared with other ways of working
 
-**Status: running the pilot. No counted runs yet.** Last updated 2026-11-14.
+**Status: pilot work; no counted runs yet.** Last updated 2026-11-21.
 
 ## The question
 
@@ -57,7 +57,7 @@ Read this section first when you pick the work up in a new session. Update it at
 
 **Next actions** (milestones M2 and M2c in [plan.md](plan.md)):
 
-1. **The growth test is next** (plan.md milestone M2d; design.md, "The growth test"). The Clowder pilot is done (log, 2026-11-18), and its replicates are deferred. In progress: Sol drafting the thirty new changes, the harness pieces, and a first look at intent from tests on BenchTime and Clowder's own history. After it finishes, review the deferred ideas from the specification-explicitness paper with the maintainer (plan.md, "After the growth test").
+1. **The growth trial is done; the full growth run hasn't started** (log, 2026-11-21). At change 20, bare's whole codebase is about 25k tokens, too small to exercise the scale and rot mechanisms. After Claude Fable's strategic review, the maintainer is choosing the next direction: banking the growth test as a pilot, a checklist arm, Clowder cross-crate changes, a LID arm on an existing history benchmark, and the cost of repairing missed intent. Review the specification-explicitness paper's deferred ideas with her too (plan.md, "After the growth test").
 2. **Extend `report.py`** for recalled intent (review and question), contradictions kept against drawn, keeping, the Clowder measures (held-out retention, missing items, intent reach, cost to green, edits to visible tests), and the window dose.
 3. **Finish the owner checks:**
    - labelled judgments on about 100 replayed stops;

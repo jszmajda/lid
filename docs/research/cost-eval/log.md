@@ -4,6 +4,42 @@ Newest entries first. Each entry says what was done, what was decided, and who d
 
 Older entries move to [log-archive/](log-archive/) when this file passes about 2,000 words, and 'Earlier, in brief' at the bottom summarizes them.
 
+## 2026-11-21: The trial's scale, and a strategic review
+
+**Size at change 20:**
+
+| | bare | LID Full |
+|---|---|---|
+| Source | 5 files, 1,440 lines | 16 files, 2,727 lines |
+| Tests | 1 file, 637 lines | 18 files, 8,977 lines |
+| Docs | the README | 22 files, with 406 specs |
+| Code and tests | about 25k tokens | about 123k tokens |
+
+Bare never split the service into components. The maintainer judged ReleaseDesk too small to exercise the scale and rot mechanisms: a bare agent can read its whole system at every change.
+
+**The cost of working around rot** is now measured in every fork. The trial shows no contrast in outcome yet: every reliance fork followed the current rule.
+
+**Claude Fable's strategic review:**
+- **Don't run the full growth run.** The trial's latent lead is all intent only LID heard. On rules both arms had heard, both met every one. So a bigger run would mostly confirm that LID asks more.
+- **Rot sat at the floor in both arms.** Fable suggested that agents read code, which is current, so tests may not be an agent's main record of intent.
+- **History replay is a fair test of adopting LID on an existing project, but a weak test of scale or rot:**
+  - real tests encode the implementer's choices, not the owner's intent;
+  - issues carry no latent intent;
+  - the model has likely seen the project.
+- **A better scale test:** Clowder with cross-crate changes, stripped against LID, three repeats each.
+- **The study is missing:**
+  - the cost of repairing missed intent, which is the break-even #75 asks about;
+  - LID's Scoped mode;
+  - cost by how deeply the owner reviews;
+  - per-phase token spend;
+  - the competitors.
+- **What can be claimed so far is grade C or D:**
+  - LID costs about 4–5.5× the agent tokens per change;
+  - it asks for about ten times the owner reading;
+  - on small projects its fidelity gain is a few points.
+
+The maintainer is choosing the next direction.
+
 ## 2026-11-21: The growth trial
 
 **What ran:** bare and LID Full, one trajectory each (replicate g-r1), through change 20 under the bounded owner. Each had course forks (3 per course change), reliance forks (3 per course change), checkpoints at 10 and 20, intent from tests and docs, and the stale-intent audit. One trajectory per arm: pilot observations, not evidence.

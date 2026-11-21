@@ -28,7 +28,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
-from costeval import grading, growth, rust_grading, simulator  # noqa: E402
+from costeval import grading, growth, rot_cost, rust_grading, simulator  # noqa: E402
 
 KINDS = ("stated", "askable", "recognized on sight", "emerging")
 
@@ -434,10 +434,38 @@ def intent_reads(runs: Path, tid: str, c: int, arm: str) -> dict | None:
     return out or None
 
 
-def growth_report(runs: Path, seed_dir: Path, prefix: str, arms: dict[str, list[str]], checkpoints: list[int]) -> dict:
+def rot_records(runs: Path, run: Path, checkpoints: list[int], reference: Path) -> tuple[list[dict], list[dict]]:
+    """Working around rot: each reliance fork and course fork a trajectory's checkpoints list, once, with its
+    measures, the audit joined (costeval/rot_cost.py) and its outcome; a reliance fork also with its cost over R+'s
+    reliance fork for the same request."""
+    rel, course, seen = [], [], set()
+    for c in checkpoints:
+        g = run / "growth" / f"checkpoint-{c:02d}"
+        for kind, name, key in (("reliance", "reliance.json", "outcome"), ("course", "course-forks.json", "behaves")):
+            for row in _json(g / name) or []:
+                if not row.get("run") or row["run"] in seen:
+                    continue
+                seen.add(row["run"])
+                rec = rot_cost.record(runs / row["run"])
+                if rec is None:
+                    continue
+                rec["outcome"] = row.get(key)
+                if kind == "reliance":
+                    ref = rot_cost.measures(reference / "course-forks" / f"c{rec['course']:02d}-reliance-1") or {}
+                    base, cost = ref.get("agent_cost_usd"), rec.get("agent_cost_usd")
+                    rec["r_plus_ratio"] = cost / base if base and cost is not None else None
+                    rel.append(rec)
+                else:
+                    course.append(rec)
+    return rel, course
+
+
+def growth_report(runs: Path, seed_dir: Path, prefix: str, arms: dict[str, list[str]], checkpoints: list[int],
+                  reference: str | None = None) -> dict:
     """The growth test per trajectory and checkpoint (design.md, "The growth test"). Trajectories are
     <prefix>-<arm>-<k>; a replicate k that isn't a number (the drift floor, g-bare-drift) is its own row and joins no
-    replicate's intersection."""
+    replicate's intersection. `reference` is R+'s trajectory (default <prefix>-ref-correct), whose reliance forks are
+    the clean-build reference for working around rot."""
     oracle = simulator.parse_oracle((seed_dir / "hidden" / "oracle.md").read_text(encoding="utf-8"))
     kinds = {i.id: kind_of(i) for i in oracle.items}
     latent = {i for i, k in kinds.items() if k != "stated"}
@@ -460,7 +488,10 @@ def growth_report(runs: Path, seed_dir: Path, prefix: str, arms: dict[str, list[
         known = [n for n in disclosed[key] if n <= c]
         return disclosed[key][max(known)] if known else set()
 
-    out = {"prefix": prefix, "checkpoints": checkpoints, "arms": {}, "reliance_by_course": {}, "reliance_spot_checks": []}
+    out = {"prefix": prefix, "checkpoints": checkpoints, "arms": {}, "reliance_by_course": {}, "reliance_spot_checks": [],
+           "rot": {}, "rot_reference_id": reference or f"{prefix}-ref-correct", "rot_reference": {}}
+    ref_run = runs / out["rot_reference_id"]
+    rot: dict[str, dict[str, list]] = {}
     seen_forks: set[str] = set()
     for (arm, k), run in trajs.items():
         s, rows, prev_met = trajectory_summary(run), [], None
@@ -519,6 +550,21 @@ def growth_report(runs: Path, seed_dir: Path, prefix: str, arms: dict[str, list[
                     out["reliance_spot_checks"].append(row.get("run"))
         label = arm if k.isdigit() else f"{arm} ({k})"
         out["arms"].setdefault(label, []).append({"id": run.name, "replicate": k, "checkpoints": rows})
+        rel_recs, course_recs = rot_records(runs, run, checkpoints, ref_run)
+        rot.setdefault(label, {"reliance": [], "course": []})
+        rot[label]["reliance"] += rel_recs
+        rot[label]["course"] += course_recs
+    for label, x in rot.items():
+        if x["reliance"] or x["course"]:
+            out["rot"][label] = {  # both cuts of flagged, neither preferred
+                "reliance": {cut: rot_cost.groups(x["reliance"], rot_cost.RELIANCE_OUTCOMES, cut) for cut in rot_cost.CUTS},
+                "course": {cut: rot_cost.groups(x["course"], rot_cost.COURSE_OUTCOMES, cut) for cut in rot_cost.CUTS},
+                "forks": x["reliance"] + x["course"]}
+    for course in sorted({rec["course"] for x in rot.values() for rec in x["reliance"]}):
+        m = rot_cost.measures(ref_run / "course-forks" / f"c{course:02d}-reliance-1")
+        if m:
+            out["rot_reference"][str(course)] = {"run": m["run"], "agent_cost_usd": m["agent_cost_usd"],
+                                                 "turns": m["turns"], "files_read_count": len(m["files_read"])}
     return out
 
 
@@ -604,7 +650,82 @@ def render_growth(r: dict) -> str:
     if r.get("reliance_spot_checks"):
         lines += ["## Reliance forks to spot-check", "", "Each met both frozen outcomes, which can't both hold.", ""]
         lines += [f"- {run}" for run in r["reliance_spot_checks"]] + [""]
+    if r.get("rot"):
+        lines += render_rot(r)
     return "\n".join(lines)
+
+
+DIDNT = rot_cost.COURSE_OUTCOMES[False]
+ROT_ROWS = (("stale", "read flagged", "read a stale file"), ("stale", "read none", "read no stale file"),
+            ("stale or mixed", "read flagged", "read a stale or mixed file"),
+            ("stale or mixed", "read none", "read no stale or mixed file"), ("stale", "no audit", "no audit to join"))
+
+
+def render_rot(r: dict) -> list[str]:
+    """The "Working around rot" section of the growth report."""
+    money = lambda x: f"${x:.2f}" if x is not None else "–"  # noqa: E731
+    one = lambda x: f"{x:.1f}" if x is not None else "–"  # noqa: E731
+    times = lambda x: f"{x:.1f}×" if x is not None else "–"  # noqa: E731
+    lines = ["## Working around rot", "",
+             "What each fork's agent spent, set against whether it read a file the stale-intent audit flagged for the "
+             "fork's course change.", "",
+             "- Files read: the distinct repository files a Read returned or a Bash read named (a partial read "
+             "included; searches left out). A Bash glob read counts the files of the joined audit it matches, since "
+             "a fork's workspace isn't kept to list.",
+             "- Flagged, in two cuts with neither preferred: files the audit judged \"stale\" for the fork's course "
+             "change, and files it judged \"stale\" or \"mixed\". A reliance fork takes the trajectory's audit at the "
+             "nearest checkpoint that covers its course change (\"away\" counts changes between the fork's snapshot and "
+             "that checkpoint); a course fork takes its own.",
+             "- A reliance fork's audit is of the files as they stand at that checkpoint, which can be several changes "
+             "after the fork's snapshot, so a flag says the file was stale there, not necessarily when the fork read it.",
+             "- Turns: the fork's owner rounds, each one session turn. Model calls: the main thread's API calls over "
+             "them.",
+             f"- Cost ÷ R+: the fork's agent cost over R+'s reliance fork for the same request ({r['rot_reference_id']}). "
+             "R+ is a clean-build reference on a different codebase, its own build made with every held rule stated, "
+             "so the ratio sets each fork against a build with no rot, not against the same files.", ""]
+    if r.get("rot_reference"):
+        lines += ["R+'s reliance forks (a different codebase):", "", "| Course change | Cost | Turns | Files read |",
+                  "|---|---|---|---|"]
+        for course, x in sorted(r["rot_reference"].items(), key=lambda e: int(e[0])):
+            lines.append(f"| {course} | {money(x['agent_cost_usd'])} | {x['turns']} | {x['files_read_count']} |")
+        lines.append("")
+    stats = lambda s: (f"| {s['n']} | {money(s['cost_mean'])} | {money(s['cost_median'])} | {one(s['turns_mean'])} | "  # noqa: E731
+                       f"{one(s['turns_median'])} | {one(s['calls_mean'])} | {one(s['calls_median'])} | "
+                       f"{one(s['files_mean'])} | {one(s['files_median'])} |")
+    head = ("Forks | Cost, mean | Cost, median | Turns, mean | Turns, median | Model calls, mean | Model calls, median | "
+            "Files read, mean | Files read, median")
+    for arm, x in r["rot"].items():
+        lines += [f"### {arm}", ""]
+        rows = lambda by: [(label, by[cut][g]) for cut, g, label in ROT_ROWS if g in by.get(cut, {})]  # noqa: E731
+        if rows(x["reliance"]):
+            lines += [f"| Reliance forks | {head} | Cost ÷ R+, median | Current | Displaced | Neither | Other |",
+                      "|---" * 15 + "|"]
+            for label, s in rows(x["reliance"]):
+                o = s["outcomes"]
+                lines.append(f"| {label} {stats(s)} {times(s['r_plus_ratio_median'])} | {o['current']} | "
+                             f"{o['displaced']} | {o['neither']} | {o['other']} |")
+            lines.append("")
+        if rows(x["course"]):
+            lines += [f"| Course forks | {head} | Behaved | Didn't | Undetermined |", "|---" * 13 + "|"]
+            for label, s in rows(x["course"]):
+                o = s["outcomes"]
+                lines.append(f"| {label} {stats(s)} {o['behaved']} | {o[DIDNT]} | {o['undetermined']} |")
+            lines.append("")
+        forks = [f for f in x["forks"] if f["kind"] == "reliance"]
+        if forks:
+            lines += ["| Reliance fork | Course change | Audit | Files read | Stale read | Mixed read | Cost | Cost ÷ R+ | "
+                      "Turns | Model calls | Minutes | Input tokens | Cache-read tokens | Outcome |", "|---" * 14 + "|"]
+            count = lambda xs: len(xs) if xs is not None else "–"  # noqa: E731
+            for f in sorted(forks, key=lambda f: (f["course"], f["run"])):
+                a = f["audit"]
+                where = f"{a['source']} ({a['distance']} away)" if a else "–"
+                lines.append(f"| {f['run'].replace('/course-forks/', '/')} | {f['course']} | {where} | {f['files_read_count']} | "
+                             f"{count(f['flagged_read'])} | {count(f['mixed_read'])} | {money(f['agent_cost_usd'])} | "
+                             f"{times(f.get('r_plus_ratio'))} | {f['turns']} | {f['model_calls']} | {f['minutes']} | "
+                             f"{f['input_tokens']:,} | "
+                             f"{f['cache_read_tokens']:,} | {f['outcome']} |")
+            lines.append("")
+    return lines
 
 
 # ------------------------------------------------------------------------------------------------ the instrument gate
@@ -753,6 +874,7 @@ def main(argv=None) -> int:
         ap.add_argument("--seed", default="releasedesk")
         ap.add_argument("--arms", nargs="+", required=True, help="arm:k1,k2 (run ids are <prefix>-<arm>-<k>)")
         ap.add_argument("--checkpoints", default="10,20,30,40")
+        ap.add_argument("--reference", help="R+'s trajectory, for working around rot (default <prefix>-ref-correct)")
         ap.add_argument("--out", required=True)
         args = ap.parse_args(argv)
         arms: dict[str, list[str]] = {}
@@ -760,7 +882,7 @@ def main(argv=None) -> int:
             name, ks = a.split(":")
             arms.setdefault(name, []).extend(ks.split(","))
         r = growth_report(HERE.parent / "runs", HERE.parent / "seeds" / args.seed, args.prefix, arms,
-                          [int(x) for x in args.checkpoints.split(",")])
+                          [int(x) for x in args.checkpoints.split(",")], reference=args.reference)
         out = Path(args.out)
         out.write_text(render_growth(r), encoding="utf-8")
         out.with_suffix(".json").write_text(json.dumps(r, indent=1), encoding="utf-8")

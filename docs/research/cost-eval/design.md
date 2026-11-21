@@ -196,6 +196,7 @@ Cheap discipline and the competitor arms (OpenSpec, Spec Kit, BMAD) join in mile
   - A positive control plants stale tests in one build, and the measure must catch them.
 - **Intent from docs,** the same way, for arms that keep docs.
 - **The stale-intent audit:** a blind reader checks every test and doc a course change touched, or should have touched. It asks whether names, comments and assertions agree with current intent.
+- **The cost of working around rot:** for every reliance and course fork, the agent's cost, turns, model calls and files read, and how many of those files the stale-intent audit flagged as stale (or mixed). Forks that read flagged files are compared with forks that read none, and with the correct reference build's fork of the same request.
 - **Cost, owner attention and context,** per change, and fidelity per owner-hour as well as per dollar. On this length, LID's owner reading could reach several hundred thousand words.
 - **Probe forks:** the same request is run from each checkpoint, so age is separated from how hard a particular change is.
 

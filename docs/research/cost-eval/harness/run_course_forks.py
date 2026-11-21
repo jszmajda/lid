@@ -35,7 +35,7 @@ from typing import Callable
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
-from costeval import executor, growth, reference, simulator, trajectory  # noqa: E402
+from costeval import executor, growth, reference, rot_cost, simulator, trajectory  # noqa: E402
 from run_trajectory import CLAUDE_CODE, IMAGE, ROLES_VOLUME  # noqa: E402
 
 
@@ -198,6 +198,10 @@ def main(argv=None, *, deps: Deps | None = None) -> int:
                                "owner_cost_usd": round(sum(costs), 4), "minutes": round((time.monotonic() - began) / 60, 1)}
     meta_path.write_text(json.dumps(meta, indent=1))
     (out / f"owner-state-{key}.json").write_text(json.dumps(trajectory.owner_state(owner), indent=1))
+    try:  # working around rot: what the agent spent and read; the audit is joined when the report is made
+        rot_cost.measures(out, write=True)
+    except (OSError, ValueError, KeyError) as exc:
+        print(f"{fid}: no working-around-rot record yet ({exc}); rot_cost.py writes it later")
     print(f"{fid}: {key} {'stopped: ' + res.error if res.error else 'done'}")
     return 1 if res.error else 0
 

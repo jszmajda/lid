@@ -400,6 +400,10 @@ class CourseForkTest(unittest.TestCase):
         self.assertEqual(list(meta["changes"]), ["reliance"])
         self.assertIn("Can I get this week's releases as a file?", turns.calls[0]["prompt"])  # the request, fresh session
         self.assertEqual(turns.calls[0]["resume"], None)
+        # the working-around-rot record: what the fork's agent spent and read, written beside it as it finishes
+        rot = json.loads((self.runs / "g-bare-1" / "course-forks" / "c02-reliance-1" / "rot-cost.json").read_text())
+        self.assertEqual((rot["kind"], rot["course"], rot["turns"]), ("reliance", 2, 1))
+        self.assertEqual(rot["agent_cost_usd"], meta["changes"]["reliance"]["agent_cost_usd"])
 
     def test_a_growth_forks_owner_holds_the_main_lines_state_never_the_clowder_forks_scope(self):
         # the reliance fork's owner stands at change 4 as the main line's does: every item in force by then, the retired
