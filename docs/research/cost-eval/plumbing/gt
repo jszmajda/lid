@@ -1,0 +1,28 @@
+#!/bin/bash
+# Grading tool for the plumbing test (macOS host, BSD date). Every call is appended to $GT_LOG as one JSON line.
+# The service runs in container $GT_CONTAINER under libfaketime; its clock file is read in the container's time zone (UTC).
+# Usage:
+#   gt clock <UTC time, e.g. 2026-01-05T08:00:00Z>      set the service's clock, frozen at that instant
+#   gt reset                                            restart the service on an empty data location; the clock is kept
+#   gt http <METHOD> <PATH> [JSON body or ''] ['Header: value' ...]   make a request to the service; prints status and body
+#   gt run '<shell command>'                            run a command in the service's directory (for setup the service loads from files or commands)
+set -u; LOG=${GT_LOG:?}; C=${GT_CONTAINER:?}; PORT=${GT_PORT:?}
+ts(){ date -u +%FT%TZ; }
+logj(){ python3 -c 'import json,sys; a=sys.argv[1:]; print(json.dumps(dict(zip(a[::2],a[1::2]))))' at "$(ts)" "$@" >> "$LOG"; }
+case "${1:-}" in
+  clock) T=$(date -j -u -f '%Y-%m-%dT%H:%M:%SZ' "$2" +%s) || { echo "bad time: use 2026-01-05T08:00:00Z"; exit 2; }
+         LOCAL=$(date -u -r $T '+%Y-%m-%d %H:%M:%S'); [ -n "${GT_STATE:-}" ] && echo "$LOCAL" > "$GT_STATE/clock"
+         docker exec $C sh -c "echo '$LOCAL' > /clock/faketime" && logj op clock utc "$2" && echo "clock set to $2";;
+  reset) "${GT_RESET:?}" >/dev/null 2>&1 && logj op reset && echo "reset done: empty data, service restarted";;
+  http)  M=$2; PTH=$3; BODY=${4:-}; shift 4 2>/dev/null || shift $#
+         ARGS=(-s -w '
+%{http_code}' -X "$M"); HDRS=""
+         for h in "$@"; do ARGS+=(-H "$h"); HDRS="$HDRS$h; "; done
+         [ -n "$BODY" ] && ARGS+=(-H 'content-type: application/json' --data "$BODY")
+         RAW=$(docker exec $C curl "${ARGS[@]}" "http://localhost:$PORT$PTH")
+         STATUS=$(printf '%s' "$RAW" | tail -n1); RESP=$(printf '%s' "$RAW" | sed '$d')
+         logj op http method "$M" path "$PTH" headers "$HDRS" body "$BODY" status "$STATUS" response "$RESP"; echo "status $STATUS"; echo "$RESP";;
+  run)   OUT=$(docker exec -w ${GT_APPDIR:-/home/agent/app} $C sh -c "$2" 2>&1); RC=$?
+         logj op run command "$2" exit "$RC" output "$OUT"; echo "exit $RC"; echo "$OUT";;
+  *) sed -n '4,8p' "$0"; exit 2;;
+esac

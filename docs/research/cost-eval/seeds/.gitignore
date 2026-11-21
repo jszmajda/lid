@@ -1,0 +1,7 @@
+# Hidden seed materials (oracles, change scripts, raw drafts, edit logs) stay
+# out of the public repository until the runs that use them are finished.
+# Their hashes are recorded in each seed's README.
+*/hidden/
+
+# Seeds the harness assembles from a seed and its additions (harness/assemble_growth_seed.py): derived, rebuilt on demand.
+releasedesk-growth/

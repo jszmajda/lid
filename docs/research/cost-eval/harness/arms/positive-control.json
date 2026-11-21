@@ -1,0 +1,9 @@
+{
+  "name": "positive-control",
+  "description": "A deliberately careless arm, for the positive control: an AGENTS.md tells the agent to skip tests, never ask questions, and not to read existing code before changing it. The instrument should show it with worse fidelity than bare.",
+  "plugins": [],
+  "lid_release": null,
+  "workspace_files": {"AGENTS.md": "positive-control-AGENTS.md"},
+  "first_turn_mode": "bypassPermissions",
+  "first_prompt_prefix": {}
+}

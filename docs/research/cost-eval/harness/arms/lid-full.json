@@ -1,0 +1,9 @@
+{
+  "name": "lid-full",
+  "description": "The linked-intent-dev plugin in Full mode, from LID's repository at a release tag, loaded with --plugin-dir. The first build starts with /linked-intent-dev, LID's documented way to start a fresh project; later changes are plain requests, and the project's own instruction file sends the agent to the skill.",
+  "plugins": ["linked-intent-dev"],
+  "lid_release": "v1.4.6",
+  "workspace_files": {},
+  "first_turn_mode": "bypassPermissions",
+  "first_prompt_prefix": {"0": "/linked-intent-dev "}
+}
