@@ -38,7 +38,10 @@
     { "model": "openai/gpt-6.1-terra", "date": "2026-11-11", "evals": "10,11,15,16", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "167/180" },
     { "model": "tencent/hy4", "date": "2026-11-11", "evals": "10,11,15,16", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "171/180" },
     { "model": "minimax/minimax-m3.1-flash", "date": "2026-11-11", "evals": "10,11,15,16", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "135/180" },
-    { "model": "deepseek/deepseek-v4.1-flash-1017", "date": "2026-11-11", "evals": "10,11,15,16", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "166/180" }
+    { "model": "deepseek/deepseek-v4.1-flash-1017", "date": "2026-11-11", "evals": "10,11,15,16", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "166/180" },
+    { "model": "google/gemini-4-hydrogen", "date": "2026-11-20", "evals": "10,11,15,16", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "179/180" },
+    { "model": "google/gemini-4-neon", "date": "2026-11-20", "evals": "10,11,15,16", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "179/180" },
+    { "model": "google/gemini-4-carbon", "date": "2026-11-20", "evals": "10,11,15,16", "effort": "medium", "harness": "opencode-ai@1.18.32", "passed": "175/180" }
   ],
   "evals": [
     {
