@@ -151,6 +151,24 @@ def ckpt_volume(tid: str, out_name: str, change: int) -> str:
                               change=change, commit="", image=IMAGE).volume
 
 
+def keeps_volumes(run_id: str, out_name: str, change: int) -> bool:
+    """Whether a grading keeps its checkpoint and tools volumes once its results are recorded: only a main
+    trajectory's checkpoint grading (its grading/change-NN, never a fork's) does, as its workspace is kept, so later
+    gradings of the same build can reuse its extraction and prior-data hops its environment. Every other grading's
+    volumes go as soon as its verdicts are written."""
+    return "/" not in run_id and out_name == f"change-{change:02d}"
+
+
+def release_volumes(run_id: str, out_name: str, change: int, runner: Callable = subprocess.run) -> list[str]:
+    """Remove a recorded grading's checkpoint and tools volumes, unless keeps_volumes says it keeps them."""
+    if keeps_volumes(run_id, out_name, change):
+        return []
+    ckpt = ckpt_volume(run_id, out_name, change)
+    names = [ckpt, ckpt[: -len("ckpt")] + "tools"]
+    runner(["docker", "volume", "rm", "-f", *names], capture_output=True, text=True)
+    return names
+
+
 def _volume_exists(name: str) -> bool:
     return subprocess.run(["docker", "volume", "inspect", name], capture_output=True).returncode == 0
 
@@ -397,6 +415,7 @@ def main(argv=None) -> int:
         if not runnable:
             return finish_without_runs(out, summary, injected, [by_id[pid] for pid in injected])
     workers = 1 if earlier_mode else max(1, min(args.workers, len(runnable) // args.batch_size + 1))
+    recorded_early = False  # an earlier-mode run whose preparations and observations are all recorded
     for k in range(workers):
         ck.put(ck.volume, f"/work/out/start-{k}.json", json.dumps(grading.worker_spec(ex["spec"], k)))
     try:
@@ -435,6 +454,7 @@ def main(argv=None) -> int:
                                execute=execute, seed=args.seed, run=lambda cmd: subprocess.run(cmd, cwd=HERE).returncode,
                                open_storage=lambda p: _open_one(runs, args.id, args.change, p, hop))
             print(f"earlier runs: prepared {done['prepared']}, observed {done['observed']}, failed {done['failed']}")
+            recorded_early = not done["failed"]
             return 0 if not done["failed"] else 1
         for pid, data in opened.items():  # each prior-data probe's storage as this build received it, run on a copy
             if pid in {p.id for p in runnable}:
@@ -483,6 +503,8 @@ def main(argv=None) -> int:
     finally:
         if not args.keep:
             ck.stop(workers)
+            if recorded_early:  # the containers are gone, so the volumes can go
+                release_volumes(args.id, out.name, args.change)
 
     verdicts.update(injected)
     runnable += [by_id[pid] for pid in injected]
@@ -497,7 +519,10 @@ def main(argv=None) -> int:
     print(f"items: {counts}; not run: {summary['not_run']}; {summary['minutes']} min")
     # a probe asked for and left unrun (its setup broken, its earlier run missing): incomplete, so no caller treats the
     # build as graded and discards it
-    return 2 if chosen and any(pid in chosen for pid in summary["not_run"]) else 0
+    rc = 2 if chosen and any(pid in chosen for pid in summary["not_run"]) else 0
+    if rc == 0 and not args.keep:  # recorded: this grading's volumes go, but a main trajectory's checkpoint's
+        release_volumes(args.id, out.name, args.change)
+    return rc
 
 
 if __name__ == "__main__":

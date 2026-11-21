@@ -150,6 +150,36 @@ class RepairForkTest(Fixture):
         self.assertIn("BK-07", rcf.LAST_OWNER.realized)
 
 
+class CaptureTest(Fixture):
+    """Every kind of fork commits what the agent left in the working tree as its change's commit, as the main line's
+    changes do; the fork's own "commit" is the snapshot it started from."""
+
+    def deps(self):
+        ws = FakeWorkspace()
+        turns = FakeTurns(ws, ("Done: the code is changed. I haven't committed anything.", None, ["src/app.py"]))
+        ask = FakeAsk(out("completion"))
+        return ws, rcf.Deps(docker=lambda cmd, **kw: subprocess_ok(cmd), turn_for=lambda s: turns,
+                            workspace_for=lambda image, vol: ws, ask=ask, touch=ask.touch, trim=None)
+
+    def test_course_reliance_and_repair_forks_each_record_the_harness_commit_of_the_working_tree(self):
+        for n in (1, 4):
+            (self.base / f"owner-state-{n:02d}.json").write_text(json.dumps(EMPTY_STATE))
+        common = ["--id", "g-bare-1", "--runs", str(self.runs), "--seed-dir", str(self.seed)]
+        cases = [(rcf.main, ["--kind", "course", "--course", "2", "--fork", "1"], "course-forks/c02-course-1", "2", "c-after-1"),
+                 (rcf.main, ["--kind", "reliance", "--course", "2", "--fork", "1"], "course-forks/c02-reliance-1", "reliance",
+                  "c-after-4"),
+                 (lambda argv, deps: rrf.main(["run", *argv], deps=deps), ["--at", "2", "--item", "BK-02"],
+                  "repair-forks/c02-BK-02", "repair", "c-after-2")]
+        for main, extra, where, key, start in cases:
+            ws, deps = self.deps()
+            with contextlib.redirect_stdout(io.StringIO()):
+                self.assertEqual(main([*common, *extra], deps=deps), 0, where)
+            meta = json.loads((self.base / where / "trajectory.json").read_text())
+            self.assertEqual((meta["commit"], meta["changes"][key]["commit"]), (start, "c1"), where)  # FakeWorkspace's commit
+            self.assertEqual(len(ws.commits), 1, where)
+            self.assertIn("committed by the harness", ws.commits[0])
+
+
 class GradeTest(Fixture):
     def setUp(self):
         super().setUp()
@@ -161,8 +191,8 @@ class GradeTest(Fixture):
     def grade(self, data):
         def run(cmd):
             self.cmds.append(cmd)
-            if "grade_checkpoint.py" in cmd[1]:
-                self.grading(self.where, data)
+            if "grade_checkpoint.py" in cmd[1]:  # what grade_checkpoint.py records: the commit it graded, with the verdicts
+                self.grading(self.where, data if "error" in data else {**data, "commit": cmd[cmd.index("--commit") + 1]})
             return 0
         with contextlib.redirect_stdout(io.StringIO()):
             return rrf.main(["grade", "--id", "g-bare-1", "--at", "2", "--item", "BK-02", "--runs", str(self.runs),
@@ -179,8 +209,10 @@ class GradeTest(Fixture):
         rec = json.loads((self.runs / self.fid / "repair.json").read_text())
         self.assertEqual((rec["item"], rec["at"], rec["kind"], rec["fixed"], rec["regrade"]), ("BK-02", 2, "askable", True, "full"))
         self.assertEqual(rec["keeping"], {"met_before": 1, "held": 0, "broken": ["BK-01"], "undetermined": []})
+        self.assertEqual((rec["start_commit"], rec["commit"]), ("c-after-2", commit))  # graded: the change's own commit
         self.assertEqual(rec["measures"]["kind"], "repair")
         self.assertTrue(any(c[:3] == ["docker", "volume", "rm"] and "ce-g-bare-1-repair02-bk-02-1-ws" in c for c in self.cmds))
+        self.assertEqual(rec["graded_commit"], commit)
 
     def test_an_unfixed_item_and_a_kept_build(self):
         self.grade(verdicts(P_BK01_a="met", P_BK02_a="not_met", P_BK03_a="not_met"))

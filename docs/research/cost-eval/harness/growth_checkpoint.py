@@ -210,15 +210,14 @@ def main(argv=None, *, run: Callable[[list[str]], int] | None = None, volume: Ca
                 if str(n) not in fm.get("changes", {}):
                     continue
                 fid, where = f"{t}/course-forks/{fork.name}", fork / "grading" / "course"
-                graded_now = False
                 if new + old and _verdicts(where) is None:
-                    graded_now = grade(fid, n, "--probes", ",".join(new + old), "--out-name", "course") == 0
+                    grade(fid, n, "--probes", ",".join(new + old), "--out-name", "course")
                 audit_path = fork / "growth" / "stale-audit.json"
                 if not audit_path.exists():
                     audit_path.parent.mkdir(parents=True, exist_ok=True)
                     audit_path.write_text(json.dumps(audit_course(n, ch, volume(fm["volumes"]["workspace"]), fm["commit"],
                                                                   fm["changes"][str(n)]["commit"]), indent=1))
-                if graded_now:
+                if _verdicts(where) is not None or not new + old:  # recorded (graded, or nothing to grade) and audited
                     run([PY, "run_course_forks.py", "--id", t, "--kind", "course", "--course", str(n), "--fork",
                          fork.name.rsplit("-", 1)[1], "--discard"])
                 if new + old and _verdicts(where) is None:
@@ -250,14 +249,14 @@ def main(argv=None, *, run: Callable[[list[str]], int] | None = None, volume: Ca
                                  "fork": k, "outcome": "no probe", "current_rule_held": None, "verdicts": {}})
                     continue
                 if _verdicts(where) is None:
-                    if grade(fid, course + lag, "--probes", ",".join(outcomes + current), "--out-name", "reliance",
-                             "--commit", done["commit"]) == 0:
-                        run([PY, "run_course_forks.py", "--id", t, "--kind", "reliance", "--course", str(course),
-                             "--fork", k, "--discard"])
+                    grade(fid, course + lag, "--probes", ",".join(outcomes + current), "--out-name", "reliance",
+                          "--commit", done["commit"])
                 if _verdicts(where) is None:
                     leave("reliance", fork.name)
-                else:
+                else:  # recorded: the fork's volumes go, now or (graded by an earlier run) whenever they're still there
                     forks_seen.append(fork.name)
+                    run([PY, "run_course_forks.py", "--id", t, "--kind", "reliance", "--course", str(course),
+                         "--fork", k, "--discard"])
                 got = _verdicts(where) or {}
                 rows.append({"course": course, "kind": script[course].course_change.kind, "lag": lag, "run": fid, "fork": k,
                              "outcome": growth.reliance_outcome(got.get(f"P-RR{course:02d}-current"),

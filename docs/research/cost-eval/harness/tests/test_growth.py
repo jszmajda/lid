@@ -760,11 +760,11 @@ class GrowthCheckpointTest(unittest.TestCase):
             (t / "course-forks" / name / "trajectory.json").write_text(json.dumps(meta))
         self.commands = []
 
-    def run_pipeline(self, *steps, ask=None):
+    def run_pipeline(self, *steps, ask=None, run=None):
         vols = FakeVolumes({"c4": self.TESTS, "f2": self.TESTS}, touched=["tests/test_fees.py", "src/app.py"])
         rc = gc.main(["--id", "g-bare-1", "--change", "4", "--runs", str(self.runs), "--seeds", str(self.root / "seeds"),
                       *(["--steps", ",".join(steps)] if steps else [])],
-                     run=lambda cmd: self.commands.append(cmd) or 0, volume=vols,
+                     run=run or (lambda cmd: self.commands.append(cmd) or 0), volume=vols,
                      ask=ask or (lambda p: ({"name": "current", "comments": "silent", "assertions": "current",
                                               "verdict": "current", "evidence": [1], "reason": "It waives the fee as intended."}, 0.01)))
         return rc, vols
@@ -808,7 +808,7 @@ class GrowthCheckpointTest(unittest.TestCase):
         self.assertFalse(gc.pending(self.runs, "g-bare-1", 3))  # the reliance forks at change 4 aren't checkpoint 3's
 
     def test_grading_flip_checks_and_course_forks(self):
-        rc, _ = self.run_pipeline("grade", "flips")
+        rc, _ = self.run_pipeline("grade", "flips", run=self.grading_writes_verdicts)
         self.assertEqual(rc, 0)
         cmds = [" ".join(c) for c in self.commands]
         self.assertTrue(any("grade_checkpoint.py --id g-bare-1 --change 4 --seed bk" in c and "--probes" not in c for c in cmds))
@@ -833,6 +833,24 @@ class GrowthCheckpointTest(unittest.TestCase):
         self.assertFalse(any("grade_checkpoint.py" in " ".join(c) or "--discard" in c for c in self.commands))  # kept to grade later
         rows = json.loads((self.runs / "g-bare-1" / "growth" / "checkpoint-04" / "reliance.json").read_text())
         self.assertEqual([(r["course"], r["fork"], r["outcome"]) for r in rows], [(2, "1", "no probe")])
+
+    def test_a_fork_whose_results_were_recorded_earlier_is_discarded_now(self):
+        # graded (and, for a course fork, audited) by an earlier run that stopped before discarding: its volumes go now
+        (self.seed / "hidden" / "probes.md").write_text(PROBES + self.RR02)
+        forks = self.runs / "g-bare-1" / "course-forks"
+        for name, where in (("c02-course-1", "course"), ("c02-reliance-1", "reliance")):
+            g = forks / name / "grading" / where
+            g.mkdir(parents=True)
+            (g / "verdicts.json").write_text(json.dumps({"probes": {"P-BK01-a": "met", "P-BK02-a": "met",
+                                                                    "P-RR02-current": "met", "P-RR02-displaced": "not met"}}))
+        (forks / "c02-course-1" / "growth").mkdir()
+        (forks / "c02-course-1" / "growth" / "stale-audit.json").write_text(json.dumps({"stale": 0, "files": {}}))
+        self.run_pipeline("flips", "reliance")
+        cmds = [" ".join(c) for c in self.commands]
+        self.assertFalse(any("grade_checkpoint.py --id g-bare-1/course-forks" in c for c in cmds))  # nothing graded again
+        for kind in ("course", "reliance"):
+            self.assertTrue(any(f"run_course_forks.py --id g-bare-1 --kind {kind} --course 2 --fork 1 --discard" in c
+                                for c in cmds), kind)
 
     def test_a_flip_check_whose_grading_left_no_verdict_is_undetermined_not_a_failed_flip(self):
         self.assertIsNone(gc.flip_behaves({}, ["P-a"], "not met"))

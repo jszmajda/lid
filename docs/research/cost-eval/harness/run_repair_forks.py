@@ -133,8 +133,11 @@ def grade(args, run: Callable[[list[str]], int]) -> int:
         return 1
     before = repair.item_verdicts(args.runs / args.id / "grading" / f"change-{args.at:02d}", probes) or {}
     item = next((i for i in _oracle(seed_dir).items if i.id == args.item), None)
+    graded = json.loads((where / "verdicts.json").read_text()).get("commit")
     rec = {"trajectory": args.id, "run": fid, "at": args.at, "item": args.item,
            "kind": report.kind_of(item) if item else None, **repair.outcome(before, after, args.item), "regrade": "full",
+           # where the fork started, the commit the harness made of the agent's working tree, and the one graded
+           "start_commit": meta.get("commit"), "commit": done["commit"], "graded_commit": graded,
            "agent_cost_usd": done.get("agent_cost_usd"), "owner_cost_usd": done.get("owner_cost_usd"),
            "measures": rot_cost.measures(fork, write=True)}
     (fork / "repair.json").write_text(json.dumps(rec, indent=1))
