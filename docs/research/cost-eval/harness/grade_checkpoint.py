@@ -495,7 +495,9 @@ def main(argv=None) -> int:
     items = summary["items"]
     counts = {v: sum(1 for i in items.values() if i["verdict"] == v) for v in (*grading.VERDICTS, None)}
     print(f"items: {counts}; not run: {summary['not_run']}; {summary['minutes']} min")
-    return 0
+    # a probe asked for and left unrun (its setup broken, its earlier run missing): incomplete, so no caller treats the
+    # build as graded and discards it
+    return 2 if chosen and any(pid in chosen for pid in summary["not_run"]) else 0
 
 
 if __name__ == "__main__":

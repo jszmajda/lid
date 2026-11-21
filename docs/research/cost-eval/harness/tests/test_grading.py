@@ -148,6 +148,13 @@ class SetupTest(unittest.TestCase):
         self.assertIn("write `{DATA}` as it is", ref)
         self.assertNotIn("/cfg/data", ref)  # the location itself stays hidden
 
+    def test_the_option_the_service_takes_its_data_location_by_is_named_first(self):
+        spec = {"env": {}, "command": ".venv/bin/python -m app --data-dir {DATA} --port 8000"}
+        ref = grading.grader_reference("# Ref\n\nImport: `app import FILE --data-dir DIR`.", spec)
+        self.assertTrue(ref.startswith("## The data location"))  # before anything else, where a setup session reads it
+        self.assertIn("`--data-dir {DATA}`", ref)
+        self.assertIn("# Ref", ref)
+
     def test_a_broken_setup_is_named_so_only_its_probes_skip(self):
         problems = ["no snapshot for S1", "CANNOT S2: no researchers yet", "CANNOT S0 qualifications missing"]
         self.assertEqual(grading.broken_setups(problems, ["S0", "S1", "S2", "S3"]), {"S0", "S1", "S2"})
@@ -258,7 +265,67 @@ class JudgmentTest(unittest.TestCase):
             grading._template("grade-judge.md", PROBES="x")
 
 
+class SetupRetryTest(unittest.TestCase):
+    """A setup session that skips a setup it was given (no snapshot, no CANNOT) gets one more session for the rest."""
+
+    def test_a_skipped_setup_gets_a_second_session_and_both_identifier_lists_are_kept(self):
+        from costeval import executor
+        ps = grading.parse_probes(PROBES)
+        files, sessions = {}, []
+
+        class Ck:
+            volume, tools_volume, network = "v", "t", "n"
+            snaps: set = set()
+
+            def put(self, vol, path, text):
+                files[path] = text
+
+            def admin(self, k, payload):
+                return {"ok": True}
+
+            def get(self, vol, path):
+                return files.get("/work/" + path)
+
+            def sh(self, vol, script, **kw):
+                return " ".join(sorted(self.snaps))
+
+            def log_lines(self, k, batch):
+                return [{"seq": 1, "op": "snapshot", "request": {"name": n}} for n in sorted(self.snaps)]
+        ck = Ck()
+
+        class Rec:
+            text, usage, duration_s = "done", executor.usage.Usage(models={}, reported_cost_usd=0.0), 1.0
+
+        def run_role(role, prompt, **kw):
+            sessions.append(files["/work/setups.md"])
+            if len(sessions) == 1:
+                ck.snaps.add("S0")
+                files["/work/ids.md"] = "| Aster | rec-1 |\n\n## Credentials\n\nNone needed."
+            else:
+                ck.snaps.add("S1")
+                files["/work/ids.md"] = "| S1 extra | rec-9 |\n\n## Credentials\n\nNone needed."
+            return Rec()
+        saved = executor.run_role
+        executor.run_role = run_role
+        try:
+            out = Path(tempfile.mkdtemp())
+            g = grading.Graders(image="i", roles_volume="r", claude_code="c")
+            st = grading.prepare_setups(ck, g, ps, ["S0", "S1"], "# Ref", out)
+        finally:
+            executor.run_role = saved
+        self.assertEqual(len(sessions), 2)
+        self.assertIn("already saved: S0", sessions[1])
+        self.assertNotIn("### S0", sessions[1].split("already saved")[0])
+        self.assertEqual(st["problems"], [])
+        ids = (out / "ids.md").read_text()
+        self.assertIn("rec-1", ids)
+        self.assertIn("rec-9", ids)
+
+
 class SetupPromptTest(unittest.TestCase):
+    def test_the_setup_prompt_fills_and_keeps_the_data_placeholder(self):
+        self.assertIn("pass `{DATA}` as it is", grading._template("grade-setup.md", DATA="{DATA}"))
+
     def test_a_setup_sets_its_clock_before_resetting_so_its_timestamps_fall_at_the_intended_instants(self):
         text = (Path(__file__).resolve().parent.parent / "prompts" / "grade-setup.md").read_text()
         self.assertLess(text.index("gt clock <time>"), text.index("Run `gt reset`"))

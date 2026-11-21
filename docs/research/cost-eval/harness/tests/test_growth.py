@@ -813,6 +813,14 @@ class GrowthCheckpointTest(unittest.TestCase):
         self.assertIsNone(gc.flip_behaves({}, ["P-a"], "anticipated?"))
         self.assertTrue(gc.flip_behaves({"P-a": "met"}, ["P-a"], "anticipated?"))
 
+    def test_a_fork_folder_set_aside_is_not_one_of_the_trajectorys_forks(self):
+        d = Path(tempfile.mkdtemp())
+        for name in ("c11-reliance-1", "c11-reliance-2", "c11-reliance-1.before-head-fix", "c11-reliance-12", "c11-course-3"):
+            (d / name).mkdir()
+        self.assertEqual([f.name for f in gc.forks_of(d, 11, "reliance")], ["c11-reliance-1", "c11-reliance-12", "c11-reliance-2"])
+        self.assertEqual([f.name for f in gc.forks_of(d, 11, "course")], ["c11-course-3"])
+        self.assertEqual(gc.forks_of(d / "absent", 11, "course"), [])
+
     def test_a_grading_that_errored_counts_as_not_done(self):
         d = Path(tempfile.mkdtemp())
         (d / "verdicts.json").write_text(json.dumps({"error": "setup: ['no identifier list']", "probes": {}}))

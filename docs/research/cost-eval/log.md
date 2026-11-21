@@ -4,6 +4,33 @@ Newest entries first. Each entry says what was done, what was decided, and who d
 
 Older entries move to [log-archive/](log-archive/) when this file passes about 2,000 words, and 'Earlier, in brief' at the bottom summarizes them.
 
+## 2026-11-21: The growth trial
+
+**What ran:** bare and LID Full, one trajectory each (replicate g-r1), through change 20 under the bounded owner. Each had course forks (3 per course change), reliance forks (3 per course change), checkpoints at 10 and 20, intent from tests and docs, and the stale-intent audit. One trajectory per arm: pilot observations, not evidence.
+
+**Harness faults found and fixed before reading anything:**
+- LID's build takes its data folder only as a command-line option, and setups ran the reference's `{DATA}` placeholder literally. So 44 of LID's 55 gradings failed at setup, and an errored grading still counted as done. Both are fixed and the trial is regraded.
+- The same fault could have hidden two of LID's symptom diagnostics. Rechecked: change 15's passes, and change 7's can't occur, because LID's build at that point offers no saved-link download. LID's trajectory stands as run.
+
+| Measure at change 20 | bare | LID Full |
+|---|---|---|
+| Stated items met | 98% | 93% |
+| Latent items met (change 10 → 20) | 75% → 67% | 88% → 89% |
+| Keeping (items met at 10 still met) | 49/49 | 45/47 |
+| Reliance forks following the displaced rule | 0 of 18 | 0 of 18 |
+| Flip checks behaving | 8/8 | 8/8 |
+| Stale files found by the audit in course forks | 1 of 12 | 4 of 64 |
+| Intent from tests, recall of met items (above a brief-only reader) | 61% (+10) | 83% (+35) |
+| Intent from docs | – | 83% (+36) |
+| Cost per change (notional) | $0.29 | $1.59 |
+| Owner reading by change 20 | 0.6 hours | 6.6 hours |
+
+- **LID's latent lead grew** from 13 points at change 10 to 22 at change 20, in this one replicate.
+- **No reliance fork followed a displaced rule** in either arm through change 20, so the rot consequence sits at the floor so far.
+- **Bare's tests carry little intent beyond the brief:** a reader of bare's tests recovers 10 points more than a reader of the brief alone, against LID's 35.
+
+**Cost:** the trial used about 19 points of the weekly subscription limit, regrades included.
+
 ## 2026-11-21: The growth test's instrument gate passes
 
 The gate asks whether the probes tell a correct build from a stale one, before any arm runs. It never looks at arm results.
@@ -57,48 +84,12 @@ On Clowder's own snapshot, the kittens segment's tests implied 32% of its retire
 
 **A symptom-row leak, found and fixed.** The owner held a realized-on-symptom row from its change onward, even when its report never fired. In five stage 3b trajectories (bare-2, cheap discipline 1 and 2, LID 1 and 2), the owner recalled BT-41 once, at change 6 or 9, although change 5's report never fired. Every build already met BT-41 before the share. Leaving BT-41 out moves each arm's change-10 figure by at most 0.13 points, and no arm's standing changes. The owner now holds such a row only after its report fires on that trajectory. Symptom rows had also sat outside the report's latent column, which counted askable items only.
 
-## 2026-11-18: The Clowder pilot
-
-**What ran:** three arms, each at a 1M and a 200k context window, twelve independent changes each, one run per cell, on Sonnet 5.5 under the bounded owner. The arms were bare on the stripped repository, bare on the full repository, and LID Full. These are pilot numbers, not evidence.
-
-**Items met** (33 items: 12 stated, 20 latent, and the planted bug's repair), with the spot-check rulings applied:
-
-| Arm | 1M | 200k | Latent items, 1M / 200k | Agent cost, 1M / 200k | Words shown to the owner, 1M / 200k |
-|---|---|---|---|---|---|
-| bare, stripped repository | 26 (79%) | 28 (85%) | 15 / 16 of 20 | $4.30 / $4.03 | 7,699 / 13,791 |
-| bare, full repository (an inheritance check: a bare agent on a repository LID built, not a baseline) | 29 (88%) | 30 (91%) | 17 / 18 of 20 | $12.48 / $13.61 | 5,316 / 39,494 |
-| LID Full | 32 (97%) | 27 of 32 (84%), 1 missing | 19 / 16 of 20 | $18.55 / $15.74 | 195,044 / 105,323 |
-| null (untouched snapshot) | | 0 | | | |
-
-- **Room exists.** Bare on the stripped repository missed one item in five, against one in twenty on BenchTime.
-- **The repository's docs and fuller tests helped bare** by 2 to 3 items, at three times the agent cost.
-- **LID at 1M met the most items, and at 200k fell to the stripped arm's level.** LID's 200k losses (changes 6, 7, 11 and 12) don't line up with compaction, which happened only at change 7. With one run per cell, a single item moves a share 3 points, so none of these differences separate the arms or the windows.
-- **Owner attention is LID's largest cost:** about 195,000 words shown across twelve changes at 1M, which is roughly 14 hours of reading at 238 words a minute, against 5,000 to 14,000 for bare.
-- **Keeping didn't discriminate:** held-out tests lost per cell ranged from 5 to 15 out of about 3,900 runs. Two LID runs changed the API so that some held-out tests couldn't build (86 tests, reported by cause).
-
-**Context:** bare on the stripped repository never used more than 98k tokens in a session. Bare on the full repository reached 193k, and LID reached 255k. At 200k, four sessions compacted: bare on the full repository at changes 7 and 11, and LID at changes 2 and 7. The window binds only for arms that read the repository's intent, and rarely.
-
-**What the pilot fixed in the instruments.** Each fix was applied blind to arm, and the affected changes were regraded:
-- **The owner's completion reading:** the owner took "Phase 6 is next. I'll add…" as a completion report, so a separate check now reads every completion first. The two runs it had cut short were rerun.
-- **The stand-in rule:** it now turns on who produced the outcome. A changed existing command counts as the build's own operation.
-- **The evidence the judge sees:** executor output is no longer cut off.
-- **Probe output:** probes print one summary line per case.
-- **Two probe flaws:** a stock drop is now the probe's own measurement, and a setup no longer pre-fills a record.
-- **Held-out adaptation:** it now fills missing array fields.
-
-The pilot ends on probes version 5 for changes 5 and 10 and version 4 elsewhere; the two differ by one clarifying sentence in the shared conventions.
-
-**Spot-checks** (Claude Fable, blind to arm):
-- **The one conflict** (change 11) was ruled not met.
-- **A stratified sample of 20 met verdicts:** 19 were upheld. One, change 7 in bare stripped at 1M, was overturned because the build shows "Cuddles “Professor Fluff”" where the item asks for the nickname as the display name. Every other build shows the nickname alone.
-- **A pattern the readers noted:** executors often build setup S1 with housing 6 rather than 2. That rarely touches a deciding reading, but the judge ruled it a fixture fault once (LID at 200k, change 7, the one missing item). The next probe version fixes S1, and the judge counts a broken witness only when it could change the deciding reading.
-
 ## Earlier, in brief
 
-**The arc so far.** On 11-18, a null arm checked Clowder's grading (no new-intent item met on an untouched snapshot once stand-in readings were ruled out), and the ceiling check showed room (bare on the stripped repository met 80%). On 11-17, BenchTime ran under the rebuilt owner (pilot: bare 95%, cheap discipline 93%, LID Full 97% at change 10; LID's lead came from its own asking, not the owner's corrections). On 11-16, the simulated owner was rebuilt as an imperfect person on published attention and recall research, with separate seeded draws for attention and recall. On 11-11, three takes on the design converged on one core design, and mining old transcripts was dropped. On 11-12, the maintainer settled that graders are models, and BenchTime and ReleaseDesk were chosen as the pilot and second seeds. On 11-13, a grading protocol was written into design.md, about 25 throwaway sessions showed that LID's phase stops work headless, and the maintainer decided the harness stays outside LID's arrow. On 11-14, Claude Fable's review found the simulated owner not ready for counted runs, and pilot stage 0 ran the three arms through two changes. In the evening, grader calibration showed Haiku 5.5 flipping 9% of its verdicts on repeat, so Sonnet 5.5 judges and Haiku executes, and two Opus 5.5 trajectories met 90% in stage 1 under the diligent owner. Under a rubber-stamp owner, which shares only what direct questions ask for, Opus met 88%. Late that night, a Sonnet ceiling check started. On 11-15, it met 80% and 76%, so Sonnet became BenchTime's main executor. ReleaseDesk's owner brief was drafted by several models and checked by Claude Fable, and a six-model panel measured how guessable its candidate rules are. The maintainer then set the mix of eight latent rules by guessability band, and the rules within each band were drawn by lot. Later on 11-15, ReleaseDesk's oracle, change script, and probes were drafted, reviewed, and accepted. Stage 2 on BenchTime was graded. Its first numbers put LID Full at 96% of items met at about 5× bare's cost, and ReleaseDesk's ceiling check started. That night stage 2 passed all four of its thresholds, and a leak review found the owner adding what a plan left out; the owner's corrections were tightened.
+**The arc so far.** On 11-18, the Clowder pilot ran (bare on the stripped repository 79% at 1M and 85% at 200k, LID 97% and 84%; one run per cell); a bare agent on the full repository copied LID's artifacts, which ruled out further Clowder runs as a test of LID against bare. Also on 11-18, a null arm checked Clowder's grading (no new-intent item met on an untouched snapshot once stand-in readings were ruled out), and the ceiling check showed room (bare on the stripped repository met 80%). On 11-17, BenchTime ran under the rebuilt owner (pilot: bare 95%, cheap discipline 93%, LID Full 97% at change 10; LID's lead came from its own asking, not the owner's corrections). On 11-16, the simulated owner was rebuilt as an imperfect person on published attention and recall research, with separate seeded draws for attention and recall. On 11-11, three takes on the design converged on one core design, and mining old transcripts was dropped. On 11-12, the maintainer settled that graders are models, and BenchTime and ReleaseDesk were chosen as the pilot and second seeds. On 11-13, a grading protocol was written into design.md, about 25 throwaway sessions showed that LID's phase stops work headless, and the maintainer decided the harness stays outside LID's arrow. On 11-14, Claude Fable's review found the simulated owner not ready for counted runs, and pilot stage 0 ran the three arms through two changes. In the evening, grader calibration showed Haiku 5.5 flipping 9% of its verdicts on repeat, so Sonnet 5.5 judges and Haiku executes, and two Opus 5.5 trajectories met 90% in stage 1 under the diligent owner. Under a rubber-stamp owner, which shares only what direct questions ask for, Opus met 88%. Late that night, a Sonnet ceiling check started. On 11-15, it met 80% and 76%, so Sonnet became BenchTime's main executor. ReleaseDesk's owner brief was drafted by several models and checked by Claude Fable, and a six-model panel measured how guessable its candidate rules are. The maintainer then set the mix of eight latent rules by guessability band, and the rules within each band were drawn by lot. Later on 11-15, ReleaseDesk's oracle, change script, and probes were drafted, reviewed, and accepted. Stage 2 on BenchTime was graded. Its first numbers put LID Full at 96% of items met at about 5× bare's cost, and ReleaseDesk's ceiling check started. That night stage 2 passed all four of its thresholds, and a leak review found the owner adding what a plan left out; the owner's corrections were tightened.
 
 **Decisions.** Every decision that still stands, with its date and who made it, is in [decisions.md](decisions.md).
 
 **Archive.**
 
-- [2026-11.md](log-archive/2026-11.md): entries from 2026-11-11 to 2026-11-18 (twenty-four entries)
+- [2026-11.md](log-archive/2026-11.md): entries from 2026-11-11 to 2026-11-18 (twenty-five entries)

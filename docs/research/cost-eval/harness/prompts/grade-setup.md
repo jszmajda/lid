@@ -23,4 +23,6 @@ If you can't load part of a setup through the reference at all, mark it with `gt
 
 `gt http` never follows a redirect: a 3xx status and its Location are logged as the answer. Where the reference's path is redirected only to add or remove a trailing slash, send the request to the path the Location gives (or use `gt http --follow`).
 
+If a setup command takes the service's data location (a data folder or database file option), pass `{DATA}` as it is: the harness fills in this instance's own location, the one the service reads. Never pass a folder of your own choosing or the command's default. The reference's "The data location" section names the option.
+
 To give a setup command or a request a file, such as an import manifest, write it with `gt file <name> '<content>'`. It prints the file's path inside the service's container; pass that path to the command. You can't write files any other way.

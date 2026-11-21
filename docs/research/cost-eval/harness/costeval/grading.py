@@ -402,11 +402,15 @@ def grader_reference(reference: str, spec: dict) -> str:
     """The reference as graders get it: extraction's text, plus the settings the grading instance runs with, so a
     secret the service needs (such as an admin token) is the one graders use."""
     env = {k: v for k, v in (spec.get("env") or {}).items() if "{DATA}" not in str(v)}
-    if "{DATA}" in reference:  # the data location, kept from graders: a setup command names it as {DATA}
-        reference = (reference.rstrip() + "\n\n## The data location\n\nWhere this reference writes `{DATA}` in a setup "
-                     "command (a data folder or file option), write `{DATA}` as it is in your `gt run` command: the harness "
-                     "puts this instance's data location in its place. Never use another folder, such as a default "
-                     "`./data`: the service reads only its own.\n")
+    options = sorted(set(re.findall(r"(--?[A-Za-z][\w-]*)[ =]\{DATA\}", str(spec.get("command") or ""))))
+    if options or "{DATA}" in reference:  # the data location, kept from graders: a setup command names it as {DATA}
+        named = (" This service takes it as " + " or ".join(f"`{o} {{DATA}}`" for o in options)
+                 + ": give exactly that to every setup command that takes a data location, whatever folder the "
+                   "command's own example uses.") if options else ""
+        reference = ("## The data location\n\nThis instance's data location is written `{DATA}`. Where a setup command "
+                     "needs it (a data folder or file option), write `{DATA}` as it is in your `gt run` command: the "
+                     "harness puts this instance's data location in its place. Never use another folder, such as a default "
+                     f"`./data` or a folder of your own: the service reads only its own.{named}\n\n" + reference)
     if not env:
         return reference
     lines = "\n".join(f"- `{k}` = `{v}`" for k, v in env.items())
@@ -577,20 +581,39 @@ def setups_needed(probeset: ProbeSet, wanted: set[str]) -> list[str]:
     return sorted(need, key=lambda n: int(n[1:]))
 
 
-def prepare_setups(ck: Checkpoint, g: Graders, probeset: ProbeSet, names: list[str], reference: str, out: Path) -> dict:
-    ck.put(ck.tools_volume, "/work/reference.md", reference)
-    setups = "\n\n".join(probeset.setups[n] for n in names) + "\n\n" + probeset.setup_notes
+def _setup_session(ck: Checkpoint, g: Graders, setups: str, batch: str):
     ck.put(ck.tools_volume, "/work/setups.md", setups)
-    ck.admin(0, {"batch": "setup", "allow_snapshot": True})
+    ck.admin(0, {"batch": batch, "allow_snapshot": True})
     role = g.role(g.setup_model, tools=("Bash", "Read", "Write"), workspace_volume=ck.tools_volume,
                   network=ck.network, env=(("GT_CONTROL", "http://app0:9000"), ("PATH", TOOL_PATH)), timeout_s=2400)
-    rec = executor.run_role(role, _template("grade-setup.md"))
+    rec = executor.run_role(role, _template("grade-setup.md", DATA="{DATA}"))
     ck.admin(0, {"batch": None, "allow_snapshot": False})
-    ids = ck.get(ck.tools_volume, "ids.md") or ""
+    return rec, ck.get(ck.tools_volume, "ids.md") or "", ck.log_lines(0, batch)
+
+
+def prepare_setups(ck: Checkpoint, g: Graders, probeset: ProbeSet, names: list[str], reference: str, out: Path) -> dict:
+    """Load the named setups in a setup session. A setup it skipped, with no snapshot and no CANNOT mark, gets one
+    more session of its own (the setups it builds on already saved), and both identifier lists are kept."""
+    ck.put(ck.tools_volume, "/work/reference.md", reference)
+    rec, ids, lines = _setup_session(ck, g, "\n\n".join(probeset.setups[n] for n in names) + "\n\n"
+                                     + probeset.setup_notes, "setup")
     have = set(ck.sh(ck.volume, "ls /work/snap 2>/dev/null || true").split())
+    marked = {n for n in names for r in lines if r.get("op") == "mark"
+              and str((r.get("request") or {}).get("text", "")).startswith((f"CANNOT {n}:", f"CANNOT {n} "))}
+    skipped = [n for n in names if n not in have and n not in marked]  # no snapshot, and no word of why
+    if skipped and ids.strip():
+        note = (f"These setups are already saved: {', '.join(sorted(have & set(names)))}. Don't load them again: where a "
+                "setup below builds on one, `gt restore` it, add the rest, and snapshot the new one. Add what you load "
+                "to /work/ids.md below what is there.")
+        rec2, ids2, lines2 = _setup_session(ck, g, note + "\n\n" + "\n\n".join(probeset.setups[n] for n in skipped)
+                                            + "\n\n" + probeset.setup_notes, "setup-2")
+        have = set(ck.sh(ck.volume, "ls /work/snap 2>/dev/null || true").split())
+        if ids2.strip() and ids2.strip() != ids.strip():
+            ids = ids2 if ids.strip() in ids2 else ids.rstrip() + "\n\n## Setups loaded in a second session\n\n" + ids2
+        lines = lines + lines2
+        rec = rec2 if rec2 is not None else rec
     out.mkdir(parents=True, exist_ok=True)
     (out / "ids.md").write_text(ids, encoding="utf-8")
-    lines = ck.log_lines(0, "setup")
     (out / "setup-log.jsonl").write_text("\n".join(json.dumps(r) for r in lines), encoding="utf-8")
     problems = setup_problems(lines, names, have)
     if not ids.strip():

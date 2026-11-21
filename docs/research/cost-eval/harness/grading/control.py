@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import shutil
 import signal
 import socket
@@ -159,8 +160,19 @@ class Service:
         self.set_clock(datetime.strptime(clock, "%Y-%m-%d %H:%M:%S").strftime("%Y-%m-%dT%H:%M:%SZ"))
         return self.start()
 
+    @staticmethod
+    def _command_part(named: str) -> str:
+        """A named setup command up to its first argument placeholder (FILE, {DATA}, <path>): an extraction sometimes
+        writes the arguments' placeholders in, and the command is what's named."""
+        words = []
+        for w in named.split():
+            if re.fullmatch(r"[A-Z][A-Z0-9_]*|\{[A-Z_]+\}|<[^>]+>|\[.*", w):
+                break
+            words.append(w)
+        return " ".join(words) or named
+
     def run(self, command: str) -> dict:
-        allowed = self.spec.get("setup_commands") or []
+        allowed = [self._command_part(a) for a in self.spec.get("setup_commands") or []]
         # the reference writes the data location as {DATA}; this instance's own takes its place
         command = command.replace("{DATA}", self.spec["data_path"])
         if not any(command == a or command.startswith(a + " ") for a in allowed):

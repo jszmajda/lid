@@ -33,6 +33,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -70,6 +71,8 @@ def pending(runs: Path, trajectory_id: str, c: int, steps=STEPS) -> bool:
         return True
     seen = set(status.get("forks") or [])
     for meta_path in (runs / trajectory_id / "course-forks").glob("c*-*-*/trajectory.json"):
+        if not re.fullmatch(r"c\d+-(course|reliance)-\d+", meta_path.parent.name):  # a fork set aside isn't one
+            continue
         m = json.loads(meta_path.read_text())
         if ("flips" if m.get("kind") == "course" else "reliance") not in steps:
             continue
@@ -87,6 +90,14 @@ def _verdicts(path: Path) -> dict[str, str] | None:
     if data.get("error"):  # a grading that failed (extraction, setup) gave no verdicts: not done, so it runs again
         return None
     return {p: (v if isinstance(v, str) else v.get("verdict")) for p, v in (data.get("probes") or {}).items()}
+
+
+def forks_of(forks_dir: Path, course: int, kind: str) -> list[Path]:
+    """The trajectory's forks of one kind for a course change: cNN-<kind>-K folders only, never one set aside under
+    another name (cNN-<kind>-K.before-…)."""
+    if not forks_dir.exists():
+        return []
+    return sorted(f for f in forks_dir.iterdir() if re.fullmatch(rf"c{course:02d}-{kind}-\d+", f.name))
 
 
 def flip_behaves(got: dict, probes: list[str], expect: str) -> bool | None:
@@ -194,7 +205,7 @@ def main(argv=None, *, run: Callable[[list[str]], int] | None = None, volume: Ca
             if n > c or ch.course_change is None:
                 continue
             new, old, choice = growth.course_fork_probes(script, probeset, n)  # the flip pair where the seed has one
-            for fork in sorted((args.runs / t / "course-forks").glob(f"c{n:02d}-course-*")):
+            for fork in forks_of(args.runs / t / "course-forks", n, "course"):
                 fm = json.loads((fork / "trajectory.json").read_text()) if (fork / "trajectory.json").exists() else {}
                 if str(n) not in fm.get("changes", {}):
                     continue
@@ -227,7 +238,7 @@ def main(argv=None, *, run: Callable[[list[str]], int] | None = None, volume: Ca
         for course, lag in growth.reliance_requests(script, upto=c):
             outcomes = growth.reliance_probes(probeset, course)  # the seed's P-RRCC pair, or None
             current = growth.current_rule_probes(script, probeset, course)
-            for fork in sorted((args.runs / t / "course-forks").glob(f"c{course:02d}-reliance-*")):
+            for fork in forks_of(args.runs / t / "course-forks", course, "reliance"):
                 fm = json.loads((fork / "trajectory.json").read_text()) if (fork / "trajectory.json").exists() else {}
                 done = (fm.get("changes") or {}).get("reliance")
                 if not done or not done.get("commit"):

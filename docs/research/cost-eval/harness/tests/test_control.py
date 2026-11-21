@@ -74,10 +74,13 @@ class ControlTest(unittest.TestCase):
         (cls.tmp / "app").mkdir()
         (cls.tmp / "app" / "service.py").write_text(SERVICE)
         (cls.tmp / "app" / "load.py").write_text("import sys; print('loaded', *sys.argv[1:])")
+        (cls.tmp / "app" / "load2.py").write_text("import sys; print('imported', *sys.argv[1:])")
         cls.svc_port, cls.port = free_port(), free_port()
         spec = {"workdir": str(cls.tmp / "app"), "command": f"{sys.executable} service.py {cls.svc_port}",
                 "env": {"DATA_DIR": str(cls.tmp / "data")}, "port": cls.svc_port, "data_path": str(cls.tmp / "data"),
-                "ready_path": "/", "setup_commands": [f"{sys.executable} load.py"]}
+                "ready_path": "/", "setup_commands": [f"{sys.executable} load.py",
+                                                      # as an extraction sometimes writes one: with its argument placeholders
+                                                      f"{sys.executable} load2.py FILE --data-dir {{DATA}} --zone ZONE"]}
         (cls.tmp / "spec.json").write_text(json.dumps(spec))
         env = dict(os.environ, CLOCK_FILE=str(cls.tmp / "clock" / "faketime"), FAKETIME_LIB="/nonexistent",
                    CONTROL_ADMIN_TOKEN="secret", FIXTURES_DIR=str(cls.tmp / "fixtures"))
@@ -210,6 +213,8 @@ class ControlTest(unittest.TestCase):
         # {DATA}, as the reference writes a data location, becomes this instance's own
         self.assertIn(f"loaded --data-dir {self.tmp / 'data'}", self.gt("run", f"{sys.executable} load.py --data-dir {{DATA}}"))
         self.assertIn("not a setup command", self.gt("run", "cat service.py"))
+        # a named command written with its placeholders still allows the command itself, with any arguments
+        self.assertIn("imported a.json --data-dir", self.gt("run", f"{sys.executable} load2.py a.json --data-dir {{DATA}}"))
 
     def test_concurrent_requests_both_get_answers(self):
         self.gt("reset")
