@@ -85,7 +85,9 @@ See design.md, "Later seeds and variants". Feasibility is checked:
   - intent reach and context telemetry.
 - `[ ]` The pilot: bare stripped first as a ceiling check, then all three arms at both windows.
 
-## M2d: The growth test `[ ]`
+## M2d: The growth test `[x]` (banked as a pilot)
+
+Banked as a pilot on 2026-11-21: the instrument gate passed and the trial ran (bare and LID through change 20), but at change 20 bare's whole system was about 25k tokens, too small to exercise the scale and rot mechanisms. Neither hypothesis was tested; the full run was not started.
 
 ReleaseDesk grown by each arm through 40 changes (design.md, "The growth test").
 
@@ -97,11 +99,20 @@ ReleaseDesk grown by each arm through 40 changes (design.md, "The growth test").
 - `[ ]` Fix X and Y for the predictions from the trial's spread, and record them.
 - `[ ]` Full run: bare ×5 (plus the drift floor), LID Full ×5, one-line bare ×3.
 
+## M2e: The checklist arm and the cost of rework, a first look `[ ]`
+
+On ReleaseDesk's growth seed through change 20, paired with the trial's bare and LID runs (replicate g-r1).
+
+- `[ ]` The checklist arm: a bare agent whose AGENTS.md asks it to keep a spec of the system's obligations and ask the owner about anything unsettled (landscape.md, "The checklist arm"). One trajectory through change 20 on replicate g-r1, with the same forks, checkpoints, intent readers and stale-intent audit as the trial's replicate 1.
+- `[ ]` Repair forks: for every latent rule a run missed at changes 10 and 20, fork from that snapshot, deliver the owner's report of the wrong behaviour, and measure what the fix costs and whether it holds without breaking other rules. For all three runs, from their existing snapshots.
+- `[ ]` From data already collected: module count and coupling at every snapshot; LID's spend by phase; owner reading by review depth.
+- `[ ]` Then decide: if the checklist arm lands near LID on latent rules at a fraction of the cost, add replicates 2 and 3 for all three arms (the trial's runs are replicate 1).
+
 ## After the growth test: ideas to review with the maintainer `[ ]`
 
 Suggested by Onagh and Nayebi's specification-explicitness paper (sources.md, "Specification explicitness"). The maintainer asked that they change nothing in the growth test, and be reviewed with her once it finishes.
 
-- `[ ]` **A checklist arm.** A few lines of AGENTS.md: before each change, write or update a spec listing functional requirements, constraints, invariants, negative requirements, edge cases and tie-breaking rules; ask the owner about anything unsettled; update the spec before the code. No design-doc hierarchy, no `@spec` links, no phase stops.
+- `[~]` **A checklist arm** (pulled forward into M2e on 2026-11-21). A few lines of AGENTS.md: before each change, write or update a spec listing functional requirements, constraints, invariants, negative requirements, edge cases and tie-breaking rules; ask the owner about anything unsettled; update the spec before the code. No design-doc hierarchy, no `@spec` links, no phase stops.
   - If it gets most of LID's latent-item lead at a fraction of the cost and owner reading, that answers where LID isn't worth the spend. If LID beats it on reliance forks and rot, that isolates the value of linking and the cascade.
   - It leans on the simulated owner's broad-question rules.
 - `[ ]` **Tag each oracle item by kind of obligation** (invariant, negative requirement, edge case, tie-break, constraint, assumption), done blind, and report fidelity by kind. This gives H2 a second axis beyond change type, and shows which kinds LID's questions bring out.

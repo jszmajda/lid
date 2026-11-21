@@ -47,3 +47,11 @@ The column that matters most for this research is the third one: when someone ch
 - **OpenSpec 2.0 replaced its commands.** It shipped on the snapshot date and replaced its `/opsx:*` commands with skills. Older tutorials won't match it.
 - **BMAD's timing.** BMAD version 7 changes the install path to a skills CLI and plugins, and it was due in mid-November 2026.
 - **How each system handles a person differs the most.** That is the biggest fairness question. Spec Kit takes approval verdicts as inputs. BMAD's headless mode returns its open questions as data. OpenSpec has no gates. Superpowers and Agent OS ask questions interactively. Each arm's configuration says how its human touchpoints map to the user simulator.
+
+## The checklist arm
+
+A bare agent whose AGENTS.md holds only this:
+
+> Before each change, write or update SPEC.md: the system's functional requirements, constraints, invariants, negative requirements (what it must never do), edge cases, and tie-breaking rules. Before you write code, ask the owner about anything the spec leaves unsettled. Update the spec before the code, and keep it current as the system changes.
+
+It names the kinds of obligation that Onagh and Nayebi's specification-explicitness study found carried the gain (sources.md, "Specification explicitness"), without LID's design-doc hierarchy, spec links or phase stops. It asks whether naming the obligations and asking the owner buys most of what LID delivers, at a fraction of the cost and owner reading.
