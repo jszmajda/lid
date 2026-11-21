@@ -338,11 +338,11 @@ class Checkpoint:
                            "-v", f"{executor._volume(self.volume)}:/work", self.image, "sh", "-c",
                            'for f in $(ls -A /src/app); do [ -e "/work/app/$f" ] || cp -a "/src/app/$f" /work/app/; done'])
 
-    def install(self, spec: dict) -> None:
+    def install(self, spec: dict, check: bool = True) -> None:
         """Run the start spec's install commands, where it has them, in its workdir on this export."""
         if spec.get("install"):
             _run(self.runner, ["docker", "run", "--rm", "-v", f"{executor._volume(self.volume)}:/work", self.image, "sh",
-                               "-c", f"cd {spec.get('workdir', '/work/app')} && {spec['install']}"])
+                               "-c", f"cd {spec.get('workdir', '/work/app')} && {spec['install']}"], check=check)
 
     def has_command(self, spec: dict) -> bool:
         """Whether the start command's program is there, where it is a path inside the workdir (`.venv/bin/python`)."""
@@ -402,6 +402,11 @@ def grader_reference(reference: str, spec: dict) -> str:
     """The reference as graders get it: extraction's text, plus the settings the grading instance runs with, so a
     secret the service needs (such as an admin token) is the one graders use."""
     env = {k: v for k, v in (spec.get("env") or {}).items() if "{DATA}" not in str(v)}
+    if "{DATA}" in reference:  # the data location, kept from graders: a setup command names it as {DATA}
+        reference = (reference.rstrip() + "\n\n## The data location\n\nWhere this reference writes `{DATA}` in a setup "
+                     "command (a data folder or file option), write `{DATA}` as it is in your `gt run` command: the harness "
+                     "puts this instance's data location in its place. Never use another folder, such as a default "
+                     "`./data`: the service reads only its own.\n")
     if not env:
         return reference
     lines = "\n".join(f"- `{k}` = `{v}`" for k, v in env.items())

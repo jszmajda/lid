@@ -191,7 +191,8 @@ def make_hop(runs: Path, fallback: list[tuple[str, dict]], env_volume: str | Non
             for source in [v for v in (own_vol, env_volume) if v and (v == env_volume or _volume_exists(v))]:
                 ck.copy_environment(source)
             for _, spec in specs[:1]:
-                ck.install(spec)
+                if not ck.has_command(spec):  # the copies lacked what the command needs: install, as the spec says
+                    ck.install(spec, check=False)
             started = None
             for name, spec in specs:
                 ck.sh(ck.volume, "rm -f /work/log/exec-0.jsonl")
@@ -356,8 +357,9 @@ def main(argv=None) -> int:
         ck.put(ck.volume, "/work/out/reference.md", (out / "reference.md").read_text())
         ck.put(ck.volume, "/work/out/start.json", (out / "start.json").read_text())
         ck.copy_environment(ckpt_volume(args.id, reused, args.change))
-        ck.install(ex["spec"])
-        if not ck.has_command(ex["spec"]):  # the reused volume lacked what the command needs: extract afresh
+        if not ck.has_command(ex["spec"]):  # the copy lacked what the command needs: install, as the spec says
+            ck.install(ex["spec"], check=False)
+        if not ck.has_command(ex["spec"]):  # still missing: extract afresh
             ex = grading.extract(ck, g, out, notes)
     else:
         ex = grading.extract(ck, g, out, notes)

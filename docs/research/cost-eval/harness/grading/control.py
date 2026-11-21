@@ -161,6 +161,8 @@ class Service:
 
     def run(self, command: str) -> dict:
         allowed = self.spec.get("setup_commands") or []
+        # the reference writes the data location as {DATA}; this instance's own takes its place
+        command = command.replace("{DATA}", self.spec["data_path"])
         if not any(command == a or command.startswith(a + " ") for a in allowed):
             return {"ok": False, "error": "not a setup command named in the interface reference", "allowed": allowed}
         p = subprocess.run(command, shell=True, cwd=self.spec.get("workdir", "/app"), env=self.env(),
@@ -292,6 +294,8 @@ def _forward_once(port: int, req: dict) -> dict:
         out["starts_with"] = raw[:4].hex(" ")
     # Headers that can matter to a probe: where a download is named or redirected, and the type of anything not JSON.
     shown = {k: rh.get(k) for k in keep if rh and rh.get(k)}
+    if rh and rh.get("content-length") and (method == "HEAD" or not raw):  # a size only the header gives
+        shown["content-length"] = rh.get("content-length")
     if str(out.get("body", "")).lstrip().startswith(("{", "[")):
         shown.pop("content-type", None)
     if shown:

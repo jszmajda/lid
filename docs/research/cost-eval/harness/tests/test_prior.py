@@ -219,6 +219,11 @@ class EnvironmentTest(unittest.TestCase):
         ck.install({"workdir": "/work/app", "install": "python3 -m venv .venv && .venv/bin/pip install -e ."})
         self.assertIn("cd /work/app && python3 -m venv .venv && .venv/bin/pip install -e .", " ".join(calls[1]))
 
+        class Failed:
+            returncode, stdout, stderr = 1, "", "error: subprocess-exited-with-error"
+        ck2 = grading.Checkpoint(trajectory="t", change=27, commit="c", image="img", runner=lambda cmd, **kw: Failed())
+        ck2.install({"install": "pip install -e ."}, check=False)  # a failed install is reported by has_command, not raised
+
     def test_a_reused_extractions_volume_is_named_as_its_grading_named_it(self):
         import grade_checkpoint as gck
         self.assertEqual(gck.ckpt_volume("g-ref-correct", "change-30", 30), "ce-g-g-ref-correct-c30-ckpt")
@@ -534,8 +539,11 @@ class HopOnDockerTest(unittest.TestCase):
             def copy_environment(self, vol):
                 test.ops.append(("env", vol))
 
-            def install(self, spec):
+            def install(self, spec, check=True):
                 test.ops.append(("install", spec.get("install")))
+
+            def has_command(self, spec):
+                return test.command_there
 
             def sh(self, vol, script, **kw):
                 return ""
@@ -572,6 +580,7 @@ class HopOnDockerTest(unittest.TestCase):
         self.runs = runs_with_lineage()
         (self.runs / "g-bare-1" / "trajectory.json").write_text(json.dumps(
             {"volumes": {"workspace": "ce-g-bare-1-ws"}, "changes": {str(n): {"commit": f"b{n}"} for n in range(41)}}))
+        self.command_there = True
         self.saved = (gck.grading.Checkpoint, gck.subprocess.run)
         gck.subprocess.run = lambda *a, **kw: None
 
@@ -587,6 +596,7 @@ class HopOnDockerTest(unittest.TestCase):
                                 env_volume="ce-under-test-ckpt")
         got = hop(24, "g-bare-1", "b24", {"P-1": b"s"})
         self.assertIn(("env", "ce-under-test-ckpt"), self.ops)  # the dependencies a fresh export lacks
+        self.assertFalse(any(o[0] == "install" for o in self.ops))  # copied in already: nothing to install
         self.assertEqual(self.made[0][1:], (24, "b24"))
         self.assertIn(("export", "ce-g-bare-1-ws"), self.ops)
         self.assertEqual([o for o in self.ops if o[0] in ("restore", "snapshot")], [("restore", "HOP-P-1"), ("snapshot", "HOP-P-1")])
@@ -607,6 +617,13 @@ class HopOnDockerTest(unittest.TestCase):
         envs = [o[1] for o in self.ops if o[0] == "env"]
         self.assertEqual(len(envs), 2)  # its own extraction's volume first, then the build under test's
         self.assertEqual(envs[1], "ce-under-test-ckpt")
+
+    def test_the_specs_install_runs_only_where_the_copied_environment_lacks_the_command(self):
+        self.command_there = False
+        self.gck.grading.Checkpoint = self.fake_checkpoint({"fallback-a"}, restore_ok=True)
+        self.gck.make_hop(self.runs, [("a", {**self.spec("fallback-a"), "install": "pip install -e ."})],
+                          env_volume="ce-under-test-ckpt")(24, "g-bare-1", "b24", {"P-1": b"s"})
+        self.assertIn(("install", "pip install -e ."), self.ops)
 
     def test_a_service_that_starts_empty_but_not_on_the_storage_didnt_come_up(self):
         self.gck.grading.Checkpoint = self.fake_checkpoint({"fallback-a"}, restore_ok=False)

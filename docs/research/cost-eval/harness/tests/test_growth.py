@@ -805,6 +805,21 @@ class GrowthCheckpointTest(unittest.TestCase):
         rows = json.loads((self.runs / "g-bare-1" / "growth" / "checkpoint-04" / "reliance.json").read_text())
         self.assertEqual([(r["course"], r["fork"], r["outcome"]) for r in rows], [(2, "1", "no probe")])
 
+    def test_a_flip_check_whose_grading_left_no_verdict_is_undetermined_not_a_failed_flip(self):
+        self.assertIsNone(gc.flip_behaves({}, ["P-a"], "not met"))
+        self.assertIsNone(gc.flip_behaves({"P-a": "not met"}, ["P-a", "P-b"], "not met"))
+        self.assertTrue(gc.flip_behaves({"P-a": "not met", "P-b": "not met"}, ["P-a", "P-b"], "not met"))
+        self.assertFalse(gc.flip_behaves({"P-a": "met", "P-b": None}, ["P-a", "P-b"], "not met"))  # decided
+        self.assertIsNone(gc.flip_behaves({}, ["P-a"], "anticipated?"))
+        self.assertTrue(gc.flip_behaves({"P-a": "met"}, ["P-a"], "anticipated?"))
+
+    def test_a_grading_that_errored_counts_as_not_done(self):
+        d = Path(tempfile.mkdtemp())
+        (d / "verdicts.json").write_text(json.dumps({"error": "setup: ['no identifier list']", "probes": {}}))
+        self.assertIsNone(gc._verdicts(d))
+        import instrument
+        self.assertIsNone(instrument.verdicts(d))
+
     def test_the_current_rule_held_is_undetermined_where_a_probe_has_no_verdict(self):
         f = gc.current_rule_held
         self.assertTrue(f({"P-a": "met", "P-b": "met"}, ["P-a", "P-b"]))

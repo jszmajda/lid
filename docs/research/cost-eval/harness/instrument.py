@@ -40,6 +40,8 @@ def verdicts(path: Path) -> dict[str, str] | None:
     if not f.exists():
         return None
     data = json.loads(f.read_text())
+    if data.get("error"):  # a grading that failed (extraction, setup) gave no verdicts: not done
+        return None
     return {p: (v if isinstance(v, str) else v.get("verdict")) for p, v in (data.get("probes") or {}).items()}
 
 

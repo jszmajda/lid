@@ -235,6 +235,29 @@ class GrowthReportTest(unittest.TestCase):
         self.assertIn("| bare | 5 | 0/1 | BK-07 |", text)
         self.assertIn("graded in force from its change", text)
 
+    def test_intent_from_tests_and_docs_per_arm_and_checkpoint(self):
+        root = Path(tempfile.mkdtemp())
+        runs, seed = root / "runs", root / "seeds" / "bk"
+        write(seed / "hidden" / "oracle.md", ORACLE)
+        write(seed / "hidden" / "change-script.md", CHANGES)
+        write(seed / "hidden" / "probes.md", PROBES)
+        self.traj(runs, "g-lid-full-1", "lid-full", {2: {"P-BK01-a": "met"}}, {})
+        cell = lambda r, m, lat, mb, st, ret: {"mean": {"recall": r, "recall_of_met": m, "by_group_of_met.latent.recall": lat,  # noqa: E731
+                                                        "rates_per_rule.stale": st, "stale_items_share": ret},
+                                               "minus_baseline": {"recall_of_met": mb}}
+        write(runs / "intent-from-tests" / "growth-g-lid-full-1-c02" / "summary.json", {"cells": {
+            "brief|brief": {"mean": {"recall": 0.49}},
+            "lid-full|tests": cell(0.82, 0.83, 0.93, 0.35, 0.04, 0.29),
+            "lid-full|tests-neutral": cell(0.79, 0.80, 0.93, 0.33, 0.04, 0.29),
+            "lid-full|docs": cell(0.82, 0.83, 1.0, 0.36, 0.02, 0.29)}})
+        r = report.growth_report(runs, seed, "g", {"lid-full": ["1"]}, [2])
+        row = r["arms"]["lid-full"][0]["checkpoints"][0]
+        self.assertEqual(row["intent_reads"]["tests"]["recall_of_met"], 0.83)
+        self.assertEqual(row["intent_reads"]["docs"]["minus_baseline"], 0.36)
+        text = report.render_growth(r)
+        self.assertIn("## Intent from tests and docs", text)
+        self.assertIn("| 2 | lid-full | tests, names replaced | 80% | 93% | 33% | 0.04 | 29% |", text)
+
     def test_growth_figures_per_arm_and_checkpoint(self):
         root = Path(tempfile.mkdtemp())
         runs, seed = root / "runs", root / "seeds" / "bk"

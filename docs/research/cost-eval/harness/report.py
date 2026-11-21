@@ -413,6 +413,27 @@ def _displaced(rows: list[dict]) -> tuple[int, int]:
     return sum(r["outcome"] == "displaced" for r in decided), len(decided)
 
 
+INTENT_SOURCES = {"tests": "tests", "tests-neutral": "tests, names replaced", "docs": "docs"}
+
+
+def intent_reads(runs: Path, tid: str, c: int, arm: str) -> dict | None:
+    """A checkpoint's intent from tests and docs (intent_from_tests.py's summary): per source, recall of the items
+    the build meets, latent recall of them, recall of met minus the brief-only baseline, stale claims per rule, and
+    the share of retired items the reader still states."""
+    s = _json(runs / "intent-from-tests" / f"growth-{tid.replace('/', '-')}-c{c:02d}" / "summary.json")
+    if not s:
+        return None
+    out = {}
+    for src in INTENT_SOURCES:
+        cell = (s.get("cells") or {}).get(f"{arm}|{src}")
+        if cell:
+            m = cell.get("mean") or {}
+            out[src] = {"recall_of_met": m.get("recall_of_met"), "latent_of_met": m.get("by_group_of_met.latent.recall"),
+                        "minus_baseline": (cell.get("minus_baseline") or {}).get("recall_of_met"),
+                        "stale_per_rule": m.get("rates_per_rule.stale"), "retired_stated": m.get("stale_items_share")}
+    return out or None
+
+
 def growth_report(runs: Path, seed_dir: Path, prefix: str, arms: dict[str, list[str]], checkpoints: list[int]) -> dict:
     """The growth test per trajectory and checkpoint (design.md, "The growth test"). Trajectories are
     <prefix>-<arm>-<k>; a replicate k that isn't a number (the drift floor, g-bare-drift) is its own row and joins no
@@ -457,7 +478,7 @@ def growth_report(runs: Path, seed_dir: Path, prefix: str, arms: dict[str, list[
             rel, flips, stale = _json(g / "reliance.json") or [], _json(g / "flips.json") or [], _json(g / "stale-audit.json")
             cforks = _json(g / "course-forks.json") or []
             real_flips = [f for f in flips if f.get("behaves") is not None]
-            anticipations = [f for f in flips if "anticipated" in f]
+            anticipations = [f for f in flips if f.get("anticipated") is not None]  # undetermined ones apart
             courses = (stale or {}).get("courses", {}).values()
             spent = [x for n, x in s["changes"].items() if n <= c]
             dollars = sum(x["agent_usd"] + x["owner_usd"] for x in spent)
@@ -481,6 +502,7 @@ def growth_report(runs: Path, seed_dir: Path, prefix: str, arms: dict[str, list[
                 "stale_files": (sum(x.get("stale", 0) for x in courses),
                                 sum(x.get("stale", 0) + x.get("current", 0) + x.get("mixed", 0) for x in courses)) if stale else None,
                 "intent": ((_json(g / "status.json") or {}).get("intent") or {}).get("state"),
+                "intent_reads": intent_reads(runs, run.name, c, arm),
                 "cost_usd": round(dollars, 4), "cost_per_change": dollars / len(spent) if spent else None,
                 "owner_words": sum(x["words_shown"] for x in spent), "owner_hours": hours,
                 "met_per_owner_hour": len(met) / hours if hours else None,
@@ -551,6 +573,24 @@ def render_growth(r: dict) -> str:
         for arm, c, rows in symptoms:
             unreported = sorted({i for x in rows for i in x.get("graded_unreported") or []})
             lines.append(f"| {arm} | {c} | {ratio([x['symptom_reports'] for x in rows])} | {', '.join(unreported) or '–'} |")
+        lines.append("")
+    reads = [(c, arm, src, [x["intent_reads"][src] for t in ts for x in t["checkpoints"]
+                            if x["checkpoint"] == c and (x.get("intent_reads") or {}).get(src)])
+             for c in r["checkpoints"] for arm, ts in r["arms"].items() for src in INTENT_SOURCES]
+    reads = [x for x in reads if x[3]]
+    if reads:
+        lines += ["## Intent from tests and docs", "",
+                  "A fresh reader given only the build's tests (as written, or with names, comments and docstrings "
+                  "replaced) or its docs, scored against the intent in force (intent_from_tests.py). Means over "
+                  "trajectories.", "",
+                  "| Change | Arm | Source | Recall of met | Latent of met | Minus brief baseline | Stale claims /rule | "
+                  "Retired stated |", "|---|---|---|---|---|---|---|---|"]
+        for c, arm, src, xs in reads:
+            def m(k, xs=xs):
+                return mean([x.get(k) for x in xs])
+            stale = m("stale_per_rule")
+            lines.append(f"| {c} | {arm} | {INTENT_SOURCES[src]} | {pct(m('recall_of_met'))} | {pct(m('latent_of_met'))} | "
+                         f"{pct(m('minus_baseline'))} | {'–' if stale is None else f'{stale:.2f}'} | {pct(m('retired_stated'))} |")
         lines.append("")
     if r.get("reliance_by_course"):
         lines += ["## Reliance forks by course change", "", "| Course change | Arm | Current | Displaced | Neither | Both | "

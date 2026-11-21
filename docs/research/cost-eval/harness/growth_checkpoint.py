@@ -84,7 +84,19 @@ def _verdicts(path: Path) -> dict[str, str] | None:
     if not f.exists():
         return None
     data = json.loads(f.read_text())
+    if data.get("error"):  # a grading that failed (extraction, setup) gave no verdicts: not done, so it runs again
+        return None
     return {p: (v if isinstance(v, str) else v.get("verdict")) for p, v in (data.get("probes") or {}).items()}
+
+
+def flip_behaves(got: dict, probes: list[str], expect: str) -> bool | None:
+    """Whether a flip check behaved: every probe at the expected verdict ("not met"; for an emerging change's
+    "anticipated?", met). Undetermined while any probe lacks a verdict, unless one already decidedly doesn't."""
+    want = "met" if expect == "anticipated?" else "not met"
+    decided = {p: got.get(p) for p in probes if got.get(p) in ("met", "not met")}
+    if any(v != want for v in decided.values()):
+        return False
+    return True if probes and len(decided) == len(probes) else None
 
 
 def _ask_default(model: str = "claude-sonnet-5-5") -> Callable:
@@ -171,9 +183,9 @@ def main(argv=None, *, run: Callable[[list[str]], int] | None = None, volume: Ca
             got = _verdicts(grading_dir / name) or {}
             row = {**e, "verdicts": {p: got.get(p) for p in e["probes"]}}
             if e["expect"] == "anticipated?":  # an emerging change: did the build already do it? Not a flip
-                row.update(anticipated=bool(got) and all(got.get(p) == "met" for p in e["probes"]), behaves=None)
+                row.update(anticipated=flip_behaves(got, e["probes"], "anticipated?"), behaves=None)
             else:
-                row["behaves"] = bool(got) and all(got.get(p) == "not met" for p in e["probes"])
+                row["behaves"] = flip_behaves(got, e["probes"], e["expect"])
             rows.append(row)
         (out / "flips.json").write_text(json.dumps(rows, indent=1))
         # each course fork: the new rule (should hold) and the retired one (should not) at its end, audited, discarded

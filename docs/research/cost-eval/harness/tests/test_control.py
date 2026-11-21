@@ -33,6 +33,9 @@ class H(BaseHTTPRequestHandler):
         if self.path == "/notice":
             b = b"This letter was taken down."; self.send_response(200); self.send_header("content-type", "text/plain")
             self.send_header("content-length", str(len(b))); self.end_headers(); self.wfile.write(b); return
+        if self.path == "/sized":
+            self.send_response(200); self.send_header("content-type", "text/plain"); self.send_header("content-length", "120")
+            self.end_headers(); return
         if self.path == "/lead":
             b = b"\xef\xbb\xbftitle,id\n"; self.send_response(200); self.send_header("content-type", "text/csv")
             self.send_header("content-length", str(len(b))); self.end_headers(); self.wfile.write(b); return
@@ -46,6 +49,8 @@ class H(BaseHTTPRequestHandler):
             self.send_header("content-disposition", 'attachment; filename="bundle-1.zip"')
             self.send_header("content-length", str(len(raw))); self.end_headers(); self.wfile.write(raw); return
         self.send(200, load())
+    def do_HEAD(self):
+        return self.do_GET()
     def do_POST(self):
         n = int(self.headers.get("content-length") or 0); raw = self.rfile.read(n)
         if self.path == "/echo":
@@ -68,7 +73,7 @@ class ControlTest(unittest.TestCase):
         cls.tmp = Path(tempfile.mkdtemp())
         (cls.tmp / "app").mkdir()
         (cls.tmp / "app" / "service.py").write_text(SERVICE)
-        (cls.tmp / "app" / "load.py").write_text("print('loaded')")
+        (cls.tmp / "app" / "load.py").write_text("import sys; print('loaded', *sys.argv[1:])")
         cls.svc_port, cls.port = free_port(), free_port()
         spec = {"workdir": str(cls.tmp / "app"), "command": f"{sys.executable} service.py {cls.svc_port}",
                 "env": {"DATA_DIR": str(cls.tmp / "data")}, "port": cls.svc_port, "data_path": str(cls.tmp / "data"),
@@ -166,6 +171,11 @@ class ControlTest(unittest.TestCase):
         self.assertNotIn("after", (snap / "data" / "items.json").read_text())
         self.assertIn("only a preparation step", self.gt("retain"))
 
+    def test_a_head_requests_size_is_shown(self):
+        out = self.gt("http", "HEAD", "/sized")
+        self.assertIn("content-length: 120", out)
+        self.assertNotIn("content-length", [e for e in self.lines() if e.get("op") == "http"][-1]["request"].get("path", ""))
+
     def test_a_body_that_starts_with_bytes_outside_ascii_shows_them(self):
         out = self.gt("http", "GET", "/lead")
         self.assertIn("the body's first bytes: ef bb bf 74", out)
@@ -197,6 +207,8 @@ class ControlTest(unittest.TestCase):
 
     def test_only_named_setup_commands_run(self):
         self.assertIn("loaded", self.gt("run", f"{sys.executable} load.py"))
+        # {DATA}, as the reference writes a data location, becomes this instance's own
+        self.assertIn(f"loaded --data-dir {self.tmp / 'data'}", self.gt("run", f"{sys.executable} load.py --data-dir {{DATA}}"))
         self.assertIn("not a setup command", self.gt("run", "cat service.py"))
 
     def test_concurrent_requests_both_get_answers(self):

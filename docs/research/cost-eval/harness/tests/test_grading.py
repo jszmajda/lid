@@ -143,6 +143,11 @@ class SetupTest(unittest.TestCase):
         self.assertNotIn("DIR", ref)
         self.assertEqual(grading.grader_reference("# Ref", {"env": {}}), "# Ref")
 
+    def test_a_reference_that_writes_the_data_location_as_a_placeholder_says_how_to_use_it(self):
+        ref = grading.grader_reference("Import with `app import FILE --data-dir {DATA}`.", {"env": {}})
+        self.assertIn("write `{DATA}` as it is", ref)
+        self.assertNotIn("/cfg/data", ref)  # the location itself stays hidden
+
     def test_a_broken_setup_is_named_so_only_its_probes_skip(self):
         problems = ["no snapshot for S1", "CANNOT S2: no researchers yet", "CANNOT S0 qualifications missing"]
         self.assertEqual(grading.broken_setups(problems, ["S0", "S1", "S2", "S3"]), {"S0", "S1", "S2"})
