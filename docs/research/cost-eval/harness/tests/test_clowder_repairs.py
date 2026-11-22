@@ -43,12 +43,13 @@ class Base(unittest.TestCase):
         write(self.files / "repair-reports.json", {"BK-02": {"report": "An order came in after six."},
                                                    "DEP-01": {"report": "The list and the count disagree.", "change": 1}})
         self.grading(self.arm, items={"BK-02": "not met", "BK-03": "met"}, dependency_met=False,
-                     tests={"x::a": "ok", "x::b": "ok"}, probes={"t::probe_m2f_a": "passed"})
+                     tests={"x::a": "ok", "x::b": "ok"}, probes={"t::probe_m2f_a": "passed"}, held={"q::kept": "passed"})
 
-    def grading(self, run: Path, *, items, dependency_met, tests, probes):
+    def grading(self, run: Path, *, items, dependency_met, tests, probes, held=None):
         g = run / "grading" / "change-01"
         write(g / "summary.json", {"items": items, "dependency_met": dependency_met,
-                                   "dependency_probes": {t: {"result": r} for t, r in probes.items()}})
+                                   "dependency_probes": {t: {"result": r} for t, r in probes.items()},
+                                   "held_out_tests": {t: {"result": r} for t, r in (held or {}).items()}})
         write(g / "keeping.json", {"targets": {"heldout_x": {"tests": tests}}})
 
     def argv(self, what, *extra):
@@ -150,13 +151,14 @@ class RecordTest(Base):
 
     def test_a_graded_repair_records_the_fix_keeping_against_the_fork_and_what_it_cost(self):
         self.grading(self.fix, items={"BK-02": "met", "BK-03": "not met"}, dependency_met=False,
-                     tests={"x::a": "ok", "x::b": "FAILED"}, probes={"t::probe_m2f_a": "failed"})
+                     tests={"x::a": "ok", "x::b": "FAILED"}, probes={"t::probe_m2f_a": "failed"}, held={"q::kept": "failed"})
         self.assertEqual(self.record(), 0)
         rec = json.loads((self.fix / "repair.json").read_text())
         self.assertEqual((rec["of"], rec["item"], rec["fixed"]), (ARM, "BK-02", True))
         self.assertEqual(rec["keeping"]["items_broken"], ["BK-03"])
         self.assertEqual(rec["keeping"]["tests_broken"], ["x::b"])
         self.assertEqual(rec["keeping"]["dependency_probes_broken"], ["t::probe_m2f_a"])
+        self.assertEqual(rec["keeping"]["held_out_tests_broken"], ["q::kept"])  # change 20's graded held-out copies
         self.assertIn("agent_cost_usd", rec)
         self.assertIn("turns", rec["measures"])
         self.assertTrue(any(f"ce-{ARM}-fix-BK-02-ws" in c for c in self.removed))  # the repair fork's volumes go

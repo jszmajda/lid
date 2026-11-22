@@ -1289,7 +1289,9 @@ class ShellProbesTest(unittest.TestCase):
         g = rg.RustGraders(image="img", roles_volume="roles", claude_code="v")
         rg.grade_probes(ck, g, probeset, applicable, base="b0", out=Path(tempfile.mkdtemp()), volume="ckpt",
                         run_role=run_role, batch_size=1)
-        extraction, first, second = calls[0], calls[1], calls[3]
+        extraction = calls[0]
+        first = next(c for c in calls if "/work/out/probes-b01.md" in c and "You run probes" in c)
+        second = next(c for c in calls if "/work/out/probes-b02.md" in c and "You run probes" in c)
         self.assertIn("clowder-tui", extraction)
         self.assertNotIn("crates/clowder-tui/tests/", first)  # P-NEW01-a needs nothing
         self.assertIn("crates/clowder-tui/tests/", second)  # P-NEW01-b needs the shell
@@ -1311,3 +1313,22 @@ class ShellProbesTest(unittest.TestCase):
         rendered = grading.render_for_execution(ps.probes[:1], ps.setup_notes, ps.setups)
         self.assertIn("Screen probes", rendered)
         self.assertNotIn("Expected observation", rendered)
+
+
+class GradedKeepingOnlyTest(unittest.TestCase):
+    def test_keeping_alone_runs_the_graded_targets_again_and_keeps_the_rest_of_the_summary(self):
+        import grade_rust
+        root, run, seed = m2f_fork()
+        out = run / "grading" / "change-03"
+        out.mkdir(parents=True)
+        (out / "summary.json").write_text(json.dumps({"items": {"CLX-0301": "met"}, "dependency_met": True}))
+        (out / "graded-targets.json").write_text('{"old": true}')
+        grade_rust.main(["--id", "cf-x", "--runs", str(root / "runs"), "--seed-dir", str(seed), "--keeping-only",
+                         "--no-classify"], checkpoint=lambda name, commit, image: M2fCk(),
+                        run_role=lambda *a, **k: self.fail("no model call"))
+        summary = json.loads((out / "summary.json").read_text())
+        self.assertEqual(summary["items"], {"CLX-0301": "met"})  # the probes' results stand
+        self.assertIs(summary["dependency_met"], False)  # the graded targets ran again
+        self.assertEqual(summary["held_out_tests_met"], True)
+        self.assertEqual(json.loads((out / "graded-targets.before-rerun.json").read_text()), {"old": True})
+        self.assertNotIn("old", json.loads((out / "graded-targets.json").read_text()))

@@ -34,6 +34,14 @@ Design: "Later seeds and variants" (the falsification test's grading) and "Grade
      step the test did with its own logic rather than the library's is an interface fault too, and a "met" on an
      item the extraction found absent is a conflict: "missing (conflict)", out of the share, flagged with both
      rulings for a spot-check.
+   - a probe that needs `tui` drives the game's terminal shell (clowder-tui): the extraction covers the shell's
+     surface as well (drawing a frame into a test backend, resolving keys, the shell's update), and its batch's
+     executor is told to write its test in the shell's crate. Probes without that need are graded as before.
+5. **Graded targets (M2f).** The variant set's graded/ folder (m2f_graded_targets.py) holds the dependency probes and
+   the held-out test functions as test targets of their own, built from the snapshot. A change is graded on its own
+   targets that are in force (graded_for_change), through the keeping step's machinery: each target goes into the
+   arm's checkout, is built with the compile-only adaptation, run, tallied, and its failures classified. Each test's
+   result, and whether all the change's probes (and all its held-out tests) passed, is graded_tests.
 """
 
 from __future__ import annotations
@@ -174,6 +182,66 @@ def _count(xs) -> dict[str, int]:
     return dict(sorted(out.items()))
 
 
+# ------------------------------------------------------------------------------------- M2f's graded targets
+
+
+GRADED_JSON = "graded.json"  # the variant set's graded/ folder, from m2f_graded_targets.py
+DEPENDENCY_PROBE, HELD_OUT_TEST = "dependency probe", "held-out test"
+
+
+def load_graded(graded_dir: Path) -> list[dict]:
+    return json.loads((graded_dir / GRADED_JSON).read_text(encoding="utf-8"))
+
+
+def graded_for_change(entries: list[dict], n: int) -> list[dict]:
+    """The targets that grade change n: its dependency probes and its held-out tests still in force (status
+    "graded"). A retired held-out test grades nothing."""
+    return [e for e in entries if e.get("change") == n and e.get("status") == "graded"]
+
+
+def graded_files(graded_dir: Path, entries: list[dict]) -> dict[str, str]:
+    """The targets' files by checkout path, as the snapshot gave them."""
+    return {f: (graded_dir / f).read_text(encoding="utf-8") for e in entries for f in e["files"]}
+
+
+def _graded_result(rec: dict | None, name: str) -> dict:
+    if rec is None:
+        return {"result": "not built", "cause": "target not run"}
+    if rec["compile_failed"]:
+        reason = (rec.get("adaptation") or {}).get("reason") or (rec["errors"] or [""])[0]
+        return {"result": "not built", "cause": not_built_cause(reason)}
+    adapted = {"adapted": True} if (rec.get("adaptation") or {}).get("status") == "adapted" else {}
+    status = rec["tests"].get(name)
+    if status == "ok":
+        return {"result": "passed", **adapted}
+    if status == "FAILED":
+        failure = (rec.get("failures") or {}).get(name)
+        return {"result": "failed", **({"class": failure["classification"]} if failure else {}), **adapted}
+    cause = "ignored" if status == "ignored" else f"no result line (exit {rec.get('exit_code')})"
+    return {"result": "not run", "cause": cause, **adapted}
+
+
+def graded_tests(result: dict, entries: list[dict]) -> dict:
+    """Each graded test's result, by its cargo name (`<module>::<fn>`), from the targets' keeping result: "passed",
+    "failed" (with the classifier's class when it ruled), "not built" (with the cause, as keeping counts it), or "not
+    run" (ignored, or no result line in a target that built); "adapted" marks a test whose target built only after
+    the compile-only adaptation. Probes and held-out tests apart, each with its roll-up: true when every one passed,
+    false when any didn't, null when the change has none."""
+    probes: dict[str, dict] = {}
+    held: dict[str, dict] = {}
+    for e in entries:
+        rec = (result.get("targets") or {}).get(e["target"])
+        into = probes if e["kind"] == DEPENDENCY_PROBE else held
+        for fn in e["tests"]:
+            name = f"{e['module']}::{fn}" if e.get("module") else fn
+            into[name] = _graded_result(rec, name)
+
+    def met(tests: dict) -> bool | None:
+        return all(t["result"] == "passed" for t in tests.values()) if tests else None
+    return {"dependency_probes": probes, "dependency_met": met(probes), "held_out_tests": held,
+            "held_out_tests_met": met(held)}
+
+
 # ------------------------------------------------------------------------------------- edits to existing tests
 
 
@@ -292,13 +360,27 @@ class RustGraders:
 
 
 IMPLEMENTATION = ("implemented", "absent", "unclear")
+SHELL_NEED, SHELL_CRATE = "tui", "clowder-tui"  # a probe that needs "tui" drives the game's terminal shell
 
 
-def extraction_prompt(items: list[tuple[str, str]] = ()) -> str:
-    """items: (ID, statement) for each graded item of the change, whose implementation the extraction records."""
+def _drives_shell(needs) -> bool:
+    return SHELL_NEED in set(needs or ())
+
+
+def extraction_prompt(items: list[tuple[str, str]] = (), needs=()) -> str:
+    """items: (ID, statement) for each graded item of the change, whose implementation the extraction records.
+    needs: what the change's probes need; where one needs the shell, the reference covers the shell's surface too."""
     note = ""
+    if _drives_shell(needs):
+        note += (f"Some graders will also drive the game's terminal shell, the `{SHELL_CRATE}` crate, from a test. Cover "
+                 f"it in step 2 too, and check its examples in `crates/{SHELL_CRATE}/tests/zz_reference_check.rs` "
+                 "(step 3): how to build the shell's view state, draw a frame into a `ratatui::backend::TestBackend` of "
+                 "a given size and read the buffer back as text, one string per row, resolve a key against the view "
+                 "and pass the action to the shell's update, and apply what the update returns to the state. Include "
+                 "every key, overlay, row, and drawn element the change added to the shell or altered, and how to "
+                 "reach each one.\n\n")
     if items:
-        note = ("5. For each item below, record whether the change's diff implements anything addressing it, in "
+        note += ("5. For each item below, record whether the change's diff implements anything addressing it, in "
                 "/work/out/implementation.json: `{\"items\": [{\"item\": \"<ID>\", \"status\": \"implemented\" | "
                 "\"absent\" | \"unclear\", \"evidence\": [{\"file\": \"<path>\", \"symbols\": [\"<function, type, "
                 "or variant>\"]}], \"note\": \"<one sentence>\"}]}`, one entry per item.\n"
@@ -406,8 +488,12 @@ def helpers_note(helpers: dict | None) -> str:
     return "\n".join(parts) + "\n\n"
 
 
-def execution_prompt(bid: str, helpers: dict | None = None) -> str:
-    return grading._template("grade-execute-rust.md", BATCH=bid, HELPERS=helpers_note(helpers))
+def execution_prompt(bid: str, helpers: dict | None = None, needs=()) -> str:
+    """needs: what the batch's probes need; a probe that needs the shell gets its test in the shell's crate."""
+    shell = (f"Probes marked **Needs:** {SHELL_NEED} drive the game's terminal shell: write each such probe's test "
+             f"file in `/work/app/crates/{SHELL_CRATE}/tests/` and run it with `-p {SHELL_CRATE}`, whatever crate "
+             "the batch's other probes use.\n\n") if _drives_shell(needs) else ""
+    return grading._template("grade-execute-rust.md", BATCH=bid, HELPERS=helpers_note(helpers) + shell)
 
 
 FAULTS = ("compile", "fixture", "interface", "observation")
@@ -464,7 +550,7 @@ def _judge_batch(ck, g: RustGraders, batch: list, bid: str, out: Path, *, volume
     (bdir / "probes.md").write_text(rendered, encoding="utf-8")
     try:
         rec = run_role(g.role(g.execute_model, tools=("Bash", "Read", "Write", "Edit"), workspace_volume=volume,
-                              timeout_s=2400), execution_prompt(bid, helpers))
+                              timeout_s=2400), execution_prompt(bid, helpers, needs={n for p in batch for n in p.needs}))
         sessions[bid] = {"usage": _usage(rec), "reply": rec.text}
     except executor.RoleFailed as e:
         sessions[bid] = {"error": str(e)}
@@ -500,10 +586,13 @@ def grade_probes(ck, g: RustGraders, probeset: grading.ProbeSet, probes: list, *
     same instructions (nothing about the arm), and if it is still unresolved its verdict is "missing", with the fault.
     helpers: the snapshot's test helpers as placed (place_probe_helpers), offered to every executor. items: the change's
     graded items, (ID, statement), whose implementation the extraction records from the diff; an interface fault left
-    after the rerun on an item it found absent is a confirmed absence: "not met"."""
+    after the rerun on an item it found absent is a confirmed absence: "not met". A probe that needs `tui` drives the
+    terminal shell: the extraction then covers the shell's surface too, and its batch's executor is told the shell's
+    crate."""
     out.mkdir(parents=True, exist_ok=True)
     rec = run_role(g.role(g.extraction_model, tools=("Bash", "Read", "Write", "Edit", "Glob", "Grep"),
-                          workspace_volume=volume, timeout_s=2400), extraction_prompt(items))
+                          workspace_volume=volume, timeout_s=2400),
+                   extraction_prompt(items, needs={n for p in probes for n in p.needs}))
     reference = ck.get("/work/out/reference.md") or ""
     (out / "reference.md").write_text(reference, encoding="utf-8")
     sessions = {"extraction": {"usage": _usage(rec), "problems": [] if reference.strip() else ["no reference"]}}

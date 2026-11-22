@@ -18,6 +18,12 @@ from for the held-out slice. Writes under ../runs/<id>/grading/change-NN/:
   without the seed's change script (or with --no-classify) the failures stay unclassified. Compare it with the variant's
   keeping-baseline-<variant>.json, the same run on the untouched variant, for tests that never run (ignored, or
   gated off) and so never count;
+- graded-targets.json: with a variant set's graded targets (M2f; m2f_graded_targets.py writes them to
+  <variants>/graded, or --graded-dir), the change's own dependency probes and held-out tests still in force, each
+  target put into the arm's checkout and built, adapted, run, and its failures classified exactly as keeping does
+  (graded-targets/ holds the logs, adapted files, and the classifier's record); retired held-out tests and other
+  changes' targets aren't run. Without a graded folder (the pilot's variant sets) the step is skipped, and the
+  summary says why;
 - test_edits.json: test files that existed at the start and that the arm edited, deleted, or renamed, with lines and
   #[test] functions before and after;
 - probes/: the interface reference, each batch's probes as the executor saw them, each probe's test and output, the
@@ -32,10 +38,17 @@ from for the held-out slice. Writes under ../runs/<id>/grading/change-NN/:
   new-intent items and kept-behaviour checks apart (the change script's "Kept behaviour" IDs), each with items met
   out of those with a verdict, "missing" ones counted apart and by fault, and beside them the items an interface
   fault left after the rerun, "not met (absent)" or missing; the probe helpers offered; and the visible-assertion
-  audit.
+  audit. With graded targets: dependency_probes and held_out_tests, each test by its cargo name with its result
+  ("passed", "failed" with the classifier's "class", "not built" with its "cause", or "not run"), dependency_met and
+  held_out_tests_met (every one of the change's passed; null when it has none), and graded_targets (the folder,
+  the targets run, compile failures, adaptations), or graded_targets.skipped with the reason. probes_skipped says why
+  the LLM-executed probes didn't run when their file is absent; classification_skipped, when the change script
+  doesn't have the change.
 
 The probes are the seed's hidden/probes.md, in the format the other seeds use; those in force at the change run.
-The checkpoint volume's build output is deleted at the end, and the volume too unless --keep.
+The seed files can each be named instead (--probes, --change-script, --kept-assertions, --oracle), as M2f's are
+(seeds/clowder/hidden/m2f/). The checkpoint volume's build output is deleted at the end, and the volume too unless
+--keep.
 """
 
 from __future__ import annotations
@@ -63,12 +76,32 @@ def _held_out_test_counts(held_dir: Path, held: list[str]) -> dict[str, int]:
             for p in held}
 
 
-def keeping(ck, held_dir: Path, held: list[str], out: Path | None = None, *,
-            classify: Callable[[dict, dict[str, str], dict[str, dict[str, str]]], None] | None = None) -> dict:
+Classify = Callable[[dict, dict[str, str], dict[str, dict[str, str]]], None]
+
+
+def keeping(ck, held_dir: Path, held: list[str], out: Path | None = None, *, classify: Classify | None = None) -> dict:
     """Each held-out file as a target of its own against the arm's code, after the compile-only adaptation
     (costeval/rust_adapt.py) where the target fails to build only on what the rule covers. classify(result, logs,
     files), given, rules on the failing tests (costeval/rust_classify.py), with each target's log and files as run."""
-    files = rg.held_out_targets(held_dir, held)
+    return run_targets(ck, rg.held_out_targets(held_dir, held), rg.held_out_target_names(held),
+                       _held_out_test_counts(held_dir, held), out, classify=classify)
+
+
+def graded(ck, graded_dir: Path, entries: list[dict], out: Path | None = None, *,
+           classify: Classify | None = None) -> tuple[dict, dict]:
+    """M2f's graded targets (graded.json's entries, as rg.graded_for_change picks them for the change) against the
+    arm's code, through the keeping step's machinery. Returns the keeping result and each test's result with the
+    change's roll-ups (rg.graded_tests)."""
+    result = run_targets(ck, rg.graded_files(graded_dir, entries), [(e["crate"], e["target"]) for e in entries],
+                         {e["target"]: len(e["tests"]) for e in entries}, out, classify=classify)
+    return result, rg.graded_tests(result, entries)
+
+
+def run_targets(ck, files: dict[str, str], names: list[tuple[str, str]], expected: dict[str, int],
+                out: Path | None = None, *, classify: Classify | None = None) -> dict:
+    """Put these files into the arm's checkout, then build each (crate, target), adapting it where the rule covers
+    what stops it, run it, and tally the results (rg.keeping_result), classifying failures when classify is given.
+    expected: #[test] count per target. out, given, holds each target's log and its adapted files."""
     for path, text in files.items():
         ck.put(f"/work/app/{path}", text)
     sources: dict[str, str] = {}
@@ -78,7 +111,7 @@ def keeping(ck, held_dir: Path, held: list[str], out: Path | None = None, *,
             sources.update(ra.arm_sources(ck))
         return sources
     runs, adaptations, logs, files_run = [], {}, {}, {}
-    for crate, target in rg.held_out_target_names(held):
+    for crate, target in names:
         own = {p: t for p, t in files.items()
                if p.startswith(f"crates/{crate}/tests/{target}/") or p == f"crates/{crate}/tests/{target}.rs"}
         cargo = (f"cd /work/app && CARGO_TARGET_DIR=/work/target timeout 1800 cargo test --offline "
@@ -96,7 +129,7 @@ def keeping(ck, held_dir: Path, held: list[str], out: Path | None = None, *,
                 dest = out / "adapted" / path
                 dest.parent.mkdir(parents=True, exist_ok=True)
                 dest.write_text(adapted[path])
-    result = rg.keeping_result(runs, _held_out_test_counts(held_dir, held), adaptations)
+    result = rg.keeping_result(runs, expected, adaptations)
     if classify is not None:
         classify(result, logs, files_run)
     else:
@@ -117,11 +150,11 @@ def test_edits(ck, base: str, commit: str) -> dict:
     return rg.test_edits(ns, num, count)
 
 
-def graded_items(seed_dir: Path, n: int, meta: dict, probes: list) -> list[tuple[str, str]]:
+def graded_items(seed_dir: Path, n: int, meta: dict, probes: list, oracle: Path | None = None) -> list[tuple[str, str]]:
     """(ID, statement) for the change's graded items whose implementation the extraction records: the oracle's items
     live at the change that have probes here. A fork's diff starts from the snapshot, so the start's items, which the
-    snapshot already has, are left out."""
-    oracle_path = seed_dir / "hidden" / "oracle.md"
+    snapshot already has, are left out. oracle: the oracle's path (default <seed-dir>/hidden/oracle.md)."""
+    oracle_path = oracle or seed_dir / "hidden" / "oracle.md"
     if not oracle_path.exists():
         return []
     oracle = simulator.parse_oracle(oracle_path.read_text(encoding="utf-8"))
@@ -141,9 +174,16 @@ def main(argv=None, *, checkpoint=None, run_role=executor.run_role) -> int:
     ap.add_argument("--change-script", type=Path, help="default: <seed-dir>/hidden/change-script.md")
     ap.add_argument("--no-classify", action="store_true", help="leave failing held-out tests unclassified")
     ap.add_argument("--kept-assertions", type=Path, help="default: <seed-dir>/hidden/kept-assertions.json")
+    ap.add_argument("--oracle", type=Path,
+                    help="the oracle whose items the extraction is asked about; default: <seed-dir>/hidden/oracle.md")
+    ap.add_argument("--graded-dir", type=Path,
+                    help="the graded targets (M2f, from m2f_graded_targets.py); default: <variants>/graded when the run "
+                         "was forked from a variant set")
+    ap.add_argument("--no-graded", action="store_true", help="don't run the graded targets")
     ap.add_argument("--keeping-only", action="store_true",
-                    help="run the held-out keeping step alone again, keeping the rest of the change's summary; the "
-                         "earlier keeping.json and keeping/ stay beside it as keeping.<tag>")
+                    help="run the held-out keeping step (and the graded targets) alone again, keeping the rest of the "
+                         "change's summary; the earlier keeping.json and keeping/ stay beside it as keeping.<tag>, and "
+                         "graded-targets.json and graded-targets/ as graded-targets.<tag>")
     ap.add_argument("--keeping-tag", default="before-rerun")
     ap.add_argument("--audit-only", action="store_true",
                     help="run the visible-assertion audit alone again, keeping the rest of the change's summary; the "
@@ -177,20 +217,27 @@ def main(argv=None, *, checkpoint=None, run_role=executor.run_role) -> int:
     summary["seed_files"] = {"probes_sha256": sha(probes_file),
                              "kept_assertions_sha256": sha(args.kept_assertions or args.seed_dir / "hidden" / "kept-assertions.json"),
                              "change_script_sha256": sha(args.change_script or args.seed_dir / "hidden" / "change-script.md")}
+    if args.oracle:
+        summary["seed_files"]["oracle_sha256"] = sha(args.oracle)
     g = rg.RustGraders(image=image, roles_volume=ROLES_VOLUME, claude_code=CLAUDE_CODE,
                        execute_model=args.execute_model, judge_model=args.judge_model)
     script_path = args.change_script or args.seed_dir / "hidden" / "change-script.md"
-    classify = None
+    classifier: Callable[[Path], Classify] | None = None  # a classify writing its record under the folder given
     if not args.no_classify and script_path.exists():
-        change = rc.change_text(simulator.parse_change_script(script_path.read_text(encoding="utf-8"))[n])
+        script = simulator.parse_change_script(script_path.read_text(encoding="utf-8"))
+        if n in script:
+            change = rc.change_text(script[n])
 
-        def ask(prompt: str):
-            rec = run_role(g.role(g.judge_model, timeout_s=1200), prompt,
-                           json_schema=json.dumps(rc.SCHEMA, separators=(",", ":")))
-            return rec.structured, rg._usage(rec)
+            def ask(prompt: str):
+                rec = run_role(g.role(g.judge_model, timeout_s=1200), prompt,
+                               json_schema=json.dumps(rc.SCHEMA, separators=(",", ":")))
+                return rec.structured, rg._usage(rec)
 
-        def classify(result, logs, files):
-            rc.classify(result, logs, files, change, ask=ask, out=out / "keeping" / "classify")
+            def classifier(dest: Path) -> Classify:
+                return lambda result, logs, files: rc.classify(result, logs, files, change, ask=ask, out=dest)
+        else:
+            summary["classification_skipped"] = f"no change {n} in {script_path}"
+    classify = classifier(out / "keeping" / "classify") if classifier else None
     try:
         if not args.keeping_only:
             edits = test_edits(ck, base, commit)
@@ -254,14 +301,49 @@ def main(argv=None, *, checkpoint=None, run_role=executor.run_role) -> int:
                     "compile_failed_not_adapted", "tests_not_built", "tests_not_built_by_cause", "adapted", "adaptations_by_code",
                     "reached_adaptation", "reached_adaptation_tests", "share_passed", "share_kept",
                     "share_of_held_out_passed", "classification_cost_usd")}
+            forked = bool((meta.get("fork_of") or {}).get("variants"))
+            graded_dir = args.graded_dir or (variants / "graded" if forked else None)
+            if args.no_graded:
+                summary["graded_targets"] = {"skipped": "--no-graded"}
+            elif graded_dir is None:
+                summary["graded_targets"] = {"skipped": "no graded targets: the run wasn't forked from a variant set, "
+                                                        "and no --graded-dir"}
+            elif not (graded_dir / rg.GRADED_JSON).is_file():
+                summary["graded_targets"] = {"skipped": f"no graded targets: {graded_dir / rg.GRADED_JSON} doesn't exist"}
+            else:
+                if args.keeping_only:  # the earlier run stays beside the new one
+                    for name, kept_as in (("graded-targets.json", f"graded-targets.{args.keeping_tag}.json"),
+                                          ("graded-targets", f"graded-targets.{args.keeping_tag}")):
+                        if (out / name).exists() and not (out / kept_as).exists():
+                            (out / name).rename(out / kept_as)
+                        elif (out / name).is_dir():
+                            shutil.rmtree(out / name)
+                chosen = rg.graded_for_change(rg.load_graded(graded_dir), n)
+                result, fields = graded(ck, graded_dir, chosen, out / "graded-targets",
+                                        classify=classifier(out / "graded-targets" / "classify") if classifier else None)
+                (out / "graded-targets.json").write_text(json.dumps({"dir": str(graded_dir), "entries": chosen, **result},
+                                                                    indent=1))
+                summary.update(fields)
+                summary["graded_targets"] = {
+                    "dir": str(graded_dir), "graded_sha256": sha(graded_dir / rg.GRADED_JSON),
+                    "targets": [e["target"] for e in chosen],
+                    **{k: result.get(k) for k in ("compile_failed", "compile_failed_not_adapted", "adapted",
+                                                  "adaptations_by_code", "reached_adaptation_tests", "classified",
+                                                  "classification_cost_usd")}}
             if args.keeping_only:  # the rest of the earlier summary stands
                 earlier = json.loads((out / "summary.json").read_text()) if (out / "summary.json").exists() else {}
+                for k in ("dependency_probes", "dependency_met", "held_out_tests", "held_out_tests_met", "graded_targets",
+                          "classification_skipped"):
+                    if k in summary:
+                        earlier[k] = summary[k]
                 earlier["held_out_retention"] = summary.get("held_out_retention")
                 earlier["keeping_rerun"] = {"at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
                                             "earlier_kept_as": f"keeping.{args.keeping_tag}.json",
                                             "seed_files": summary["seed_files"]}
                 summary = earlier
             probes_path = args.probes or args.seed_dir / "hidden" / "probes.md"
+            if not args.no_probes and not args.keeping_only and not probes_path.exists():
+                summary["probes_skipped"] = f"no probes file at {probes_path}: the LLM-executed probes didn't run"
             if not args.no_probes and not args.keeping_only and probes_path.exists():
                 probeset = grading.parse_probes(probes_path.read_text(encoding="utf-8"))
                 applicable = [p for p in probeset.probes if p.applies(n) and not p.deferred]
@@ -272,7 +354,7 @@ def main(argv=None, *, checkpoint=None, run_role=executor.run_role) -> int:
                     summary["probe_helpers"] = {c: h["status"] for c, h in helpers.items()}
                     result = rg.grade_probes(ck, g, probeset, applicable, base=base, out=out / "probes", volume=ck.volume,
                                              batch_size=args.batch_size, run_role=run_role, helpers=helpers,
-                                             items=graded_items(args.seed_dir, n, meta, applicable))
+                                             items=graded_items(args.seed_dir, n, meta, applicable, oracle=args.oracle))
                     items = {item: v["verdict"] for item, v in result["items"].items()}
                     kept = rg.kept_behaviour_ids(script_path.read_text(encoding="utf-8")) if script_path.exists() else set()
                     summary["items"], summary["kept_behaviour_checks"] = rg.split_items(items, kept)

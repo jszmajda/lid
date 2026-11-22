@@ -15,8 +15,8 @@ change; one fresh session opens with the owner's repair report for the item (rep
 row's report, or DEP-NN's for the dependency), and the owner answers as in any change. The repair fork is graded with
 grade_rust.py like any fork (its trajectory.json names the same variant set). record compares that grading with the
 fork's: fixed is the row met (for DEP-NN, every dependency probe passing); keeping lists the fork's other rows met
-before and not met now, its held-out tests that passed and now don't, and its dependency probes that passed and now
-don't; with cost, turns, model calls, wall time and files read (costeval/rot_cost.py). Then the repair fork's volumes
+before and not met now, its held-out tests that passed and now don't (the pilot's held-out files, and the graded
+held-out copies), and its dependency probes that passed and now don't; with cost, turns, model calls, wall time and files read (costeval/rot_cost.py). Then the repair fork's volumes
 go. release removes a fork's own volumes once every miss it has is repaired and recorded (or it has none; a null fork's,
 once graded).
 
@@ -198,8 +198,9 @@ def _ok_tests(keeping: dict | None) -> set[str]:
             for t, r in (target.get("tests") or {}).items() if r == "ok"}
 
 
-def _passed_probes(summary: dict) -> set[str]:
-    return {t for t, r in (summary.get("dependency_probes") or {}).items() if r.get("result") == "passed"}
+def _passed(summary: dict, key: str = "dependency_probes") -> set[str]:
+    """The graded targets' tests that passed (grade_rust.py: dependency_probes, held_out_tests)."""
+    return {t for t, r in (summary.get(key) or {}).items() if (r or {}).get("result") == "passed"}
 
 
 def record(args, docker: Callable) -> int:
@@ -223,7 +224,9 @@ def record(args, docker: Callable) -> int:
            "keeping": {"items_broken": sorted(i for i in before_items if after_items.get(i) == "not met"),
                        "items_undetermined": sorted(i for i in before_items if after_items.get(i) not in ("met", "not met")),
                        "tests_broken": sorted(_ok_tests(arm_keeping) - _ok_tests(fixed_keeping)),
-                       "dependency_probes_broken": sorted(_passed_probes(arm_summary) - _passed_probes(fixed_summary))},
+                       "dependency_probes_broken": sorted(_passed(arm_summary) - _passed(fixed_summary)),
+                       "held_out_tests_broken": sorted(_passed(arm_summary, "held_out_tests")
+                                                       - _passed(fixed_summary, "held_out_tests"))},
            "start_commit": meta.get("start_commit"), "commit": done.get("commit"),
            "agent_cost_usd": done.get("agent_cost_usd"), "owner_cost_usd": done.get("owner_cost_usd"),
            "rounds": done.get("rounds"), "minutes": done.get("minutes"),
