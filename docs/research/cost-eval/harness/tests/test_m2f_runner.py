@@ -57,12 +57,12 @@ class M2fRunnerTest(unittest.TestCase):
         cmds = dry("right", runs=self.runs)
         self.assertTrue(any("m2f_right_builds.py" in c and "--out" in c for c in cmds))
         forks = [c for c in cmds if "run_fork.py" in c]
-        self.assertEqual(ids(cmds, "run_fork.py"), [f"m2f-right-c{n:02d}" for n in range(13, 21)])  # builds.py's right builds
+        self.assertEqual(ids(cmds, "run_fork.py"), [f"m2f-right-c{n:02d}" for n in range(13, 25)])  # builds.py's right builds
         for c in forks:
             n = re.search(r"--change (\d+)", c).group(1)
-            for part in ("--null", "--variant full", "/clowder-variants/v2 ", f"/right/change-{n}.diff"):
+            for part in ("--null", "--variant full", "/clowder-variants/v2 ", f"--result-patch ", f"/right/change-{n}.diff"):
                 self.assertIn(part, c)
-        self.assertEqual(ids(cmds, "grade_rust.py"), [f"m2f-right-c{n:02d}" for n in range(13, 21)])
+        self.assertEqual(ids(cmds, "grade_rust.py"), [f"m2f-right-c{n:02d}" for n in range(13, 25)])
         self.assertIn("m2f_null_check.py", cmds[-1])
         self.assertIn("--mode right", cmds[-1])
 

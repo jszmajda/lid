@@ -133,6 +133,39 @@ class ForkTest(unittest.TestCase):
         meta = json.loads((f.runs / "cf-stripped-bare-200k-c04-r2" / "trajectory.json").read_text())
         self.assertEqual(meta["owner_scope"], sm.FORK_SCOPE)
 
+    def test_a_null_fork_can_record_a_patch_as_its_changes_result_for_grading_from_the_snapshot(self):
+        # a right build (the instrument's positive control): committed after the snapshot, never folded into it, so the
+        # graders' diff from the start commit shows it as an arm's change would
+        f = Fixture()
+        patch = f.root / "right.diff"
+        patch.write_text(PATCH)
+
+        class Committing(Docker):
+            def __call__(self, cmd, **kw):
+                self.calls.append({"cmd": cmd, "input": kw.get("input")})
+                if "commit -q" in (cmd[-1] if cmd and isinstance(cmd[-1], str) else ""):
+                    return subprocess.CompletedProcess(cmd, 0, "r1ght\n", "")
+                return subprocess.CompletedProcess(cmd, 0, "", "")
+        docker = Committing()
+        argv = f.argv()
+        argv[argv.index("--arm"):argv.index("--arm") + 2] = []
+        self.assertEqual(rf.main([*argv, "--null", "--result-patch", str(patch)], deps=f.deps(docker)), 0)
+        meta = json.loads((f.runs / "cf-stripped-null-200k-c01-r2" / "trajectory.json").read_text())
+        self.assertEqual(meta["start_commit"], "base")  # the snapshot the fork started from
+        self.assertEqual(meta["changes"]["1"]["commit"], "r1ght")  # the patch, committed as the change's result
+        self.assertEqual(meta["result_patch"]["sha256"], hashlib.sha256(PATCH.encode()).hexdigest())
+        script = next(c for c in docker.calls if "commit -q" in str(c["cmd"]))
+        self.assertNotIn("--amend", script["cmd"][-1])
+        self.assertEqual(script["input"], PATCH)
+        self.assertIsNone(meta["planted_bug"])
+
+    def test_a_result_patch_is_only_for_a_null_fork(self):
+        f = Fixture()
+        patch = f.root / "right.diff"
+        patch.write_text(PATCH)
+        with self.assertRaises(SystemExit):
+            rf.main([*f.argv(), "--result-patch", str(patch)], deps=f.deps())
+
     def test_a_null_fork_prepares_the_snapshot_and_records_it_unchanged_with_no_session(self):
         f = Fixture()
         argv = [a for a in f.argv() if a not in ("--arm", "bare")]

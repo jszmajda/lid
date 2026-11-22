@@ -21,6 +21,8 @@ CORE = {13: [(C + "lib.rs", "const MAX: u32 = 8;", "const MAX: u32 = 16;", 1)],
         14: [(C + "lib.rs", "fn level() {}", "fn level() { step(); }", 1)]}
 SHELL = {13: [(T + "keys.rs", "notches(8)", "notches(16)", 2)],
          23: [(T + "card.rs", "draw_card();", "draw_compact_card();", 1)]}
+CONTROLS = {24: [(T + "card.rs", "fn c()", "fn page()", 1)]}
+QUALIFY_24 = [("crates/tui/tests/keys.rs", "a", "b", 1)]
 '''
 FILES = {"crates/core/src/lib.rs": "const MAX: u32 = 8;\nfn level() {}\n",
          "crates/tui/src/keys.rs": "fn a() { notches(8) }\nfn b() { notches(8) }\n",
@@ -44,7 +46,8 @@ class RightBuildsTest(unittest.TestCase):
 
     def test_a_right_build_is_its_changes_core_and_shell_edits(self):
         edits = rb.right_edits(self.builds)
-        self.assertEqual(sorted(edits), [13, 14, 23])  # a control may edit one crate only
+        self.assertEqual(sorted(edits), [13, 14, 23, 24])  # a control may edit one crate only
+        self.assertEqual(edits[24], [("crates/tui/src/card.rs", "fn c()", "fn page()", 1)])  # CONTROLS[24], no QUALIFY_24
         self.assertEqual([e[0] for e in edits[13]], ["crates/core/src/lib.rs", "crates/tui/src/keys.rs"])
 
     def test_each_patch_applies_to_the_snapshot_and_gives_the_right_builds_files(self):
@@ -64,7 +67,7 @@ class RightBuildsTest(unittest.TestCase):
     def test_the_cli_writes_a_patch_per_change_and_lists_them(self):
         out = Path(tempfile.mkdtemp())
         self.assertEqual(rb.main(["--builds", str(self.builds_path), "--out", str(out)], read=FILES.__getitem__), 0)
-        self.assertEqual(sorted(p.name for p in out.glob("change-*.diff")), ["change-13.diff", "change-14.diff", "change-23.diff"])
+        self.assertEqual(sorted(p.name for p in out.glob("change-*.diff")), ["change-13.diff", "change-14.diff", "change-23.diff", "change-24.diff"])
         index = json.loads((out / "right-builds.json").read_text())
         self.assertEqual(index["13"]["files"], ["crates/core/src/lib.rs", "crates/tui/src/keys.rs"])
 
@@ -74,7 +77,7 @@ class RightBuildsTest(unittest.TestCase):
         if not builds.exists() or not (clowder / ".git").exists():
             self.skipTest("no builds.py or Clowder repository")
         edits = rb.right_edits(rb.load_builds(builds))
-        self.assertTrue(set(range(13, 21)) <= set(edits))
+        self.assertTrue(set(range(13, 25)) <= set(edits))
         read = rb.snapshot_reader(clowder, "86db995")
         for n, e in edits.items():
             patch = rb.patch_for(e, read)

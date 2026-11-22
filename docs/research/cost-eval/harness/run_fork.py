@@ -76,6 +76,9 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--owner-items", type=Path, help="default: <seed-dir>/hidden/owner-items.json")
     ap.add_argument("--brief", type=Path, help="default: <seed-dir>/brief.md")
     ap.add_argument("--patch", type=Path, help="a planted bug to apply, in place of the change script's or a sidecar")
+    ap.add_argument("--result-patch", type=Path,
+                    help="null forks only: a patch committed after the snapshot as the change's result (a right build, "
+                         "the instrument's positive control), so the graders' diff from the start shows it")
     ap.add_argument("--id", help="default: cf-<variant>-<arm>-<window>-cNN-r<repeat>")
     ap.add_argument("--model", default="claude-sonnet-5-5")
     ap.add_argument("--effort", default="medium")
@@ -142,6 +145,20 @@ def plant_bug(deps: Deps, image: str, workspace_volume: str, patch: str, *, vari
     return p.stdout.strip()
 
 
+def commit_result_patch(deps: Deps, image: str, workspace_volume: str, patch: str, *, change: int) -> str:
+    """Apply a patch and commit it after the snapshot, as a change's result; returns the new commit."""
+    name, email = trajectory.GIT_IDENTITY
+    script = (f"cd /work && cat > /tmp/result.diff && git apply --check /tmp/result.diff && git apply /tmp/result.diff"
+              f" && git add -A && git -c user.name='{name}' -c user.email='{email}' commit -q"
+              f" -m 'Change {change}: the right build (the instrument positive control)'"
+              f" && rm /tmp/result.diff && git rev-parse HEAD")
+    p = deps.docker(["docker", "run", "--rm", "-i", "-v", f"{workspace_volume}:/work", image, "sh", "-c", script],
+                    input=patch, capture_output=True, text=True)
+    if p.returncode != 0:
+        raise RuntimeError(f"the result patch for change {change} doesn't apply cleanly: {(p.stderr or '')[-800:]}")
+    return p.stdout.strip()
+
+
 def init_jj(deps: Deps, image: str, workspace_volume: str) -> None:
     """A fresh colocated jj repository over the snapshot, so jj's history starts at the commit the arm starts from."""
     _run(deps, ["docker", "run", "--rm", "-v", f"{workspace_volume}:/work", image, "sh", "-c",
@@ -183,6 +200,8 @@ def main(argv=None, *, deps: Deps | None = None) -> int:
         args.arm = "null"
     elif not args.arm:
         ap.error("--arm is required (or --null)")
+    if args.result_patch and not args.null:
+        ap.error("--result-patch is for a null fork only")
     manifest = json.loads((args.variants / "manifest.json").read_text())
     if args.variant not in manifest["variants"]:
         print(f"no variant {args.variant!r} in {args.variants}")
@@ -254,10 +273,16 @@ def main(argv=None, *, deps: Deps | None = None) -> int:
         "started": datetime.now(timezone.utc).isoformat(timespec="seconds"), "changes": {},
     }
     meta_path.write_text(json.dumps(meta, indent=1))
-    if args.null:  # the change's result is the snapshot it started from
+    if args.null:  # the change's result is the snapshot it started from, or the result patch committed after it
+        result = base
+        if args.result_patch:
+            text = args.result_patch.read_text(encoding="utf-8")
+            result = commit_result_patch(deps, args.image, ws_vol, text, change=args.change)
+            meta["result_patch"] = {"path": str(args.result_patch), "sha256": hashlib.sha256(text.encode()).hexdigest()}
         meta["changes"][str(args.change)] = {"title": change.title, "null": True, "rounds": 0, "finished": True,
-                                             "capped": False, "error": None, "commit": base, "redirect": None,
-                                             "agent_cost_usd": 0.0, "owner_cost_usd": 0.0, "minutes": 0.0}
+                                             "capped": False, "error": None, "commit": result, "redirect": None,
+                                             "agent_cost_usd": 0.0, "owner_cost_usd": 0.0, "minutes": 0.0,
+                                             **({"result_patch": True} if args.result_patch else {})}
         meta_path.write_text(json.dumps(meta, indent=1))
         print(f"{fid}: null fork at {base}", flush=True)
         return 0

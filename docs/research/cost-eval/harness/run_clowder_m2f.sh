@@ -9,8 +9,8 @@
 #   null       the null-arm check: the untouched v2 snapshot (the full variant, no agent) graded at every change, then
 #              m2f_null_check.py: every new row not met, every dependency probe and held-out test passing
 #   right      the instrument's positive control: each change's right build (m2f-validation/builds.py, written as a
-#              patch by m2f_right_builds.py) applied to the v2 full variant as a null fork and graded exactly as a fork
-#              is, then m2f_null_check.py --mode right: every row met, every dependency probe and held-out test passing
+#              patch by m2f_right_builds.py) committed after the v2 full variant's snapshot as a null fork's result,
+#              so the graders see it as an arm's change, and graded exactly as a fork is, then m2f_null_check.py --mode right: every row met, every dependency probe and held-out test passing
 #   main       bare on the stripped variant against LID Full on the full variant, three forks a change at the 1M
 #              window; fork k of every change and both arms shares the owner's replicate m2f-rk
 #   dose       the same pairs on v2-dose, for changes 14, 15 and 19 only
@@ -84,7 +84,7 @@ right_one() {  # one right build, as a null fork with its patch, and its grading
   if ! recorded "$fid"; then
     [ -d "$RUNS/$fid" ] && run "mv $RUNS/$fid $RUNS/$fid.stopped-$(date +%Y%m%d-%H%M%S)"
     pace
-    run "$PY run_fork.py --variants $RUNS/clowder-variants/v2 --variant full --null --patch $RIGHT/change-$nn.diff --change $n --repeat 1 --replicate m2f-r1 --window $WINDOW $SEED_FLAGS --id $fid --runs $RUNS > $LOG/$fid.fork.log 2>&1" || return 1
+    run "$PY run_fork.py --variants $RUNS/clowder-variants/v2 --variant full --null --result-patch $RIGHT/change-$nn.diff --change $n --repeat 1 --replicate m2f-r1 --window $WINDOW $SEED_FLAGS --id $fid --runs $RUNS > $LOG/$fid.fork.log 2>&1" || return 1
   fi
   [ -f "$RUNS/$fid/grading/change-$nn/summary.json" ] && return 0
   pace

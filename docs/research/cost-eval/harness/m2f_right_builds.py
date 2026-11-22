@@ -7,8 +7,8 @@ writes each as a unified diff against the snapshot, which run_fork.py --null --p
     python3.12 m2f_right_builds.py --builds ... --list          # the changes that have a right build, one per line
 
 Writes <out>/change-NN.diff and <out>/right-builds.json ({"NN": {"files", "sha256"}}). A change's right build is its
-CORE and SHELL edits together (a control may have one of the two only); builds.py may also give RIGHT[n], which then
-stands for the change's whole right build.
+CORE and SHELL edits together; a control's is CONTROLS[n] (changes 21-24), and builds.py may give RIGHT[n], each
+standing for the change's whole right build. Test-only edits builds.py keeps apart (QUALIFY_24) are never part of one.
 """
 
 from __future__ import annotations
@@ -36,7 +36,8 @@ def load_builds(path: Path):
 
 def right_edits(builds) -> dict[int, list[tuple[str, str, str, int]]]:
     """Each change's right-build edits, (path, old, new, count), in order: core, then shell."""
-    core, shell, right = getattr(builds, "CORE", {}), getattr(builds, "SHELL", {}), getattr(builds, "RIGHT", {})
+    core, shell = getattr(builds, "CORE", {}), getattr(builds, "SHELL", {})
+    right = {**getattr(builds, "CONTROLS", {}), **getattr(builds, "RIGHT", {})}  # each the change's whole right build
     return {n: list(right[n]) if n in right else list(core.get(n, [])) + list(shell.get(n, []))
             for n in sorted(set(core) | set(shell) | set(right))}
 
