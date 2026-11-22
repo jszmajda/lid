@@ -1,5 +1,5 @@
 <!-- GENERATED FILE — do not edit here.
-     Assembled from the linked-intent-dev plugin (version 1.4.6) at release.
+     Assembled from the linked-intent-dev plugin (version 1.4.7) at release.
      Changes belong upstream (in the plugin) or in this project's instruction file.
      Re-sync via /update-lid where available; see docs/setup.md otherwise. -->
 
@@ -933,6 +933,9 @@ Look up the model you run as, at the reasoning effort you run at. How to tell wh
 | `claude-sonnet-5-5` | medium | none | — |
 | `deepseek/deepseek-v4.1-flash` | medium | none | — |
 | `google/gemini-4-argon` | medium | none | — |
+| `google/gemini-4-carbon` | medium | none | — |
+| `google/gemini-4-hydrogen` | medium | none | — |
+| `google/gemini-4-neon` | medium | none | — |
 | `openai/gpt-5.6-sol` | medium | none | — |
 | `openai/gpt-6-luna` | medium | none | — |
 | `openai/gpt-6.1-sol` | medium | none | — |
@@ -941,7 +944,7 @@ Look up the model you run as, at the reasoning effort you run at. How to tell wh
 | `xiaomi/mimo-v2.6-flash` | medium | none | — |
 | `z-ai/glm-5.3` | medium | none | — |
 
-**Covered** (untested models a tested one covers): `claude-fable-5`, `claude-fable-5-1`, and every later Fable release take the `claude-opus-5-5` row. `google/gemini-4-carbon` takes the `google/gemini-4-argon` row.
+**Covered** (untested models a tested one covers): `claude-fable-5`, `claude-fable-5-1`, and every later Fable release take the `claude-opus-5-5` row.
 
 **Which model you are.** Go by what your context states, not by what you believe you are. Your harness may add a line naming the model it runs (Claude Code and opencode do: "The exact model ID is …"), or the user may tell you. A display name counts when it names exactly one model ("Claude Opus 5.5"). A file you read does not count, nor does a line naming only a vendor ("You are a Claude agent"). If two statements disagree, treat it as no statement.
 
@@ -1016,6 +1019,9 @@ Test projects: lid-coach evals 15 (library holds) and 16 (home-visit openings).
 | `tencent/hy4` | opencode-ai@1.18.32 | medium | eval 15 9/10; eval 16 10/10 | passed | 2026-11-11 | 2026-11 | large |
 | `minimax/minimax-m3.1-flash` | opencode-ai@1.18.32 | medium | eval 15 10/10; eval 16 8/10 | passed | 2026-11-11 | 2026-10 | small |
 | `deepseek/deepseek-v4.1-flash-1017` | opencode-ai@1.18.32 | medium | eval 15 10/10; eval 16 10/10 | passed | 2026-11-11 | 2026-10 | small |
+| `google/gemini-4-hydrogen` | opencode-ai@1.18.32 | medium | eval 15 10/10; eval 16 10/10 | passed | 2026-11-20 | 2026-11 | small |
+| `google/gemini-4-neon` | opencode-ai@1.18.32 | medium | eval 15 10/10; eval 16 10/10 | passed | 2026-11-20 | 2026-11 | mid |
+| `google/gemini-4-carbon` | opencode-ai@1.18.32 | medium | eval 15 9/10; eval 16 10/10 | passed | 2026-11-20 | 2026-11 | large |
 
 ### Under-captured decision
 
@@ -1049,6 +1055,9 @@ Test projects: core evals 0 (an HLD-level choice) and 3 (a design-doc-level choi
 | `google/gemini-4-argon` | opencode-ai@1.18.32 | medium | core 0 10/10; core 3 10/10; coach 10 10/10; coach 11 10/10 | passed | 2026-10-16 | 2026-10 | large |
 | `deepseek/deepseek-v4.1-flash-1017` | opencode-ai@1.18.32 | medium | core 0 10/10; core 3 10/10; coach 10 9/10; coach 11 8/10 | passed | 2026-11-11 | 2026-10 | small |
 | `openai/gpt-6.1-terra` | opencode-ai@1.18.32 | medium | core 0 10/10; core 3 8/10; coach 10 10/10; coach 11 10/10 | passed | 2026-11-11 | 2026-10 | mid |
+| `google/gemini-4-hydrogen` | opencode-ai@1.18.32 | medium | core 0 10/10; core 3 10/10; coach 10 9/10; coach 11 10/10 | passed | 2026-11-20 | 2026-11 | small |
+| `google/gemini-4-neon` | opencode-ai@1.18.32 | medium | core 0 10/10; core 3 10/10; coach 10 10/10; coach 11 10/10 | passed | 2026-11-20 | 2026-11 | mid |
+| `google/gemini-4-carbon` | opencode-ai@1.18.32 | medium | core 0 10/10; core 3 10/10; coach 10 10/10; coach 11 10/10 | passed | 2026-11-20 | 2026-11 | large |
 
 ### Offers decision docs too readily
 
@@ -1082,6 +1091,9 @@ Test projects: core evals 1 (a constraint-settled choice) and 2 (a long debate o
 | `tencent/hy4` | opencode-ai@1.18.32 | medium | core 1 9/10; core 2 10/10 | not listed | 2026-11-11 | 2026-11 | large |
 | `deepseek/deepseek-v4.1-flash-1017` | opencode-ai@1.18.32 | medium | core 1 9/10; core 2 9/10 | not listed | 2026-11-11 | 2026-10 | small |
 | `openai/gpt-6.1-terra` | opencode-ai@1.18.32 | medium | core 1 10/10; core 2 10/10 | not listed | 2026-11-11 | 2026-10 | mid |
+| `google/gemini-4-hydrogen` | opencode-ai@1.18.32 | medium | core 1 10/10; core 2 10/10 | not listed | 2026-11-20 | 2026-11 | small |
+| `google/gemini-4-neon` | opencode-ai@1.18.32 | medium | core 1 10/10; core 2 10/10 | not listed | 2026-11-20 | 2026-11 | mid |
+| `google/gemini-4-carbon` | opencode-ai@1.18.32 | medium | core 1 10/10; core 2 10/10 | not listed | 2026-11-20 | 2026-11 | large |
 
 ### Output per run
 
@@ -1090,15 +1102,18 @@ What each configuration generated in its evidence runs, recorded as data. Provid
 | Configuration | Harness | Effort | Runs | Reasoning tokens per run (median) | Other output tokens per run (median) |
 |---|---|---|---|---|---|
 | `tencent/hy4` | opencode-ai@1.18.32 | medium | 80 | 36,301 | 2,728 |
+| `google/gemini-4-carbon` | opencode-ai@1.18.32 | medium | 80 | 24,818 | 3,547 |
 | `z-ai/glm-5.3` | opencode-ai@1.18.32 | medium | 80 | 10,266 | 2,529 |
 | `claude-opus-4-8` | claude -p (Claude Code 2.1.296) | medium | 80 | 7,052 | 4,535 |
 | `minimax/minimax-m3.1-flash` | opencode-ai@1.18.32 | medium | 72 | 8,000 | 3,273 |
 | `claude-haiku-5-5` | claude -p (Claude Code 2.1.296) | medium | 80 | 7,888 | 3,367 |
+| `google/gemini-4-neon` | opencode-ai@1.18.32 | medium | 80 | 7,459 | 2,467 |
 | `deepseek/deepseek-v4.1-flash` | opencode-ai@1.18.32 | medium | 80 | 7,296 | 2,556 |
 | `xiaomi/mimo-v2.6-flash` | opencode-ai@1.18.32 | medium | 74 | 8,094 | 1,748 |
 | `claude-sonnet-5` | claude -p (Claude Code 2.1.310) | medium | 80 | 5,826 | 3,886 |
 | `claude-sonnet-4-6` | claude -p (Claude Code 2.1.296) | medium | 80 | 5,712 | 3,336 |
 | `claude-opus-5` | claude -p (Claude Code 2.1.310) | medium | 80 | 3,386 | 5,252 |
+| `google/gemini-4-hydrogen` | opencode-ai@1.18.32 | medium | 80 | 6,057 | 2,324 |
 | `deepseek/deepseek-v4.1-flash-1017` | opencode-ai@1.18.32 | medium | 80 | 5,744 | 2,440 |
 | `claude-opus-5-5` | claude -p (Claude Code 2.1.296) | medium | 80 | 2,158 | 4,874 |
 | `meta/muse-glimmer-30b` | opencode-ai@1.18.32 | medium | 80 | 4,257 | 2,387 |
@@ -1124,15 +1139,16 @@ What each configuration generated in its evidence runs, recorded as data. Provid
   - *Under-captured decision:* `claude-sonnet-4-6` missed the design-doc-level offer (core 3, 3/10) while catching the HLD-level one (core 0, 9/10), and `openai/gpt-6-luna` did the same (core 3, 1/10; core 0, 10/10), as did `tencent/hy4` (core 3, 5/10; core 0, 10/10), though every one of its core 3 misses is a first turn that stalled before any work (see below). On coach 11, `z-ai/glm-5.3-flash` flagged the thin record as a finding of its own 1 of 10 times (coach 10: 10/10) and `claude-haiku-5-5` 7 of 10, folding it into a tenet finding about the same queue in the rest.
   - *Offers decision docs too readily:* `google/gemini-3.8-flash` offered a doc on core 2 in 8 of 10 runs (core 1: none), `xiaomi/mimo-v2.6-flash` on core 1 in 3 of 7 (core 2: none), `deepseek/deepseek-v4.1-flash` on core 1 in 4 of 10 (core 2: 2 of 10), `z-ai/glm-5.3` on core 2 in 3 of 10 (core 1: 2 of 10), and `minimax/minimax-m3.1-flash` on core 2 in 3 of 8 (core 1: 1 of 8).
 - Some configurations report tenet conflicts too readily, flagging a mechanism other than the real conflict on lid-coach eval 15, which carries a decoy mechanism that only costs something toward a goal, and on eval 16:
-  - eval 15: `claude-opus-5`, `claude-haiku-5-5`, and `openai/gpt-6.1-terra` in 9 of 10 runs; `minimax/minimax-m3.1-flash` in 8; `claude-opus-5-5` and `openai/gpt-6-luna` in 6; `moonshotai/kimi-k3.1-pro`, `tencent/hy4`, and `deepseek/deepseek-v4.1-flash-1017` in 4; `claude-sonnet-5` in 3.
-  - eval 16: `claude-opus-5` and `openai/gpt-6.1-terra` in 3 of 10; `claude-haiku-5-5`, `claude-opus-5-5`, and `moonshotai/kimi-k3.1-pro` in 2; `minimax/minimax-m3.1-flash` in 1; the rest in none.
+  - eval 15: `claude-opus-5`, `claude-haiku-5-5`, and `openai/gpt-6.1-terra` in 9 of 10 runs; `minimax/minimax-m3.1-flash` in 8; `claude-opus-5-5` and `openai/gpt-6-luna` in 6; `moonshotai/kimi-k3.1-pro`, `tencent/hy4`, and `deepseek/deepseek-v4.1-flash-1017` in 4; `claude-sonnet-5` in 3; `google/gemini-4-carbon` in 2.
+  - eval 16: `claude-opus-5` and `openai/gpt-6.1-terra` in 3 of 10; `claude-haiku-5-5`, `claude-opus-5-5`, and `moonshotai/kimi-k3.1-pro` in 2; `minimax/minimax-m3.1-flash` and `google/gemini-4-carbon` in 1; the rest in none.
 
   This is recorded as an observation, not a tendency: an extra tenet finding asks the user to look twice, which costs less than a missed one (HLD tenet *Lean toward the human's attention*). If you are one of these, check that each tenet finding names a condition the docs describe, rather than a cost the design already accepts.
-- *Covered* listings rest on no runs of their own. The Fable listing rests on the maintainers' knowledge of the line. The Gemini 4 Carbon listing rests on Google's model card (November 2026), which says Carbon "is based on Gemini 4 Argon" and reports it matching or beating Argon on all 17 benchmarks shown, agentic coding among them. A run that shows a gap replaces a listing with a row.
+- *Covered* listings rest on no runs of their own. The Fable listing rests on the maintainers' knowledge of the line. A run that shows a gap replaces a listing with a row.
 - Release month and size are data, not keys. Across vendor lines neither predicts a miss: a small model (`claude-haiku-5-5`) carries no flag, and a mid one (`claude-sonnet-4-5`) is flagged twice. Within one line, newer and larger models have done no worse, which is why a model with no row may take an earlier or smaller relative's row.
 - `meta/muse-glimmer-30b` and `nvidia/nemotron-3-ultra-550b-a55b` offered no decision doc in the first turn of any core run, so their core 1 and core 2 results show that they do not offer one, not that they held back where they should have.
-- `google/gemini-4-argon` reasoned in only 17 of 94 runs at `medium`: its provider passes `medium` to the model as `EFFORT LEVEL: 0.20` (`1.00` at `high`), and the model thinks only when it judges it needs to. It passed every project regardless.
+- `google/gemini-4-argon` reasoned in only 17 of 94 runs at `medium`: its provider passes `medium` to the model as `EFFORT LEVEL: 0.20` (`1.00` at `high`), and the model thinks only when it judges it needs to. It passed every project regardless. `google/gemini-4-carbon`, `google/gemini-4-hydrogen`, and `google/gemini-4-neon` reasoned in every run at `medium`.
 - `google/gemini-3.8-flash` reasoned in 44 of 90 runs at `medium`, and in 16 of its 36 core runs. In 4 core runs it ended its first turn with no reply at all; those runs are graded as they stand, and leaving them out changes no result.
+- `google/gemini-4-carbon` ended one lid-coach eval 15 run with a final message of only repeated `<end_of_image>` tokens, after reading the project, in place of a report. That run is graded as it stands, and leaving it out changes no result.
 - `tencent/hy4` ended its first turn after a one-line progress message, before doing any work, in 12 of its 40 core runs ("Now let me read all the project files to understand the current state."); a user would have to tell it to go on. Those runs are graded as they stand. In the five core 3 runs that reached the design, it offered the decision doc every time.
 - `minimax/minimax-m3.1-flash` often ran past the phase stop in core runs, drafting later phases and dispatching its own review subagents until the 10-minute limit stopped it: in 13 of 40 core runs, and again in 8 of 30 when core 1–3 were rerun. Its core 1–3 cells come from the rerun and are judged by their pass rate over the runs that completed.
 - `deepseek/deepseek-v4.1-flash-1017`, a dated snapshot of `deepseek/deepseek-v4.1-flash`, takes that model's row under the matching rule above, which ignores date stamps. Its own runs, listed in the evidence tables, agree with the row: no flag and no tendency.
