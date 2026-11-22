@@ -108,6 +108,15 @@ On ReleaseDesk's growth seed through change 20, paired with the trial's bare and
 - `[x]` From data already collected: module count and coupling at every snapshot; LID's spend by phase; owner reading by review depth.
 - `[ ]` Then decide: if the checklist arm lands near LID on latent rules at a fraction of the cost, add replicates 2 and 3 for all three arms (the trial's runs are replicate 1).
 
+## M2f: Clowder with cross-crate changes `[ ]`
+
+The scale question, recast: agents search a codebase rather than load it, so "too big to hold" means "the intent you need isn't near the code you're editing". Clowder has two crates of similar size (core simulation and terminal UI), much like an app and its backend.
+
+- `[ ]` Draft about twelve new changes with Sol, blind to the hypotheses. Most are requested on one crate's surface while the rule they must respect lives in the other; a few same-crate changes serve as controls. Each records its intent distance before any run.
+- `[ ]` Review by Claude Fable and GPT-6.2 Astra; record predicted directions; draft and review probes, including probes and held-out tests for intent held in the other crate; repair reports for every item.
+- `[ ]` Null-arm check of the grading on the untouched snapshot.
+- `[ ]` Runs: bare on the stripped repository and LID Full, three forks per change each, at the 1M window; repair forks for every miss, measuring rounds and cost to fix.
+
 ## After the growth test: ideas to review with the maintainer `[ ]`
 
 Suggested by Onagh and Nayebi's specification-explicitness paper (sources.md, "Specification explicitness"). The maintainer asked that they change nothing in the growth test, and be reviewed with her once it finishes.

@@ -57,7 +57,7 @@ Read this section first when you pick the work up in a new session. Update it at
 
 **Next actions** (milestones M2 and M2c in [plan.md](plan.md)):
 
-1. **M2e is next: the checklist arm and the cost of rework, a first look** (plan.md). The growth test is banked as a pilot (log, 2026-11-21): at change 20 bare's whole system was about 25k tokens, too small to exercise the scale and rot mechanisms. Still open with the maintainer: reviving Clowder for cross-crate changes (stripped against LID), and posting grade-C interim findings on #75. Review the specification-explicitness paper's other deferred ideas with her too (plan.md, "After the growth test").
+1. **M2f is next: Clowder with cross-crate changes** (plan.md). M2e's first look is done (log, 2026-11-21): the checklist arm caught little more latent intent than bare, and rework once reported was cheap in agent dollars. Preparation runs on OpenRouter while subscription use is near its weekly limit; the runs follow the reset. Review the specification-explicitness paper's other deferred ideas with the maintainer too (plan.md, "After the growth test").
 2. **Extend `report.py`** for recalled intent (review and question), contradictions kept against drawn, keeping, the Clowder measures (held-out retention, missing items, intent reach, cost to green, edits to visible tests), and the window dose.
 3. **Finish the owner checks:**
    - labelled judgments on about 100 replayed stops;
