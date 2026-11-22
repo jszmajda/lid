@@ -70,8 +70,8 @@ class NullCheckTest(unittest.TestCase):
         rc, text, rec = self.check()
         self.assertEqual(rc, 0)
         self.assertEqual(rec["problems"], [])
-        self.assertIn("| 13 | 0 of 2 | 1 of 1 | – | ok |", text)
-        self.assertIn("| 20 | 0 of 2 | 1 of 1 | 1 of 1 | ok |", text)
+        self.assertIn("| 13 | 0 of 2 | – | 1 of 1 | – | ok |", text)
+        self.assertIn("| 20 | 0 of 2 | – | 1 of 1 | 1 of 1 | ok |", text)
 
     def test_a_row_met_or_a_probe_failing_on_the_snapshot_is_a_problem(self):
         null_fork(self.runs, 13, items={"CLX-1301": "met", "CLX-1302": "not met"},
@@ -106,8 +106,61 @@ class NullCheckTest(unittest.TestCase):
     def test_rows_without_llm_probes_yet_are_named_not_counted_as_passing(self):
         null_fork(self.runs, 13, items={}, probes={"update::probe_m2f_speed": "passed"})
         rc, text, rec = self.check()
-        self.assertIn("CLX-1301, CLX-1302 have no verdict", text)
+        self.assertIn("CLX-1301 has no verdict", text)
         self.assertEqual(rec["changes"]["13"]["rows_without_verdict"], ["CLX-1301", "CLX-1302"])
+
+
+GUARDS = {"rows": {"CLX-1302": {"change": 13, "why": "as before", "checkable_on_snapshot": True},
+                   "CLX-2002": {"change": 20, "why": "stays", "checkable_on_snapshot": False}}}
+
+
+class GuardAndRightTest(unittest.TestCase):
+    def setUp(self):
+        self.root = Path(tempfile.mkdtemp())
+        self.runs, self.files = self.root / "runs", self.root / "m2f"
+        self.files.mkdir()
+        (self.files / "change-script.md").write_text(SCRIPT)
+        (self.files / "guard-rows.json").write_text(json.dumps(GUARDS))
+
+    def check(self, mode="null", forks="m2f-null-c*"):
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            rc = nc.main(["--runs", str(self.runs), "--forks", forks, "--seed-files", str(self.files), "--mode", mode])
+        return rc, out.getvalue(), json.loads((self.runs / "clowder-m2f" / f"{mode}-check.json").read_text())
+
+    def test_on_the_snapshot_a_guard_row_is_met_and_any_other_row_not_met(self):
+        null_fork(self.runs, 13, items={"CLX-1301": "not met", "CLX-1302": "met"}, probes={"u::probe": "passed"})
+        null_fork(self.runs, 20, items={"CLX-2001": "not met", "CLX-2002": "missing"}, probes={"r::probe": "passed"},
+                  held={"r::a": "passed"})
+        rc, text, rec = self.check()
+        self.assertEqual((rc, rec["problems"]), (0, []))
+        self.assertIn("CLX-2002 (guard) can't be checked on the snapshot: missing", text)  # its probes need new keys
+        self.assertIn("| 13 | 0 of 1 | 1 of 1 |", text)  # new rows met, then guard rows met
+
+    def test_a_guard_row_not_met_on_the_snapshot_is_a_problem(self):
+        null_fork(self.runs, 13, items={"CLX-1301": "not met", "CLX-1302": "not met"}, probes={"u::probe": "passed"})
+        rc, text, rec = self.check()
+        self.assertEqual(rc, 1)
+        self.assertIn("CLX-1302 (guard) not met on the snapshot", [p["what"] for p in rec["problems"]])
+
+    def test_on_a_right_build_every_row_is_met_and_every_probe_passes(self):
+        null_fork(self.runs, 13, items={"CLX-1301": "met", "CLX-1302": "met"}, probes={"u::probe": "passed"})
+        (self.runs / "m2f-null-c13").rename(self.runs / "m2f-right-c13")
+        null_fork(self.runs, 20, items={"CLX-2001": "not met", "CLX-2002": "missing"}, probes={"r::probe": "passed"},
+                  held={"r::a": "failed"})
+        (self.runs / "m2f-null-c20").rename(self.runs / "m2f-right-c20")
+        s = json.loads((self.runs / "m2f-right-c20" / "grading" / "change-20" / "summary.json").read_text())
+        s["missing_by_fault"] = {"observation": 2}
+        (self.runs / "m2f-right-c20" / "grading" / "change-20" / "summary.json").write_text(json.dumps(s))
+        rc, text, rec = self.check("right", "m2f-right-c*")
+        self.assertEqual(rc, 1)
+        whats = [p["what"] for p in rec["problems"]]
+        self.assertIn("CLX-2001 not met on the right build", whats)
+        self.assertIn("CLX-2002 (guard) missing on the right build", whats)
+        self.assertIn("r::a failed on the right build", whats)
+        self.assertEqual(rec["changes"]["13"]["ok"], True)
+        self.assertEqual(rec["changes"]["20"]["grader_faults"], {"observation": 2})
+        self.assertEqual(rec["changes"]["20"]["rows_result"], {"CLX-2001": "not met", "CLX-2002": "missing"})
 
 
 if __name__ == "__main__":

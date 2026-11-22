@@ -8,6 +8,9 @@
 #              and held-out test copies built from the snapshot outside the arms' view (m2f_graded_targets.py)
 #   null       the null-arm check: the untouched v2 snapshot (the full variant, no agent) graded at every change, then
 #              m2f_null_check.py: every new row not met, every dependency probe and held-out test passing
+#   right      the instrument's positive control: each change's right build (m2f-validation/builds.py, written as a
+#              patch by m2f_right_builds.py) applied to the v2 full variant as a null fork and graded exactly as a fork
+#              is, then m2f_null_check.py --mode right: every row met, every dependency probe and held-out test passing
 #   main       bare on the stripped variant against LID Full on the full variant, three forks a change at the 1M
 #              window; fork k of every change and both arms shares the owner's replicate m2f-rk
 #   dose       the same pairs on v2-dose, for changes 14, 15 and 19 only
@@ -36,10 +39,11 @@ DOSE_CHANGES="14 15 19"
 REPEATS="1 2 3"
 PAIRS="stripped:bare full:lid-full"
 SEED_FLAGS="--oracle $FILES/oracle.md --change-script $FILES/change-script.md --owner-items $FILES/owner-items.json"
-GRADE_FLAGS="--oracle $FILES/oracle.md --change-script $FILES/change-script.md --probes $HIDDEN/m2f-probes.md"
+GRADE_FLAGS="--oracle $FILES/oracle.md --change-script $FILES/change-script.md --probes $HIDDEN/m2f-probes.md --guard-rows $FILES/guard-rows.json"
+RIGHT=$LOG/right
 
 usage() {
-  echo "usage: sh run_clowder_m2f.sh variants | null | main | dose | repairs | all" >&2
+  echo "usage: sh run_clowder_m2f.sh variants | null | right | main | dose | repairs | all" >&2
   exit 2
 }
 
@@ -75,6 +79,18 @@ one() {  # one fork and its grading: <variant set> <variant> <arm> <change> <rep
   run "$PY grade_rust.py --id $fid --runs $RUNS $GRADE_FLAGS > $LOG/$fid.grade.log 2>&1"
 }
 
+right_one() {  # one right build, as a null fork with its patch, and its grading: <change>
+  n=$1; nn=$(printf %02d "$n"); fid=m2f-right-c$nn
+  if ! recorded "$fid"; then
+    [ -d "$RUNS/$fid" ] && run "mv $RUNS/$fid $RUNS/$fid.stopped-$(date +%Y%m%d-%H%M%S)"
+    pace
+    run "$PY run_fork.py --variants $RUNS/clowder-variants/v2 --variant full --null --patch $RIGHT/change-$nn.diff --change $n --repeat 1 --replicate m2f-r1 --window $WINDOW $SEED_FLAGS --id $fid --runs $RUNS > $LOG/$fid.fork.log 2>&1" || return 1
+  fi
+  [ -f "$RUNS/$fid/grading/change-$nn/summary.json" ] && return 0
+  pace
+  run "$PY grade_rust.py --id $fid --runs $RUNS $GRADE_FLAGS > $LOG/$fid.grade.log 2>&1"
+}
+
 repair_one() {  # one repair fork, its grading and its record: <fork id> <item>
   fid=$1; item=$2; rid=$fid-fix-$item
   [ -f "$RUNS/$rid/repair.json" ] && return 0
@@ -103,6 +119,12 @@ null() {
   run "$PY m2f_null_check.py --runs $RUNS --forks 'm2f-null-c*' --seed-files $FILES"
 }
 
+right() {
+  run "$PY m2f_right_builds.py --builds $HIDDEN/m2f-validation/builds.py --repo $REPO --commit 86db995 --out $RIGHT > $LOG/right-builds.log 2>&1" || return 1
+  for n in $($PY m2f_right_builds.py --builds "$HIDDEN/m2f-validation/builds.py" --list); do echo "sh $0 right-one $n"; done | run_queue "$JOBS"
+  run "$PY m2f_null_check.py --mode right --runs $RUNS --forks 'm2f-right-c*' --seed-files $FILES"
+}
+
 main_phase() {
   for n in $CHANGES; do for k in $REPEATS; do for pair in $PAIRS; do
     echo "sh $0 one v2 ${pair%%:*} ${pair#*:} $n $k"
@@ -127,6 +149,8 @@ case "$1" in *-one|one) ;; *) rm -f "$PACE_MARK" ;; esac  # a top-level run logs
 case "$1" in
   one) shift; one "$@" ;;
   repair-one) shift; repair_one "$@" ;;
+  right-one) shift; right_one "$@" ;;
+  right) right; echo "right builds done" ;;
   variants) variants; echo "variants done" ;;
   null) null; echo "null check done" ;;
   main) main_phase; echo "main done" ;;

@@ -780,6 +780,73 @@ class ConflictTest(unittest.TestCase):
         met = rg.items_met({i: v["verdict"] for i, v in result["items"].items()}, result["interface_faults"])
         self.assertEqual((met["met"], met["of"], met["missing"], met["conflicts"]), (1, 1, 0, 1))
 
+    def test_a_guard_row_met_where_the_extraction_finds_it_absent_stays_met(self):
+        # a keep-it-as-it-was row: an arm that rightly leaves that code alone gives the extraction nothing to find
+        import re
+        probeset = grading.parse_probes(PROBES)
+        applicable = [p for p in probeset.probes if p.applies(7)]
+        ck = FakeCk()
+        usage = SimpleNamespace(reported_cost_usd=0.1, models={})
+        record = {"items": [
+            {"item": "NEW-01", "status": "implemented", "evidence": [{"file": "crates/core/src/lib.rs", "symbols": ["rename"]}], "note": "rename"},
+            {"item": "NEW-02", "status": "absent", "evidence": [{"file": "crates/core/src/lib.rs", "symbols": []}], "note": "nothing new"}]}
+
+        def run_role(role, prompt, json_schema=None):
+            if json_schema:
+                ids = sorted(set(re.findall(r"## (P-NEW\d+-[a-z])", prompt)))
+                return SimpleNamespace(structured={"verdicts": [
+                    {"probe": pid, "verdict": "met", "evidence": [2], "reason": "The output shows what this probe needed.", "cause": "none",
+                     "fault": "none"} for pid in ids]}, text="", usage=usage, duration_s=1.0)
+            if "probes-" not in prompt:
+                ck.files["/work/out/reference.md"] = "use core::State;"
+                ck.files["/work/out/implementation.json"] = json.dumps(record)
+            else:
+                bid = re.search(r"probes-(\w+)\.md", prompt).group(1)
+                for pid in re.findall(r"(?m)^## (P-\S+)", ck.files[f"/work/out/probes-{bid}.md"]):
+                    ck.files[f"/work/out/probes/{rg.probe_target(pid)}.log"] = "observed"
+            return SimpleNamespace(structured=None, text="done", usage=usage, duration_s=1.0)
+
+        g = rg.RustGraders(image="img", roles_volume="roles", claude_code="v")
+        result = rg.grade_probes(ck, g, probeset, applicable, base="b0", out=Path(tempfile.mkdtemp()), volume="ckpt",
+                                 run_role=run_role, items=IMPLEMENTATION_ITEMS, guards={"NEW-02"})
+        self.assertEqual(result["probes"]["P-NEW02-a"], "met")
+        self.assertEqual(result["conflicts"], {})
+        self.assertEqual(result["guard_exempt"], ["P-NEW02-a"])  # recorded: met, though the extraction found it absent
+
+    def test_guard_rows_are_counted_apart_from_new_behaviour_rows_and_in_the_total(self):
+        items = {"NEW-01": "met", "NEW-02": "not met", "NEW-03": "met", "NEW-04": "missing"}
+        split = rg.items_met_by_kind(items, {}, guards={"NEW-03", "NEW-04"})
+        self.assertEqual((split["new_rows_met"]["met"], split["new_rows_met"]["of"]), (1, 2))
+        self.assertEqual((split["guard_rows_met"]["met"], split["guard_rows_met"]["of"], split["guard_rows_met"]["missing"]),
+                         (1, 1, 1))
+        self.assertEqual(split["guard_rows"], ["NEW-03", "NEW-04"])
+
+    def test_an_earlier_grading_gets_the_guard_exemption_without_grading_again(self):
+        # a grading made before the guard rows were known: its conflicts on guard rows become the probes' "met"
+        probeset = grading.parse_probes(PROBES)
+        applicable = [p for p in probeset.probes if p.applies(7)]
+        g = Path(tempfile.mkdtemp())
+        (g / "probes").mkdir()
+        conflict = {"probes": {"P-NEW02-a": {"verdict": "met", "reason": "As it was.", "batch": "b01"}},
+                    "extraction": {"status": "absent"}}
+        (g / "probes" / "verdicts.json").write_text(json.dumps({
+            "probes": {"P-NEW01-a": "met", "P-NEW01-b": "met", "P-NEW02-a": "missing (conflict)"},
+            "details": {"P-NEW02-a": {"verdict": "missing (conflict)", "reason": "As it was."}},
+            "conflicts": {"NEW-02 Something later": conflict}, "interface_faults": {}}))
+        (g / "summary.json").write_text(json.dumps({"items": {"NEW-01 Kittens can be renamed": "met",
+                                                              "NEW-02 Something later": "missing (conflict)"},
+                                                    "conflicts": {"NEW-02 Something later": conflict}}))
+        summary = rg.reapply_guards(g, applicable, guards={"NEW-02"}, kept=set())
+        self.assertEqual(summary["items"]["NEW-02 Something later"], "met")
+        self.assertEqual(summary["conflicts"], {})
+        self.assertEqual(summary["guard_exempt"], ["P-NEW02-a"])
+        self.assertEqual((summary["items_met"]["met"], summary["items_met"]["of"]), (2, 2))
+        self.assertEqual((summary["guard_rows_met"]["met"], summary["new_rows_met"]["met"]), (1, 1))
+        on_disk = json.loads((g / "summary.json").read_text())
+        self.assertEqual(on_disk["items"]["NEW-02 Something later"], "met")
+        self.assertTrue((g / "summary.before-guards.json").exists())  # the earlier summary kept beside it
+        self.assertEqual(json.loads((g / "probes" / "verdicts.json").read_text())["probes"]["P-NEW02-a"], "met")
+
     def test_a_conflict_ranks_with_missing_below_a_decided_verdict(self):
         ps = [p for p in grading.parse_probes(PROBES).probes if p.item.startswith("NEW-01")]
         v = lambda a, b: grading.item_verdicts({"P-NEW01-a": a, "P-NEW01-b": b}, ps)["NEW-01 Kittens can be renamed"]["verdict"]

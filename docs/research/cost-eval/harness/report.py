@@ -363,12 +363,20 @@ def fork_report(runs: Path, pattern: str, spot_checks: list[dict] = ()) -> dict:
                "not_built": h.get("tests_not_built_by_cause") or {}, "missing_by_fault": s.get("missing_by_fault") or {},
                "probes": ((s.get("seed_files") or {}).get("probes_sha256") or "")[:7], "items": items,
                "spot_checks": applied}
+        if "guard_rows_met" in s:  # M2f: keep-it-as-it-was rows apart from the new-behaviour rows
+            row["new"] = {k: (s.get("new_rows_met") or {}).get(k, 0) for k in ("met", "of", "missing", "conflicts")}
+            row["guard"] = {k: (s.get("guard_rows_met") or {}).get(k, 0) for k in ("met", "of", "missing", "conflicts")}
         c = cells.setdefault(cell, {"changes": [], "total": {"met": 0, "of": 0, "missing": 0, "conflicts": 0,
                                                             "tests_not_built_by_cause": {}, "missing_by_fault": {}}})
         c["changes"].append(row)
         t = c["total"]
         for k in ("met", "of", "missing", "conflicts"):
             t[k] += row[k]
+        for kind in ("new", "guard"):
+            if kind in row:
+                tk = t.setdefault(kind, {"met": 0, "of": 0, "missing": 0, "conflicts": 0})
+                for k in tk:
+                    tk[k] += row[kind][k]
         for k, src in (("tests_not_built_by_cause", row["not_built"]), ("missing_by_fault", row["missing_by_fault"])):
             for cause, x in src.items():
                 t[k][cause] = t[k].get(cause, 0) + x
@@ -385,14 +393,21 @@ def render_forks(r: dict) -> str:
         lines += [f"## {name}", "", f"Items met {t['met']}/{t['of']}, missing {t['missing']}"
                   + (f" ({', '.join(f'{k} {x}' for k, x in t['missing_by_fault'].items())})" if t["missing_by_fault"] else "")
                   + f", conflicts {t['conflicts']}; tests not built: "
-                  + (", ".join(f"{k} {x}" for k, x in t["tests_not_built_by_cause"].items()) or "none"), "",
-                  "| Change | Items met | Missing | Conflicts | Retention | Tests not built | Probes | Spot-checked |",
-                  "|---|---|---|---|---|---|---|---|"]
+                  + (", ".join(f"{k} {x}" for k, x in t["tests_not_built_by_cause"].items()) or "none")
+                  + (f"; new-behaviour rows met {t['new']['met']}/{t['new']['of']}, guard rows met "
+                     f"{t['guard']['met']}/{t['guard']['of']}" if "guard" in t else ""), ""]
+        split = "guard" in t
+        lines += (["| Change | Items met | New rows met | Guard rows met | Missing | Conflicts | Retention | Tests not built | "
+                   "Probes | Spot-checked |", "|---|---|---|---|---|---|---|---|---|---|"] if split else
+                  ["| Change | Items met | Missing | Conflicts | Retention | Tests not built | Probes | Spot-checked |",
+                   "|---|---|---|---|---|---|---|---|"])
         notes = []
         for row in c["changes"]:
             checked = "; ".join(f"{x['item']}: {x['was']} → {x['now']} ({x['by']})" for x in row.get("spot_checks") or [])
             notes += [f"- Change {row['change']}, {x['item']}: {x['note']}" for x in row.get("spot_checks") or [] if x.get("note")]
-            lines.append(f"| {row['change']} | {row['met']}/{row['of']} | {row['missing']} | {row['conflicts']} | "
+            kinds = (f"{row['new']['met']}/{row['new']['of']} | {row['guard']['met']}/{row['guard']['of']} | "
+                     if split and "guard" in row else ("– | – | " if split else ""))
+            lines.append(f"| {row['change']} | {row['met']}/{row['of']} | {kinds}{row['missing']} | {row['conflicts']} | "
                          f"{row['passed']}/{row['run']} | {', '.join(f'{k} {x}' for k, x in row['not_built'].items()) or '–'} | "
                          f"{row['probes'] or '–'} | {checked or '–'} |")
         lines += ["", "Spot-checks:", *notes, ""] if notes else [""]

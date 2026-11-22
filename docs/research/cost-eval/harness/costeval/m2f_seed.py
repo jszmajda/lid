@@ -37,7 +37,24 @@ BRIEFS = HIDDEN / "prompts-m2f" / "briefs-r2.json"
 OUT = HIDDEN / "m2f"
 SNAPSHOT = "86db995"
 
-OUTPUTS = ("change-script.md", "oracle.md", "owner-items.json", "repair-reports.json", "kept-behaviour.json")
+OUTPUTS = ("change-script.md", "oracle.md", "owner-items.json", "repair-reports.json", "kept-behaviour.json",
+           "guard-rows.json")
+# Guard rows: keep-it-as-it-was rules a change introduces. Untouched code meets them, so the snapshot does, and an arm
+# that rightly leaves that code alone gives the extraction nothing new to find: grading exempts them from the rule that
+# voids a "met" on an item the extraction found absent, the null check expects them met on the snapshot, and results
+# count them apart from the new-behaviour rows. The null-arm check found the first five (each "missing (conflict)":
+# met by its probes, absent to the extraction); CLX-2403's probes check only that paging leaves fields, overlays and
+# the narrow swap alone, which the snapshot does too, though they can't run there (the snapshot has no paging keys).
+GUARD_ROWS = {
+    "CLX-1702": "shy colonies nap at the same rate as before",
+    "CLX-1703": "a bonus is as generous as before",
+    "CLX-1802": "a deficit still dims the global bonus and the Long Sun",
+    "CLX-1803": "Wisdom still gives its storage benefit in a deficit",
+    "CLX-2302": "a pane too small for the compact card stays blank",
+    "CLX-2403": "paging leaves fields, full-screen overlays and the narrow inspector swap alone",
+}
+SNAPSHOT_UNCHECKABLE = {"CLX-2403": "its probes press the paging keys, which the snapshot doesn't have"}
+KEEP_RULE = re.compile(r"\b(as before|same|still|stays|usual|doesn't|rather than|unchanged)\b", re.I)
 SALIENCE = "salience.json"
 PLACEHOLDER_TIERS = "placeholder: medium for every row (no salience rating yet)"
 RATED_TIERS = "rated: from m2f/salience.json"
@@ -516,6 +533,22 @@ def _oracle(changes: dict[int, M2fChange], pilot_text: str, rated: bool) -> str:
     return "\n".join(out) + "\n"
 
 
+def guard_problems(rows: dict[str, "Row"], guards: dict[str, str]) -> list[str]:
+    """Each guard row must be a row of the change set, and its behaviour must read as a keep rule."""
+    out = []
+    for gid in sorted(guards):
+        if gid not in rows:
+            out.append(f"guard row {gid}: no such row")
+        elif not KEEP_RULE.search(rows[gid].behaviour):
+            out.append(f"guard row {gid}: its behaviour doesn't read as a keep rule: {rows[gid].behaviour!r}")
+    return out
+
+
+def _guards(changes: dict[int, "M2fChange"]) -> dict[str, str]:
+    """The guard rows of the changes converted."""
+    return {g: why for g, why in GUARD_ROWS.items() if change_of(g) in changes}
+
+
 def _json(data) -> str:
     return json.dumps(data, indent=1, ensure_ascii=False) + "\n"
 
@@ -553,6 +586,12 @@ def convert(source_text: str, pilot_text: str, *, salience: dict | None = None,
         "owner-items.json": _json(owner),
         "repair-reports.json": _json(reports),
         "kept-behaviour.json": _json(kept),
+        "guard-rows.json": _json({
+            "note": "Keep-it-as-it-was rows (costeval/m2f_seed.py, GUARD_ROWS): exempt from grading's absent-conflict "
+                    "rule, expected met on the snapshot, and counted apart from the new-behaviour rows.",
+            "rows": {g: {"change": change_of(g), "why": why, "checkable_on_snapshot": g not in SNAPSHOT_UNCHECKABLE,
+                         **({"uncheckable_why": SNAPSHOT_UNCHECKABLE[g]} if g in SNAPSHOT_UNCHECKABLE else {})}
+                     for g, why in sorted(_guards(changes).items())}}),
     }
 
 
@@ -580,6 +619,7 @@ def check_seed(out_dir: Path, source_text: str, pilot_text: str, *, test_index: 
         fresh = convert(source_text, pilot_text, salience=load_salience(out_dir), test_index=test_index)
     except ValueError as e:
         return [f"the source doesn't convert: {e}"], warnings, []
+    problems += guard_problems({r.id: r for c in changes.values() for r in c.rows}, _guards(changes))
     for name in OUTPUTS:
         f = out_dir / name
         if not f.exists():

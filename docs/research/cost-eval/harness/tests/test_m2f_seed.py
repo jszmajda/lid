@@ -526,6 +526,30 @@ class CliTest(unittest.TestCase):
         self.assertIn("PROBLEM", buf.getvalue())
 
 
+class GuardRowsTest(unittest.TestCase):
+    """A guard row is a keep-it-as-it-was rule a change introduces ("shy colonies nap at the same rate as before"):
+    untouched code meets it, so the snapshot meets it and an arm that rightly leaves that code alone has nothing new
+    for the extraction to find."""
+
+    def test_the_guard_rows_are_the_null_checks_five_and_clx_2403(self):
+        self.assertEqual(sorted(ms.GUARD_ROWS), ["CLX-1702", "CLX-1703", "CLX-1802", "CLX-1803", "CLX-2302", "CLX-2403"])
+        self.assertEqual(sorted(ms.SNAPSHOT_UNCHECKABLE), ["CLX-2403"])  # its probes need keys the snapshot lacks
+
+    def test_each_guard_row_must_exist_and_read_as_a_keep_rule(self):
+        rows = {"CLX-1301": ms.Row("CLX-1301", "The meadow can run at 16x.", "Stated", "c"),
+                "CLX-1302": ms.Row("CLX-1302", "The speed stays where it was left, as before.", "Askable", "c")}
+        self.assertEqual(ms.guard_problems(rows, {"CLX-1302": "why"}), [])
+        problems = ms.guard_problems(rows, {"CLX-1301": "why", "CLX-9901": "why"})
+        self.assertTrue(any("CLX-1301" in p and "keep" in p for p in problems))
+        self.assertTrue(any("CLX-9901" in p and "no such row" in p for p in problems))
+
+    def test_the_seed_writes_guard_rows_json(self):
+        c = Converted()
+        guards = json.loads(c.files["guard-rows.json"])
+        self.assertEqual(guards["rows"], {})  # the synthetic rows have no guard
+        self.assertIn("guard-rows.json", ms.OUTPUTS)
+
+
 class RealSourceTest(unittest.TestCase):
     def test_the_real_change_set_converts_and_checks(self):
         source = ms.HIDDEN / "m2f-changes-r2.md"
@@ -551,6 +575,10 @@ class RealSourceTest(unittest.TestCase):
         briefs = json.loads(ms.BRIEFS.read_text(encoding="utf-8")) if ms.BRIEFS.exists() else None
         problems, warnings, _ = ms.check_seed(out, text, pilot_text, test_index=index, briefs=briefs)
         self.assertEqual(problems, [])
+        guards = json.loads((out / "guard-rows.json").read_text())["rows"]
+        self.assertEqual(sorted(guards), sorted(ms.GUARD_ROWS))
+        self.assertEqual({g: v["checkable_on_snapshot"] for g, v in guards.items()}["CLX-2403"], False)
+        self.assertEqual(guards["CLX-1702"]["change"], 17)
 
 
 if __name__ == "__main__":

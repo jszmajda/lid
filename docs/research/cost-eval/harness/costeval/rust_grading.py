@@ -627,7 +627,7 @@ def _judge_batch(ck, g: RustGraders, batch: list, bid: str, out: Path, *, volume
 
 def grade_probes(ck, g: RustGraders, probeset: grading.ProbeSet, probes: list, *, base: str, out: Path, volume: str,
                  batch_size: int = 4, run_role: Callable = executor.run_role, attempts: int = 3,
-                 helpers: dict | None = None, items: list[tuple[str, str]] = ()) -> dict:
+                 helpers: dict | None = None, items: list[tuple[str, str]] = (), guards=frozenset()) -> dict:
     """Extraction, then for each batch: execution, the harness's own run of each probe's test, and judgment. A probe
     the judge couldn't exercise is a grader error: it runs once more in a batch of its own, from no test, with the
     same instructions (nothing about the arm), and if it is still unresolved its verdict is "missing", with the fault.
@@ -635,7 +635,9 @@ def grade_probes(ck, g: RustGraders, probeset: grading.ProbeSet, probes: list, *
     graded items, (ID, statement), whose implementation the extraction records from the diff; an interface fault left
     after the rerun on an item it found absent is a confirmed absence: "not met". A probe that needs `tui` drives the
     terminal shell: the extraction then covers the shell's surface too, and its batch's executor is told the shell's
-    crate."""
+    crate. guards: the item IDs of keep-it-as-it-was rows, which untouched code meets: a "met" on one stays met though
+    the extraction found it absent (recorded under guard_exempt), since an arm that rightly leaves that code alone gives
+    the extraction nothing new to find."""
     out.mkdir(parents=True, exist_ok=True)
     rec = run_role(g.role(g.extraction_model, tools=("Bash", "Read", "Write", "Edit", "Glob", "Grep"),
                           workspace_volume=volume, timeout_s=2400),
@@ -685,8 +687,12 @@ def grade_probes(ck, g: RustGraders, probeset: grading.ProbeSet, probes: list, *
             verdicts[pid] = second
     # a "met" on an item the extraction found nothing addressing is a conflict between the two: neither counts
     conflicts: dict[str, dict] = {}
+    guard_exempt: list[str] = []
     for pid, v in verdicts.items():
         if v.get("verdict") == "met" and statuses.get(by_id[pid].item.split()[0]) == "absent":
+            if by_id[pid].item.split()[0] in guards:
+                guard_exempt.append(pid)
+                continue
             verdicts[pid] = {**v, "verdict": grading.CONFLICT}
             c = conflicts.setdefault(by_id[pid].item, {"probes": {}, "extraction": records.get(by_id[pid].item.split()[0])})
             c["probes"][pid] = {"verdict": "met", "reason": v.get("reason"), "evidence": v.get("evidence"),
@@ -702,7 +708,7 @@ def grade_probes(ck, g: RustGraders, probeset: grading.ProbeSet, probes: list, *
     result = {"probes": probe_verdicts, "items": verdict_items, "details": verdicts, "sessions": sessions,
               "execution_faults": faults, "reruns": reruns, "missing": missing, "missing_by_fault": by_fault,
               "absent": absent, "interface_faults": interface, "implementation": statuses, "conflicts": conflicts,
-              "helpers": helpers or {}}
+              "guard_exempt": sorted(guard_exempt), "helpers": helpers or {}}
     (out / "verdicts.json").write_text(json.dumps(result, indent=1), encoding="utf-8")
     return result
 
@@ -939,6 +945,47 @@ def items_met(items: dict[str, str | None], interface: dict[str, list[str]] | No
             "conflicts": sum(v == grading.CONFLICT for v in items.values()),
             "interface_faults": {k: sum(i in items for i in (interface or {}).get(k, []))
                                  for k in ("not met (absent)", "missing")}}
+
+
+def items_met_by_kind(items: dict[str, str | None], interface: dict[str, list[str]] | None = None, *, guards=frozenset()) -> dict:
+    """items_met apart for the new-behaviour rows and the guard rows (keep-it-as-it-was rules), by item ID."""
+    key = lambda i: i.split()[0]  # noqa: E731
+    new = {i: v for i, v in items.items() if key(i) not in guards}
+    guard = {i: v for i, v in items.items() if key(i) in guards}
+    return {"new_rows_met": items_met(new, interface), "guard_rows_met": items_met(guard, interface),
+            "guard_rows": sorted(guard)}
+
+
+def reapply_guards(gdir: Path, probes: list, *, guards, kept: set[str]) -> dict:
+    """Give a grading made before the guard rows were known their exemption, with no new model call: each conflict on a
+    guard row goes back to the probes' own "met" (recorded under guard_exempt), the item verdicts and tallies are
+    recounted, and the new-behaviour and guard rows are counted apart. The earlier summary is kept beside it as
+    summary.before-guards.json. Returns the new summary."""
+    vpath, spath = gdir / "probes" / "verdicts.json", gdir / "summary.json"
+    v, summary = json.loads(vpath.read_text()), json.loads(spath.read_text())
+    exempt = []
+    for item, c in list((v.get("conflicts") or {}).items()):
+        if item.split()[0] not in guards:
+            continue
+        for pid, ruling in c["probes"].items():
+            v["probes"][pid] = ruling["verdict"]
+            v.setdefault("details", {})[pid] = {**(v.get("details") or {}).get(pid, {}), "verdict": ruling["verdict"]}
+            exempt.append(pid)
+        del v["conflicts"][item]
+    v["guard_exempt"] = sorted(set(v.get("guard_exempt") or []) | set(exempt))
+    v["items"] = grading.item_verdicts(v["probes"], [p for p in probes if p.id in v["probes"]])
+    vpath.write_text(json.dumps(v, indent=1), encoding="utf-8")
+    if not (gdir / "summary.before-guards.json").exists():
+        (gdir / "summary.before-guards.json").write_text(spath.read_text())
+    items = {item: x["verdict"] for item, x in v["items"].items()}
+    summary["items"], summary["kept_behaviour_checks"] = split_items(items, kept)
+    summary["items_met"] = items_met(summary["items"], v.get("interface_faults"))
+    summary["kept_behaviour_met"] = items_met(summary["kept_behaviour_checks"], v.get("interface_faults"))
+    summary.update(items_met_by_kind(summary["items"], v.get("interface_faults"), guards=guards))
+    summary["conflicts"] = v.get("conflicts") or {}
+    summary["guard_exempt"] = v["guard_exempt"]
+    spath.write_text(json.dumps(summary, indent=1), encoding="utf-8")
+    return summary
 
 
 # -------------------------------------------------------------------------- still-valid visible assertions

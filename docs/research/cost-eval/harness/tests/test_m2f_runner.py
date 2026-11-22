@@ -53,6 +53,23 @@ class M2fRunnerTest(unittest.TestCase):
         self.assertLess(cmds.index(next(c for c in cmds if "m2f-stripped-bare-c13-r1" in c and "run_fork" in c)),
                         cmds.index(next(c for c in cmds if "m2f-stripped-bare-c13-r1" in c and "grade_rust" in c)))
 
+    def test_right_grades_each_changes_right_build_as_a_null_fork_with_its_patch_then_checks_it(self):
+        cmds = dry("right", runs=self.runs)
+        self.assertTrue(any("m2f_right_builds.py" in c and "--out" in c for c in cmds))
+        forks = [c for c in cmds if "run_fork.py" in c]
+        self.assertEqual(ids(cmds, "run_fork.py"), [f"m2f-right-c{n:02d}" for n in range(13, 21)])  # builds.py's right builds
+        for c in forks:
+            n = re.search(r"--change (\d+)", c).group(1)
+            for part in ("--null", "--variant full", "/clowder-variants/v2 ", f"/right/change-{n}.diff"):
+                self.assertIn(part, c)
+        self.assertEqual(ids(cmds, "grade_rust.py"), [f"m2f-right-c{n:02d}" for n in range(13, 21)])
+        self.assertIn("m2f_null_check.py", cmds[-1])
+        self.assertIn("--mode right", cmds[-1])
+
+    def test_every_grading_knows_the_guard_rows(self):
+        cmds = dry("main", runs=self.runs) + dry("null", runs=self.runs)
+        self.assertTrue(all("--guard-rows ../seeds/clowder/hidden/m2f/guard-rows.json" in c for c in cmds if "grade_rust.py" in c))
+
     def test_every_job_waits_at_the_pacing_gate_when_live(self):
         text = (HARNESS / "run_clowder_m2f.sh").read_text()
         self.assertIn("sh pace.sh", text)

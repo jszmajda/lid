@@ -208,6 +208,11 @@ def main(argv=None, *, checkpoint=None, run_role=executor.run_role) -> int:
     ap.add_argument("--change-script", type=Path, help="default: <seed-dir>/hidden/change-script.md")
     ap.add_argument("--no-classify", action="store_true", help="leave failing held-out tests unclassified")
     ap.add_argument("--kept-assertions", type=Path, help="default: <seed-dir>/hidden/kept-assertions.json")
+    ap.add_argument("--guard-rows", type=Path, default=None,
+                    help="guard-rows.json (M2f): keep-it-as-it-was rows, exempt from the absent-conflict rule and "
+                         "counted apart from the new-behaviour rows")
+    ap.add_argument("--reapply-guards", action="store_true",
+                    help="give an existing grading the guard rows' exemption (needs --guard-rows), with no model call")
     ap.add_argument("--oracle", type=Path,
                     help="the oracle whose items the extraction is asked about; default: <seed-dir>/hidden/oracle.md")
     ap.add_argument("--graded-dir", type=Path,
@@ -238,6 +243,17 @@ def main(argv=None, *, checkpoint=None, run_role=executor.run_role) -> int:
         ap.error("--change is needed for a trajectory")
     commit, base = meta["changes"][str(n)]["commit"], meta["start_commit"]
     out = run / "grading" / f"change-{n:02d}"
+    if args.reapply_guards:  # an earlier grading given the guard rows' exemption, with no new model call
+        if not args.guard_rows or not (out / "summary.json").exists():
+            ap.error("--reapply-guards needs --guard-rows and a grading to reapply them to")
+        guards = set((json.loads(args.guard_rows.read_text()).get("rows") or {}))
+        probes_path = args.probes or args.seed_dir / "hidden" / "probes.md"
+        probes = [p for p in grading.parse_probes(probes_path.read_text(encoding="utf-8")).probes if p.applies(n)]
+        script_path = args.change_script or args.seed_dir / "hidden" / "change-script.md"
+        kept = rg.kept_behaviour_ids(script_path.read_text(encoding="utf-8")) if script_path.exists() else set()
+        s = rg.reapply_guards(out, probes, guards=guards, kept=kept)
+        print(f"{args.id}: guard exemption reapplied to {s['guard_exempt'] or 'no probe'}; items {s['items']}")
+        return 0
     out.mkdir(parents=True, exist_ok=True)
     image = meta.get("image") or "lid-cost-eval-executor-rust:2.1.323"
     make = checkpoint or (lambda name, c, img: rg.RustCheckpoint(name=name, commit=c, image=img))
@@ -382,6 +398,7 @@ def main(argv=None, *, checkpoint=None, run_role=executor.run_role) -> int:
                                             "seed_files": summary["seed_files"]}
                 summary = earlier
             probes_path = args.probes or args.seed_dir / "hidden" / "probes.md"
+            guards = set((json.loads(args.guard_rows.read_text()).get("rows") or {})) if args.guard_rows else set()
             if not args.no_probes and not args.keeping_only and not probes_path.exists():
                 summary["probes_skipped"] = f"no probes file at {probes_path}: the LLM-executed probes didn't run"
             if not args.no_probes and not args.keeping_only and probes_path.exists():
@@ -394,11 +411,15 @@ def main(argv=None, *, checkpoint=None, run_role=executor.run_role) -> int:
                     summary["probe_helpers"] = {c: h["status"] for c, h in helpers.items()}
                     result = rg.grade_probes(ck, g, probeset, applicable, base=base, out=out / "probes", volume=ck.volume,
                                              batch_size=args.batch_size, run_role=run_role, helpers=helpers,
-                                             items=graded_items(args.seed_dir, n, meta, applicable, oracle=args.oracle))
+                                             items=graded_items(args.seed_dir, n, meta, applicable, oracle=args.oracle),
+                                             guards=guards)
                     items = {item: v["verdict"] for item, v in result["items"].items()}
                     kept = rg.kept_behaviour_ids(script_path.read_text(encoding="utf-8")) if script_path.exists() else set()
                     summary["items"], summary["kept_behaviour_checks"] = rg.split_items(items, kept)
                     summary["items_met"] = rg.items_met(summary["items"], result["interface_faults"])
+                    if guards:  # the new-behaviour rows and the guard rows apart, beside the total
+                        summary.update(rg.items_met_by_kind(summary["items"], result["interface_faults"], guards=guards))
+                        summary["guard_exempt"] = result.get("guard_exempt", [])
                     summary["kept_behaviour_met"] = rg.items_met(summary["kept_behaviour_checks"], result["interface_faults"])
                     summary["implementation"] = result["implementation"]
                     summary["conflicts"] = result["conflicts"]  # both rulings, for a spot-check

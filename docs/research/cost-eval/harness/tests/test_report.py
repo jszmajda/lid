@@ -146,6 +146,24 @@ class ForkReportTest(unittest.TestCase):
         self.assertIn("| 1 | 2/3 | 1 | 0 | 232/232 | E0063 no empty value 91 | abcdef0 |", text)
         self.assertIn("## stripped-null-200k", text)
 
+    def test_guard_rows_are_reported_apart_from_new_behaviour_rows_and_in_the_total(self):
+        runs = Path(tempfile.mkdtemp())
+        self.fork(runs, "full", "lid-full", "1m", 17, items_met={"met": 2, "of": 3, "missing": 0, "conflicts": 0},
+                  new_rows_met={"met": 1, "of": 1, "missing": 0, "conflicts": 0},
+                  guard_rows_met={"met": 1, "of": 2, "missing": 0, "conflicts": 0}, guard_rows=["CLX-1702", "CLX-1703"],
+                  held_out_retention={"passed": 10, "failed": 0})
+        self.fork(runs, "full", "lid-full", "1m", 13, items_met={"met": 2, "of": 2, "missing": 0, "conflicts": 0},
+                  new_rows_met={"met": 2, "of": 2, "missing": 0, "conflicts": 0},
+                  guard_rows_met={"met": 0, "of": 0, "missing": 0, "conflicts": 0}, guard_rows=[],
+                  held_out_retention={"passed": 10, "failed": 0})
+        r = report.fork_report(runs, "cf-*-r1")
+        t = r["cells"]["full-lid-full-1m"]["total"]
+        self.assertEqual((t["met"], t["of"]), (4, 5))
+        self.assertEqual((t["new"]["met"], t["new"]["of"], t["guard"]["met"], t["guard"]["of"]), (3, 3, 1, 2))
+        text = report.render_forks(r)
+        self.assertIn("new-behaviour rows met 3/3, guard rows met 1/2", text)
+        self.assertIn("| 17 | 2/3 | 1/1 | 1/2 |", text)
+
     def test_an_older_summary_takes_its_tests_not_built_from_keeping(self):
         runs = Path(tempfile.mkdtemp())
         self.fork(runs, "full", "lid-full", "1m", 7, items_met={"met": 4, "of": 4},
