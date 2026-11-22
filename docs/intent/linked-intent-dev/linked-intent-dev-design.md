@@ -157,6 +157,8 @@ LID's own evidence runs pin reasoning effort at `medium`, the most common defaul
 
 **Evidence runs exclude the capability subsystem.** A run that produces evidence for the list measures the model's own judgment, so the skill text the run gives the model carries no trace of the list. The run's copy of the skills drops `references/capability-flags.md` and every passage that mentions the list or its flags, wherever the model could read it: the skills, their references, the vendored workflow doc, the plugin's changelog. Files the run never gives the model, such as eval definitions and earlier run output, stay as shipped like everything else: eval definitions hold the assertions the run is graded by, so editing them would change what is measured. The subsystem is a handful of passages, so they are removed from the copy by hand. Before any run starts, a case-insensitive search for `capability` over the parts of the copy the model is given finds only uses unrelated to the list, and a diff of the whole copy against the commit it came from shows nothing changed but those passages. The run's results are recorded against that commit.
 
+The alternate-model runner's `capability` roster preset (`docs/intent/alt-model-evals/`) runs the test projects these flags and tendencies rest on, at 10 runs per project, so a change to which projects stand behind a flag changes that preset too.
+
 A configuration leaves a flag when a rerun at that configuration no longer clears the bar.
 
 ## Decisions & Alternatives
