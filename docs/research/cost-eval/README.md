@@ -57,7 +57,7 @@ Read this section first when you pick the work up in a new session. Update it at
 
 **Next actions** (milestones M2 and M2c in [plan.md](plan.md)):
 
-1. **M2f is next: Clowder with cross-crate changes** (plan.md). M2e's first look is done (log, 2026-11-21): the checklist arm caught little more latent intent than bare, and rework once reported was cheap in agent dollars. Preparation runs on OpenRouter while subscription use is near its weekly limit; the runs follow the reset. Review the specification-explicitness paper's other deferred ideas with the maintainer too (plan.md, "After the growth test").
+1. **M2f is ready to run after the subscription's weekly reset** (plan.md). The cross-crate changes went through three drafting rounds, with reviews by Claude Fable and GPT-6.2 Astra. Every graded probe and held-out test passes on the snapshot and on a correct build, and fails on its core-only build. A Fable fix-check, the variants and the null check come first. M2h (Paperless-ngx) passed feasibility; its seed design follows. Review the specification-explicitness paper's other deferred ideas with the maintainer too (plan.md, "After the growth test").
 2. **Extend `report.py`** for recalled intent (review and question), contradictions kept against drawn, keeping, the Clowder measures (held-out retention, missing items, intent reach, cost to green, edits to visible tests), and the window dose.
 3. **Finish the owner checks:**
    - labelled judgments on about 100 replayed stops;
