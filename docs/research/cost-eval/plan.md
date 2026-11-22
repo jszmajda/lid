@@ -117,6 +117,14 @@ The scale question, recast: agents search a codebase rather than load it, so "to
 - `[ ]` Null-arm check of the grading on the untouched snapshot.
 - `[ ]` Runs: bare on the stripped repository and LID Full, three forks per change each, at the 1M window; repair forks for every miss, measuring rounds and cost to fix.
 
+## M2g: A name-drift survey `[ ]`
+
+Agents find a dependency by searching for the names they're changing, so a cross-component dependency is remote only when the names don't carry across. A descriptive survey, before choosing the brownfield project:
+
+- `[ ]` For each project, the concepts several components share, whether each component names them the same way (allowing for case conventions), and, for a sample of real cross-component dependencies, whether searching the name on one side finds the dependent code on the other.
+- `[ ]` Projects: Clowder (LID-built), the growth runs (drift from change to change), three or four open-source multi-component projects, and a private long-running project of the maintainer's that adopted the method halfway (analysed privately, its code never published; an anonymised summary may be).
+- `[ ]` Then: injected renaming on Clowder as a dose for M2f (the UI renames shared concepts; LID's variant renames consistently through its docs, keeping its spec links), and the choice of the brownfield project, one where names really drift.
+
 ## After the growth test: ideas to review with the maintainer `[ ]`
 
 Suggested by Onagh and Nayebi's specification-explicitness paper (sources.md, "Specification explicitness"). The maintainer asked that they change nothing in the growth test, and be reviewed with her once it finishes.
