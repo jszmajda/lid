@@ -4,9 +4,12 @@ dependency probe and every held-out test graded at that change.
 
     python3.12 m2f_null_check.py --forks 'm2f-null-c*'
 
-Reads each null fork's grading summary (grade_rust.py: items, dependency_probes, held_out_tests) and the M2f change
-script's Introduces lines. Prints a table, names every problem and every row left without a verdict (the LLM probes
-for the new rows, until they exist), and writes ../runs/clowder-m2f/null-check.json. Exits 1 if anything fails.
+Reads each null fork's grading summary (grade_rust.py: items, dependency_probes, held_out_tests, graded_targets) and
+the M2f change script's Introduces lines. The snapshot must pass every graded test outright: a test that failed is a
+problem whatever its class, and so is one missing (its target not built, the test not run), with its cause, and
+graded targets that didn't run at all. Prints a table, names every problem and every row left without a verdict (the
+LLM probes for the new rows, until they exist), and writes ../runs/clowder-m2f/null-check.json. Exits 1 if anything
+fails.
 """
 
 from __future__ import annotations
@@ -55,10 +58,17 @@ def main(argv=None) -> int:
         items = s.get("items") or {}
         met = [i for i in rows if items.get(i) == "met"]
         no_verdict = [i for i in rows if items.get(i) not in ("met", "not met")]
+        recs = {**(s.get("dependency_probes") or {}), **(s.get("held_out_tests") or {})}
         probes = {t: (r or {}).get("result") for t, r in (s.get("dependency_probes") or {}).items()}
         held = {t: (r or {}).get("result") for t, r in (s.get("held_out_tests") or {}).items()}
         problems = [f"{i} met on the snapshot" for i in met]
-        problems += [f"{t} {r} on the snapshot" for t, r in {**probes, **held}.items() if r != "passed"]
+        if (s.get("graded_targets") or {}).get("skipped"):
+            problems.append(f"graded targets not run: {s['graded_targets']['skipped']}")
+        for t, r in {**probes, **held}.items():
+            if r == "failed":
+                problems.append(f"{t} failed on the snapshot")
+            elif r != "passed":  # not built, not run: missing, which on the snapshot is a problem, not a pass
+                problems.append(f"{t} missing on the snapshot ({r}: {(recs[t] or {}).get('cause') or '?'})")
         out["problems"] += [{"change": n, "what": p} for p in problems]
         out["changes"][str(n)] = {"rows": rows, "met": met, "rows_without_verdict": no_verdict, "dependency_probes": probes,
                                   "held_out_tests": held, "ok": not problems}

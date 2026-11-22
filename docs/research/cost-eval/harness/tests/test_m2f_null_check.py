@@ -35,14 +35,18 @@ SCRIPT = """# Change script
 """
 
 
-def null_fork(runs: Path, n: int, *, items, probes, held=None):
+def null_fork(runs: Path, n: int, *, items, probes, held=None, graded_targets=None):
     d = runs / f"m2f-null-c{n:02d}"
     g = d / "grading" / f"change-{n:02d}"
     g.mkdir(parents=True)
     (d / "trajectory.json").write_text(json.dumps({"arm": "null", "change": n, "changes": {str(n): {"commit": "c0"}}}))
+
+    def rec(r):  # a result, or (result, extra fields)
+        return {"result": r} if isinstance(r, str) else {"result": r[0], **r[1]}
     (g / "summary.json").write_text(json.dumps({
-        "items": items, "dependency_probes": {t: {"result": r} for t, r in probes.items()},
-        "held_out_tests": {t: {"result": r} for t, r in (held or {}).items()}}))
+        "items": items, "dependency_probes": {t: rec(r) for t, r in probes.items()},
+        "held_out_tests": {t: rec(r) for t, r in (held or {}).items()},
+        "graded_targets": graded_targets or {"targets": ["m2f_target"]}}))
 
 
 class NullCheckTest(unittest.TestCase):
@@ -77,6 +81,27 @@ class NullCheckTest(unittest.TestCase):
         self.assertEqual(sorted(p["what"] for p in rec["problems"]),
                          ["CLX-1301 met on the snapshot", "update::probe_m2f_speed failed on the snapshot"])
         self.assertIn("change 20: not graded", text)  # a change with no null grading is named
+
+    def test_a_target_missing_on_the_snapshot_is_a_problem_with_its_cause(self):
+        null_fork(self.runs, 13, items={"CLX-1301": "not met", "CLX-1302": "not met"},
+                  probes={"update::probe_m2f_speed": ("not built", {"cause": "E0425"})})
+        null_fork(self.runs, 20, items={"CLX-2001": "not met", "CLX-2002": "not met"},
+                  probes={"report_queue::probe_m2f_history": ("not run", {"cause": "ignored"})},
+                  held={"report_queue::a": ("failed", {"class": "new state only"})})
+        rc, text, rec = self.check()
+        self.assertEqual(rc, 1)
+        self.assertEqual(sorted(p["what"] for p in rec["problems"]), [
+            "report_queue::a failed on the snapshot",  # the snapshot must pass outright
+            "report_queue::probe_m2f_history missing on the snapshot (not run: ignored)",
+            "update::probe_m2f_speed missing on the snapshot (not built: E0425)"])
+
+    def test_graded_targets_skipped_on_the_snapshot_is_a_problem(self):
+        null_fork(self.runs, 13, items={"CLX-1301": "not met", "CLX-1302": "not met"}, probes={},
+                  graded_targets={"skipped": "no graded targets: v2/graded/graded.json doesn't exist"})
+        rc, text, rec = self.check()
+        self.assertEqual(rc, 1)
+        self.assertEqual([p["what"] for p in rec["problems"]],
+                         ["graded targets not run: no graded targets: v2/graded/graded.json doesn't exist"])
 
     def test_rows_without_llm_probes_yet_are_named_not_counted_as_passing(self):
         null_fork(self.runs, 13, items={}, probes={"update::probe_m2f_speed": "passed"})

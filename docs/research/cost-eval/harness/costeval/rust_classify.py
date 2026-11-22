@@ -28,6 +28,11 @@ from typing import Any, Callable
 from . import grading, rust_adapt
 
 CLASSES = ("new state only", "keeping failure")
+TEMPLATE = "keeping-classify-rust.md"
+# M2f's dependency probes (graded targets) are ruled on by a variant of the prompt with classes of their own. The first
+# class is the one that doesn't count as a failure; the second does.
+PROBE_CLASSES = ("settled precondition", "dependency failure")
+PROBE_TEMPLATE = "keeping-classify-probe-rust.md"
 MAX_OUTPUT = 12000  # characters of one failure's output the judge sees
 MAX_DIFFERENCES = 80
 MAX_TEST_LINES = 150
@@ -37,17 +42,22 @@ SITE_CONTEXT = 12
 BATCH = 5
 ATTEMPTS = 3
 
-SCHEMA = {
-    "type": "object", "additionalProperties": False, "required": ["rulings"],
-    "properties": {"rulings": {"type": "array", "items": {
-        "type": "object", "additionalProperties": False, "required": ["test", "classification", "reason", "evidence"],
-        "properties": {
-            "test": {"type": "string"}, "classification": {"type": "string", "enum": list(CLASSES)},
-            "reason": {"type": "string"},
-            "evidence": {"type": "array", "items": {
-                "type": "object", "additionalProperties": False, "required": ["seq", "lines"],
-                "properties": {"seq": {"type": "integer"}, "lines": {"type": "array", "items": {"type": "integer"}}}}}}}}},
-}
+
+def schema(classes: tuple[str, str]) -> dict:
+    return {
+        "type": "object", "additionalProperties": False, "required": ["rulings"],
+        "properties": {"rulings": {"type": "array", "items": {
+            "type": "object", "additionalProperties": False, "required": ["test", "classification", "reason", "evidence"],
+            "properties": {
+                "test": {"type": "string"}, "classification": {"type": "string", "enum": list(classes)},
+                "reason": {"type": "string"},
+                "evidence": {"type": "array", "items": {
+                    "type": "object", "additionalProperties": False, "required": ["seq", "lines"],
+                    "properties": {"seq": {"type": "integer"}, "lines": {"type": "array", "items": {"type": "integer"}}}}}}}}},
+    }
+
+
+SCHEMA = schema(CLASSES)
 
 
 # ---------------------------------------------------------------------------------------------- failure output
@@ -352,11 +362,12 @@ def render(entries: list[dict]) -> str:
     return "\n\n".join(blocks)
 
 
-def prompt(change: str, entries: list[dict]) -> str:
-    return grading._template("keeping-classify-rust.md", CHANGE=change, EVIDENCE=render(entries))
+def prompt(change: str, entries: list[dict], template: str = TEMPLATE) -> str:
+    return grading._template(template, CHANGE=change, EVIDENCE=render(entries))
 
 
-def check_rulings(structured: Any, tests: list[str], entries: list[dict]) -> list[tuple[str | None, str]]:
+def check_rulings(structured: Any, tests: list[str], entries: list[dict],
+                  classes: tuple[str, str] = CLASSES) -> list[tuple[str | None, str]]:
     """(test, problem) for each problem in the judge's answer; test is None for one about the answer as a whole."""
     rulings = (structured or {}).get("rulings") if isinstance(structured, dict) else None
     if not isinstance(rulings, list):
@@ -372,7 +383,7 @@ def check_rulings(structured: Any, tests: list[str], entries: list[dict]) -> lis
         if t in seen:
             problems.append((t, f"two rulings for `{t}`"))
         seen.add(t)
-        if r.get("classification") not in CLASSES:
+        if r.get("classification") not in classes:
             problems.append((t, f"`{t}`: classification {r.get('classification')!r}"))
         if not r.get("evidence"):
             problems.append((t, f"`{t}` cites no evidence"))
@@ -401,17 +412,21 @@ def _resolve(evidence: list[dict], entries: list[dict]) -> list[dict]:
     return out
 
 
-def _harness(reason: str) -> dict:
-    return {"classification": "keeping failure", "by": "harness", "reason": reason, "evidence": []}
+def _harness(reason: str, classification: str = CLASSES[1]) -> dict:
+    return {"classification": classification, "by": "harness", "reason": reason, "evidence": []}
 
 
 def classify(result: dict, logs: dict[str, str], files: dict[str, dict[str, str]], change: str, *,
              ask: Callable[[str], tuple[Any, dict]], out: Path | None = None, attempts: int = ATTEMPTS,
-             batch_size: int = BATCH) -> dict:
+             batch_size: int = BATCH, template: str = TEMPLATE, classes: tuple[str, str] = CLASSES) -> dict:
     """Classify every failing held-out test in a keeping result, in place: each target's "failures", and in total
     "new_state_only", "keeping_failures", "share_kept" (passed and new-state-only over tests run), "classified", and
-    "classification_cost_usd". ask(prompt) -> (structured answer, usage)."""
+    "classification_cost_usd". ask(prompt) -> (structured answer, usage). template and classes: the prompt and its
+    classes (PROBE_TEMPLATE and PROBE_CLASSES for dependency probes), the first class counted as "new_state_only"."""
     cost = 0.0
+
+    def harness(reason: str) -> dict:
+        return _harness(reason, classes[1])
     for target, rec in result["targets"].items():
         failed = sorted(n for n, s in rec["tests"].items() if s == "FAILED")
         if not failed:
@@ -421,21 +436,21 @@ def classify(result: dict, logs: dict[str, str], files: dict[str, dict[str, str]
         pending = []
         for t in failed:
             if t in rec.get("reached_adaptation", []):
-                records[t] = _harness("The test reached a wildcard arm the adaptation added: a variant the arm added "
+                records[t] = harness("The test reached a wildcard arm the adaptation added: a variant the arm added "
                                       "arrived where the test handles only the old ones.")
             elif t not in outputs:
-                records[t] = _harness("No failure output to read.")
+                records[t] = harness("No failure output to read.")
             else:
                 pending.append(t)
         for k in range(0, len(pending), batch_size):
             batch = pending[k:k + batch_size]
             entries = evidence_entries(batch, outputs, files.get(target, {}))
-            text = prompt(change, entries)
+            text = prompt(change, entries, template)
             tries = []
             for _ in range(attempts):
                 structured, usage = ask(text)
                 cost += (usage or {}).get("cost_usd") or 0.0
-                problems = check_rulings(structured, batch, entries)
+                problems = check_rulings(structured, batch, entries, classes)
                 tries.append({"structured": structured, "problems": [p for _, p in problems], "usage": usage})
                 if not problems:
                     break
@@ -449,7 +464,7 @@ def classify(result: dict, logs: dict[str, str], files: dict[str, dict[str, str]
                     records[t] = {"classification": r["classification"], "by": "grader", "reason": r["reason"],
                                   "evidence": _resolve(r["evidence"], entries)}
                 else:
-                    records[t] = _harness("No valid ruling from the grader: " +
+                    records[t] = harness("No valid ruling from the grader: " +
                                           "; ".join(p for b, p in problems if b in (t, None)))
                 diff = next((e["lines"] for e in entries if e["test"] == t and e["kind"] == "json difference"), None)
                 if diff is not None:
@@ -460,7 +475,7 @@ def classify(result: dict, logs: dict[str, str], files: dict[str, dict[str, str]
                     json.dumps({"prompt": text, "entries": entries, "tries": tries}, indent=1))
         rec["failures"] = {t: records[t] for t in failed}
     every = [f for r in result["targets"].values() for f in (r.get("failures") or {}).values()]
-    nso = sum(f["classification"] == "new state only" for f in every)
+    nso = sum(f["classification"] == classes[0] for f in every)
     ran = result["passed"] + result["failed"]
     result.update({"classified": True, "new_state_only": nso, "keeping_failures": result["failed"] - nso,
                    "share_kept": (result["passed"] + nso) / ran if ran else None,

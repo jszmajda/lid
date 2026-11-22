@@ -47,9 +47,12 @@ class Base(unittest.TestCase):
 
     def grading(self, run: Path, *, items, dependency_met, tests, probes, held=None):
         g = run / "grading" / "change-01"
+
+        def rec(r):  # a result, or (result, extra fields)
+            return {"result": r} if isinstance(r, str) else {"result": r[0], **r[1]}
         write(g / "summary.json", {"items": items, "dependency_met": dependency_met,
-                                   "dependency_probes": {t: {"result": r} for t, r in probes.items()},
-                                   "held_out_tests": {t: {"result": r} for t, r in (held or {}).items()}})
+                                   "dependency_probes": {t: rec(r) for t, r in probes.items()},
+                                   "held_out_tests": {t: rec(r) for t, r in (held or {}).items()}})
         write(g / "keeping.json", {"targets": {"heldout_x": {"tests": tests}}})
 
     def argv(self, what, *extra):
@@ -63,6 +66,11 @@ class PlanTest(Base):
         with contextlib.redirect_stdout(out):
             self.assertEqual(rcr.main(self.argv("plan", "--forks", "m2f-*")), 0)
         self.assertEqual(out.getvalue().split("\n"), [f"{ARM} BK-02", f"{ARM} DEP-01", ""])
+
+    def test_a_dependency_whose_probes_are_missing_plans_no_repair(self):
+        self.assertEqual(rcr.misses({"items": {}, "dependency_met": None,
+                                     "dependency_missing": [{"test": "t::probe_m2f_a", "cause": "E0061"}]}, 1), [])
+        self.assertEqual(rcr.misses({"items": {}, "dependency_met": False}, 1), ["DEP-01"])
 
     def test_a_fork_not_yet_graded_and_a_repair_fork_are_not_planned(self):
         (self.arm / "grading" / "change-01" / "summary.json").unlink()
@@ -162,6 +170,26 @@ class RecordTest(Base):
         self.assertIn("agent_cost_usd", rec)
         self.assertIn("turns", rec["measures"])
         self.assertTrue(any(f"ce-{ARM}-fix-BK-02-ws" in c for c in self.removed))  # the repair fork's volumes go
+
+    def test_a_probe_or_held_out_test_missing_after_the_repair_is_undetermined_not_broken(self):
+        self.grading(self.fix, items={"BK-02": "met", "BK-03": "met"}, dependency_met=None,
+                     tests={"x::a": "ok", "x::b": "ok"}, probes={"t::probe_m2f_a": ("not built", {"cause": "E0061"})},
+                     held={"q::kept": ("failed", {"class": "new state only"})})
+        self.assertEqual(self.record(), 0)
+        rec = json.loads((self.fix / "repair.json").read_text())
+        self.assertEqual(rec["keeping"]["dependency_probes_broken"], [])
+        self.assertEqual(rec["keeping"]["dependency_probes_undetermined"], ["t::probe_m2f_a"])
+        self.assertEqual(rec["keeping"]["held_out_tests_broken"], [])  # new state only: kept, as keeping counts it
+        self.assertEqual(rec["keeping"]["held_out_tests_undetermined"], [])
+
+    def test_a_dependency_repair_whose_probes_are_missing_is_undetermined(self):
+        with contextlib.redirect_stdout(io.StringIO()):
+            rcr.main(self.argv("run", "--of", ARM, "--item", "DEP-01"), deps=self.f.deps())
+        fix = self.f.runs / f"{ARM}-fix-DEP-01"
+        self.grading(fix, items={"BK-02": "not met", "BK-03": "met"}, dependency_met=None,
+                     tests={"x::a": "ok", "x::b": "ok"}, probes={"t::probe_m2f_a": ("not built", {"cause": "E0061"})})
+        self.assertEqual(self.record("DEP-01"), 0)
+        self.assertIsNone(json.loads((fix / "repair.json").read_text())["fixed"])
 
     def test_the_dependency_is_fixed_when_its_probes_pass(self):
         with contextlib.redirect_stdout(io.StringIO()):

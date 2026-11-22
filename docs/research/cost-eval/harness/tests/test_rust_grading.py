@@ -1006,6 +1006,23 @@ EXIT=101
 """
 HELD_LOG = ("running 2 tests\ntest waking::w1 ... ok\ntest waking::w2 ... ok\n"
             "test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out\nEXIT=0\n")
+HELD_FAILING = """running 2 tests
+test waking::w1 ... ok
+test waking::w2 ... FAILED
+
+failures:
+
+---- waking::w2 stdout ----
+
+thread 'waking::w2' panicked at crates/ui/tests/m2f_c3_heldout_waking/waking.rs:4:11:
+the saved game differs: a new field holds null
+
+failures:
+    waking::w2
+
+test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out
+EXIT=101
+"""
 
 
 def graded_entries(change: int = 3) -> list[dict]:
@@ -1049,15 +1066,25 @@ class GradedTargetsTest(unittest.TestCase):
              "m2f_c3_heldout_waking": {"status": "not adapted",
                                        "reason": "E0061 at waking.rs:3 is not one the rule adapts: takes 2 arguments"}})
         result["targets"]["m2f_c3_probe_idle"]["failures"] = {
-            "chrome::probe_b": {"classification": "keeping failure", "by": "grader", "reason": "A count differs."}}
+            "chrome::probe_b": {"classification": "dependency failure", "by": "grader", "reason": "A count differs."}}
         fields = rg.graded_tests(result, entries)
         self.assertEqual(fields["dependency_probes"], {
             "chrome::probe_a": {"result": "passed", "adapted": True},
-            "chrome::probe_b": {"result": "failed", "class": "keeping failure", "adapted": True}})
+            "chrome::probe_b": {"result": "failed", "class": "dependency failure", "adapted": True}})
         self.assertIs(fields["dependency_met"], False)
+        self.assertEqual(fields["dependency_missing"], [])
         self.assertEqual(fields["held_out_tests"], {"waking::w1": {"result": "not built", "cause": "E0061"},
                                                     "waking::w2": {"result": "not built", "cause": "E0061"}})
-        self.assertIs(fields["held_out_tests_met"], False)
+        # a target that doesn't build after adaptation is missing, outside the share, by cause: not a failure
+        self.assertIsNone(fields["held_out_tests_met"])
+        self.assertEqual(fields["held_out_tests_missing"], [{"test": "waking::w1", "cause": "E0061"},
+                                                            {"test": "waking::w2", "cause": "E0061"}])
+        self.assertEqual(fields["held_out_tests_counts"], {
+            "passed": 0, "failed": 0, "missing": 2, "missing_by_cause": {"E0061": 2}, "tests_not_built": 2,
+            "tests_not_built_by_cause": {"E0061": 2}, "new_state_only": 0, "of": 2, "share_passed": None})
+        self.assertEqual(fields["dependency_counts"], {
+            "passed": 1, "failed": 1, "missing": 0, "missing_by_cause": {}, "tests_not_built": 0,
+            "tests_not_built_by_cause": {}, "settled_precondition": 0, "of": 2, "share_passed": 0.5})
 
     def test_a_change_with_nothing_of_a_kind_rolls_up_to_none_and_a_test_with_no_result_line_did_not_run(self):
         e = graded_entries()
@@ -1067,13 +1094,40 @@ class GradedTargetsTest(unittest.TestCase):
             fields = rg.graded_tests(rg.keeping_result([("ui", "m2f_c4_probe_speed", log)]), probe)
             # a target of one file: its tests have no module in their names
             self.assertEqual(fields["dependency_probes"], {"probe_s": {"result": "not run", "cause": cause}})
-            self.assertIs(fields["dependency_met"], False)
+            self.assertIsNone(fields["dependency_met"])  # it didn't run: missing, not a failure
+            self.assertEqual(fields["dependency_missing"], [{"test": "probe_s", "cause": cause}])
         self.assertIsNone(fields["held_out_tests_met"])
         self.assertEqual(fields["held_out_tests"], {})
         ok = rg.keeping_result([("ui", "m2f_c4_probe_speed", "test probe_s ... ok\nEXIT=0\n")])
         self.assertIs(rg.graded_tests(ok, probe)["dependency_met"], True)
         self.assertEqual(rg.graded_tests({"targets": {}}, probe)["dependency_probes"]["probe_s"],
                          {"result": "not built", "cause": "target not run"})
+
+    def test_a_probe_failing_only_on_a_settled_precondition_is_missing_and_new_state_only_is_kept(self):
+        entries = rg.graded_for_change(graded_entries(), 3)
+        log = GRADED_LOG.replace("test chrome::probe_a ... ok", "test chrome::probe_a ... FAILED")
+        result = rg.keeping_result([("ui", "m2f_c3_probe_idle", log),
+                                    ("ui", "m2f_c3_heldout_waking", HELD_LOG.replace("w2 ... ok", "w2 ... FAILED"))])
+        result["targets"]["m2f_c3_probe_idle"]["failures"] = {
+            "chrome::probe_a": {"classification": "settled precondition"},
+            "chrome::probe_b": {"classification": "settled precondition"}}
+        result["targets"]["m2f_c3_heldout_waking"]["failures"] = {"waking::w2": {"classification": "new state only"}}
+        fields = rg.graded_tests(result, entries)
+        self.assertIsNone(fields["dependency_met"])
+        self.assertEqual(fields["dependency_missing"], [{"test": "chrome::probe_a", "cause": "settled precondition"},
+                                                        {"test": "chrome::probe_b", "cause": "settled precondition"}])
+        self.assertEqual(fields["dependency_counts"]["settled_precondition"], 2)
+        self.assertIs(fields["held_out_tests_met"], True)  # as keeping counts it: not against keeping
+        self.assertEqual(fields["held_out_tests_counts"]["new_state_only"], 1)
+        # a failure that counts outweighs a missing test; one never classified counts
+        result["targets"]["m2f_c3_probe_idle"]["failures"]["chrome::probe_b"] = {"classification": "dependency failure"}
+        self.assertIs(rg.graded_tests(result, entries)["dependency_met"], False)
+        del result["targets"]["m2f_c3_heldout_waking"]["failures"]
+        self.assertIs(rg.graded_tests(result, entries)["held_out_tests_met"], False)
+        self.assertEqual(rg.graded_outcome({"result": "failed", "class": "settled precondition"}, rg.DEPENDENCY_PROBE),
+                         "missing")
+        self.assertEqual(rg.graded_outcome({"result": "failed", "class": "new state only"}, rg.HELD_OUT_TEST), "passed")
+        self.assertEqual(rg.graded_outcome({"result": "not built", "cause": "E0061"}, rg.HELD_OUT_TEST), "missing")
 
 
 def m2f_fork(change: int = 3, *, graded: bool = True, script: bool = True) -> tuple[Path, Path, Path]:
@@ -1109,8 +1163,10 @@ class M2fCk(FakeCk):
         if "--test m2f_c3_probe_idle" in script:
             return GRADED_LOG
         if "--test m2f_c3_heldout_waking" in script:
-            return HELD_LOG
+            return self.held_log
         return ""
+
+    held_log = HELD_LOG
 
     def export(self, vol):
         pass
@@ -1120,7 +1176,10 @@ class M2fCk(FakeCk):
 
 
 def ruling(prompt):
-    return {"rulings": [{"test": "chrome::probe_b", "classification": "keeping failure",
+    if "`waking::w2`" in prompt:
+        return {"rulings": [{"test": "waking::w2", "classification": "new state only",
+                             "reason": "Only a field the change adds differs, at null.", "evidence": [{"seq": 1, "lines": [1]}]}]}
+    return {"rulings": [{"test": "chrome::probe_b", "classification": "dependency failure",
                          "reason": "The lock reason and Assign disagree.", "evidence": [{"seq": 1, "lines": [1]}]}]}
 
 
@@ -1130,9 +1189,10 @@ class GradeRustGradedTargetsTest(unittest.TestCase):
         from costeval import rust_classify as rc
         root, run, seed = m2f_fork()
         ck, asked = M2fCk(), []
+        ck.held_log = HELD_FAILING
 
         def run_role(role, prompt, json_schema=None):
-            asked.append(json_schema)
+            asked.append((json_schema, prompt))
             return SimpleNamespace(structured=ruling(prompt), text="", duration_s=0.1,
                                    usage=SimpleNamespace(reported_cost_usd=0.01, models={}))
         rc_ = grade_rust.main(["--id", "cf-x", "--runs", str(root / "runs"), "--seed-dir", str(seed), "--no-probes"],
@@ -1142,15 +1202,22 @@ class GradeRustGradedTargetsTest(unittest.TestCase):
         summary = json.loads((out / "summary.json").read_text())
         self.assertEqual(summary["dependency_probes"], {
             "chrome::probe_a": {"result": "passed"},
-            "chrome::probe_b": {"result": "failed", "class": "keeping failure"}})
+            "chrome::probe_b": {"result": "failed", "class": "dependency failure"}})
         self.assertIs(summary["dependency_met"], False)
-        self.assertEqual(summary["held_out_tests"], {"waking::w1": {"result": "passed"}, "waking::w2": {"result": "passed"}})
+        self.assertEqual(summary["held_out_tests"], {"waking::w1": {"result": "passed"},
+                                                     "waking::w2": {"result": "failed", "class": "new state only"}})
         self.assertIs(summary["held_out_tests_met"], True)
+        self.assertEqual(summary["held_out_tests_counts"]["new_state_only"], 1)
         self.assertEqual(summary["graded_targets"]["targets"], ["m2f_c3_probe_idle", "m2f_c3_heldout_waking"])
         self.assertEqual(summary["graded_targets"]["dir"], str(root / "variants" / "graded"))
         self.assertTrue(summary["graded_targets"]["classified"])
         self.assertIn("graded_sha256", summary["graded_targets"])
-        self.assertEqual(asked, [json.dumps(rc.SCHEMA, separators=(",", ":"))])  # one ruling, by the keeping classifier
+        # each kind by its own prompt and classes: the probe's variant for the probe, keeping's for the held-out test
+        schemas = {s: p for s, p in asked}
+        self.assertEqual(set(schemas), {json.dumps(rc.schema(rc.PROBE_CLASSES), separators=(",", ":")),
+                                        json.dumps(rc.SCHEMA, separators=(",", ":"))})
+        self.assertIn("dependency probe", schemas[json.dumps(rc.schema(rc.PROBE_CLASSES), separators=(",", ":"))])
+        self.assertIn("held-out tests", schemas[json.dumps(rc.SCHEMA, separators=(",", ":"))])
         self.assertIn("/work/app/crates/ui/tests/m2f_c3_probe_idle/chrome.rs", ck.files)
         self.assertEqual(ck.files["/work/app/crates/ui/tests/m2f_c3_probe_idle/chrome.rs"], GRADED_CHROME)
         ran = [s for s in ck.scripts if "cargo test" in s and "--no-run" not in s]
@@ -1159,7 +1226,9 @@ class GradeRustGradedTargetsTest(unittest.TestCase):
         self.assertEqual((out / "graded-targets" / "m2f_c3_probe_idle.log").read_text(), GRADED_LOG)
         record = json.loads((out / "graded-targets.json").read_text())
         self.assertEqual(record["targets"]["m2f_c3_probe_idle"]["failures"]["chrome::probe_b"]["classification"],
-                         "keeping failure")
+                         "dependency failure")
+        self.assertEqual(record["targets"]["m2f_c3_heldout_waking"]["failures"]["waking::w2"]["classification"],
+                         "new state only")
         self.assertTrue(list((out / "graded-targets" / "classify").glob("m2f_c3_probe_idle-b01.json")))
         self.assertIn("held_out_retention", summary)  # keeping ran as before (an empty held-out slice)
 
@@ -1332,3 +1401,21 @@ class GradedKeepingOnlyTest(unittest.TestCase):
         self.assertEqual(summary["held_out_tests_met"], True)
         self.assertEqual(json.loads((out / "graded-targets.before-rerun.json").read_text()), {"old": True})
         self.assertNotIn("old", json.loads((out / "graded-targets.json").read_text()))
+
+
+class ProbeClassifierTest(unittest.TestCase):
+    def test_a_dependency_probe_is_ruled_on_by_its_own_prompt_and_classes(self):
+        from costeval import rust_classify as rc
+        self.assertTrue((grading.PROMPTS / rc.PROBE_TEMPLATE).exists())
+        entries = [{"seq": 1, "test": "chrome::probe_b", "kind": "failure output", "from": 1, "to": 1,
+                    "lines": ["assertion failed"], "label": ""}]
+        text = rc.prompt("Change 19: the Elder takes no job.", entries, template=rc.PROBE_TEMPLATE)
+        self.assertIn("Change 19: the Elder takes no job.", text)
+        for words in ("settled precondition", "dependency failure", "fixture:"):
+            self.assertIn(words, text)
+        self.assertEqual(rc.prompt("c", entries), rc.prompt("c", entries, template=rc.TEMPLATE))  # keeping's as before
+        good = {"rulings": [{"test": "chrome::probe_b", "classification": "dependency failure", "reason": "r",
+                             "evidence": [{"seq": 1, "lines": [1]}]}]}
+        self.assertEqual(rc.check_rulings(good, ["chrome::probe_b"], entries, classes=rc.PROBE_CLASSES), [])
+        self.assertTrue(rc.check_rulings(good, ["chrome::probe_b"], entries))  # not one of keeping's classes
+        self.assertEqual(rc.schema(rc.CLASSES), rc.SCHEMA)

@@ -150,6 +150,139 @@ class TestFunctionsTest(unittest.TestCase):
         self.assertEqual(gt.remove_tests(text), text)
 
 
+PRUNABLE = """//! A host.
+#![allow(clippy::all)]
+use std::collections::BTreeSet;
+use std::io::Write as _;
+use clowder_core::{GameState, Kitten, Removed};
+use clowder_tui::nav::{self, ViewState};
+use clowder_tui::render::*;
+use crate::common::ok;
+use crate::other::{shared, unused_shared};
+
+const WIDE: u16 = 120;
+const UNUSED: u16 = 3;
+static NAME: &str = "x";
+const WIDE_W: u16 = 160;
+
+macro_rules! twice {
+    ($e:expr) => {
+        $e + $e
+    };
+}
+
+macro_rules! unused_macro {
+    () => {};
+}
+
+// ---- fixtures ----
+
+/// The fixture.
+#[derive(Clone)]
+struct Fixture {
+    s: GameState,
+}
+
+impl Fixture {
+    fn new() -> Self {
+        Fixture { s: GameState::new(WIDE as u64) }
+    }
+}
+
+impl Default for Fixture {
+    fn default() -> Self {
+        Fixture::new()
+    }
+}
+
+struct Unused;
+
+impl Unused {
+    fn drift(&self) -> Removed {
+        Removed::gone()
+    }
+}
+
+trait Reads {
+    fn reading(&self) -> u32;
+}
+
+impl Reads for GameState {
+    fn reading(&self) -> u32 {
+        1
+    }
+}
+
+fn fixture() -> Fixture {
+    Fixture::default()
+}
+
+fn chained() -> u32 {
+    twice!(helper_two())
+}
+
+fn helper_two() -> u32 {
+    2
+}
+
+/// Reaches an API an arm might change.
+fn uses_removed() -> Removed {
+    Removed::new(Kitten::default())
+}
+
+fn formatted() -> String {
+    format!("{WIDE_W} and {}", "uses_removed")
+}
+
+#[test]
+fn the_probe() {
+    let f = fixture();
+    assert_eq!(chained(), 4);
+    assert_eq!(f.s.reading(), 1);
+    let _ = formatted();
+    let _v = ViewState::default();
+    let _ = nav::something();
+    assert!(ok());
+    let _ = shared();
+}
+"""
+WORKSPACE = {"clowder_core", "clowder_tui"}
+
+
+class PruneTest(unittest.TestCase):
+    def test_a_target_keeps_only_what_its_tests_reach(self):
+        out = gt.prune(PRUNABLE, {"the_probe"}, WORKSPACE)
+        for kept in ("fn the_probe()", "fn fixture()", "struct Fixture", "impl Fixture", "impl Default for Fixture",
+                     "trait Reads", "impl Reads for GameState", "fn chained()", "fn helper_two()", "macro_rules! twice",
+                     "const WIDE: u16 = 120;", "const WIDE_W: u16 = 160;", "fn formatted()", "/// The fixture.",
+                     "#[derive(Clone)]", "use clowder_core::GameState;",
+                     "use clowder_tui::nav::{self, ViewState};",  # every name it brings is used: as it was
+                     "use crate::common::ok;", "use crate::other::shared;",
+                     "#![allow(clippy::all)]", "//! A host."):
+            self.assertIn(kept, out)
+        for gone in ("Kitten", "Removed", "unused_shared", "UNUSED", "static NAME", "unused_macro", "struct Unused",
+                     "impl Unused", "fn uses_removed", "Reaches an API"):
+            self.assertNotIn(gone, out)
+        self.assertTrue(balanced(out))
+        self.assertNotIn("\n\n\n", out)
+
+    def test_imports_from_outside_the_workspace_and_glob_imports_stay(self):
+        out = gt.prune(PRUNABLE, {"the_probe"}, WORKSPACE)
+        self.assertIn("use std::collections::BTreeSet;", out)  # std can't drift with the arm, and may bring traits
+        self.assertIn("use std::io::Write as _;", out)
+        self.assertIn("use clowder_tui::render::*;", out)  # what a glob brings is unknown
+
+    def test_a_file_with_nothing_unreachable_is_unchanged(self):
+        text = "use clowder_core::GameState;\n\nfn f() -> GameState {\n    GameState::new(1)\n}\n\n#[test]\nfn t() {\n    f();\n}\n"
+        self.assertEqual(gt.prune(text, {"t"}, WORKSPACE), text)
+
+    def test_a_top_level_macro_call_is_kept_whatever_it_defines(self):
+        text = "thread_local! {\n    static CELL: u8 = 0;\n}\n\nfn unused() {}\n\n#[test]\nfn t() {}\n"
+        out = gt.prune(text, {"t"}, WORKSPACE)
+        self.assertIn("thread_local!", out)
+        self.assertNotIn("fn unused", out)
+
+
 MAIN = "//! The suite.\n#![allow(clippy::all)]\n\nmod common;\nmod host;\nmod other;\nmod uses_other;\n"
 INTEGRATION = "crates/tui/tests/integration"
 SNAP = {
@@ -159,7 +292,9 @@ SNAP = {
     f"{INTEGRATION}/other.rs": "pub fn shared() -> u32 { 1 }\n\n#[test]\nfn other_test() {}\n",
     f"{INTEGRATION}/uses_other.rs": ("use crate::other::shared;\n\n#[test]\nfn a() {\n    assert_eq!(shared(), 1);\n}\n\n"
                                      "#[test]\nfn b() {}\n"),
-    "crates/tui/tests/term.rs": "fn helper() -> u8 { 2 }\n\n#[test]\nfn term() {}\n",
+    "crates/tui/tests/term.rs": "fn helper() -> u8 { 2 }\n\nfn unreached() -> u8 { 3 }\n\n#[test]\nfn term() {}\n",
+    "crates/tui/Cargo.toml": "[package]\nname = \"tui\"\n",
+    "crates/clowder-core/Cargo.toml": "[package]\nname = \"clowder-core\"\n",
 }
 PROBE_P = "\n// ---- probe ----\n#[test]\nfn probe_m2f_p() {\n    assert!(fresh().ticks == 0);\n}\n"
 PROBE_Q = "\n#[test]\nfn probe_m2f_q() {\n    assert_eq!(helper(), 2);\n}\n"
@@ -202,6 +337,9 @@ class BuildTest(unittest.TestCase):
         host = files[f"{dest}/host.rs"]
         self.assertEqual([t.name for t in gt.test_functions(host)], ["probe_m2f_p"])
         self.assertIn("fn fresh()", host)
+        for gone in ("fn longest", "struct Helper", "impl Helper", "mod inner", "const WIDE"):  # the probe reaches none
+            self.assertNotIn(gone, host)
+        self.assertIn("use clowder_core::GameState;", host)  # fresh() names it
         self.assertTrue(host.rstrip().endswith(PROBE_P.rstrip()))
         self.assertEqual(files[f"{dest}/common/mod.rs"], SNAP[f"{INTEGRATION}/common/mod.rs"])
         self.assertEqual(e["source"]["host"], f"{INTEGRATION}/host.rs")
@@ -215,6 +353,7 @@ class BuildTest(unittest.TestCase):
         text = files["crates/tui/tests/m2f_c14_probe_q.rs"]
         self.assertEqual([t.name for t in gt.test_functions(text)], ["probe_m2f_q"])
         self.assertIn("fn helper()", text)
+        self.assertNotIn("fn unreached()", text)
         self.assertEqual(e["module"], None)
 
     def test_held_out_tests_are_kept_alone_with_their_files_helpers_and_the_modules_they_reach(self):
@@ -232,6 +371,9 @@ class BuildTest(unittest.TestCase):
         self.assertIn("pub fn shared()", files[f"{dest}/other.rs"])
         retired = by["m2f_c14_heldout_host"]
         self.assertEqual((retired["status"], sorted(retired["tests"])), ("retired", ["first_test", "panics"]))
+        kept = files["crates/tui/tests/m2f_c14_heldout_host/host.rs"]
+        self.assertIn("fn fresh()", kept)  # first_test reaches it
+        self.assertNotIn("struct Helper", kept)  # only ignored_test, not kept, reached it
         self.assertEqual(len(entries), 4)
 
     def test_what_the_seed_doesnt_match_is_refused(self):

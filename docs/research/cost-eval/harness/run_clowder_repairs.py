@@ -8,15 +8,18 @@ it costs to fix a miss, and whether the fix holds without breaking what the fork
     python3.12 run_clowder_repairs.py release --forks 'm2f-*'
 
 plan prints "<fork> <item>" for every miss of each graded fork the glob names (never a repair fork): each of the
-change's rows its grading has as not met, and DEP-NN when the change's dependency probes didn't all pass. run forks
+change's rows its grading has as not met, and DEP-NN when one of the change's dependency probes ran and failed
+(dependency_met false; a dependency left undecided because a probe is missing plans no repair). run forks
 from that fork's own result: its workspace copied as it stands (its last commit is the change's result, and a jj
 repository keeps its history), a fresh configuration with the arm's setup, and the fork's owner as it stood after its
 change; one fresh session opens with the owner's repair report for the item (repair-reports.json in --seed-files: the
 row's report, or DEP-NN's for the dependency), and the owner answers as in any change. The repair fork is graded with
 grade_rust.py like any fork (its trajectory.json names the same variant set). record compares that grading with the
-fork's: fixed is the row met (for DEP-NN, every dependency probe passing); keeping lists the fork's other rows met
-before and not met now, its held-out tests that passed and now don't (the pilot's held-out files, and the graded
-held-out copies), and its dependency probes that passed and now don't; with cost, turns, model calls, wall time and files read (costeval/rot_cost.py). Then the repair fork's volumes
+fork's: fixed is the row met (for DEP-NN, dependency_met: every dependency probe ran and passed; undetermined when
+one is missing); keeping lists the fork's other rows met before and not met now, its held-out tests that passed and
+now fail (the pilot's held-out files, and the graded held-out copies), and its dependency probes that passed and now
+fail, with those that passed and are now missing (not built, not run, a settled precondition) apart as undetermined;
+with cost, turns, model calls, wall time and files read (costeval/rot_cost.py). Then the repair fork's volumes
 go. release removes a fork's own volumes once every miss it has is repaired and recorded (or it has none; a null fork's,
 once graded).
 
@@ -41,7 +44,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
 import run_fork as rf  # noqa: E402
-from costeval import executor, repair, rot_cost, simulator, trajectory  # noqa: E402
+from costeval import executor, repair, rot_cost, rust_grading, simulator, trajectory  # noqa: E402
 from run_trajectory import CLAUDE_CODE, owner_model_from_arg, sha256  # noqa: E402
 
 FIX = "-fix-"
@@ -198,9 +201,14 @@ def _ok_tests(keeping: dict | None) -> set[str]:
             for t, r in (target.get("tests") or {}).items() if r == "ok"}
 
 
-def _passed(summary: dict, key: str = "dependency_probes") -> set[str]:
-    """The graded targets' tests that passed (grade_rust.py: dependency_probes, held_out_tests)."""
-    return {t for t, r in (summary.get(key) or {}).items() if (r or {}).get("result") == "passed"}
+def _graded_change(before: dict, after: dict, key: str) -> tuple[list[str], list[str]]:
+    """(broken, undetermined): the graded targets' tests (grade_rust.py: dependency_probes, held_out_tests) that passed
+    before and failed after, and those that passed before and are missing after (rust_grading.graded_outcome)."""
+    kind = rust_grading.DEPENDENCY_PROBE if key == "dependency_probes" else rust_grading.HELD_OUT_TEST
+    was = {t: rust_grading.graded_outcome(r, kind) for t, r in (before.get(key) or {}).items()}
+    now = {t: rust_grading.graded_outcome(r, kind) for t, r in (after.get(key) or {}).items()}
+    passed = [t for t, o in sorted(was.items()) if o == "passed"]
+    return [t for t in passed if now.get(t) == "failed"], [t for t in passed if now.get(t) not in ("passed", "failed")]
 
 
 def record(args, docker: Callable) -> int:
@@ -224,9 +232,10 @@ def record(args, docker: Callable) -> int:
            "keeping": {"items_broken": sorted(i for i in before_items if after_items.get(i) == "not met"),
                        "items_undetermined": sorted(i for i in before_items if after_items.get(i) not in ("met", "not met")),
                        "tests_broken": sorted(_ok_tests(arm_keeping) - _ok_tests(fixed_keeping)),
-                       "dependency_probes_broken": sorted(_passed(arm_summary) - _passed(fixed_summary)),
-                       "held_out_tests_broken": sorted(_passed(arm_summary, "held_out_tests")
-                                                       - _passed(fixed_summary, "held_out_tests"))},
+                       **{f"{key}_{what}": tests
+                          for key in ("dependency_probes", "held_out_tests")
+                          for what, tests in zip(("broken", "undetermined"),
+                                                 _graded_change(arm_summary, fixed_summary, key))}},
            "start_commit": meta.get("start_commit"), "commit": done.get("commit"),
            "agent_cost_usd": done.get("agent_cost_usd"), "owner_cost_usd": done.get("owner_cost_usd"),
            "rounds": done.get("rounds"), "minutes": done.get("minutes"),

@@ -362,10 +362,10 @@ def drop_doc_tests(files: dict[str, bytes]) -> list[str]:
 _RAW_STRING = re.compile(r'[bc]?r(#*)"')
 
 
-def mask_rust(text: str) -> str:
+def mask_rust(text: str, *, comments_only: bool = False) -> str:
     """The text with every comment (nested block comments too), string (raw and byte strings too), and character
     literal blanked to spaces, keeping newlines, so what is left is the code at the same offsets. Lifetimes and loop
-    labels stay code."""
+    labels stay code. With comments_only, strings and characters stay (a name in a format string is a use of it)."""
     out, n, i = list(text), len(text), 0
 
     def blank(a: int, b: int) -> None:
@@ -404,7 +404,8 @@ def mask_rust(text: str) -> str:
         else:
             i += 1  # code, a lifetime, or a label
             continue
-        blank(i, j)
+        if not comments_only or text.startswith(("//", "/*"), i):
+            blank(i, j)
         i = j
     return "".join(out)
 
@@ -530,6 +531,254 @@ def remove_test_fns(text: str, names) -> str:
     return _cut(text, [found[n] for n in set(names)])
 
 
+_RULE = re.compile(r"\s*//\s*[-=*#~]{4,}")
+_RULE_ENDS = re.compile(r"^\s*[-=*#~]{2,}\s*|\s*[-=*#~]{2,}\s*$")
+
+
+def _plain_comment(line: str) -> bool:
+    s = line.strip()
+    return s.startswith("//") and not s.startswith("//!") and not (s.startswith("///") and not s.startswith("////"))
+
+
+def _line_starts(text: str) -> list[int]:
+    return [0] + [i + 1 for i, c in enumerate(text) if c == "\n"]
+
+
+def rust_banners(text: str) -> list[dict]:
+    """The section banners of a Rust file: free-standing blocks of plain `//` lines (a blank line, the file's start or
+    an opening brace above; a blank line or the end below) with a rule line (`// ----`, `// ====`) in them. Each has
+    its span, its title (its first line that isn't only a rule, without the rule), and where the group it heads ends:
+    at the next banner at its depth, the end of the block it sits in, or the end of the file."""
+    m = mask_rust(text)
+    starts = _line_starts(text)
+    lines, mlines = text.split("\n"), m.split("\n")
+    depth_at, d = [], 0
+    for line in mlines:
+        depth_at.append(d)
+        d += line.count("{") - line.count("}")
+
+    def comment_line(k: int) -> bool:
+        return _plain_comment(lines[k]) and not mlines[k].strip()
+
+    found, k = [], 0
+    while k < len(lines):
+        if not comment_line(k):
+            k += 1
+            continue
+        j = k
+        while j < len(lines) and comment_line(j):
+            j += 1
+        above = k == 0 or not lines[k - 1].strip() or mlines[k - 1].rstrip().endswith("{")
+        below = j >= len(lines) or not lines[j].strip()
+        if above and below and any(_RULE.match(lines[i]) for i in range(k, j)):
+            titles = [_RULE_ENDS.sub("", lines[i].strip()[2:]).strip() for i in range(k, j)]
+            found.append({"line": k, "start": starts[k], "end": starts[j] if j < len(starts) else len(text),
+                          "title": next((t for t in titles if t), ""), "depth": depth_at[k]})
+        k = j
+    for b in found:
+        end = next((starts[i] for i in range(b["line"] + 1, len(depth_at)) if depth_at[i] < b["depth"]), len(text))
+        later = [o["start"] for o in found if o["start"] > b["start"] and o["depth"] == b["depth"]]
+        b["group_end"] = min([end, *later])
+    return found
+
+
+_ITEM = re.compile(r"(?m)^[ \t]*(pub(?:\s*\([^)]*\))?\s+)?(?:(?:const|async|unsafe|extern)\s+)*"
+                   r"(fn|const|static|struct|enum|type|union)\s+(?:mut\s+)?(\w+)")
+_USE = re.compile(r"(?m)^[ \t]*(pub(?:\s*\([^)]*\))?\s+)?use\s")
+
+
+def _item_close(m: str, i: int, kind: str) -> int:
+    depth = 0
+    for j in range(i, len(m)):
+        c = m[j]
+        if c in "([{":
+            depth += 1
+        elif c in ")]}":
+            depth -= 1
+            if depth == 0 and c == "}" and kind in ("fn", "struct", "enum", "union"):
+                return j
+        elif c == ";" and depth == 0:
+            return j
+    raise ValueError(f"no end to the {kind} at offset {i}")
+
+
+def _whole_lines(m: str, close: int) -> int:
+    """Where a span whose last character is at `close` stops: past its line's end when only whitespace follows."""
+    eol = m.find("\n", close)
+    eol = len(m) if eol < 0 else eol
+    return (eol + 1 if eol < len(m) else eol) if not m[close + 1:eol].strip() else close + 1
+
+
+def _use_tree(s: str, i: int) -> tuple[dict, int]:
+    start, segs = i, []
+    while True:
+        while i < len(s) and s[i].isspace():
+            i += 1
+        if s.startswith("{", i):
+            close = _match_forward(s, i, "{", "}")
+            children, j = [], i + 1
+            while True:
+                while j < close and (s[j].isspace() or s[j] == ","):
+                    j += 1
+                if j >= close:
+                    break
+                child, j = _use_tree(s, j)
+                children.append(child)
+            return {"kind": "group", "start": start, "end": close + 1, "children": children}, close + 1
+        if s.startswith("*", i):
+            return {"kind": "glob", "start": start, "end": i + 1}, i + 1
+        seg = re.compile(r"r#\w+|\w+").match(s, i)
+        if not seg:
+            raise ValueError(f"can't read the use tree at {s[i:i + 20]!r}")
+        segs.append(seg.group(0))
+        i = j = seg.end()
+        while j < len(s) and s[j].isspace():
+            j += 1
+        if s.startswith("::", j):
+            i = j + 2
+            continue
+        alias = re.compile(r"\s+as\s+(\w+)").match(s, i)
+        if alias:
+            return {"kind": "leaf", "start": start, "end": alias.end(), "name": alias.group(1)}, alias.end()
+        name = segs[-2] if segs[-1] == "self" and len(segs) > 1 else segs[-1]
+        return {"kind": "leaf", "start": start, "end": i, "name": name}, i
+
+
+def _use_root(stmt: str) -> dict:
+    m = mask_rust(stmt)
+    return _use_tree(m, re.search(r"\buse\s", m).end())[0]
+
+
+def _use_leaves(node: dict) -> list[str]:
+    if node["kind"] == "leaf":
+        return [node["name"]] if node["name"] not in ("self", "_") else []
+    return [n for c in node.get("children", []) for n in _use_leaves(c)]
+
+
+def _plan_use(node: dict, names: set, s: str, cuts: list) -> bool:
+    """Whether the node goes whole; if not, the cuts that take the named leaves out of it, with their commas."""
+    if node["kind"] == "leaf":
+        return node["name"] in names
+    if node["kind"] == "glob":
+        return False
+    kids, gone = node["children"], []
+    for c in kids:
+        sub: list = []
+        gone.append(_plan_use(c, names, s, sub))
+        if not gone[-1]:
+            cuts.extend(sub)
+    if all(gone):
+        return bool(kids)
+    last_kept = max(i for i, g in enumerate(gone) if not g)
+    for i, c in enumerate(kids[:last_kept]):
+        if gone[i]:  # up to the next element on its line, past its comma
+            k = c["end"]
+            while k < len(s) and s[k] in " \t":
+                k += 1
+            if s.startswith(",", k):
+                k += 1
+                while k < len(s) and s[k] in " \t":
+                    k += 1
+            cuts.append((c["start"], k))
+    if last_kept < len(kids) - 1:  # a run at the end: from the last kept element's end
+        cuts.append((kids[last_kept]["end"], kids[-1]["end"]))
+    return False
+
+
+def drop_use_names(stmt: str, names) -> str:
+    """A `use` statement without the leaves that bring the given local names in (an alias's name, not its
+    target's), with their commas; a group left empty goes, and a statement left empty becomes ''."""
+    cuts: list = []
+    if _plan_use(_use_root(stmt), set(names), stmt, cuts):
+        return ""
+    for a, b in sorted(cuts, reverse=True):
+        stmt = stmt[:a] + stmt[b:]
+    return "\n".join(line for line in stmt.split("\n") if line.strip())
+
+
+def _top_level_names(text: str) -> list[tuple[str, str, tuple[int, int]]]:
+    """What a file defines or imports at its top level that a dead-code or unused-import warning could name: its
+    private items (fn, const, static, struct, enum, type) and the names its private `use` statements bring in, each
+    with the span that defines it (an item from its attached docs and attributes; a use, its statement)."""
+    m = mask_rust(text)
+    marks = sorted([(x.start(), "item", x) for x in _ITEM.finditer(m)] + [(x.start(), "use", x) for x in _USE.finditer(m)],
+                   key=lambda t: t[0])
+    out, depth, at = [], 0, 0
+    for pos, what, x in marks:
+        depth += m.count("{", at, pos) - m.count("}", at, pos)
+        at = pos
+        if depth != 0 or x.group(1):
+            continue
+        if what == "use":
+            span = (x.start() + len(x.group(0)) - len(x.group(0).lstrip()), m.find(";", x.end()) + 1)
+            out += [("use", name, span) for name in _use_leaves(_use_root(text[span[0]:span[1]]))]
+        else:
+            kind, name = x.group(2), x.group(3)
+            kw = x.start() + len(x.group(0)) - len(x.group(0).lstrip())
+            close = _item_close(m, x.end(), kind)
+            out.append((kind, name, (_attached_start(text, m, kw), _whole_lines(m, close))))
+    return out
+
+
+def _refs(code: str, name: str, span: tuple[int, int]) -> int:
+    word = re.compile(rf"(?<!\w){re.escape(name)}(?!\w)")
+    return sum(1 for w in word.finditer(code) if not span[0] <= w.start() < span[1])
+
+
+def _edit(text: str, ops: list) -> str:
+    """Apply cuts ((start, end, None)) and replacements ((start, end, new)), last first."""
+    for start, end, new in sorted(ops, key=lambda o: o[0], reverse=True):
+        text = _cut(text, [(start, end)]) if new is None else text[:start] + new + text[end:]
+    return text
+
+
+def remove_tests_and_traces(text: str, names) -> tuple[str, dict]:
+    """The file without the named `#[test]` functions and without what only they left behind, so nothing in it
+    points at them and the compiler warns of nothing new: a section banner that headed tests and has none left under
+    it (or headed code and has none left), an imported name only they used (the rest of its `use` stays), and a
+    private helper item only they, or helpers going with them, used. Returns the file and the traces, by kind."""
+    remove_test_fns(text, names)  # each name must be one test here
+    names, fns = set(names), rust_test_fns(text)
+    traces = {"banners": [], "imports": [], "items": []}
+    spans = [(s, e) for n, s, e in fns if n in names]
+    m = mask_rust(text)
+    had_code = {}
+    for b in rust_banners(text):
+        under = [n for n, s, _ in fns if b["end"] <= s < b["group_end"]]
+        had_code[b["title"]] = bool(m[b["end"]:b["group_end"]].strip())
+        if under and all(n in names for n in under):
+            spans.append((b["start"], b["end"]))
+            traces["banners"].append(b["title"])
+    out = _cut(text, spans)
+    code = mask_rust(text, comments_only=True)
+    baseline = {name: _refs(code, name, span) for _, name, span in _top_level_names(text)}
+    while True:
+        code = mask_rust(out, comments_only=True)
+        dead = [(kind, name, span) for kind, name, span in _top_level_names(out)
+                if baseline.get(name, 0) > 0 and _refs(code, name, span) == 0]
+        if not dead:
+            break
+        ops, uses = [], {}
+        for kind, name, span in dead:
+            if kind == "use":
+                uses.setdefault(span, set()).add(name)
+                traces["imports"].append(name)
+            else:
+                ops.append((span[0], span[1], None))
+                traces["items"].append(f"{kind} {name}")
+        mo = mask_rust(out)
+        for (s, e), gone in uses.items():
+            new = drop_use_names(out[s:e], gone)
+            ops.append((out.rfind("\n", 0, s) + 1, _whole_lines(mo, e - 1), None) if not new else (s, e, new))
+        out = _edit(out, ops)
+    mo = mask_rust(out)
+    empty = [b for b in rust_banners(out) if had_code.get(b["title"]) and not mo[b["end"]:b["group_end"]].strip()]
+    if empty:
+        out = _cut(out, [(b["start"], b["end"]) for b in empty])
+        traces["banners"] += [b["title"] for b in empty]
+    return out, {k: sorted(v) for k, v in traces.items()}
+
+
 def keep_test_fns(text: str, names) -> str:
     """The file with every `#[test]` function but the named ones taken out: those tests and the file's helpers."""
     found = rust_test_fns(text)
@@ -554,31 +803,44 @@ def load_holdouts(path: Path | str) -> list[dict]:
 
 def remove_forced_holdouts(variants: dict[str, Variant], holdouts: list[dict], *, tree: Tree,
                            held_out: list[str]) -> list[dict]:
-    """Take each listed test function out of every variant that still has its file, after the draw and the
-    thinning (so neither moves), and count the variants' test lines again. Returns the record: per test, the
-    variants it was removed from, those whose file was already gone and why, and where its held-out copy is."""
+    """Take each listed test function out of every variant that still has its file, with the traces only those
+    tests left (a banner over no test, an import or helper only they used; see remove_tests_and_traces), after the
+    draw and the thinning (so neither moves), and count the variants' test lines again. Each variant's report lists
+    the traces taken, per file, as `forced_holdout_traces`. Returns the record: per test, the variants it was
+    removed from, those whose file was already gone and why, and where its held-out copy is."""
     for h in holdouts:
         if h["path"] not in tree.files:
             raise ValueError(f"{h['test']}: {h['path']} isn't in the snapshot")
         if h["fn"] not in {n for n, _, _ in rust_test_fns(tree.files[h["path"]].decode())}:
             raise ValueError(f"{h['test']}: no #[test] fn {h['fn']} in {h['path']}")
     record = []
+    present = {name: {p: {n for n, _, _ in rust_test_fns(v.files[p].decode())} for p in {h["path"] for h in holdouts}
+                      if p in v.files} for name, v in variants.items()}
     for h in holdouts:
         r = {"test": h["test"], "change": h["change"], "status": h["status"], "removed_from": [], "absent_in": [],
              "absent_why": {}, "held_out_copy": f"held-out/{h['path']}"}
         for name, v in variants.items():
-            text = v.files[h["path"]].decode() if h["path"] in v.files else None
-            if text is not None and h["fn"] in {n for n, _, _ in rust_test_fns(text)}:
-                v.files[h["path"]] = remove_test_fns(text, [h["fn"]]).encode()
+            tests = present[name].get(h["path"])
+            if tests is not None and h["fn"] in tests:
                 r["removed_from"].append(name)
                 continue
             r["absent_in"].append(name)
-            r["absent_why"][name] = ("test already removed" if text is not None
+            r["absent_why"][name] = ("test already removed" if tests is not None
                                      else "held out by the draw" if h["path"] in held_out
                                      else "thinned" if h["path"] in v.report.get("tests_thinned", [])
                                      else "reads the docs" if h["path"] in v.report.get("tests_reading_docs", [])
                                      else "removed")
         record.append(r)
+    for name, v in variants.items():
+        v.report["forced_holdout_traces"] = {}
+        for path, tests in sorted(present[name].items()):
+            gone = [h["fn"] for h in holdouts if h["path"] == path and h["fn"] in tests]
+            if not gone:
+                continue
+            text, traces = remove_tests_and_traces(v.files[path].decode(), gone)
+            v.files[path] = text.encode()
+            if any(traces.values()):
+                v.report["forced_holdout_traces"][path] = traces
     for v in variants.values():
         v.report.update(source_lines=_source_lines(v.files), test_lines=_test_lines(v.files))
         v.report["ratio"] = round(v.report["test_lines"] / max(1, v.report["source_lines"]), 3)

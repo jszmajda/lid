@@ -40,8 +40,12 @@ Design: "Later seeds and variants" (the falsification test's grading) and "Grade
 5. **Graded targets (M2f).** The variant set's graded/ folder (m2f_graded_targets.py) holds the dependency probes and
    the held-out test functions as test targets of their own, built from the snapshot. A change is graded on its own
    targets that are in force (graded_for_change), through the keeping step's machinery: each target goes into the
-   arm's checkout, is built with the compile-only adaptation, run, tallied, and its failures classified. Each test's
-   result, and whether all the change's probes (and all its held-out tests) passed, is graded_tests.
+   arm's checkout, is built with the compile-only adaptation, run, tallied, and its failures classified: a held-out
+   test's by keeping's rule, a probe's by its variant (settled precondition, or dependency failure). graded_tests
+   gives each test's result and the change's roll-ups: met when every test ran and passed, not met when any ran and
+   failed, and undecided when some are missing (a target not built after adaptation, a test that didn't run, a probe
+   failing only on a precondition the change settles) and none failed; missing tests are reported by cause, outside
+   the share, as keeping reports the held-out tests it couldn't build.
 """
 
 from __future__ import annotations
@@ -221,25 +225,68 @@ def _graded_result(rec: dict | None, name: str) -> dict:
     return {"result": "not run", "cause": cause, **adapted}
 
 
+# A failure in this class doesn't count against its kind: for a held-out test, keeping's "new state only" (counted as
+# kept, as keeping counts it); for a probe, "settled precondition" (the probe couldn't decide: missing).
+NOT_COUNTED = {HELD_OUT_TEST: ("new state only", "passed"), DEPENDENCY_PROBE: ("settled precondition", "missing")}
+
+
+def graded_outcome(rec: dict, kind: str) -> str:
+    """What one graded test's result counts as: "passed", "failed", or "missing" (not built, not run, or for a probe a
+    failure only on a precondition the change settles). A held-out test failing on new state only is kept, as keeping
+    counts it; a failure never classified counts as a failure."""
+    result = (rec or {}).get("result")
+    if result == "passed":
+        return "passed"
+    if result == "failed":
+        cls, counts_as = NOT_COUNTED[kind]
+        return counts_as if rec.get("class") == cls else "failed"
+    return "missing"
+
+
+def _missing_cause(rec: dict) -> str:
+    if rec.get("result") == "failed":
+        return rec.get("class") or "?"
+    return rec.get("cause") or rec.get("result") or "?"
+
+
 def graded_tests(result: dict, entries: list[dict]) -> dict:
     """Each graded test's result, by its cargo name (`<module>::<fn>`), from the targets' keeping result: "passed",
     "failed" (with the classifier's class when it ruled), "not built" (with the cause, as keeping counts it), or "not
     run" (ignored, or no result line in a target that built); "adapted" marks a test whose target built only after
-    the compile-only adaptation. Probes and held-out tests apart, each with its roll-up: true when every one passed,
-    false when any didn't, null when the change has none."""
-    probes: dict[str, dict] = {}
-    held: dict[str, dict] = {}
-    for e in entries:
-        rec = (result.get("targets") or {}).get(e["target"])
-        into = probes if e["kind"] == DEPENDENCY_PROBE else held
-        for fn in e["tests"]:
-            name = f"{e['module']}::{fn}" if e.get("module") else fn
-            into[name] = _graded_result(rec, name)
+    the compile-only adaptation. Probes and held-out tests apart, each with:
 
-    def met(tests: dict) -> bool | None:
-        return all(t["result"] == "passed" for t in tests.values()) if tests else None
-    return {"dependency_probes": probes, "dependency_met": met(probes), "held_out_tests": held,
-            "held_out_tests_met": met(held)}
+    - its roll-up (dependency_met, held_out_tests_met): true when every test ran and passed (graded_outcome), false
+      when any ran and failed, and null when the change has none, or when some are missing and none failed;
+    - the missing ones with their causes, outside the share, as keeping counts the held-out tests it couldn't build;
+    - counts: passed, failed, missing (by cause), tests not built (by cause), the failures in the class that doesn't
+      count (new state only; settled precondition), and the share passed of those that counted."""
+    out: dict = {}
+    for kind, key, met_key, prefix, not_counted in (
+            (DEPENDENCY_PROBE, "dependency_probes", "dependency_met", "dependency", "settled_precondition"),
+            (HELD_OUT_TEST, "held_out_tests", "held_out_tests_met", "held_out_tests", "new_state_only")):
+        tests: dict[str, dict] = {}
+        for e in entries:
+            if e["kind"] != kind:
+                continue
+            rec = (result.get("targets") or {}).get(e["target"])
+            for fn in e["tests"]:
+                name = f"{e['module']}::{fn}" if e.get("module") else fn
+                tests[name] = _graded_result(rec, name)
+        outcome = {t: graded_outcome(r, kind) for t, r in tests.items()}
+        missing = [{"test": t, "cause": _missing_cause(tests[t])} for t in tests if outcome[t] == "missing"]
+        passed = sum(o == "passed" for o in outcome.values())
+        failed = sum(o == "failed" for o in outcome.values())
+        not_built = [r for r in tests.values() if r["result"] == "not built"]
+        out[key] = tests
+        out[met_key] = False if failed else None if missing or not tests else True
+        out[f"{prefix}_missing"] = missing
+        out[f"{prefix}_counts"] = {
+            "passed": passed, "failed": failed, "missing": len(missing),
+            "missing_by_cause": _count(m["cause"] for m in missing), "tests_not_built": len(not_built),
+            "tests_not_built_by_cause": _count(r["cause"] for r in not_built),
+            not_counted: sum(r["result"] == "failed" and r.get("class") == NOT_COUNTED[kind][0] for r in tests.values()),
+            "of": len(tests), "share_passed": passed / (passed + failed) if passed + failed else None}
+    return out
 
 
 # ------------------------------------------------------------------------------------- edits to existing tests
@@ -811,7 +858,7 @@ def prepare_for_graders(ck, base: str, commit: str, *, spec_pattern: str | None 
     paths = ck.sh("cd /work/app && git ls-files", check=False).split()
     links = {}
     for line in ck.sh("cd /work/app && find . -path ./.git -prune -o -type l -exec sh -c "
-                      "'printf \"%s\\t%s\\n\" \"$1\" \"$(readlink \"$1\")\"' _ {} \;", check=False).splitlines():
+                      "'printf \"%s\\t%s\\n\" \"$1\" \"$(readlink \"$1\")\"' _ {} \\;", check=False).splitlines():
         if "\t" in line:
             p, t = line.split("\t", 1)
             links[p.removeprefix("./")] = t

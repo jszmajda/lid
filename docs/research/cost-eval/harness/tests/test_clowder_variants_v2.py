@@ -135,6 +135,135 @@ class RemoveTestFnsTest(unittest.TestCase):
             self.assertIn(f"fn {name}", chunk)
 
 
+# ------------------------------------------------------- traces a removed test leaves: banners, imports, helpers
+
+TRACES = '''//! A module of tests.
+
+use std::collections::HashMap;
+use std::path::{Path, PathBuf as Buf};
+use crate::common::{fresh, only_gone, Shared};
+use crate::common::lonely;
+
+const KEPT: u8 = 1;
+const GONE_LIMIT: u8 = 2;
+
+/// Builds the map the gone tests read.
+fn gone_map() -> HashMap<u8, u8> {
+    let mut m = inner_gone();
+    m.insert(GONE_LIMIT, 0);
+    m
+}
+
+/// Only gone_map uses this.
+fn inner_gone() -> HashMap<u8, u8> { HashMap::new() }
+
+#[derive(Debug)]
+struct GoneCase { n: u8 }
+
+fn shared() -> u8 { KEPT + fresh() }
+
+fn never_used() -> u8 { 0 }
+
+pub fn exported() -> Buf { Buf::new() }
+
+// ---------------------------------------------------------------------------
+// FEAT-001 — helpers for everyone
+// ---------------------------------------------------------------------------
+
+fn helper_in_section() -> u8 { 3 }
+
+// ---------------------------------------------------------------------------
+// FEAT-002 — what stays
+// ---------------------------------------------------------------------------
+
+/// Stays.
+#[test]
+fn stays() {
+    assert_eq!(shared(), 1);
+    let _p: &Path = Path::new("x");
+    let _s: Shared = Shared;
+    assert_eq!(helper_in_section(), 3);
+}
+
+/// Goes, in a section that keeps a test.
+#[test]
+fn goes_beside() { let _m = gone_map(); }
+
+// ---- FEAT-003 — all gone ----
+
+#[test]
+fn goes_alone() { only_gone(); lonely(); let _c = GoneCase { n: GONE_LIMIT }; }
+
+// ---------------------------------------------------------------------------
+// FEAT-004 — the last section, all gone
+// ---------------------------------------------------------------------------
+
+/// Goes at the end.
+#[test]
+fn goes_last() { let _m: HashMap<u8, u8> = gone_map(); }
+'''
+
+GONE = ["goes_beside", "goes_alone", "goes_last"]
+
+
+class TracesTest(unittest.TestCase):
+    def test_a_banner_goes_once_no_test_is_left_under_it(self):
+        out, traces = cv.remove_tests_and_traces(TRACES, GONE)
+        self.assertNotIn("FEAT-003", out)
+        self.assertNotIn("FEAT-004", out)
+        self.assertIn("// FEAT-002 — what stays", out)  # a test is still under it
+        self.assertIn("// FEAT-001 — helpers for everyone", out)  # it never headed a test
+        self.assertEqual(traces["banners"], ["FEAT-003 — all gone", "FEAT-004 — the last section, all gone"])
+        self.assertNotIn("\n\n\n", out)
+        self.assertTrue(out.endswith("    assert_eq!(helper_in_section(), 3);\n}\n"), out[-80:])
+        self.assertEqual(out.count("// -----"), 4)  # two whole three-line banners left
+
+    def test_imports_only_the_removed_tests_used_go_and_the_rest_of_the_use_stays(self):
+        out, traces = cv.remove_tests_and_traces(TRACES, GONE)
+        self.assertNotIn("HashMap", out)
+        self.assertNotIn("use crate::common::lonely;", out)
+        self.assertIn("use crate::common::{fresh, Shared};\n", out)
+        self.assertIn("use std::path::{Path, PathBuf as Buf};\n", out)
+        self.assertEqual(traces["imports"], ["HashMap", "lonely", "only_gone"])
+
+    def test_helpers_only_the_removed_tests_used_go_down_the_chain_and_others_stay(self):
+        out, traces = cv.remove_tests_and_traces(TRACES, GONE)
+        for gone in ("fn gone_map", "fn inner_gone", "GONE_LIMIT", "GoneCase", "derive(Debug)",
+                     "Builds the map the gone tests read", "Only gone_map uses this"):
+            self.assertNotIn(gone, out, gone)
+        for kept in ("const KEPT", "fn shared()", "fn never_used()", "pub fn exported()", "fn helper_in_section()",
+                     "fn stays()"):
+            self.assertIn(kept, out, kept)
+        self.assertEqual(traces["items"], ["const GONE_LIMIT", "fn gone_map", "fn inner_gone", "struct GoneCase"])
+
+    def test_a_banner_with_a_test_left_under_it_stays_and_so_do_names_still_used(self):
+        out, traces = cv.remove_tests_and_traces(TRACES, ["goes_beside"])  # gone_map is still goes_last's
+        self.assertEqual(traces, {"banners": [], "imports": [], "items": []})
+        self.assertEqual(out, cv.remove_test_fns(TRACES, ["goes_beside"]))
+        out, traces = cv.remove_tests_and_traces(TRACES, ["stays"])  # goes_beside is still under FEAT-002
+        self.assertIn("// FEAT-002 — what stays", out)
+        # FEAT-001 headed only helper_in_section, which only stays used: a banner over nothing goes too
+        self.assertNotIn("FEAT-001", out)
+        self.assertEqual(traces, {"banners": ["FEAT-001 — helpers for everyone"], "imports": ["Path", "Shared", "fresh"],
+                                  "items": ["const KEPT", "fn helper_in_section", "fn shared"]})
+        self.assertNotIn("\n\n\n", out)
+        self.assertIn("use std::path::{PathBuf as Buf};\n", out)
+        self.assertIn("use crate::common::{only_gone};\n", out)
+
+    def test_use_trees_lose_just_the_named_leaves(self):
+        drop = cv.drop_use_names
+        self.assertEqual(drop("use a::{b, c, D};", {"c"}), "use a::{b, D};")
+        self.assertEqual(drop("use a::{b, c};", {"c"}), "use a::{b};")
+        self.assertEqual(drop("use a::{b as e, c};", {"e"}), "use a::{c};")
+        self.assertEqual(drop("use a::{b as e, c};", {"b"}), "use a::{b as e, c};")  # the local name is e
+        self.assertEqual(drop("use a::{x::{p, q}, r};", {"p", "q"}), "use a::{r};")
+        self.assertEqual(drop("use a::b;", {"b"}), "")
+        self.assertEqual(drop("use a::{b, c};", {"b", "c"}), "")
+        multi = "use core::{\n    load, save, Command, Event,\n    Report,\n};"
+        self.assertEqual(drop(multi, {"load", "save"}), "use core::{\n    Command, Event,\n    Report,\n};")
+        self.assertEqual(drop(multi, {"Report"}), "use core::{\n    load, save, Command, Event,\n};")
+
+
 # ------------------------------------------------------------------------------------------- forced holdouts
 
 
@@ -209,6 +338,20 @@ class ForcedHoldoutsTest(unittest.TestCase):
             self.assertEqual(v.report["test_lines"], cv._test_lines(v.files))
             self.assertLess(v.report["test_lines"], before[name])
             self.assertEqual(v.report["ratio"], round(v.report["test_lines"] / v.report["source_lines"], 3))
+
+    def test_each_variants_report_lists_the_traces_removed_with_the_tests(self):
+        path = "crates/widgets/tests/integration/alpha.rs"
+        self.tree.files[path] = TRACES.encode()
+        holdouts = cv.load_holdouts(holdouts_file([{"change": 5, "status": "graded",
+                                                    "test": f"widgets/tests/integration/alpha.rs::{n}"} for n in GONE]))
+        plans = cv.plan_variants(self.tree, held_out=self.held, seed="s1", ratio=10.0)  # a ratio that thins nothing
+        cv.remove_forced_holdouts(plans, holdouts, tree=self.tree, held_out=self.held)
+        for name in ("full", "lid", "stripped"):
+            traces = plans[name].report["forced_holdout_traces"]
+            self.assertEqual(set(traces), {path})  # only files that lost more than their tests are listed
+            self.assertEqual(traces[path]["banners"], ["FEAT-003 — all gone", "FEAT-004 — the last section, all gone"])
+            self.assertEqual(traces[path]["imports"], ["HashMap", "lonely", "only_gone"])
+            self.assertNotIn("gone_map", plans[name].files[path].decode())
 
     def test_a_listed_test_missing_from_the_snapshot_is_an_error(self):
         plans = cv.plan_variants(self.tree, held_out=self.held, seed="s1")
@@ -347,6 +490,13 @@ class CliTest(unittest.TestCase):
         self.assertIn("pub fn caption", (self.out / "stripped/crates/widgets/src/lib.rs").read_text())
         self.assertTrue(manifest["holdouts_file"].endswith("holdouts.json"))
         self.assertTrue(manifest["renames_file"].endswith("renames.json"))
+
+    def test_rebuilding_a_set_keeps_what_others_wrote_beside_it(self):
+        (self.out / "graded" / "probes").mkdir(parents=True)
+        (self.out / "graded" / "probes" / "x.rs").write_text("kept")
+        self.run_main("--seed", "s1")
+        self.run_main("--seed", "s1")
+        self.assertEqual((self.out / "graded" / "probes" / "x.rs").read_text(), "kept")
 
     def test_a_rename_count_mismatch_stops_the_build_before_anything_is_written(self):
         with self.assertRaises(SystemExit) as e, mock.patch("sys.stderr"):

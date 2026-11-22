@@ -8,16 +8,26 @@ from the snapshot and kept outside the arms' view (in the variant set's graded/ 
 **Dependency probes.** Each probe file holds `#[test] fn probe_m2f_*` functions written to be appended to a host test
 module, whose helpers they use (PROBES gives each file its change and host, as the seed's validate.sh and README do).
 An arm's variant may thin the host or hold it out, so a probe's target is the host module as the snapshot has it, with
-its own `#[test]` functions removed and its helpers kept, and the probe appended.
+its own `#[test]` functions removed and the probe appended, pruned to what the probe reaches.
 
 **Held-out tests.** m2f-holdouts.json lists test functions held out of every variant. Each change's tests from one file
-make one target: the file as the snapshot has it, with only those tests kept.
+make one target: the file as the snapshot has it, with only those tests kept, pruned to what they reach.
+
+**Pruning** (prune), so that drift in an API only an unrelated helper used can't stop a target building: a target keeps
+its tests and, transitively, the top-level items whose names they use (functions, constants, statics, types, macros),
+an impl whose type or trait is kept or that defines a method something kept calls with method syntax, a trait
+likewise, and every inner attribute, macro call and item it doesn't recognise (what those name is reached too). A
+name a format string captures inline counts as used. Imports from the workspace's own crates that nothing kept names
+go; std's and other crates' stay (they can't drift with an arm, and may bring a trait into scope), as do glob and
+`as _` imports.
 
 **Layout,** as the keeping step's targets (costeval/rust_grading.held_out_targets): a module of a test directory goes
 into a directory of its own, `crates/<crate>/tests/<target>/`, with a main.rs that carries the original main.rs's crate
 attributes and declares the module, the directory's helper modules (those with no `#[test]`, copied as they are), and
 any sibling module it reaches through `crate::` or `super::` (copied with its own tests removed). A file that was a
-target of its own comes back as one file. Helpers left unused are allowed (dead_code, unused_imports), never removed.
+target of its own comes back as one file. The directory's helper modules and the siblings are copied whole, not
+pruned (clowder-tui's integration tests have neither). Anything pruning leaves unused is allowed (dead_code,
+unused_imports).
 
 graded.json lists the targets:
 `[{"target", "kind": "dependency probe" | "held-out test", "change", "status": "graded" | "retired", "crate",
@@ -207,30 +217,43 @@ def test_functions(text: str) -> list[TestFn]:
             k += 1
         if k >= len(masked) or masked[k] != "{" or (close := _close(masked, k)) is None:
             continue
-        start = _attached_start(text, masked, m.start())
-        ls = text.rfind("\n", 0, start) + 1
-        if not text[ls:start].strip():
-            start = ls
-        end = close + 1
-        nl = text.find("\n", end)
-        if not masked[end:len(text) if nl < 0 else nl].strip():
-            end = len(text) if nl < 0 else nl + 1
+        start, end = _whole_lines(text, masked, m.start(), close + 1)
         out.append(TestFn(f.group(1), start, end))
+    return out
+
+
+def _whole_lines(text: str, masked: str, at: int, end: int) -> tuple[int, int]:
+    """The span that removes an item whose code runs from `at` (its first attribute or keyword) to `end`: from its
+    attached doc comments and attributes, at the start of their line, to the end of its last line when nothing but a
+    comment follows it there."""
+    start = _attached_start(text, masked, at)
+    ls = text.rfind("\n", 0, start) + 1
+    if not text[ls:start].strip():
+        start = ls
+    nl = text.find("\n", end)
+    if not masked[end:len(text) if nl < 0 else nl].strip():
+        end = len(text) if nl < 0 else nl + 1
+    return start, end
+
+
+def _splice(text: str, edits: list[tuple[int, int, str]]) -> str:
+    """The text with each span replaced by its text; where a span is removed, a blank line left on both sides of the
+    cut becomes one."""
+    out, at = "", 0
+    for s, e, new in sorted(edits):
+        out += text[at:s] + new
+        at = e
+        while not new and text.startswith("\n", at) and (out.endswith("\n\n") or out.endswith("{\n") or not out):
+            at += 1
+    out += text[at:]
+    if edits and at >= len(text):
+        out = out.rstrip("\n") + "\n" if out.strip() else ""
     return out
 
 
 def _cut(text: str, spans: list[tuple[int, int]]) -> str:
     """The text without these spans; a blank line left on both sides of a cut becomes one."""
-    out, at = "", 0
-    for s, e in sorted(spans):
-        out += text[at:s]
-        at = e
-        while text.startswith("\n", at) and (out.endswith("\n\n") or out.endswith("{\n") or not out):
-            at += 1
-    out += text[at:]
-    if at >= len(text) and spans:
-        out = out.rstrip("\n") + "\n" if out.strip() else ""
-    return out
+    return _splice(text, [(s, e, "") for s, e in spans])
 
 
 def remove_tests(text: str, names: set[str] | None = None) -> str:
@@ -262,6 +285,192 @@ def top_level_names(text: str) -> set[str]:
         if depth == 0 and name not in ("fn", "unsafe", "async", "extern"):
             names.add(name)
     return names
+
+
+# ------------------------------------------------------------------------------------------------- pruning
+
+
+@dataclass(frozen=True)
+class Item:
+    kind: str  # use, fn, const, static, struct, enum, union, type, trait, impl, mod, macro (macro_rules!), other
+    name: str | None
+    start: int  # its removal span: attached doc comments and attributes through the end of its last line
+    end: int
+    code: tuple[int, int]  # its own text: first attribute or keyword through its closing brace or semicolon
+    header: frozenset = frozenset()  # an impl's words before its body; a trait's name
+    methods: frozenset = frozenset()  # the functions an impl or trait defines
+
+
+_VIS_KIND = re.compile(r"(?:pub\s*(?:\([^)]*\))?\s*)?(?:(?:unsafe|async|default)\s+)*(?:const\s+(?=(?:unsafe\s+|async\s+)*fn\b))?"
+                       r"(?:(?:unsafe|async)\s+)*(use|fn|const|static|struct|enum|union|type|trait|impl|mod|macro_rules\s*!)"
+                       r"(?![\w!])")
+_ITEM_NAME = re.compile(r"\s*(?:mut\s+)?(?:r#)?([A-Za-z_]\w*)")
+_WORD = re.compile(r"[A-Za-z_]\w*")
+
+
+def _item_end(masked: str, k: int, semicolon_only: bool) -> int:
+    """The index of an item's last character: its first `;` at depth 0, or (unless semicolon_only) the brace closing
+    its first `{` at depth 0, with a `;` straight after it."""
+    depth = 0
+    for j in range(k, len(masked)):
+        c = masked[j]
+        if c == "{" and depth == 0 and not semicolon_only:
+            close = _close(masked, j)
+            if close is None:
+                return len(masked) - 1
+            after = re.compile(r"\s*;").match(masked, close + 1)
+            return after.end() - 1 if after else close
+        if c in "([{":
+            depth += 1
+        elif c in ")]}":
+            depth -= 1
+        elif c == ";" and depth == 0:
+            return j
+    return len(masked) - 1
+
+
+def top_items(text: str) -> list[Item]:
+    """A file's top-level items, in order. Inner attributes, macro calls, `extern crate` and anything else
+    unrecognised are "other"."""
+    masked, items, k = mask(text), [], 0
+    while True:
+        while k < len(masked) and masked[k].isspace():
+            k += 1
+        if k >= len(masked):
+            return items
+        first = k
+        if inner := re.compile(r"#\s*!\s*\[").match(masked, k):
+            close = _close(masked, inner.end() - 1, "[]")
+            end = len(masked) - 1 if close is None else close
+            kind, name, header, methods = "other", None, frozenset(), frozenset()
+        else:
+            k = _past_attrs(masked, k)
+            while k < len(masked) and masked[k].isspace():
+                k += 1
+            m = _VIS_KIND.match(masked, k)
+            kind = "macro" if m and m.group(1).startswith("macro_rules") else m.group(1) if m else "other"
+            end = _item_end(masked, m.end() if m else k, kind in ("use", "const", "static", "type"))
+            name, header, methods = None, frozenset(), frozenset()
+            if kind not in ("use", "impl", "other"):
+                nm = _ITEM_NAME.match(masked, m.end())
+                name = nm.group(1) if nm else None
+            if kind in ("impl", "trait"):
+                body = masked.find("{", m.end(), end + 1)
+                body = end if body < 0 else body
+                header = frozenset(_WORD.findall(masked[m.end():body])) if kind == "impl" else frozenset({name})
+                methods = frozenset(re.findall(r"\bfn\s+(?:r#)?([A-Za-z_]\w*)", masked[body:end + 1]))
+        start, stop = _whole_lines(text, masked, first, end + 1)
+        items.append(Item(kind, name, start, stop, (first, end + 1), header, methods))
+        k = end + 1
+
+
+def _words(text: str, masked: str, a: int, b: int) -> set[str]:
+    """The names a stretch of code uses: its words outside comments and strings, and those a format string captures
+    inline (`{name}`)."""
+    return set(_WORD.findall(masked[a:b])) | set(re.findall(r"\{([A-Za-z_]\w*)", text[a:b]))
+
+
+def _use_leaves(tree: str, prefix: tuple[str, ...] = ()) -> list[tuple[tuple[str, ...], str | None]] | None:
+    """Each path a use tree imports, with its alias: `a::{b, c::d as e}` gives (a, b) and (a, c, d) as e. None for a
+    tree it can't read."""
+    tree = " ".join(tree.split())
+    if tree.endswith("}") and "{" in tree:
+        i = tree.index("{")
+        head = tree[:i].strip()
+        if head and not head.endswith("::"):
+            return None
+        segs = tuple(s.strip() for s in head[:-2].split("::")) if head else ()
+        parts, depth, cur = [], 0, ""
+        for ch in tree[i + 1:-1]:
+            depth += {"{": 1, "}": -1}.get(ch, 0)
+            if ch == "," and depth == 0:
+                parts.append(cur)
+                cur = ""
+            else:
+                cur += ch
+        parts.append(cur)
+        out = []
+        for part in parts:
+            if part.strip():
+                sub = _use_leaves(part, prefix + segs)
+                if sub is None:
+                    return None
+                out += sub
+        return out
+    m = re.fullmatch(r"\s*([\w:* ]+?)(?:\s+as\s+(\w+))?\s*", tree)
+    if not m:
+        return None
+    return [(prefix + tuple(s.strip() for s in m.group(1).split("::")), m.group(2))]
+
+
+def _pruned_use(text: str, masked: str, item: Item, refs: set[str], workspace: set[str]) -> str | None:
+    """A use item with the imports nothing kept names taken out: its replacement ("" for none left), or None to keep it
+    as it is. Only imports from the workspace's own crates (and crate::, super::, self::) go; std's and other crates'
+    can't drift with an arm and may bring traits into scope, and a glob or `as _` import stays."""
+    a, b = item.code
+    m = re.fullmatch(r"((?:pub\s*(?:\([^)]*\))?\s*)?)use\s+(.*?)\s*;", masked[a:b], re.S)
+    if not m:  # attributes, or a shape this doesn't read
+        return None
+    leaves = _use_leaves(m.group(2))
+    if not leaves:
+        return None
+    kept = []
+    for path, alias in leaves:
+        root = next((s for s in path if s), "")
+        bound = alias or (path[-2] if path[-1] == "self" and len(path) > 1 else path[-1])
+        if path[-1] == "*" or alias == "_" or root not in workspace | {"crate", "super", "self"} or bound in refs:
+            kept.append((path, alias))
+    if len(kept) == len(leaves):
+        return None
+    vis = " ".join(m.group(1).split())
+    lines = [f"{vis + ' ' if vis else ''}use {'::'.join(p[:-1] if p[-1] == 'self' and len(p) > 1 else p)}"
+             f"{' as ' + al if al else ''};" for p, al in kept]
+    return "".join(line + "\n" for line in lines)
+
+
+_METHOD_CALL = re.compile(r"\.\s*([A-Za-z_]\w*)\s*(?:::\s*<[^>]*>\s*)?\(")
+
+
+def prune(text: str, roots: set[str], workspace: set[str]) -> str:
+    """The file with only what its test functions named in roots reach: the items whose names they use, then what
+    those use, and so on; an impl when its type or trait is kept, or when it defines a method something kept calls
+    with method syntax (`x.name(`); a trait likewise. Inner attributes, macro calls and anything unrecognised stay,
+    and what they name is reached too. Imports from the workspace's own crates that nothing kept names go
+    (_pruned_use)."""
+    items = top_items(text)
+    masked = mask(text)
+    words = [_words(text, masked, *it.code) for it in items]
+    method_calls = [set(_METHOD_CALL.findall(masked[it.code[0]:it.code[1]])) for it in items]
+    keep = {k for k, it in enumerate(items) if it.kind == "other" or (it.kind == "fn" and it.name in roots)}
+    refs = set().union(*(words[k] for k in keep))
+    calls = set().union(*(method_calls[k] for k in keep))
+    local = {it.name for it in items if it.name}
+    changed = True
+    while changed:
+        changed = False
+        kept_names = {items[k].name for k in keep if items[k].name}
+        for k, it in enumerate(items):
+            if k in keep or it.kind == "use":
+                continue
+            hit = bool(it.name and it.name in refs)
+            if it.kind == "impl":
+                hit = bool(it.header & kept_names) or bool(it.methods & calls and it.header & local)
+            elif it.kind == "trait":
+                hit = hit or bool(it.methods & calls)
+            if hit:
+                keep.add(k)
+                refs |= words[k]
+                calls |= method_calls[k]
+                changed = True
+    edits = []
+    for k, it in enumerate(items):
+        if it.kind == "use":
+            new = _pruned_use(text, masked, it, refs, workspace)
+            if new is not None:
+                edits.append((it.start, it.end, new))
+        elif k not in keep:
+            edits.append((it.start, it.end, ""))
+    return _splice(text, edits) if edits else text
 
 
 # ------------------------------------------------------------------------------------------------ snapshot
@@ -368,6 +577,12 @@ def _target(snap, target: str, path: str, text: str) -> tuple[dict[str, str], st
     raise ValueError(f"{path}: not a test file directly under a crate's tests/ or one of its directories")
 
 
+def workspace_crates(snap) -> set[str]:
+    """The workspace's own crates as Rust names them (clowder-core is clowder_core): what an arm's change can reach."""
+    return {m.group(1).replace("-", "_") for p in snap.list("crates")
+            if (m := re.fullmatch(r"crates/([^/]+)/Cargo\.toml", p))}
+
+
 def _sha(text: str) -> str:
     return hashlib.sha256(text.encode()).hexdigest()
 
@@ -383,6 +598,7 @@ def build(snapshot, probes_dir: Path, holdouts: dict, *,
         raise ValueError(f"probes the table names with no file in {probes_dir}: {', '.join(missing)}")
     files: dict[str, str] = {}
     entries: list[dict] = []
+    workspace = workspace_crates(snapshot)
 
     def add(target_files: dict[str, str], entry: dict) -> None:
         if any(e["target"] == entry["target"] for e in entries) or set(target_files) & set(files):
@@ -402,6 +618,7 @@ def build(snapshot, probes_dir: Path, holdouts: dict, *,
         if clash := sorted(top_level_names(stripped) & top_level_names(probe)):
             raise ValueError(f"{name}: defines {', '.join(clash)}, which its host {host} already has")
         text = stripped.rstrip("\n") + "\n" + ("" if probe.startswith("\n") else "\n") + probe.rstrip("\n") + "\n"
+        text = prune(text, set(tests), workspace)
         target = f"m2f_c{change}_probe_{Path(name).stem}"
         target_files, crate, module = _target(snapshot, target, host, text)
         add(target_files, {"target": target, "kind": "dependency probe", "change": change, "status": "graded",
@@ -420,7 +637,7 @@ def build(snapshot, probes_dir: Path, holdouts: dict, *,
         if text is None:
             raise ValueError(f"held-out tests for change {change}: {path} isn't in the snapshot")
         try:
-            kept = keep_tests(text, set(g["tests"]))
+            kept = prune(keep_tests(text, set(g["tests"])), set(g["tests"]), workspace)
         except ValueError as e:
             raise ValueError(f"{path}: {e}") from None
         target = f"m2f_c{change}_heldout_{Path(path).stem}"

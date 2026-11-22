@@ -39,9 +39,15 @@ from for the held-out slice. Writes under ../runs/<id>/grading/change-NN/:
   out of those with a verdict, "missing" ones counted apart and by fault, and beside them the items an interface
   fault left after the rerun, "not met (absent)" or missing; the probe helpers offered; and the visible-assertion
   audit. With graded targets: dependency_probes and held_out_tests, each test by its cargo name with its result
-  ("passed", "failed" with the classifier's "class", "not built" with its "cause", or "not run"), dependency_met and
-  held_out_tests_met (every one of the change's passed; null when it has none), and graded_targets (the folder,
-  the targets run, compile failures, adaptations), or graded_targets.skipped with the reason. probes_skipped says why
+  ("passed", "failed" with the classifier's "class", "not built" with its "cause", or "not run"); dependency_met and
+  held_out_tests_met (true when every one of the change's ran and passed, false when any ran and failed, null when
+  some are missing and none failed, or the change has none); dependency_missing and held_out_tests_missing (each
+  missing test with its cause: a target not built after adaptation, a test that didn't run, or a probe failing only
+  on a precondition the change settles), outside the share, as keeping counts held-out tests it couldn't build;
+  dependency_counts and held_out_tests_counts (passed, failed, missing and tests not built by cause, and the
+  failures that don't count: settled preconditions, new state only); and graded_targets (the folder, the targets
+  run, compile failures, adaptations), or graded_targets.skipped with the reason. A held-out test's failure is
+  classified by keeping's rule; a probe's by its variant (prompts/keeping-classify-probe-rust.md). probes_skipped says why
   the LLM-executed probes didn't run when their file is absent; classification_skipped, when the change script
   doesn't have the change.
 
@@ -88,13 +94,41 @@ def keeping(ck, held_dir: Path, held: list[str], out: Path | None = None, *, cla
 
 
 def graded(ck, graded_dir: Path, entries: list[dict], out: Path | None = None, *,
-           classify: Classify | None = None) -> tuple[dict, dict]:
+           classify: Classify | None = None, classify_probes: Classify | None = None) -> tuple[dict, dict]:
     """M2f's graded targets (graded.json's entries, as rg.graded_for_change picks them for the change) against the
-    arm's code, through the keeping step's machinery. Returns the keeping result and each test's result with the
-    change's roll-ups (rg.graded_tests)."""
-    result = run_targets(ck, rg.graded_files(graded_dir, entries), [(e["crate"], e["target"]) for e in entries],
-                         {e["target"]: len(e["tests"]) for e in entries}, out, classify=classify)
+    arm's code, through the keeping step's machinery: the held-out tests' failures classified by classify (keeping's
+    rule), the dependency probes' by classify_probes (its probe variant). Returns the keeping result, both kinds
+    together, and each test's result with the change's roll-ups (rg.graded_tests)."""
+    results = []
+    for kind, how in ((rg.DEPENDENCY_PROBE, classify_probes), (rg.HELD_OUT_TEST, classify)):
+        chosen = [e for e in entries if e["kind"] == kind]
+        if chosen:
+            results.append(run_targets(ck, rg.graded_files(graded_dir, chosen), [(e["crate"], e["target"]) for e in chosen],
+                                       {e["target"]: len(e["tests"]) for e in chosen}, out, classify=how))
+    result = _merged(results)
     return result, rg.graded_tests(result, entries)
+
+
+def _merged(results: list[dict]) -> dict:
+    """Keeping results of separate runs as one: targets together, lists joined, counts added."""
+    if not results:
+        return {"targets": {}, "passed": 0, "failed": 0, "compile_failed": [], "compile_failed_not_adapted": {},
+                "adapted": [], "adaptations_by_code": {}, "reached_adaptation_tests": [], "classified": False,
+                "classification_cost_usd": None}
+    out: dict = {"targets": {}, "compile_failed_not_adapted": {}, "adaptations_by_code": {}}
+    for r in results:
+        out["targets"].update(r["targets"])
+        out["compile_failed_not_adapted"].update(r.get("compile_failed_not_adapted") or {})
+        for code, k in (r.get("adaptations_by_code") or {}).items():
+            out["adaptations_by_code"][code] = out["adaptations_by_code"].get(code, 0) + k
+    for k in ("passed", "failed", "tests_not_built"):
+        out[k] = sum(r.get(k) or 0 for r in results)
+    for k in ("compile_failed", "adapted", "reached_adaptation_tests"):
+        out[k] = sorted(x for r in results for x in r.get(k) or [])
+    out["classified"] = all(r.get("classified") for r in results)
+    costs = [r.get("classification_cost_usd") for r in results if r.get("classification_cost_usd") is not None]
+    out["classification_cost_usd"] = round(sum(costs), 6) if costs else None
+    return out
 
 
 def run_targets(ck, files: dict[str, str], names: list[tuple[str, str]], expected: dict[str, int],
@@ -222,19 +256,22 @@ def main(argv=None, *, checkpoint=None, run_role=executor.run_role) -> int:
     g = rg.RustGraders(image=image, roles_volume=ROLES_VOLUME, claude_code=CLAUDE_CODE,
                        execute_model=args.execute_model, judge_model=args.judge_model)
     script_path = args.change_script or args.seed_dir / "hidden" / "change-script.md"
-    classifier: Callable[[Path], Classify] | None = None  # a classify writing its record under the folder given
+    # a classify writing its record under the folder given; probe=True: the dependency probes' variant of the rule
+    classifier: Callable[..., Classify] | None = None
     if not args.no_classify and script_path.exists():
         script = simulator.parse_change_script(script_path.read_text(encoding="utf-8"))
         if n in script:
             change = rc.change_text(script[n])
 
-            def ask(prompt: str):
-                rec = run_role(g.role(g.judge_model, timeout_s=1200), prompt,
-                               json_schema=json.dumps(rc.SCHEMA, separators=(",", ":")))
-                return rec.structured, rg._usage(rec)
+            def classifier(dest: Path, probe: bool = False) -> Classify:
+                classes, template = (rc.PROBE_CLASSES, rc.PROBE_TEMPLATE) if probe else (rc.CLASSES, rc.TEMPLATE)
+                schema = json.dumps(rc.schema(classes), separators=(",", ":"))
 
-            def classifier(dest: Path) -> Classify:
-                return lambda result, logs, files: rc.classify(result, logs, files, change, ask=ask, out=dest)
+                def ask(prompt: str):
+                    rec = run_role(g.role(g.judge_model, timeout_s=1200), prompt, json_schema=schema)
+                    return rec.structured, rg._usage(rec)
+                return lambda result, logs, files: rc.classify(result, logs, files, change, ask=ask, out=dest,
+                                                               template=template, classes=classes)
         else:
             summary["classification_skipped"] = f"no change {n} in {script_path}"
     classify = classifier(out / "keeping" / "classify") if classifier else None
@@ -319,8 +356,10 @@ def main(argv=None, *, checkpoint=None, run_role=executor.run_role) -> int:
                         elif (out / name).is_dir():
                             shutil.rmtree(out / name)
                 chosen = rg.graded_for_change(rg.load_graded(graded_dir), n)
+                dest = out / "graded-targets" / "classify"
                 result, fields = graded(ck, graded_dir, chosen, out / "graded-targets",
-                                        classify=classifier(out / "graded-targets" / "classify") if classifier else None)
+                                        classify=classifier(dest) if classifier else None,
+                                        classify_probes=classifier(dest, probe=True) if classifier else None)
                 (out / "graded-targets.json").write_text(json.dumps({"dir": str(graded_dir), "entries": chosen, **result},
                                                                     indent=1))
                 summary.update(fields)
@@ -332,8 +371,9 @@ def main(argv=None, *, checkpoint=None, run_role=executor.run_role) -> int:
                                                   "classification_cost_usd")}}
             if args.keeping_only:  # the rest of the earlier summary stands
                 earlier = json.loads((out / "summary.json").read_text()) if (out / "summary.json").exists() else {}
-                for k in ("dependency_probes", "dependency_met", "held_out_tests", "held_out_tests_met", "graded_targets",
-                          "classification_skipped"):
+                for k in ("dependency_probes", "dependency_met", "dependency_missing", "dependency_counts",
+                          "held_out_tests", "held_out_tests_met", "held_out_tests_missing", "held_out_tests_counts",
+                          "graded_targets", "classification_skipped"):
                     if k in summary:
                         earlier[k] = summary[k]
                 earlier["held_out_retention"] = summary.get("held_out_retention")
