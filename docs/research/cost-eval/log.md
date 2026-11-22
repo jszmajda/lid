@@ -4,6 +4,37 @@ Newest entries first. Each entry says what was done, what was decided, and who d
 
 Older entries move to [log-archive/](log-archive/) when this file passes about 2,000 words, and 'Earlier, in brief' at the bottom summarizes them.
 
+## 2026-11-21: Clowder's cross-crate dependencies, and a name-drift survey
+
+**Mining Clowder** (pilot snapshot):
+- Four genuine cross-crate dependencies were found, and four more where the dependent side restates the rule only in its own specs. Each was verified with a planted wrong patch.
+- All share one shape: the UI works out a figure itself, from a core constant or raw state, where core offers no query.
+- About half are findable by a plain search on the names a change would start from.
+- An earlier draft of cross-crate changes was set aside, after both reviewers found that most of its changes had a local recipe in the crate being edited.
+
+**The name-drift survey** (static analysis; small hand-classified samples, so the rates are rough):
+
+| Subject | Shared concepts sampled | Different word across components | Dependent code found by a name search |
+|---|---|---|---|
+| Clowder | 40 | 15% | 10 of 15 |
+| Growth runs (bare, LID, checklist) | 15 each | 7–20% | 3–4 of 4–8 |
+| Vikunja | 38 | 5% | 4 of 12 |
+| Mealie | 36 | 14% | 11 of 15 |
+| Paperless-ngx | 40 | 25% | 10 of 16 |
+| Immich | 34 | 21% | 10 of 15 |
+| A private long-running project that adopted the method gradually | 33 | 15% | 8 of 15 |
+
+- **Names carry wherever a generator or an import enforces them:** crate imports, OpenAPI- or pydantic-generated clients, a shared type package.
+- **Drift sits where nothing enforces names:** hand-mirrored enums and constants, rules mirrored by value with no shared name, mapper code that renames fields, and UI vocabulary against API vocabulary.
+- **A name hit isn't understanding.** A field can share a name across components but mean something different.
+- **The growth runs kept their names** across 20 fresh-session changes: 1–3% of compound identifiers vanished.
+- **The private project's drift** is UI-metaphor vocabulary against backend nouns, plus mobile-local mirror types. Its adoption of the method was gradual, so there's no clean before-and-after split.
+
+**Brownfield candidates:**
+- **Paperless-ngx** has the most drift, a hand-written front-end client, and dozens of filter rules mirrored by integer id only.
+- **Immich** has fields with the same name and different meanings across server and mobile, but it is very large.
+- **Mealie** is a moderate fallback.
+
 ## 2026-11-21: M2e, a first look at the checklist arm and the cost of rework
 
 **What ran:** the checklist arm (landscape.md, "The checklist arm"), one trajectory through change 20 on replicate g-r1, paired with the trial's bare and LID runs. Then repair forks for every latent rule each run missed at changes 10 and 20: a fresh session opened with the owner's report of the wrong behaviour, and the fork was regraded in full. Single runs: pilot observations.
@@ -61,39 +92,12 @@ Bare never split the service into components. The maintainer judged ReleaseDesk 
 
 The maintainer is choosing the next direction.
 
-## 2026-11-21: The growth trial
-
-**What ran:** bare and LID Full, one trajectory each (replicate g-r1), through change 20 under the bounded owner. Each had course forks (3 per course change), reliance forks (3 per course change), checkpoints at 10 and 20, intent from tests and docs, and the stale-intent audit. One trajectory per arm: pilot observations, not evidence.
-
-**Harness faults found and fixed before reading anything:**
-- LID's build takes its data folder only as a command-line option, and setups ran the reference's `{DATA}` placeholder literally. So 44 of LID's 55 gradings failed at setup, and an errored grading still counted as done. Both are fixed and the trial is regraded.
-- The same fault could have hidden two of LID's symptom diagnostics. Rechecked: change 15's passes, and change 7's can't occur, because LID's build at that point offers no saved-link download. LID's trajectory stands as run.
-
-| Measure at change 20 | bare | LID Full |
-|---|---|---|
-| Stated items met | 98% | 93% |
-| Latent items met (change 10 → 20) | 75% → 67% | 88% → 89% |
-| Keeping (items met at 10 still met) | 49/49 | 45/47 |
-| Reliance forks following the displaced rule | 0 of 18 | 0 of 18 |
-| Flip checks behaving | 8/8 | 8/8 |
-| Stale files found by the audit in course forks | 1 of 12 | 4 of 64 |
-| Intent from tests, recall of met items (above a brief-only reader) | 61% (+10) | 83% (+35) |
-| Intent from docs | – | 83% (+36) |
-| Cost per change (notional) | $0.29 | $1.59 |
-| Owner reading by change 20 | 0.6 hours | 6.6 hours |
-
-- **LID's latent lead grew** from 13 points at change 10 to 22 at change 20, in this one replicate.
-- **No reliance fork followed a displaced rule** in either arm through change 20, so the rot consequence sits at the floor so far.
-- **Bare's tests carry little intent beyond the brief:** a reader of bare's tests recovers 10 points more than a reader of the brief alone, against LID's 35.
-
-**Cost:** the trial used about 19 points of the weekly subscription limit, regrades included.
-
 ## Earlier, in brief
 
-**The arc so far.** On 11-21, the growth test's instrument gate passed (17 of 17 course changes separated a correct build from a stale one, after harness and probe fixes). On 11-19, the growth test was designed and its seed drafted blind; a first look at intent from tests found bare's, cheap discipline's and LID's tests carrying 83%, 89% and 93% of BenchTime's current intent, and a symptom-row leak in the owner was fixed without changing any standing. On 11-18, the Clowder pilot ran (bare on the stripped repository 79% at 1M and 85% at 200k, LID 97% and 84%; one run per cell); a bare agent on the full repository copied LID's artifacts, which ruled out further Clowder runs as a test of LID against bare. Also on 11-18, a null arm checked Clowder's grading (no new-intent item met on an untouched snapshot once stand-in readings were ruled out), and the ceiling check showed room (bare on the stripped repository met 80%). On 11-17, BenchTime ran under the rebuilt owner (pilot: bare 95%, cheap discipline 93%, LID Full 97% at change 10; LID's lead came from its own asking, not the owner's corrections). On 11-16, the simulated owner was rebuilt as an imperfect person on published attention and recall research, with separate seeded draws for attention and recall. On 11-11, three takes on the design converged on one core design, and mining old transcripts was dropped. On 11-12, the maintainer settled that graders are models, and BenchTime and ReleaseDesk were chosen as the pilot and second seeds. On 11-13, a grading protocol was written into design.md, about 25 throwaway sessions showed that LID's phase stops work headless, and the maintainer decided the harness stays outside LID's arrow. On 11-14, Claude Fable's review found the simulated owner not ready for counted runs, and pilot stage 0 ran the three arms through two changes. In the evening, grader calibration showed Haiku 5.5 flipping 9% of its verdicts on repeat, so Sonnet 5.5 judges and Haiku executes, and two Opus 5.5 trajectories met 90% in stage 1 under the diligent owner. Under a rubber-stamp owner, which shares only what direct questions ask for, Opus met 88%. Late that night, a Sonnet ceiling check started. On 11-15, it met 80% and 76%, so Sonnet became BenchTime's main executor. ReleaseDesk's owner brief was drafted by several models and checked by Claude Fable, and a six-model panel measured how guessable its candidate rules are. The maintainer then set the mix of eight latent rules by guessability band, and the rules within each band were drawn by lot. Later on 11-15, ReleaseDesk's oracle, change script, and probes were drafted, reviewed, and accepted. Stage 2 on BenchTime was graded. Its first numbers put LID Full at 96% of items met at about 5× bare's cost, and ReleaseDesk's ceiling check started. That night stage 2 passed all four of its thresholds, and a leak review found the owner adding what a plan left out; the owner's corrections were tightened.
+**The arc so far.** On 11-21, the growth trial ran bare and LID through change 20 (LID's latent lead grew; no reliance fork followed a displaced rule), and the growth test's instrument gate passed (17 of 17 course changes separated a correct build from a stale one, after harness and probe fixes). On 11-19, the growth test was designed and its seed drafted blind; a first look at intent from tests found bare's, cheap discipline's and LID's tests carrying 83%, 89% and 93% of BenchTime's current intent, and a symptom-row leak in the owner was fixed without changing any standing. On 11-18, the Clowder pilot ran (bare on the stripped repository 79% at 1M and 85% at 200k, LID 97% and 84%; one run per cell); a bare agent on the full repository copied LID's artifacts, which ruled out further Clowder runs as a test of LID against bare. Also on 11-18, a null arm checked Clowder's grading (no new-intent item met on an untouched snapshot once stand-in readings were ruled out), and the ceiling check showed room (bare on the stripped repository met 80%). On 11-17, BenchTime ran under the rebuilt owner (pilot: bare 95%, cheap discipline 93%, LID Full 97% at change 10; LID's lead came from its own asking, not the owner's corrections). On 11-16, the simulated owner was rebuilt as an imperfect person on published attention and recall research, with separate seeded draws for attention and recall. On 11-11, three takes on the design converged on one core design, and mining old transcripts was dropped. On 11-12, the maintainer settled that graders are models, and BenchTime and ReleaseDesk were chosen as the pilot and second seeds. On 11-13, a grading protocol was written into design.md, about 25 throwaway sessions showed that LID's phase stops work headless, and the maintainer decided the harness stays outside LID's arrow. On 11-14, Claude Fable's review found the simulated owner not ready for counted runs, and pilot stage 0 ran the three arms through two changes. In the evening, grader calibration showed Haiku 5.5 flipping 9% of its verdicts on repeat, so Sonnet 5.5 judges and Haiku executes, and two Opus 5.5 trajectories met 90% in stage 1 under the diligent owner. Under a rubber-stamp owner, which shares only what direct questions ask for, Opus met 88%. Late that night, a Sonnet ceiling check started. On 11-15, it met 80% and 76%, so Sonnet became BenchTime's main executor. ReleaseDesk's owner brief was drafted by several models and checked by Claude Fable, and a six-model panel measured how guessable its candidate rules are. The maintainer then set the mix of eight latent rules by guessability band, and the rules within each band were drawn by lot. Later on 11-15, ReleaseDesk's oracle, change script, and probes were drafted, reviewed, and accepted. Stage 2 on BenchTime was graded. Its first numbers put LID Full at 96% of items met at about 5× bare's cost, and ReleaseDesk's ceiling check started. That night stage 2 passed all four of its thresholds, and a leak review found the owner adding what a plan left out; the owner's corrections were tightened.
 
 **Decisions.** Every decision that still stands, with its date and who made it, is in [decisions.md](decisions.md).
 
 **Archive.**
 
-- [2026-11.md](log-archive/2026-11.md): entries from 2026-11-11 to 2026-11-21 (twenty-seven entries)
+- [2026-11.md](log-archive/2026-11.md): entries from 2026-11-11 to 2026-11-21 (twenty-eight entries)
