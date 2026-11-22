@@ -534,7 +534,7 @@ class CourseChange:
 @dataclass(frozen=True)
 class IntentDistance:
     """How far a change's relevant intent sits from the code it edits, recorded before any run."""
-    kind: str  # same module, another module, or set at change
+    kind: str  # same module, another module, set at change; or M2f's other crate, or other module, same crate
     set_at: int | None = None  # for "set at change N"
 
 
@@ -695,7 +695,8 @@ def _growth_fields(n: int, body: str) -> dict:
             raise ValueError(f"change {n}: can't read **Reliance for:** {v!r}")
         out["reliance_for"] = tuple(int(x) for x in re.findall(r"change (\d+)", v))
     if (v := _field(body, "Intent distance")) is not None:
-        m = re.fullmatch(r"(same module|another module)\.?|set at change (\d+)\.?", v.strip())
+        m = re.fullmatch(r"(same module|another module|other crate|other module, same crate)\.?|set at change (\d+)\.?",
+                         v.strip())
         if not m:
             raise ValueError(f"change {n}: can't read **Intent distance:** {v!r}")
         out["intent_distance"] = (IntentDistance(m.group(1)) if m.group(1) else

@@ -23,6 +23,22 @@ Writes, under --out: `<variant>/` (each repository), `held-out/` (the removed te
 original helper modules they use), and `manifest.json` (what was removed and stripped, sizes in bytes and estimated
 tokens by class, each variant's commit and volume, and with --cargo-test each variant's build and test results).
 --volumes loads each repository into a Docker volume (`ce-cv-<seed>-<variant>`) for fork runs.
+
+--seed names the set (its folder's manifest, its volumes); --draw-seed (default: --seed) seeds the held-out draw and the
+thinning, so a later set can take exactly an earlier set's files:
+
+    python3.12 clowder_variants.py --repo /Users/jess/src/clowder --commit 86db995 --seed v2 --draw-seed v1 \\
+        --holdouts ../seeds/clowder/hidden/m2f-holdouts.json --out ../runs/clowder-variants/v2 --volumes --cargo-test
+
+--holdouts holds out single test functions (`{"tests": [{"change", "status", "test": "<crate>/tests/.../<file>.rs::<fn>"}]}`)
+from every variant, whatever the draw: each `#[test] fn` goes with its attributes and doc comments, and the rest of its
+file stays, helpers included (a helper left unused only warns). It goes after the draw and the thinning, so neither
+moves. A test whose file the draw or the thinning already took is recorded as absent there. Its held-out copy is its
+file with only the listed tests left in it (or the whole file, when the draw held the file out).
+
+--renames applies a renaming dose (`{"renames": [{"d", "kind", "file", "old", "new", "count", "line"?}]}`) to the
+snapshot before the variants are planned: entries in order, each replacing exactly `count` occurrences (with `line`,
+only on the one line containing it), and any other count stops the build. Doc entries drop out of stripped with docs/.
 """
 
 from __future__ import annotations
@@ -340,6 +356,270 @@ def drop_doc_tests(files: dict[str, bytes]) -> list[str]:
     return sorted(gone)
 
 
+# ------------------------------------------------------------------------------------- single test functions
+
+
+_RAW_STRING = re.compile(r'[bc]?r(#*)"')
+
+
+def mask_rust(text: str) -> str:
+    """The text with every comment (nested block comments too), string (raw and byte strings too), and character
+    literal blanked to spaces, keeping newlines, so what is left is the code at the same offsets. Lifetimes and loop
+    labels stay code."""
+    out, n, i = list(text), len(text), 0
+
+    def blank(a: int, b: int) -> None:
+        for k in range(a, b):
+            if out[k] != "\n":
+                out[k] = " "
+
+    while i < n:
+        c = text[i]
+        if text.startswith("//", i):
+            j = text.find("\n", i)
+            j = n if j < 0 else j
+        elif text.startswith("/*", i):
+            depth, j = 1, i + 2
+            while j < n and depth:
+                if text.startswith("/*", j):
+                    depth, j = depth + 1, j + 2
+                elif text.startswith("*/", j):
+                    depth, j = depth - 1, j + 2
+                else:
+                    j += 1
+        elif c in "rbc" and (i == 0 or not (text[i - 1].isalnum() or text[i - 1] == "_")) and (m := _RAW_STRING.match(text, i)):
+            close = '"' + m.group(1)
+            j = text.find(close, m.end())
+            j = n if j < 0 else j + len(close)
+        elif c == '"':
+            j = i + 1
+            while j < n and text[j] != '"':
+                j += 2 if text[j] == "\\" else 1
+            j = min(n, j + 1)
+        elif c == "'" and text.startswith("'\\", i):
+            j = text.find("'", i + 3)  # past the escaped character, which may itself be a quote
+            j = n if j < 0 else j + 1
+        elif c == "'" and i + 2 < n and text[i + 2] == "'" and text[i + 1] != "\n":
+            j = i + 3
+        else:
+            i += 1  # code, a lifetime, or a label
+            continue
+        blank(i, j)
+        i = j
+    return "".join(out)
+
+
+def _match_forward(m: str, i: int, open_: str, close: str) -> int:
+    depth = 0
+    for j in range(i, len(m)):
+        if m[j] == open_:
+            depth += 1
+        elif m[j] == close:
+            depth -= 1
+            if depth == 0:
+                return j
+    raise ValueError(f"unbalanced {open_!r} at offset {i}")
+
+
+def _match_back(m: str, i: int, open_: str, close: str) -> int:
+    depth = 0
+    for j in range(i, -1, -1):
+        if m[j] == close:
+            depth += 1
+        elif m[j] == open_:
+            depth -= 1
+            if depth == 0:
+                return j
+    return -1
+
+
+_TEST_ATTR = re.compile(r"#\s*\[\s*test\s*\]")
+_FN_HEAD = re.compile(r"(?:pub(?:\s*\([^)]*\))?\s+)?(?:(?:const|async|unsafe)\s+)*(?:extern\s+)?fn\s+(\w+)")
+
+
+def _attribute_before(m: str, p: int) -> int:
+    """The start of an attribute that ends just before p (only spaces between), or -1."""
+    before = m[:p].rstrip()
+    if not before.endswith("]"):
+        return -1
+    o = _match_back(m, len(before) - 1, "[", "]")
+    if o < 0:
+        return -1
+    hash_ = m[:o].rstrip()
+    return len(hash_) - 1 if hash_.endswith("#") else -1
+
+
+def _attached_start(text: str, m: str, p: int) -> int:
+    """Where the item whose `#[test]` is at p begins: back over the attributes, doc comments and comment lines
+    attached to it, stopping at a blank line or code."""
+    while True:
+        line_start = m.rfind("\n", 0, p) + 1
+        if m[line_start:p].strip():
+            a = _attribute_before(m, p)  # another attribute earlier on the same line
+            if a < 0 or a < line_start:
+                return p
+            p = a
+            continue
+        if line_start == 0:
+            return 0
+        prev = m.rfind("\n", 0, line_start - 1) + 1
+        if not text[prev:line_start - 1].strip():
+            return line_start  # a blank line
+        if not m[prev:line_start - 1].strip():
+            p = prev  # a comment line
+            continue
+        a = _attribute_before(m, line_start - 1)
+        if a < 0:
+            return line_start  # code
+        p = a
+
+
+def rust_test_fns(text: str) -> list[tuple[str, int, int]]:
+    """Each `#[test]` function in a Rust file, in order: its name and the span that removes it whole, from its
+    first attached attribute, doc comment or comment line to the end of its closing brace's line. Braces, `#[test]`
+    and `fn` inside strings, character literals, comments and raw strings don't count."""
+    m = mask_rust(text)
+    out = []
+    for a in _TEST_ATTR.finditer(m):
+        k = a.end()
+        while True:  # past any later attributes
+            while k < len(m) and m[k].isspace():
+                k += 1
+            h = re.match(r"#\s*\[", m[k:])
+            if not h:
+                break
+            k = _match_forward(m, k + h.end() - 1, "[", "]") + 1
+        head = _FN_HEAD.match(m, k)
+        if not head:
+            continue
+        body, semi = m.find("{", head.end()), m.find(";", head.end())
+        if body < 0 or 0 <= semi < body:
+            continue
+        close = _match_forward(m, body, "{", "}")
+        eol = m.find("\n", close)
+        eol = len(m) if eol < 0 else eol
+        end = (eol + 1 if eol < len(m) else eol) if not m[close + 1:eol].strip() else close + 1
+        out.append((head.group(1), _attached_start(text, m, a.start()), end))
+    return out
+
+
+def _cut(text: str, spans: list[tuple[int, int]]) -> str:
+    """Remove the spans, last first, leaving no run of blank lines where one was taken out between two."""
+    for start, end in sorted(spans, reverse=True):
+        before, after = text[:start], text[end:]
+        blank_before = not before or re.search(r"(?:^|\n)[ \t]*\n$", before)
+        if blank_before and (b := re.match(r"[ \t]*\n", after)):
+            after = after[b.end():]
+        elif blank_before and before and not after.strip():
+            before = re.sub(r"\n[ \t]*\n$", "\n", before)
+        text = before + after
+    return text
+
+
+def remove_test_fns(text: str, names) -> str:
+    """The file without the named `#[test]` functions (each with its attributes and doc comments) and with all
+    else as it was. A name that isn't a test function here is an error."""
+    fns = rust_test_fns(text)
+    found = {name: (s, e) for name, s, e in fns}
+    missing = [n for n in names if n not in found]
+    if missing:
+        raise ValueError(f"no #[test] fn {', '.join(missing)}")
+    twice = [n for n in set(names) if [f[0] for f in fns].count(n) > 1]
+    if twice:
+        raise ValueError(f"more than one #[test] fn {', '.join(sorted(twice))}")
+    return _cut(text, [found[n] for n in set(names)])
+
+
+def keep_test_fns(text: str, names) -> str:
+    """The file with every `#[test]` function but the named ones taken out: those tests and the file's helpers."""
+    found = rust_test_fns(text)
+    missing = [n for n in names if n not in {f[0] for f in found}]
+    if missing:
+        raise ValueError(f"no #[test] fn {', '.join(missing)}")
+    return _cut(text, [(s, e) for name, s, e in found if name not in names])
+
+
+# ------------------------------------------------------------------------------------------ forced holdouts
+
+
+def load_holdouts(path: Path | str) -> list[dict]:
+    """The forced holdouts: each test as listed, its file (with the `crates/` its listing leaves off) and function."""
+    out = []
+    for t in json.loads(Path(path).read_text(encoding="utf-8"))["tests"]:
+        file, fn = t["test"].split("::")
+        out.append({"test": t["test"], "change": t["change"], "status": t["status"],
+                    "path": file if file.startswith("crates/") else f"crates/{file}", "fn": fn})
+    return out
+
+
+def remove_forced_holdouts(variants: dict[str, Variant], holdouts: list[dict], *, tree: Tree,
+                           held_out: list[str]) -> list[dict]:
+    """Take each listed test function out of every variant that still has its file, after the draw and the
+    thinning (so neither moves), and count the variants' test lines again. Returns the record: per test, the
+    variants it was removed from, those whose file was already gone and why, and where its held-out copy is."""
+    for h in holdouts:
+        if h["path"] not in tree.files:
+            raise ValueError(f"{h['test']}: {h['path']} isn't in the snapshot")
+        if h["fn"] not in {n for n, _, _ in rust_test_fns(tree.files[h["path"]].decode())}:
+            raise ValueError(f"{h['test']}: no #[test] fn {h['fn']} in {h['path']}")
+    record = []
+    for h in holdouts:
+        r = {"test": h["test"], "change": h["change"], "status": h["status"], "removed_from": [], "absent_in": [],
+             "absent_why": {}, "held_out_copy": f"held-out/{h['path']}"}
+        for name, v in variants.items():
+            text = v.files[h["path"]].decode() if h["path"] in v.files else None
+            if text is not None and h["fn"] in {n for n, _, _ in rust_test_fns(text)}:
+                v.files[h["path"]] = remove_test_fns(text, [h["fn"]]).encode()
+                r["removed_from"].append(name)
+                continue
+            r["absent_in"].append(name)
+            r["absent_why"][name] = ("test already removed" if text is not None
+                                     else "held out by the draw" if h["path"] in held_out
+                                     else "thinned" if h["path"] in v.report.get("tests_thinned", [])
+                                     else "reads the docs" if h["path"] in v.report.get("tests_reading_docs", [])
+                                     else "removed")
+        record.append(r)
+    for v in variants.values():
+        v.report.update(source_lines=_source_lines(v.files), test_lines=_test_lines(v.files))
+        v.report["ratio"] = round(v.report["test_lines"] / max(1, v.report["source_lines"]), 3)
+    return record
+
+
+# --------------------------------------------------------------------------------------------- the renames
+
+
+def load_renames(path: Path | str) -> list[dict]:
+    return json.loads(Path(path).read_text(encoding="utf-8"))["renames"]
+
+
+def apply_renames(tree: Tree, renames: list[dict]) -> list[dict]:
+    """Apply a renaming dose to the snapshot, in order: each entry replaces `old` with `new` in its file exactly
+    `count` times, or, with `line`, on the one line that contains that text. Any other count, an anchor on other
+    than one line, or a missing file stops it. Returns what was applied."""
+    applied = []
+    for k, r in enumerate(renames):
+        where = f"rename {k} ({r['d']}, {r['kind']}, {r['file']})"
+        if r["file"] not in tree.files:
+            raise ValueError(f"{where}: no such file in the snapshot")
+        text = tree.files[r["file"]].decode("utf-8")
+        if "line" in r:
+            lines = text.split("\n")
+            at = [i for i, line in enumerate(lines) if r["line"] in line]
+            if len(at) != 1:
+                raise ValueError(f"{where}: the line anchor {r['line']!r} is on {len(at)} lines, not one")
+            got = lines[at[0]].count(r["old"])
+            lines[at[0]] = lines[at[0]].replace(r["old"], r["new"])
+            new = "\n".join(lines)
+        else:
+            got = text.count(r["old"])
+            new = text.replace(r["old"], r["new"])
+        if got != r["count"]:
+            raise ValueError(f"{where}: {r['old'][:60]!r} found {got} times, not {r['count']}")
+        tree.files[r["file"]] = new.encode("utf-8")
+        applied.append({"d": r["d"], "kind": r["kind"], "file": r["file"], "count": r["count"]})
+    return applied
+
+
 def _source_lines(files: dict[str, bytes]) -> int:
     n = 0
     for p, d in files.items():
@@ -529,11 +809,18 @@ def write_repo(v: Variant, out: Path) -> str:
     return git("rev-parse", "HEAD")
 
 
-def held_out_helpers(tree: Tree, held_out: list[str]) -> dict[str, bytes]:
+def held_out_helpers(tree: Tree, held_out: list[str], holdouts: list[dict] = ()) -> dict[str, bytes]:
     """The held-out files and, beside them, each test directory's helper modules as they were (main.rs's other
-    modules, such as common/), so grading can build them against the original helpers."""
+    modules, such as common/), so grading can build them against the original helpers. A forced holdout's copy is
+    its file with only the listed tests left in it, beside its file's helpers; a file the draw held out stays whole."""
     out = {p: tree.files[p] for p in held_out}
-    dirs = {_stratum(p) for p in held_out}
+    forced: dict[str, list[str]] = {}
+    for h in holdouts:
+        forced.setdefault(h["path"], []).append(h["fn"])
+    for path, fns in forced.items():
+        if path not in held_out:
+            out[path] = keep_test_fns(tree.files[path].decode(), fns).encode()
+    dirs = {_stratum(p) for p in [*held_out, *forced]}
     for p, d in tree.files.items():
         if any(p.startswith(d_ + "/") for d_ in dirs) and p not in test_files(tree.files):
             out[p] = d
@@ -593,7 +880,10 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--repo", type=Path, required=True)
     ap.add_argument("--commit", default="HEAD")
-    ap.add_argument("--seed", required=True, help="the seed for the held-out draw and the thinning; names the volumes")
+    ap.add_argument("--seed", required=True, help="names the set and its volumes; seeds the draw unless --draw-seed")
+    ap.add_argument("--draw-seed", help="the seed for the held-out draw and the thinning (default: --seed)")
+    ap.add_argument("--holdouts", type=Path, help="test functions to hold out of every variant (JSON)")
+    ap.add_argument("--renames", type=Path, help="a renaming dose to apply to the snapshot first (JSON)")
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--held-out-share", type=float, default=HELD_OUT_SHARE)
     ap.add_argument("--ratio", type=float, default=RATIO)
@@ -601,17 +891,29 @@ def main(argv=None) -> int:
     ap.add_argument("--cargo-test", action="store_true", help="run each variant's tests in the Rust image")
     ap.add_argument("--image", default=IMAGE)
     args = ap.parse_args(argv)
+    draw = args.draw_seed or args.seed
     tree = read_tree(args.repo, args.commit)
-    held = choose_held_out(tree, share=args.held_out_share, seed=args.seed)
-    variants = plan_variants(tree, held_out=held, seed=args.seed, ratio=args.ratio)
+    try:
+        renames = apply_renames(tree, load_renames(args.renames)) if args.renames else []
+        holdouts = load_holdouts(args.holdouts) if args.holdouts else []
+        held = choose_held_out(tree, share=args.held_out_share, seed=draw)
+        variants = plan_variants(tree, held_out=held, seed=draw, ratio=args.ratio)
+        forced = remove_forced_holdouts(variants, holdouts, tree=tree, held_out=held)
+    except ValueError as e:
+        ap.error(str(e))
+    for r in renames:
+        r["variants"] = [name for name, v in variants.items() if r["file"] in v.files]
     args.out.mkdir(parents=True, exist_ok=True)
     hdir = args.out / "held-out"
     shutil.rmtree(hdir, ignore_errors=True)
-    for p, d in held_out_helpers(tree, held).items():
+    for p, d in held_out_helpers(tree, held, holdouts).items():
         (hdir / p).parent.mkdir(parents=True, exist_ok=True)
         (hdir / p).write_bytes(d)
-    manifest = {"source_commit": tree.commit, "seed": args.seed, "held_out_share": args.held_out_share,
-                "held_out": held, "variants": {}}
+    manifest = {"source_commit": tree.commit, "seed": args.seed, "draw_seed": draw, "held_out_share": args.held_out_share,
+                "held_out": held, "holdouts_file": str(args.holdouts) if args.holdouts else None,
+                "forced_holdouts": forced, "renames_file": str(args.renames) if args.renames else None,
+                "renames_applied": renames, "variants": {}}
+    target = f"ce-cv-target-{args.seed}"  # the set's own build cache, so two sets never share one
     for name, v in variants.items():
         head = write_repo(v, args.out / name)
         entry = {"commit": head, "vcs": v.vcs, "report": v.report, "sizes": variant_sizes(v), "files": len(v.files)}
@@ -619,14 +921,14 @@ def main(argv=None) -> int:
             entry["volume"] = f"ce-cv-{args.seed}-{name}"
             load_volume(args.out / name, entry["volume"], args.image, jj=v.vcs == "jj")
         if args.cargo_test:
-            result, log = cargo_test(entry["volume"], image=args.image)
+            result, log = cargo_test(entry["volume"], image=args.image, target_volume=target)
             (args.out / f"cargo-test-{name}.log").write_text(log)
             entry["cargo_test"] = result
             print(f"{name}: {result['passed']} passed, {result['failed']} failed, compile failed {result['compile_failed']}",
                   flush=True)
         manifest["variants"][name] = entry
     if args.cargo_test:
-        subprocess.run(["docker", "volume", "rm", "-f", "ce-cv-target"], capture_output=True)
+        subprocess.run(["docker", "volume", "rm", "-f", target], capture_output=True)
     (args.out / "manifest.json").write_text(json.dumps(manifest, indent=1) + "\n")
     for name, e in manifest["variants"].items():
         s = e["sizes"]

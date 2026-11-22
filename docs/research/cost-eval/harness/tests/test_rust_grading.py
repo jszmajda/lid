@@ -968,3 +968,346 @@ class GradeRustMainTest(unittest.TestCase):
         self.assertTrue(any('#[path = "probe_helpers/common/mod.rs"] mod common;' in p for p in executed))
         self.assertTrue((out / "visible_assertions.json").exists())
         self.assertEqual(summary["visible_assertions"]["not_found_at_start"], 1)  # this fake git shows no source
+
+
+# ------------------------------------------------------------------------------------- M2f's graded targets
+
+
+GRADED_CHROME = """fn helper() -> bool { true }
+
+#[test]
+fn probe_a() {
+    assert!(helper());
+}
+
+#[test]
+fn probe_b() {
+    assert_eq!(false, true, "the Elder the only jobless kitten");
+}
+"""
+GRADED_LOG = """running 2 tests
+test chrome::probe_a ... ok
+test chrome::probe_b ... FAILED
+
+failures:
+
+---- chrome::probe_b stdout ----
+
+thread 'chrome::probe_b' panicked at crates/ui/tests/m2f_c3_probe_idle/chrome.rs:10:5:
+assertion `left == right` failed: the Elder the only jobless kitten
+  left: false
+ right: true
+
+failures:
+    chrome::probe_b
+
+test result: FAILED. 1 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out
+EXIT=101
+"""
+HELD_LOG = ("running 2 tests\ntest waking::w1 ... ok\ntest waking::w2 ... ok\n"
+            "test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out\nEXIT=0\n")
+
+
+def graded_entries(change: int = 3) -> list[dict]:
+    def entry(target, kind, status, module, tests, n=change):
+        files = ([f"crates/ui/tests/{target}/main.rs", f"crates/ui/tests/{target}/{module}.rs"] if module
+                 else [f"crates/ui/tests/{target}.rs"])
+        return {"target": target, "kind": kind, "change": n, "status": status, "crate": "ui", "module": module,
+                "tests": tests, "files": files, "source": {}}
+    return [entry(f"m2f_c{change}_probe_idle", "dependency probe", "graded", "chrome", ["probe_a", "probe_b"]),
+            entry(f"m2f_c{change}_heldout_waking", "held-out test", "graded", "waking", ["w1", "w2"]),
+            entry(f"m2f_c{change}_heldout_readouts", "held-out test", "retired", "readouts", ["r1"]),
+            entry(f"m2f_c{change + 1}_probe_speed", "dependency probe", "graded", None, ["probe_s"], n=change + 1)]
+
+
+def graded_dir(change: int = 3) -> Path:
+    d = Path(tempfile.mkdtemp()) / "graded"
+    texts = {"chrome.rs": GRADED_CHROME, "waking.rs": "#[test]\nfn w1() {}\n#[test]\nfn w2() {}\n",
+             "readouts.rs": "#[test]\nfn r1() {}\n", "main.rs": "#![allow(dead_code, unused_imports)]\n"}
+    entries = graded_entries(change)
+    for e in entries:
+        for f in e["files"]:
+            (d / f).parent.mkdir(parents=True, exist_ok=True)
+            (d / f).write_text(texts.get(f.rsplit("/", 1)[-1], "#[test]\nfn probe_s() {}\n"))
+    (d / "graded.json").write_text(json.dumps(entries))
+    return d
+
+
+class GradedTargetsTest(unittest.TestCase):
+    def test_a_changes_graded_targets_are_its_probes_and_its_held_out_tests_still_in_force(self):
+        entries = rg.load_graded(graded_dir())
+        self.assertEqual([e["target"] for e in rg.graded_for_change(entries, 3)], ["m2f_c3_probe_idle", "m2f_c3_heldout_waking"])
+        self.assertEqual([e["target"] for e in rg.graded_for_change(entries, 4)], ["m2f_c4_probe_speed"])
+        self.assertEqual(rg.graded_for_change(entries, 5), [])
+
+    def test_each_graded_test_is_passed_failed_or_not_built_and_the_change_rolls_up(self):
+        entries = rg.graded_for_change(graded_entries(), 3)
+        result = rg.keeping_result(
+            [("ui", "m2f_c3_probe_idle", GRADED_LOG), ("ui", "m2f_c3_heldout_waking", KEEP_BROKEN)],
+            {"m2f_c3_probe_idle": 2, "m2f_c3_heldout_waking": 2},
+            {"m2f_c3_probe_idle": {"status": "adapted", "edits": [{"code": "E0063", "file": "x", "line": 1}]},
+             "m2f_c3_heldout_waking": {"status": "not adapted",
+                                       "reason": "E0061 at waking.rs:3 is not one the rule adapts: takes 2 arguments"}})
+        result["targets"]["m2f_c3_probe_idle"]["failures"] = {
+            "chrome::probe_b": {"classification": "keeping failure", "by": "grader", "reason": "A count differs."}}
+        fields = rg.graded_tests(result, entries)
+        self.assertEqual(fields["dependency_probes"], {
+            "chrome::probe_a": {"result": "passed", "adapted": True},
+            "chrome::probe_b": {"result": "failed", "class": "keeping failure", "adapted": True}})
+        self.assertIs(fields["dependency_met"], False)
+        self.assertEqual(fields["held_out_tests"], {"waking::w1": {"result": "not built", "cause": "E0061"},
+                                                    "waking::w2": {"result": "not built", "cause": "E0061"}})
+        self.assertIs(fields["held_out_tests_met"], False)
+
+    def test_a_change_with_nothing_of_a_kind_rolls_up_to_none_and_a_test_with_no_result_line_did_not_run(self):
+        e = graded_entries()
+        probe = [x for x in e if x["target"] == "m2f_c4_probe_speed"]
+        for log, cause in (("test probe_s ... ignored\nEXIT=0\n", "ignored"),
+                           ("test something_else ... ok\nEXIT=0\n", "no result line (exit 0)")):
+            fields = rg.graded_tests(rg.keeping_result([("ui", "m2f_c4_probe_speed", log)]), probe)
+            # a target of one file: its tests have no module in their names
+            self.assertEqual(fields["dependency_probes"], {"probe_s": {"result": "not run", "cause": cause}})
+            self.assertIs(fields["dependency_met"], False)
+        self.assertIsNone(fields["held_out_tests_met"])
+        self.assertEqual(fields["held_out_tests"], {})
+        ok = rg.keeping_result([("ui", "m2f_c4_probe_speed", "test probe_s ... ok\nEXIT=0\n")])
+        self.assertIs(rg.graded_tests(ok, probe)["dependency_met"], True)
+        self.assertEqual(rg.graded_tests({"targets": {}}, probe)["dependency_probes"]["probe_s"],
+                         {"result": "not built", "cause": "target not run"})
+
+
+def m2f_fork(change: int = 3, *, graded: bool = True, script: bool = True) -> tuple[Path, Path, Path]:
+    """(root, run dir, seed dir) for a fork at `change` from a variant set with M2f's graded targets."""
+    import shutil
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from test_simulator import CHANGES
+    root = Path(tempfile.mkdtemp())
+    variants = root / "variants"
+    variants.mkdir()
+    (variants / "manifest.json").write_text(json.dumps({"held_out": [], "variants": {}}))
+    if graded:
+        shutil.copytree(graded_dir(change), variants / "graded")
+    seed = root / "seed"
+    (seed / "hidden").mkdir(parents=True)
+    if script:
+        (seed / "hidden" / "change-script.md").write_text(CHANGES)
+    run = root / "runs" / "cf-x"
+    run.mkdir(parents=True)
+    (run / "trajectory.json").write_text(json.dumps({
+        "id": "cf-x", "change": change, "start_commit": "b0", "image": "img", "volumes": {"workspace": "ws"},
+        "fork_of": {"variants": str(variants)}, "changes": {str(change): {"commit": "c1"}}}))
+    return root, run, seed
+
+
+class M2fCk(FakeCk):
+    volume = "ckpt"
+
+    def sh(self, script, stdin=None, check=True):
+        self.scripts.append(script)
+        if "--no-run" in script:
+            return BUILD_OK
+        if "--test m2f_c3_probe_idle" in script:
+            return GRADED_LOG
+        if "--test m2f_c3_heldout_waking" in script:
+            return HELD_LOG
+        return ""
+
+    def export(self, vol):
+        pass
+
+    def drop_target(self):
+        pass
+
+
+def ruling(prompt):
+    return {"rulings": [{"test": "chrome::probe_b", "classification": "keeping failure",
+                         "reason": "The lock reason and Assign disagree.", "evidence": [{"seq": 1, "lines": [1]}]}]}
+
+
+class GradeRustGradedTargetsTest(unittest.TestCase):
+    def test_a_fork_grades_its_changes_probes_and_held_out_tests_and_classifies_failures(self):
+        import grade_rust
+        from costeval import rust_classify as rc
+        root, run, seed = m2f_fork()
+        ck, asked = M2fCk(), []
+
+        def run_role(role, prompt, json_schema=None):
+            asked.append(json_schema)
+            return SimpleNamespace(structured=ruling(prompt), text="", duration_s=0.1,
+                                   usage=SimpleNamespace(reported_cost_usd=0.01, models={}))
+        rc_ = grade_rust.main(["--id", "cf-x", "--runs", str(root / "runs"), "--seed-dir", str(seed), "--no-probes"],
+                              checkpoint=lambda name, commit, image: ck, run_role=run_role)
+        self.assertEqual(rc_, 0)
+        out = run / "grading" / "change-03"
+        summary = json.loads((out / "summary.json").read_text())
+        self.assertEqual(summary["dependency_probes"], {
+            "chrome::probe_a": {"result": "passed"},
+            "chrome::probe_b": {"result": "failed", "class": "keeping failure"}})
+        self.assertIs(summary["dependency_met"], False)
+        self.assertEqual(summary["held_out_tests"], {"waking::w1": {"result": "passed"}, "waking::w2": {"result": "passed"}})
+        self.assertIs(summary["held_out_tests_met"], True)
+        self.assertEqual(summary["graded_targets"]["targets"], ["m2f_c3_probe_idle", "m2f_c3_heldout_waking"])
+        self.assertEqual(summary["graded_targets"]["dir"], str(root / "variants" / "graded"))
+        self.assertTrue(summary["graded_targets"]["classified"])
+        self.assertIn("graded_sha256", summary["graded_targets"])
+        self.assertEqual(asked, [json.dumps(rc.SCHEMA, separators=(",", ":"))])  # one ruling, by the keeping classifier
+        self.assertIn("/work/app/crates/ui/tests/m2f_c3_probe_idle/chrome.rs", ck.files)
+        self.assertEqual(ck.files["/work/app/crates/ui/tests/m2f_c3_probe_idle/chrome.rs"], GRADED_CHROME)
+        ran = [s for s in ck.scripts if "cargo test" in s and "--no-run" not in s]
+        self.assertTrue(any("--manifest-path crates/ui/Cargo.toml --test m2f_c3_probe_idle" in s for s in ran))
+        self.assertFalse(any("m2f_c3_heldout_readouts" in s or "m2f_c4_probe_speed" in s for s in ck.scripts))
+        self.assertEqual((out / "graded-targets" / "m2f_c3_probe_idle.log").read_text(), GRADED_LOG)
+        record = json.loads((out / "graded-targets.json").read_text())
+        self.assertEqual(record["targets"]["m2f_c3_probe_idle"]["failures"]["chrome::probe_b"]["classification"],
+                         "keeping failure")
+        self.assertTrue(list((out / "graded-targets" / "classify").glob("m2f_c3_probe_idle-b01.json")))
+        self.assertIn("held_out_retention", summary)  # keeping ran as before (an empty held-out slice)
+
+    def test_without_a_graded_dir_nothing_is_built_and_the_summary_says_why(self):
+        import grade_rust
+        for flags, graded, why in (([], False, "doesn't exist"), (["--no-graded"], True, "--no-graded")):
+            root, run, seed = m2f_fork(graded=graded)
+            ck = M2fCk()
+            grade_rust.main(["--id", "cf-x", "--runs", str(root / "runs"), "--seed-dir", str(seed), "--no-probes",
+                             "--no-classify", *flags], checkpoint=lambda name, commit, image: ck,
+                            run_role=lambda *a, **k: self.fail("no model call"))
+            summary = json.loads((run / "grading" / "change-03" / "summary.json").read_text())
+            self.assertIn(why, summary["graded_targets"]["skipped"])
+            self.assertNotIn("dependency_probes", summary)
+            self.assertFalse(any("m2f_" in s for s in ck.scripts))
+
+    def test_the_graded_dir_can_be_named(self):
+        import grade_rust
+        root, run, seed = m2f_fork(graded=False)
+        elsewhere = graded_dir()
+        ck = M2fCk()
+        grade_rust.main(["--id", "cf-x", "--runs", str(root / "runs"), "--seed-dir", str(seed), "--no-probes",
+                         "--no-classify", "--graded-dir", str(elsewhere)], checkpoint=lambda name, commit, image: ck)
+        summary = json.loads((run / "grading" / "change-03" / "summary.json").read_text())
+        self.assertEqual(summary["graded_targets"]["dir"], str(elsewhere))
+        self.assertEqual(summary["dependency_probes"]["chrome::probe_b"], {"result": "failed"})  # unclassified
+        self.assertFalse(summary["graded_targets"]["classified"])
+
+    def test_a_change_the_change_script_lacks_leaves_failures_unclassified_and_says_why(self):
+        import grade_rust
+        root, run, seed = m2f_fork(change=9)
+
+        class Ck(M2fCk):
+            def sh(self, script, stdin=None, check=True):
+                return super().sh(script.replace("m2f_c9_", "m2f_c3_"), stdin, check)
+        ck = Ck()
+        grade_rust.main(["--id", "cf-x", "--runs", str(root / "runs"), "--seed-dir", str(seed), "--no-probes"],
+                        checkpoint=lambda name, commit, image: ck, run_role=lambda *a, **k: self.fail("no model call"))
+        summary = json.loads((run / "grading" / "change-09" / "summary.json").read_text())
+        self.assertIn("no change 9", summary["classification_skipped"])
+        self.assertIs(summary["dependency_met"], False)
+
+    def test_without_the_probes_file_the_llm_probes_are_skipped_and_why_is_recorded(self):
+        import grade_rust
+        root, run, seed = m2f_fork(graded=False)
+        missing = root / "seed" / "hidden" / "m2f" / "probes.md"
+        grade_rust.main(["--id", "cf-x", "--runs", str(root / "runs"), "--seed-dir", str(seed), "--no-classify",
+                         "--probes", str(missing)], checkpoint=lambda name, commit, image: M2fCk(),
+                        run_role=lambda *a, **k: self.fail("no model call"))
+        summary = json.loads((run / "grading" / "change-03" / "summary.json").read_text())
+        self.assertIn(str(missing), summary["probes_skipped"])
+        self.assertNotIn("items", summary)
+
+    def test_the_oracle_can_be_named_for_the_extractions_graded_items(self):
+        import grade_rust
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from test_simulator import ORACLE
+        oracle = Path(tempfile.mkdtemp()) / "m2f" / "oracle.md"
+        oracle.parent.mkdir()
+        oracle.write_text(ORACLE)
+        probes = [SimpleNamespace(item="BK-10 Moving keeps the number")]
+        empty_seed = Path(tempfile.mkdtemp())
+        self.assertEqual(grade_rust.graded_items(empty_seed, 3, {}, probes), [])
+        self.assertEqual([i for i, _ in grade_rust.graded_items(empty_seed, 3, {}, probes, oracle=oracle)], ["BK-10"])
+        root, run, seed = m2f_fork(graded=False)
+        (seed / "hidden" / "probes.md").write_text(PROBES.replace("### NEW-01 Kittens can be renamed", "### BK-10 Moving keeps the number")
+                                                   .replace("P-NEW01-a", "P-BK10-a").replace("P-NEW01-b", "P-BK10-b"))
+        prompts = []
+
+        def run_role(role, prompt, json_schema=None):
+            prompts.append(prompt)
+            structured = {"verdicts": [{"probe": p, "verdict": "couldn't exercise", "evidence": [], "cause": "execution",
+                                        "reason": "No test was written.", "fault": "observation"}
+                                       for p in ("P-BK10-a", "P-BK10-b") if p in prompt]} if json_schema else None
+            return SimpleNamespace(structured=structured, text="", duration_s=0.1,
+                                   usage=SimpleNamespace(reported_cost_usd=0.0, models={}))
+        grade_rust.main(["--id", "cf-x", "--runs", str(root / "runs"), "--seed-dir", str(seed), "--no-classify",
+                         "--no-keeping", "--oracle", str(oracle)], checkpoint=lambda name, commit, image: M2fCk(),
+                        run_role=run_role)
+        self.assertIn("BK-10: Moving an order from change 3 onward keeps its number.", prompts[0])
+        summary = json.loads((run / "grading" / "change-03" / "summary.json").read_text())
+        self.assertEqual(summary["seed_files"]["oracle_sha256"], __import__("hashlib").sha256(ORACLE.encode()).hexdigest())
+
+
+TUI_PROBES = PROBES.replace("""#### P-NEW01-b
+
+- **Applies:** from change 3
+- **Needs:** none""", """#### P-NEW01-b
+
+- **Applies:** from change 3
+- **Needs:** tui""")
+
+
+class ShellProbesTest(unittest.TestCase):
+    """A probe that needs `tui` drives the game's terminal shell: its test goes in the shell's crate, and the
+    reference covers the shell's surface; probes without that need are graded as before."""
+
+    def test_the_prompts_name_the_shell_only_when_a_probe_needs_it(self):
+        self.assertEqual(rg.extraction_prompt([("A-1", "x")]), rg.extraction_prompt([("A-1", "x")], needs=set()))
+        self.assertNotIn("clowder-tui", rg.extraction_prompt([("A-1", "x")]))
+        self.assertIn("clowder-tui", rg.extraction_prompt([("A-1", "x")], needs={"tui"}))
+        self.assertIn("TestBackend", rg.extraction_prompt((), needs={"tui"}))
+        self.assertEqual(rg.execution_prompt("b01"), rg.execution_prompt("b01", needs=set()))
+        self.assertNotIn("clowder-tui", rg.execution_prompt("b01"))
+        self.assertIn("crates/clowder-tui/tests/", rg.execution_prompt("b01", needs={"tui"}))
+
+    def test_a_batch_with_a_shell_probe_is_told_its_crate_and_the_reference_covers_the_shell(self):
+        probeset = grading.parse_probes(TUI_PROBES)
+        applicable = [p for p in probeset.probes if p.applies(3)]
+        self.assertEqual([p.needs for p in applicable], [(), ("tui",)])
+        ck, calls = FakeCk(), []
+
+        def run_role(role, prompt, json_schema=None):
+            calls.append(prompt)
+            if json_schema:
+                return SimpleNamespace(structured={"verdicts": [
+                    {"probe": p.id, "verdict": "met", "evidence": [2], "reason": "Shown.", "cause": "none", "fault": "none"}
+                    for p in applicable if p.id in prompt]}, text="", duration_s=0.1,
+                    usage=SimpleNamespace(reported_cost_usd=0.0, models={}))
+            if "probes-" not in prompt:
+                ck.files["/work/out/reference.md"] = "use clowder_core::State;"
+            else:
+                for p in applicable:
+                    ck.files[f"/work/out/probes/{rg.probe_target(p.id)}.rs"] = "fn t() {}"
+                    ck.files[f"/work/out/probes/{rg.probe_target(p.id)}.log"] = "observed"
+            return SimpleNamespace(structured=None, text="", duration_s=0.1, usage=SimpleNamespace(reported_cost_usd=0.0, models={}))
+        g = rg.RustGraders(image="img", roles_volume="roles", claude_code="v")
+        rg.grade_probes(ck, g, probeset, applicable, base="b0", out=Path(tempfile.mkdtemp()), volume="ckpt",
+                        run_role=run_role, batch_size=1)
+        extraction, first, second = calls[0], calls[1], calls[3]
+        self.assertIn("clowder-tui", extraction)
+        self.assertNotIn("crates/clowder-tui/tests/", first)  # P-NEW01-a needs nothing
+        self.assertIn("crates/clowder-tui/tests/", second)  # P-NEW01-b needs the shell
+        plain = [p for p in applicable if not p.needs]
+        calls.clear()
+        rg.grade_probes(ck, g, probeset, plain, base="b0", out=Path(tempfile.mkdtemp()), volume="ckpt", run_role=run_role)
+        self.assertNotIn("clowder-tui", calls[0])
+
+    def test_m2fs_probes_parse_with_s0s_conventions_for_every_executor(self):
+        path = Path(__file__).resolve().parent.parent.parent / "seeds" / "clowder" / "hidden" / "m2f-probes.md"
+        if not path.exists():
+            self.skipTest("m2f-probes.md isn't here")
+        ps = grading.parse_probes(path.read_text(encoding="utf-8"))
+        self.assertGreaterEqual(len(ps.probes), 30)
+        self.assertTrue(ps.setup_notes.startswith("Each probe is independent"))
+        self.assertIn("Screen probes", ps.setup_notes)
+        self.assertTrue(any(p.needs == ("tui",) for p in ps.probes))
+        self.assertTrue(all(set(p.needs) <= {"tui"} for p in ps.probes))
+        rendered = grading.render_for_execution(ps.probes[:1], ps.setup_notes, ps.setups)
+        self.assertIn("Screen probes", rendered)
+        self.assertNotIn("Expected observation", rendered)

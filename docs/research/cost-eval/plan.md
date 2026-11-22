@@ -128,7 +128,7 @@ Agents find a dependency by searching for the names they're changing, so a cross
 
 ## M2h: Brownfield on a project not built with LID `[ ]`
 
-Paperless-ngx, chosen from the name-drift survey (log, 2026-11-21): it has the most cross-component drift of the projects surveyed, a hand-written front-end client, and rules mirrored between backend and front end by integer id only.
+The subject must be code the executor model can't have seen. Paperless-ngx, picked first from the name-drift survey, proved memorised (decisions.md, 2026-11-22). A scout is looking for a multi-component project created after the model's training cutoff.
 
 - `[ ]` Feasibility: build and run it in the executor setup with its test suites; size; real hidden dependencies, mined the way Clowder's were.
 - `[ ]` Seed: changes written around genuine hidden dependencies (Sol, blind), oracle and probes against its REST API and the client logic that mirrors it, reviews, null checks.
