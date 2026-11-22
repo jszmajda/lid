@@ -123,7 +123,17 @@ Agents find a dependency by searching for the names they're changing, so a cross
 
 - `[ ]` For each project, the concepts several components share, whether each component names them the same way (allowing for case conventions), and, for a sample of real cross-component dependencies, whether searching the name on one side finds the dependent code on the other.
 - `[ ]` Projects: Clowder (LID-built), the growth runs (drift from change to change), three or four open-source multi-component projects, and a private long-running project of the maintainer's that adopted the method halfway (analysed privately, its code never published; an anonymised summary may be).
+- `[x]` The survey ran (log, 2026-11-21).
 - `[ ]` Then: injected renaming on Clowder as a dose for M2f (the UI renames shared concepts; LID's variant renames consistently through its docs, keeping its spec links), and the choice of the brownfield project, one where names really drift.
+
+## M2h: Brownfield on a project not built with LID `[ ]`
+
+Paperless-ngx, chosen from the name-drift survey (log, 2026-11-21): it has the most cross-component drift of the projects surveyed, a hand-written front-end client, and rules mirrored between backend and front end by integer id only.
+
+- `[ ]` Feasibility: build and run it in the executor setup with its test suites; size; real hidden dependencies, mined the way Clowder's were.
+- `[ ]` Seed: changes written around genuine hidden dependencies (Sol, blind), oracle and probes against its REST API and the client logic that mirrors it, reviews, null checks.
+- `[ ]` Arms: bare against LID Full, with LID's onboarding (its brownfield mapping skill) metered as a cost of adoption.
+- Known limit: the project is well known, so models may have seen its code; both arms share that, and the changes are new.
 
 ## After the growth test: ideas to review with the maintainer `[ ]`
 
