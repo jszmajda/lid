@@ -684,6 +684,19 @@ class ImplementationTest(unittest.TestCase):
         self.assertEqual(len(problems), 3)  # NEW-02 cites nothing, NEW-09 isn't graded, NEW-03 has no record
         self.assertEqual(rg.check_implementation(None, ["NEW-01"])[0], {"NEW-01": "unclear"})
 
+    def test_inherited_is_the_behaviour_through_code_the_diff_didnt_need_to_touch_and_must_name_that_code(self):
+        p = rg.extraction_prompt(IMPLEMENTATION_ITEMS)
+        self.assertIn('"inherited"', p)
+        self.assertIn("didn't need to touch", p)
+        self.assertIn("isn't produced", p)  # absent: the behaviour isn't produced, not merely untouched
+        self.assertIn("inherited", rg.IMPLEMENTATION)
+        statuses, problems = rg.check_implementation({"items": [
+            {"item": "NEW-01", "status": "inherited", "evidence": [{"file": "src/a.rs", "symbols": ["save"]}],
+             "note": "the field was already serialized"},
+            {"item": "NEW-02", "status": "inherited", "evidence": [], "note": "somewhere"}]}, ["NEW-01", "NEW-02"])
+        self.assertEqual(statuses, {"NEW-01": "inherited", "NEW-02": "unclear"})  # it names the code, or it's unclear
+        self.assertEqual(len(problems), 1)
+
     def test_an_interface_fault_on_an_absent_item_is_not_met_and_on_an_implemented_one_missing(self):
         import re
         probeset = grading.parse_probes(PROBES)
@@ -820,6 +833,40 @@ class ConflictTest(unittest.TestCase):
         self.assertEqual((split["guard_rows_met"]["met"], split["guard_rows_met"]["of"], split["guard_rows_met"]["missing"]),
                          (1, 1, 1))
         self.assertEqual(split["guard_rows"], ["NEW-03", "NEW-04"])
+
+    def test_a_met_on_an_inherited_item_stays_met(self):
+        # existing code the change relies on provides it ("the field was already serialized"): evidence for met
+        import re
+        probeset = grading.parse_probes(PROBES)
+        applicable = [p for p in probeset.probes if p.applies(7)]
+        ck = FakeCk()
+        usage = SimpleNamespace(reported_cost_usd=0.1, models={})
+        record = {"items": [
+            {"item": "NEW-01", "status": "implemented", "evidence": [{"file": "crates/core/src/lib.rs", "symbols": ["rename"]}], "note": "rename"},
+            {"item": "NEW-02", "status": "inherited", "evidence": [{"file": "crates/core/src/save.rs", "symbols": ["Save"]}],
+             "note": "already serialized"}]}
+
+        def run_role(role, prompt, json_schema=None):
+            if json_schema:
+                ids = sorted(set(re.findall(r"## (P-NEW\d+-[a-z])", prompt)))
+                return SimpleNamespace(structured={"verdicts": [
+                    {"probe": pid, "verdict": "met", "evidence": [2], "reason": "The output shows what this probe needed.",
+                     "cause": "none", "fault": "none"} for pid in ids]}, text="", usage=usage, duration_s=1.0)
+            if "probes-" not in prompt:
+                ck.files["/work/out/reference.md"] = "use core::State;"
+                ck.files["/work/out/implementation.json"] = json.dumps(record)
+            else:
+                bid = re.search(r"probes-(\w+)\.md", prompt).group(1)
+                for pid in re.findall(r"(?m)^## (P-\S+)", ck.files[f"/work/out/probes-{bid}.md"]):
+                    ck.files[f"/work/out/probes/{rg.probe_target(pid)}.log"] = "observed"
+            return SimpleNamespace(structured=None, text="done", usage=usage, duration_s=1.0)
+
+        g = rg.RustGraders(image="img", roles_volume="roles", claude_code="v")
+        result = rg.grade_probes(ck, g, probeset, applicable, base="b0", out=Path(tempfile.mkdtemp()), volume="ckpt",
+                                 run_role=run_role, items=IMPLEMENTATION_ITEMS)
+        self.assertEqual(result["probes"]["P-NEW02-a"], "met")
+        self.assertEqual(result["conflicts"], {})
+        self.assertEqual(result["implementation"]["NEW-02"], "inherited")
 
     def test_an_earlier_grading_gets_the_guard_exemption_without_grading_again(self):
         # a grading made before the guard rows were known: its conflicts on guard rows become the probes' "met"

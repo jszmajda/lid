@@ -406,7 +406,10 @@ class RustGraders:
                                     isolation=executor.Isolation.for_public_seed(window="1m"), **kw)
 
 
-IMPLEMENTATION = ("implemented", "absent", "unclear")
+# implemented: the diff adds or changes code toward the item; inherited: the build has the behaviour through code the
+# diff didn't need to touch (existing code the change relies on), named in the record; absent: the behaviour isn't
+# produced. Only "absent" can void a probe's "met" (a conflict); "inherited" is evidence for it, as "implemented" is.
+IMPLEMENTATION = ("implemented", "inherited", "absent", "unclear")
 SHELL_NEED, SHELL_CRATE = "tui", "clowder-tui"  # a probe that needs "tui" drives the game's terminal shell
 
 
@@ -427,13 +430,16 @@ def extraction_prompt(items: list[tuple[str, str]] = (), needs=()) -> str:
                  "every key, overlay, row, and drawn element the change added to the shell or altered, and how to "
                  "reach each one.\n\n")
     if items:
-        note += ("5. For each item below, record whether the change's diff implements anything addressing it, in "
+        note += ("5. For each item below, record whether the build provides it and how, in "
                 "/work/out/implementation.json: `{\"items\": [{\"item\": \"<ID>\", \"status\": \"implemented\" | "
-                "\"absent\" | \"unclear\", \"evidence\": [{\"file\": \"<path>\", \"symbols\": [\"<function, type, "
-                "or variant>\"]}], \"note\": \"<one sentence>\"}]}`, one entry per item.\n"
+                "\"inherited\" | \"absent\" | \"unclear\", \"evidence\": [{\"file\": \"<path>\", \"symbols\": "
+                "[\"<function, type, or variant>\"]}], \"note\": \"<one sentence>\"}]}`, one entry per item.\n"
                 "   - implemented: the diff adds or changes code that does something toward the item; cite the files "
                 "and symbols.\n"
-                "   - absent: nothing in the diff addresses it; cite the files and symbols you checked.\n"
+                "   - inherited: the build has the behaviour through code the diff didn't need to touch: existing code "
+                "the change relies on, or that already did this; cite the code that provides it.\n"
+                "   - absent: the behaviour isn't produced: nothing in the diff addresses it and no existing code "
+                "provides it; cite the files and symbols you checked.\n"
                 "   - unclear: you can't tell.\n\n"
                 "   This record is separate from the reference: don't mention the items in reference.md.\n\n"
                 "   The items:\n" + "\n".join(f"   - {i}: {text}" for i, text in items) + "\n\n")
