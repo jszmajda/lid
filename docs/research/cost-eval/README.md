@@ -50,23 +50,20 @@ Read this section first when you pick the work up in a new session. Update it at
   - **grading:** held-out tests for keeping, and probes against each arm's own API for new intent.
 
   The changes were reviewed by Claude Fable and GPT-6.2 Astra, and the harness is built and tested.
-- **The Docker VM is small** (2 CPUs, 4 GB), which limits how much runs at once. Resizing it means restarting colima, which also stops the maintainer's other containers, so that is the maintainer's call.
+- **The Docker VM** has 6 CPUs and 10 GB (resized 2026-11-22 with the maintainer's approval), and runs four forks at a time. Its disk is 100 GiB; M2h's runner releases each fork's volumes after grading unless a repair needs them, and waits while free disk is under 20 GB.
 - **Start long jobs as tracked background tasks, or with a watch.** A job started detached sends no notice when it finishes.
 - **The maintainer has handed the pilot to the main session** (2026-11-14): run it on your own judgment, and bring the maintainer only decisions that are really theirs. Pushing to the draft pull request is allowed; marking it ready, merging, and releasing are not. Claude Fable stands in for the maintainer's detailed reviews (probes, oracles, verdict spot-checks).
-- **No counted runs yet.**
+- **M2f, Clowder's cross-crate test, has run** (log.md, 2026-11-23; analysis in `runs/clowder-m2f/analysis/`). The arms tie in total on new rows and dependencies kept but miss different dependencies; change 15 is set aside until its probes are regraded. LID's arm ran under Clowder's own standing override of phase reviews.
+- **M2h, the openGym brownfield test, is prepared** ([seeds/opengym/README.md](seeds/opengym/README.md)): four `/map-codebase` draws, twelve reviewed changes, validated probes, and a merged harness (`run_opengym_m2h.sh`). Its null check is running.
 
-**Next actions** (milestones M2 and M2c in [plan.md](plan.md)):
+**Next actions** (plan.md, M2f and M2h):
 
-1. **M2f is ready to run after the subscription's weekly reset** (plan.md). The cross-crate changes went through three drafting rounds, with reviews by Claude Fable and GPT-6.2 Astra. Every graded probe and held-out test passes on the snapshot and on a correct build, and fails on its core-only build. A Fable fix-check, the variants and the null check come first. M2h (Paperless-ngx) passed feasibility; its seed design follows. Review the specification-explicitness paper's other deferred ideas with the maintainer too (plan.md, "After the growth test").
-2. **Extend `report.py`** for recalled intent (review and question), contradictions kept against drawn, keeping, the Clowder measures (held-out retention, missing items, intent reach, cost to green, edits to visible tests), and the window dose.
-3. **Finish the owner checks:**
-   - labelled judgments on about 100 replayed stops;
-   - the constants sweep on replayed stops, plus the generous and stingy corners end to end;
-   - the three replayed stops where the owner still errs.
-4. **Then, sized by Clowder's result:** cross-crate Clowder changes, and growing ReleaseDesk into the large greenfield test.
-5. **Run the guessability panel on BenchTime's latent items.**
-6. **Write the first report.**
-7. **Still to build:** prior-data probes, grading for the probe request, and a scripted check for operating requirements.
+1. **M2h:** finish the null and right checks, then run main (bare against LID, 12 changes × 3 replicates) and repairs, and write up the joint-outcome report by searchability tier.
+2. **M2f's change 15:** regrade its main and dose forks with the second probe version, from each fork's saved diff, and fold it into the results.
+3. **Write the first report** across BenchTime, the growth pilot, M2e, M2f and M2h, and publish it on the LID site with the maintainer.
+4. **Review the specification-explicitness paper's deferred ideas** with the maintainer (plan.md, "After the growth test"), and the competitor arms (M5).
+5. **Finish the owner checks:** labelled judgments on about 100 replayed stops, the constants sweep, and the three replayed stops where the owner still errs.
+6. **Still to build:** prior-data probes, grading for the probe request, and a scripted check for operating requirements.
 
 ## Files
 

@@ -108,32 +108,34 @@ On ReleaseDesk's growth seed through change 20, paired with the trial's bare and
 - `[x]` From data already collected: module count and coupling at every snapshot; LID's spend by phase; owner reading by review depth.
 - `[ ]` Then decide: if the checklist arm lands near LID on latent rules at a fraction of the cost, add replicates 2 and 3 for all three arms (the trial's runs are replicate 1).
 
-## M2f: Clowder with cross-crate changes `[ ]`
+## M2f: Clowder with cross-crate changes `[~]`
 
 The scale question, recast: agents search a codebase rather than load it, so "too big to hold" means "the intent you need isn't near the code you're editing". Clowder has two crates of similar size (core simulation and terminal UI), much like an app and its backend.
 
-- `[ ]` Draft about twelve new changes with Sol, blind to the hypotheses. Most are requested on one crate's surface while the rule they must respect lives in the other; a few same-crate changes serve as controls. Each records its intent distance before any run.
-- `[ ]` Review by Claude Fable and GPT-6.2 Astra; record predicted directions; draft and review probes, including probes and held-out tests for intent held in the other crate; repair reports for every item.
-- `[ ]` Null-arm check of the grading on the untouched snapshot.
-- `[ ]` Runs: bare on the stripped repository and LID Full, three forks per change each, at the 1M window; repair forks for every miss, measuring rounds and cost to fix.
+- `[x]` Draft about twelve new changes with Sol, blind to the hypotheses. Most are requested on one crate's surface while the rule they must respect lives in the other; a few same-crate changes serve as controls. Each records its intent distance before any run.
+- `[x]` Review by Claude Fable and GPT-6.2 Astra; record predicted directions; draft and review probes, including probes and held-out tests for intent held in the other crate; repair reports for every item.
+- `[x]` Null-arm check of the grading on the untouched snapshot, and a right-build check of every change (log, 2026-11-23).
+- `[x]` Runs: bare on the stripped repository and LID Full, three forks per change each, at the 1M window; repair forks for every miss, measuring rounds and cost to fix (log, 2026-11-23).
+- `[ ]` Regrade change 15 with its second probe version, from each fork's saved diff, and fold it into the results.
 
-## M2g: A name-drift survey `[ ]`
+## M2g: A name-drift survey `[x]`
 
 Agents find a dependency by searching for the names they're changing, so a cross-component dependency is remote only when the names don't carry across. A descriptive survey, before choosing the brownfield project:
 
-- `[ ]` For each project, the concepts several components share, whether each component names them the same way (allowing for case conventions), and, for a sample of real cross-component dependencies, whether searching the name on one side finds the dependent code on the other.
-- `[ ]` Projects: Clowder (LID-built), the growth runs (drift from change to change), three or four open-source multi-component projects, and a private long-running project of the maintainer's that adopted the method halfway (analysed privately, its code never published; an anonymised summary may be).
+- `[x]` For each project, the concepts several components share, whether each component names them the same way (allowing for case conventions), and, for a sample of real cross-component dependencies, whether searching the name on one side finds the dependent code on the other.
+- `[x]` Projects: Clowder (LID-built), the growth runs (drift from change to change), three or four open-source multi-component projects, and a private long-running project of the maintainer's that adopted the method halfway (analysed privately, its code never published; an anonymised summary may be).
 - `[x]` The survey ran (log, 2026-11-21).
-- `[ ]` Then: injected renaming on Clowder as a dose for M2f (the UI renames shared concepts; LID's variant renames consistently through its docs, keeping its spec links), and the choice of the brownfield project, one where names really drift.
+- `[x]` Then: injected renaming on Clowder as a dose for M2f (the UI renames shared concepts; LID's variant renames consistently through its docs, keeping its spec links), and the choice of the brownfield project, one where names really drift.
 
-## M2h: Brownfield on a project not built with LID `[ ]`
+## M2h: Brownfield on a project not built with LID `[~]`
 
-The subject must be code the executor model can't have seen. Paperless-ngx, picked first from the name-drift survey, proved memorised (decisions.md, 2026-11-22). A scout is looking for a multi-component project created after the model's training cutoff.
+The subject must be code the executor model can't have seen. Paperless-ngx, picked first from the name-drift survey, proved memorised (decisions.md, 2026-11-22). The subject is openGym, a multi-component app created after the model's training cutoff ([seeds/opengym/README.md](seeds/opengym/README.md)).
 
-- `[ ]` Feasibility: build and run it in the executor setup with its test suites; size; real hidden dependencies, mined the way Clowder's were.
-- `[ ]` Seed: changes written around genuine hidden dependencies (Sol, blind), oracle and probes against its REST API and the client logic that mirrors it, reviews, null checks.
-- `[ ]` Arms: bare against LID Full, with LID's onboarding (its brownfield mapping skill) metered as a cost of adoption.
-- Known limit: the project is well known, so models may have seen its code; both arms share that, and the changes are new.
+- `[x]` Feasibility: build and run it in the executor setup with its test suites; size; real hidden dependencies, mined the way Clowder's were.
+- `[x]` Seed: changes written around genuine hidden dependencies (Sol), oracle and probes, reviews by Claude Fable and GPT-6.2 Astra, and a validated matrix of right builds, one-sided builds and mutants.
+- `[~]` Null and right checks of the grading.
+- `[ ]` Arms: bare against LID Full, three forks per change, with LID's onboarding (`/map-codebase`, one draw per replicate, done) metered as a cost of adoption; repair forks for every miss.
+- Known limits: openGym cross-references heavily, so only one of its eight cross-component dependencies is hidden from search; results are stratified by searchability tier.
 
 ## After the growth test: ideas to review with the maintainer `[ ]`
 
