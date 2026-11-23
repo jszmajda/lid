@@ -1,0 +1,47 @@
+children:
+  - name: persistence
+    specs: 41
+    built: 41
+  - name: sim
+    children:
+      - specs: 6
+        built: 6
+      - specs: 8
+        built: 8
+      - specs: 10
+        built: 10
+      - specs: 14
+        built: 14
+      - specs: 12
+        built: 12
+      - specs: 17
+        built: 17
+      - specs: 11
+        built: 11
+      - specs: 66
+        built: 66
+      - name: engine
+        specs: 87
+        built: 87
+      - specs: 6
+        built: 6
+      - specs: 43
+        built: 43
+      - specs: 16
+        built: 16
+      - specs: 16
+        built: 16
+  - name: tui
+    children:
+      - name: navigation
+        specs: 216
+        built: 216
+      - name: render
+        specs: 39
+        built: 39
+      - name: runtime
+        specs: 68
+        built: 68
+      - name: theme
+        specs: 34
+        built: 34

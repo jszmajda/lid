@@ -1,6 +1,6 @@
 // Static rings drawings, rendered at build time from the same module that animates them.
 // The hero uses one with no labels; each explainer shows its finished state until its script runs.
-// @spec MKT-SITE-111, MKT-SITE-116, MKT-SITE-117
+// @spec ONB-SITE-111, ONB-SITE-116, ONB-SITE-117
 import { CHANGE, HERO, NARROWING, finalState, renderStatic } from "../assets/js/rings.js";
 
 export default {

@@ -7,7 +7,17 @@ these optional setting files (files rather than environment variables, because
 the runner strips the harness's environment):
 
   mode              how the emulated harness behaves (default "ok"); a comma
-                    list applies per harness call in order, the last repeating
+                    list applies per harness call in order, the last repeating.
+                    "sleep" hangs silently (a follow-up turn too), "trickle" emits
+                    an event a second for six seconds and then finishes, and
+                    "chatter" emits an event a second until stopped, "spend_exit1"
+                    reports token use and then exits 1, and "spend_sleep" reports
+                    token use and then hangs silently. A model ID containing
+                    "broken", "trickle", "chatter", or "sleepy" overrides the mode
+                    with exit1, trickle, chatter, or sleep for that model's calls,
+                    and one containing "docker125" makes `docker run` fail to start
+                    its harness container (exit 125). A prompt containing
+                    "[[trickle]]" forces trickle for that call
   docker-info-fail  when present, `docker info` exits 1
   build-sleep       seconds `docker build` sleeps before succeeding
   mem-total         bytes `docker info --format {{.MemTotal}}` reports (default 8 GiB)
@@ -69,9 +79,22 @@ def list_tree(root):
     return sorted(out)
 
 
+def model_of(argv):
+    return argv[argv.index("-m") + 1] if "-m" in argv else ""
+
+
+MODEL_MODES = (("broken", "exit1"), ("trickle", "trickle"), ("chatter", "chatter"), ("sleepy", "sleep"))
+
+
 def harness(project, plugins, config_path, argv, pidfile):
     """Emulate `opencode run` inside `project`."""
     mode = next_mode()
+    for word, forced in MODEL_MODES:
+        if word in model_of(argv):
+            mode = forced
+    if argv and "[[trickle]]" in argv[-1]:
+        mode = "trickle"  # a fixture whose prompt asks for a slow, steady run
+    started = time.time()
     stdin_data = sys.stdin.read()  # blocks forever if the runner left stdin open
     key = os.environ.get("OPENROUTER_API_KEY", "")
     log({
@@ -83,6 +106,15 @@ def harness(project, plugins, config_path, argv, pidfile):
         "env": dict(os.environ),
         "config": open(config_path).read() if config_path and os.path.exists(config_path) else None,
         "plugins_listing": list_tree(plugins) if plugins and os.path.isdir(plugins) else None,
+        "plugins_links": sorted(
+            os.path.relpath(os.path.join(d, n), plugins)
+            for d, dirs, files in os.walk(plugins) for n in dirs + files
+            if os.path.islink(os.path.join(d, n))) if plugins and os.path.isdir(plugins) else None,
+        "skill_md": (open(os.path.join(plugins, "demo-plugin/skills/demo-skill/SKILL.md")).read()
+                     if plugins and os.path.isfile(os.path.join(plugins, "demo-plugin/skills/demo-skill/SKILL.md"))
+                     else None),
+        "model": model_of(argv),
+        "t": started,
         "fixture_log": subprocess.run(
             ["git", "-C", project, "log", "--format=%an <%ae>|%s"],
             capture_output=True, text=True).stdout,
@@ -91,12 +123,35 @@ def harness(project, plugins, config_path, argv, pidfile):
         with open(pidfile, "w") as f:
             f.write(str(os.getpid()))
 
+    import atexit
+    atexit.register(lambda: log({"kind": "harness-end", "model": model_of(argv), "t": time.time(), "started": started}))
     if mode == "exit1":
         sys.stderr.write("harness crashed\n")
         sys.exit(1)
+    if mode in ("spend_exit1", "spend_sleep"):
+        emit({"type": "step_finish", "part": {"cost": 0.25, "tokens": {"input": 10, "output": 5, "reasoning": 0, "cache": {"read": 3, "write": 0}}}})
+        emit({"type": "step_finish", "part": {"cost": 0.5, "tokens": {"input": 1, "output": 2, "cache": {"read": 0, "write": 1}}}})
+        if mode == "spend_exit1":
+            sys.stderr.write("harness crashed after spending\n")
+            sys.exit(1)
+        time.sleep(120)
+        sys.exit(0)
     if mode == "error_event":
         emit({"type": "error", "error": {"name": "APIError", "data": {"message": "Missing Authentication header"}}})
         sys.exit(0)
+    if mode == "sleep":
+        with open(os.path.join(project, "partial.txt"), "w") as f:
+            f.write("written before the hang\n")
+        os.makedirs(os.path.join(project, ".git"), exist_ok=True)
+        open(os.path.join(project, ".git", "index.lock"), "w").close()
+        time.sleep(120)
+        sys.exit(0)
+    if mode in ("trickle", "chatter"):
+        # Steady output: one event a second, for six seconds (trickle, which then
+        # finishes normally) or until the runner stops it (chatter).
+        for _ in range(6 if mode == "trickle" else 120):
+            emit({"type": "step_start", "part": {}})
+            time.sleep(1)
     if "--continue" in argv:
         # A follow-up turn: answer in the same session and leave one more file behind.
         with open(os.path.join(project, "second-turn.txt"), "w") as f:
@@ -111,13 +166,6 @@ def harness(project, plugins, config_path, argv, pidfile):
         os.symlink(decoy, os.path.join(project, ".git"))
     if mode == "fifo":
         os.mkfifo(os.path.join(project, "pipe"))
-    if mode == "sleep":
-        with open(os.path.join(project, "partial.txt"), "w") as f:
-            f.write("written before the hang\n")
-        os.makedirs(os.path.join(project, ".git"), exist_ok=True)
-        open(os.path.join(project, ".git", "index.lock"), "w").close()
-        time.sleep(120)
-        sys.exit(0)
 
     if mode == "gitlink":
         emit({"type": "text", "part": {"type": "text", "text": "swapped .git"}})
@@ -252,6 +300,10 @@ def docker(args):
                     os.unlink(gitdir)
                     os.symlink(target, gitdir)
             sys.exit(code)
+        if cmd and "docker125" in model_of(cmd):
+            log({"kind": "docker-run-failed", "cmd": cmd})
+            sys.stderr.write("docker: Error response from daemon: failed to create task\n")
+            sys.exit(125)
         passwd = host.get("/etc/passwd")
         log({"kind": "docker-run", "mounts": mounts, "envs": envs, "opts": opts,
              "name": name, "workdir": workdir, "image": image, "cmd": cmd,

@@ -5,17 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{% if title %}{{ title }} — {% endif %}{{ site.title }}</title>
     <meta name="description" content="{{ description or site.description }}" />
-    <!-- Typefaces from Bunny Fonts, a no-tracking service. @spec MKT-SITE-030, MKT-SITE-130 -->
+    <!-- Typefaces from Bunny Fonts, a no-tracking service. @spec ONB-SITE-030, ONB-SITE-130 -->
     <link rel="preconnect" href="https://fonts.bunny.net" crossorigin />
     <link rel="stylesheet" href="https://fonts.bunny.net/css?family=geologica:wght@400;500;600;700;800&family=spline-sans-mono:wght@400;500;600&display=swap" />
     <link rel="stylesheet" href="{{ '/assets/css/main.css' | url }}?v={{ buildId }}" />
-    <!-- @spec MKT-SITE-126 -->
+    <!-- @spec ONB-SITE-126 -->
     <link rel="icon" href="{{ '/assets/favicon.svg' | url }}" type="image/svg+xml" />
     <meta name="theme-color" content="#14100D" media="(prefers-color-scheme: dark)" />
     <meta name="theme-color" content="#F6F6F4" media="(prefers-color-scheme: light)" />
-    <meta property="og:title" content="{% if title %}{{ title }} — {% endif %}{{ site.title }}" />
-    <meta property="og:description" content="{{ description or site.description }}" />
-    <meta property="og:type" content="website" />
+    <!-- Link previews. @spec ONB-SITE-135, ONB-SITE-136, ONB-SITE-137, ONB-SITE-138, ONB-SHOWCASE-094 -->
+    {{ {
+      title: (title + " — " + site.title) if title else site.title,
+      description: description or site.description,
+      url: site.url + page.url,
+      image: site.url + (socialImage or "/assets/social-card.png"),
+      imageAlt: socialImageAlt or "LID: How do you know your agent built what you meant? linked-intent.dev",
+      imageWidth: socialImageWidth or 1200,
+      imageHeight: socialImageHeight or 630
+    } | previewTags | safe }}
   </head>
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
@@ -23,11 +30,11 @@
     <main id="main">
       {{ content | safe }}
     </main>
-    <!-- @spec MKT-SITE-131, MKT-SITE-069 -->
+    <!-- @spec ONB-SITE-131, ONB-SITE-069, ONB-SITE-140 -->
     <footer class="site-footer">
       <div class="wrap footer-inner">
         <div class="footer-brand">{% include "icon.svg" %}<span>Linked-Intent Development · MIT · © {{ "" | year }} Jess Szmajda</span></div>
-        <p>This site is built with LID too: read its <a href="{{ site.repoUrl }}/blob/main/docs/intent/marketing-site/marketing-site-design.md">design doc</a> and <a href="{{ site.repoUrl }}/blob/main/docs/intent/marketing-site/marketing-site-specs.md">specs</a>. If you spot drift, <a href="{{ site.repoUrl }}/issues">open an issue</a>.</p>
+        <p>This site is built with LID too: read its <a href="{{ site.repoUrl }}/blob/main/docs/intent/onboarding/marketing-site/marketing-site-design.md">design doc</a> and <a href="{{ site.repoUrl }}/blob/main/docs/intent/onboarding/marketing-site/marketing-site-specs.md">specs</a>. If you spot drift, <a href="{{ site.repoUrl }}/issues">open an issue</a>.</p>
       </div>
     </footer>
     <script src="{{ '/assets/js/site.js' | url }}?v={{ buildId }}" defer></script>

@@ -1,14 +1,19 @@
 #!/usr/bin/env python3
 """Run LID's behavioral eval suites on non-Claude models through OpenRouter.
 
-    tools/alt-model-evals/run_eval.py <skill> <eval-ids> <model>
-        [--runs N] [--timeout SECONDS] [--no-container]
+    tools/alt-model-evals/run_eval.py <skill> <eval-ids> <model> [--runs N] [options]
+    tools/alt-model-evals/run_eval.py --roster <preset> <model> [<model> ...] [--lanes N] [options]
 
-Each run stages the eval's fixture and a copy of plugins/, executes the
+    options: [--estimate] [--max-cost USD] [--timeout SECONDS] [--idle-timeout SECONDS]
+             [--effort LEVEL] [--variant NAME] [--no-container]
+
+Each run stages the eval's fixture and a snapshot of plugins/, executes the
 opencode coding agent against the model inside a container, and captures the
 transcript, final response, and resulting project state into the skill's
 gitignored workspace, in the per-eval shape skill-creator's grader reads.
-The runner does not grade.
+Every run is priced from OpenRouter's published prices. A roster runs one of
+the presets in rosters.json across several suites, in lanes; --estimate runs a
+small cost probe and prints the projected cost instead. The runner does not grade.
 
 Design: docs/intent/alt-model-evals/alt-model-evals-design.md
 Specs:  docs/intent/alt-model-evals/alt-model-evals-specs.md
@@ -27,7 +32,10 @@ import signal
 import subprocess
 import sys
 import tempfile
+import threading
 import time
+import traceback
+import urllib.request
 from pathlib import Path
 
 HARNESS_VERSION = "1.18.32"
@@ -40,7 +48,14 @@ RUNNER_DIR = Path(__file__).resolve().parent
 REPO_ROOT = RUNNER_DIR.parent.parent
 DOCKERFILE = RUNNER_DIR / "Dockerfile"
 
-DEFAULT_TIMEOUT = 600
+ROSTERS_FILE = RUNNER_DIR / "rosters.json"
+# @spec ALT-EVAL-COST-001
+MODELS_URL = "https://openrouter.ai/api/v1/models"
+MODELS_URL_ENV = "LID_ALT_EVALS_MODELS_URL"  # tests point this at a local file
+PRICE_FIELDS = ("prompt", "completion", "internal_reasoning", "input_cache_read", "input_cache_write")
+DEFAULT_TIMEOUT = 1800
+DEFAULT_IDLE_TIMEOUT = 600
+POLL_SECONDS = 1
 STOP_GRACE_SECONDS = 10
 MEMORY_LIMIT_BYTES = 2 * 1024 ** 3  # docker's --memory 2g is 2 GiB
 CONTAINER_HOME = "/home/eval"
@@ -168,6 +183,35 @@ def build_prompt(name, plugins_dir, prompt, date, conversational=False):
     ) % (name, plugins_dir, prompt, CONVERSATIONAL if conversational else NON_INTERACTIVE, date)
 
 
+# @spec ALT-EVAL-RUN-004, ALT-EVAL-RUN-012
+def wait_with_limits(proc, events, run_limit, idle_limit, started, poll=POLL_SECONDS, stop=None):
+    """Wait for the harness to exit. Returns None when it does, "stopped" once the
+    stop event is set (an interrupt or a runner failure), or the limit that stopped
+    it: "run" once it has lasted run_limit seconds, "inactivity" once it has written
+    nothing to its event stream for idle_limit seconds. The run limit is checked
+    first, so a turn that reaches both at once records "run"."""
+    last, size = started, 0
+    while True:
+        try:
+            proc.wait(timeout=poll)
+            return None
+        except subprocess.TimeoutExpired:
+            pass
+        if stop is not None and stop.is_set():
+            return "stopped"
+        now = time.monotonic()
+        try:
+            current = os.path.getsize(events)
+        except OSError:
+            current = size
+        if current != size:
+            size, last = current, now
+        if now - started >= run_limit:
+            return "run"
+        if now - last >= idle_limit:
+            return "inactivity"
+
+
 # @spec ALT-EVAL-RUN-001, ALT-EVAL-RUN-002, ALT-EVAL-RUN-003, ALT-EVAL-RUN-004
 def classify(exit_code, has_error, timed_out, interrupted):
     if interrupted:
@@ -230,6 +274,118 @@ def summarize_events(lines):
     return summary
 
 
+# ------------------------------------------------------------ cost
+
+def _price(value):
+    try:
+        price = float(value)
+    except (TypeError, ValueError):
+        return None
+    return price if price >= 0 else None
+
+
+# @spec ALT-EVAL-COST-004, ALT-EVAL-COST-006
+def effective_prices(pricing):
+    """The per-token prices to charge, from a model-list entry's `pricing`, or None
+    when it lists no usable prompt or completion price. A listed price is used as
+    listed, zero included; an unlisted reasoning price falls back to the completion
+    price, and unlisted cache prices to the prompt price, which errs high."""
+    pricing = pricing if isinstance(pricing, dict) else {}
+    prompt, completion = _price(pricing.get("prompt")), _price(pricing.get("completion"))
+    if prompt is None or completion is None:
+        return None
+    prices = {"prompt": prompt, "completion": completion, "fallbacks": []}
+    for field, fallback in (("internal_reasoning", completion), ("input_cache_read", prompt),
+                            ("input_cache_write", prompt)):
+        value = _price(pricing.get(field))
+        if value is None:
+            value = fallback
+            prices["fallbacks"].append(field)
+        prices[field] = value
+    return prices
+
+
+# @spec ALT-EVAL-COST-005, ALT-EVAL-COST-007
+def turn_price(tokens, prices):
+    """A turn's priced cost from the token counts summed from its event stream. The
+    harness reports the five counts disjointly, so each token is priced once."""
+    if not isinstance(tokens, dict):
+        return 0.0
+    cache = tokens.get("cache") if isinstance(tokens.get("cache"), dict) else {}
+
+    def n(d, k):
+        v = d.get(k)
+        return v if isinstance(v, (int, float)) and not isinstance(v, bool) else 0
+
+    return (n(tokens, "input") * prices["prompt"]
+            + n(cache, "read") * prices["input_cache_read"]
+            + n(cache, "write") * prices["input_cache_write"]
+            + n(tokens, "output") * prices["completion"]
+            + n(tokens, "reasoning") * prices["internal_reasoning"])
+
+
+# @spec ALT-EVAL-COST-001
+def fetch_model_list(url):
+    """OpenRouter's public model list keyed by model ID, or None when it cannot be
+    fetched or parsed. The request carries no key."""
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "lid-alt-model-evals"})
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        return {m["id"]: m for m in data["data"] if isinstance(m, dict) and "id" in m}
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+
+
+# @spec ALT-EVAL-COST-001, ALT-EVAL-COST-002, ALT-EVAL-COST-003, ALT-EVAL-COST-004
+def model_prices(models, need_prices, url=None):
+    """Check every model against OpenRouter's list and return {model: prices or None}."""
+    url = url or os.environ.get(MODELS_URL_ENV) or MODELS_URL
+    listing = fetch_model_list(url)
+    if listing is None:
+        if need_prices:
+            raise UsageError("OpenRouter's model list could not be read from %s; --estimate and "
+                             "--max-cost need its prices" % url)
+        sys.stderr.write("WARNING: OpenRouter's model list could not be read from %s; running without "
+                         "prices, so summaries show the harness's own cost figures.\n" % url)
+        return {m: None for m in models}
+    read_at = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
+    out = {}
+    for model in models:
+        entry = listing.get(model)
+        if entry is None:
+            raise UsageError("OpenRouter lists no model %r; check the model ID" % model)
+        if "tools" not in (entry.get("supported_parameters") or []):
+            raise UsageError("OpenRouter lists %r without tool calling; the harness needs tool calling, "
+                             "so every run would fail" % model)
+        prices = effective_prices(entry.get("pricing"))
+        if prices is None:
+            if need_prices:
+                raise UsageError("OpenRouter lists no prompt or completion price for %r; --estimate and "
+                                 "--max-cost need its prices" % model)
+            sys.stderr.write("WARNING: OpenRouter lists no prompt or completion price for %r; running it "
+                             "without prices.\n" % model)
+        else:
+            prices["read_at"] = read_at
+        out[model] = prices
+    return out
+
+
+# @spec ALT-EVAL-COST-014
+def makespan(durations, lanes):
+    """Wall-clock time to run batches of these durations, in queue order, each on the lane that frees first."""
+    free = [0.0] * max(1, lanes)
+    for d in durations:
+        i = min(range(len(free)), key=lambda k: free[k])
+        free[i] += d
+    return max(free) if durations else 0
+
+
+def fmt_duration(seconds):
+    seconds = int(round(seconds))
+    return "%dh %02dm %02ds" % (seconds // 3600, seconds % 3600 // 60, seconds % 60)
+
+
 # @spec ALT-EVAL-BOX-004
 def image_tag(dockerfile_bytes):
     digest = hashlib.sha256(dockerfile_bytes).hexdigest()[:12]
@@ -237,10 +393,11 @@ def image_tag(dockerfile_bytes):
 
 
 # @spec ALT-EVAL-OUT-002
-def claim_batch_dir(workspace, date, slug):
+# @spec ALT-EVAL-OUT-020
+def claim_batch_dir(workspace, date, slug, prefix="alt-model"):
     """Create and return the first free batch directory; mkdir makes the claim atomic."""
     workspace.mkdir(parents=True, exist_ok=True)
-    base = "alt-model-%s-%s" % (date, slug)
+    base = "%s-%s-%s" % (prefix, date, slug)
     n = 1
     while True:
         candidate = workspace / (base if n == 1 else "%s-%d" % (base, n))
@@ -301,6 +458,32 @@ def plugins_tree(repo_root):
         return git(repo_root, "write-tree", "--prefix=plugins/", env=index).stdout.strip()
 
 
+# @spec ALT-EVAL-STAGE-005, ALT-EVAL-STAGE-006, ALT-EVAL-STAGE-011
+def snapshot_plugins(repo_root, dest):
+    """The tree ID of plugins/ as it is on disk, and a copy in `dest` of exactly the
+    files that tree covers, minus evals/ and *-workspace/ directories, links kept as links."""
+    with tempfile.TemporaryDirectory() as tmp:
+        index = {"GIT_INDEX_FILE": os.path.join(tmp, "index")}
+        git(repo_root, "read-tree", "--empty", env=index)
+        git(repo_root, "add", "-A", "--", "plugins", env=index)
+        tree = git(repo_root, "write-tree", "--prefix=plugins/", env=index).stdout.strip()
+        listed = git(repo_root, "ls-files", "-z", "--", "plugins", env=index).stdout
+    dest.mkdir(parents=True)
+    for rel in listed.split("\0"):
+        if not rel:
+            continue
+        parts = Path(rel).parts[1:]
+        if any(p == "evals" or p.endswith("-workspace") for p in parts[:-1]):
+            continue
+        src, dst = repo_root / rel, dest.joinpath(*parts)
+        dst.parent.mkdir(parents=True, exist_ok=True)
+        if src.is_symlink():
+            os.symlink(os.readlink(src), dst)
+        elif src.is_file():
+            shutil.copy2(src, dst)
+    return tree
+
+
 def head_info(repo_root):
     head = git(repo_root, "rev-parse", "--verify", "-q", "HEAD", check=False).stdout.strip() or None
     tree = None
@@ -343,12 +526,20 @@ def stage_fixture(files, project):
     return git(project, "rev-parse", "HEAD").stdout.strip()
 
 
-# @spec ALT-EVAL-STAGE-005, ALT-EVAL-STAGE-006
+# @spec ALT-EVAL-STAGE-006
 def stage_plugins(repo_root, dest):
+    """A copy of repo_root's plugins/ minus evals/ and *-workspace/ directories. The packaging
+    checks stage a tree this way; the runner's own runs stage from its snapshot instead."""
     def skip(directory, names):
         return [n for n in names
                 if (n == "evals" or n.endswith("-workspace")) and os.path.isdir(os.path.join(directory, n))]
     shutil.copytree(repo_root / "plugins", dest, symlinks=True, ignore=skip)
+
+
+# @spec ALT-EVAL-STAGE-005, ALT-EVAL-STAGE-006
+def stage_snapshot(snapshot, dest):
+    """A run's plugins/: a copy of the invocation's snapshot, never of the repository."""
+    shutil.copytree(snapshot, dest, symlinks=True)
 
 
 # ------------------------------------------------------------ harness
@@ -367,19 +558,21 @@ def check_docker():
 
 
 # @spec ALT-EVAL-BOX-016
-def check_runtime_memory():
+def check_runtime_memory(lanes=1):
     out = subprocess.run(["docker", "info", "--format", "{{.MemTotal}}"],
                          capture_output=True, text=True)
     try:
         total = int(out.stdout.strip())
     except ValueError:
         return  # the runtime did not report its memory; let the run find out
-    if total < MEMORY_LIMIT_BYTES:
+    need = MEMORY_LIMIT_BYTES * max(1, lanes)
+    if total < need:
+        who = "each run's container" if lanes <= 1 else "%d lanes' containers" % lanes
         raise UsageError(
-            "the container runtime has %.1f GiB of memory, less than the %.1f GiB each run's "
-            "container may use; give the runtime more memory (e.g. `colima start --memory 4`, "
-            "or Docker Desktop's Resources settings) and try again"
-            % (total / 1024 ** 3, MEMORY_LIMIT_BYTES / 1024 ** 3))
+            "the container runtime has %.1f GiB of memory, less than the %.1f GiB %s may use; "
+            "give the runtime more memory (e.g. `colima start --memory %d`, or Docker Desktop's "
+            "Resources settings), or run fewer lanes, and try again"
+            % (total / 1024 ** 3, need / 1024 ** 3, who, need // 1024 ** 3 + 2))
 
 
 # @spec ALT-EVAL-BOX-002, ALT-EVAL-BOX-003, ALT-EVAL-BOX-004
@@ -606,9 +799,69 @@ class Interrupted(Exception):
     pass
 
 
-# @spec ALT-EVAL-RUN-006, ALT-EVAL-STAGE-010
+class Invocation:
+    """State one invocation's lanes share: why it is stopping, each model's spend,
+    and which models no further run may start for."""
+
+    def __init__(self, max_cost=None):
+        self.lock = threading.Lock()
+        self.stop = threading.Event()      # set on an interrupt or a runner failure
+        self.cause = None                  # "interrupted" or "runner_error"
+        self.interrupted_at = None
+        self.max_cost = max_cost
+        self.spent = {}
+        self.model_stop = {}               # model -> "harness_errors" or "max_cost"
+        self.out_lock = threading.Lock()
+
+    # @spec ALT-EVAL-RUN-008
+    def interrupt(self, *_):
+        with self.lock:
+            self.cause = "interrupted"     # an interrupt is the reason, whenever it comes
+            if self.interrupted_at is None:
+                self.interrupted_at = time.monotonic()
+        self.stop.set()
+
+    # @spec ALT-EVAL-ROSTER-008
+    def fail(self):
+        with self.lock:
+            if self.cause is None:
+                self.cause = "runner_error"
+        self.stop.set()
+
+    def add_spend(self, model, cost):
+        with self.lock:
+            self.spent[model] = self.spent.get(model, 0.0) + (cost or 0.0)
+
+    def stop_model(self, model, reason):
+        with self.lock:
+            self.model_stop.setdefault(model, reason)
+
+    # @spec ALT-EVAL-COST-017, ALT-EVAL-COST-018, ALT-EVAL-COST-019, ALT-EVAL-ROSTER-007
+    # (checked only before a run starts, so a run in progress always finishes)
+    def stop_reason_for(self, model):
+        """Why no further run of `model` may start, or None. The first stop to reach a model is kept."""
+        with self.lock:
+            if self.cause:
+                return self.cause
+            if model in self.model_stop:
+                return self.model_stop[model]
+            if self.max_cost is not None and self.spent.get(model, 0.0) >= self.max_cost:
+                self.model_stop[model] = "max_cost"
+                return "max_cost"
+            return None
+
+    def say(self, text):
+        with self.out_lock:
+            print(text, flush=True)
+
+
+# @spec ALT-EVAL-OUT-009
 def run_one(ctx, ev, n, run_dir):
-    """Stage, execute, capture, and clean up one run. Returns (status, timing)."""
+    """Stage, execute, capture, and clean up one run.
+    Returns (status, timing, priced cost or None, elapsed seconds)."""
+    t0 = time.monotonic()
+    stop = ctx["inv"].stop
+    prices = ctx["prices"]
     scratch = make_scratch()
     home = None
     status, harness, interrupted = None, None, False
@@ -617,7 +870,7 @@ def run_one(ctx, ev, n, run_dir):
     exit_code, started, finished = None, None, None
     try:
         fixture_sha = stage_fixture(ev.get("files", []), scratch / "project")
-        stage_plugins(REPO_ROOT, scratch / "plugins")
+        stage_snapshot(ctx["snapshot"], scratch / "plugins")
         # @spec ALT-EVAL-BOX-015
         plugins_dir = str(scratch / "plugins") if ctx["bare"] else "/work/plugins"
         (scratch / "opencode.json").write_text(json.dumps(opencode_config(plugins_dir, ctx["model"], ctx["effort"]), indent=2) + "\n")
@@ -629,7 +882,7 @@ def run_one(ctx, ev, n, run_dir):
             home = Path(tempfile.mkdtemp(prefix="lid-alt-eval-home-"))
 
         def turn(text, cont, suffix):
-            """Run the harness once; returns (status, summary, exit_code, (start, end), error, interrupted)."""
+            """Run the harness once; returns (status, summary, exit_code, (start, end), error, interrupted, limit)."""
             nonlocal harness
             with open(out / ("events%s.jsonl" % suffix), "wb") as stdout, \
                     open(out / ("stderr%s.log" % suffix), "wb") as stderr:
@@ -642,15 +895,18 @@ def run_one(ctx, ev, n, run_dir):
                     argv = docker_run_argv(name, ctx["image"], scratch, ctx["model"], text,
                                            ctx["variant"], cont)
                     harness = Harness(argv, stdout, stderr, container=name)
-                begun, timed_out, stopped = harness.started, False, False
+                begun, timed_out, stopped, limit = harness.started, False, False, None
                 try:
-                    harness.proc.wait(timeout=ctx["timeout"])
-                except subprocess.TimeoutExpired:
-                    timed_out = True
-                    harness.stop()
+                    limit = wait_with_limits(harness.proc, out / ("events%s.jsonl" % suffix),
+                                             ctx["timeout"], ctx["idle_timeout"], begun, stop=stop)
+                    if limit == "stopped":
+                        stopped, limit = True, None
+                        harness.stop()
+                    elif limit:
+                        timed_out = True
+                        harness.stop()
                 except KeyboardInterrupt:
                     stopped = True
-                    signal.signal(signal.SIGINT, signal.SIG_IGN)
                     harness.stop()
                 ended = time.monotonic()
                 code = harness.proc.returncode
@@ -659,11 +915,15 @@ def run_one(ctx, ev, n, run_dir):
             st = classify(code, summ["has_error"], timed_out, stopped)
             err = summ["error_message"]
             if st == "harness_error" and not err:
+                # @spec ALT-EVAL-RUN-013: a container that fails to start is the harness's non-zero exit
                 err = "harness exited with code %s" % code
-            return st, summ, code, (begun, ended), err, stopped
+            return st, summ, code, (begun, ended), err, stopped, (limit if st == "timeout" else None)
 
-        status, summary, exit_code, (started, finished), error_message, interrupted = turn(prompt, False, "")
+        status, summary, exit_code, (started, finished), error_message, interrupted, limit = turn(prompt, False, "")
         (out / "response.md").write_text(summary["response"])
+        # @spec ALT-EVAL-COST-007, ALT-EVAL-OUT-021
+        first_cost = turn_price(summary["tokens"], prices) if prices else None
+        run_cost = first_cost
 
         def capture(dest):
             if ctx["bare"]:
@@ -674,18 +934,28 @@ def run_one(ctx, ev, n, run_dir):
         follow_up = None
         if ev.get("follow_up"):
             # @spec ALT-EVAL-RUN-009, ALT-EVAL-RUN-010, ALT-EVAL-OUT-016
-            if status == "completed" and not interrupted:
+            if status == "completed" and not interrupted and not stop.is_set():
                 # @spec ALT-EVAL-OUT-017
                 first = Path(tempfile.mkdtemp(prefix="turn1-", dir=str(scratch)))
                 capture(first)
                 shutil.move(str(first / "changes.patch"), str(out / "changes1.patch"))
-                st2, summ2, code2, (b2, e2), err2, interrupted = turn(ev["follow_up"]["prompt"], True, "2")
+                st2, summ2, code2, (b2, e2), err2, interrupted, limit2 = turn(ev["follow_up"]["prompt"], True, "2")
                 (out / "response2.md").write_text(summ2["response"])
+                second_cost = turn_price(summ2["tokens"], prices) if prices else None
                 follow_up = {"status": st2, "duration_ms": int(round((e2 - b2) * 1000)),
                              "total_cost_usd": summ2["total_cost_usd"], "tokens": summ2["tokens"],
-                             "tool_calls": summ2["tool_calls"], "exit_code": code2, "error_message": err2}
+                             "tool_calls": summ2["tool_calls"], "exit_code": code2, "error_message": err2,
+                             "timeout_limit": limit2,  # @spec ALT-EVAL-OUT-019
+                             "priced_cost_usd": second_cost}  # @spec ALT-EVAL-OUT-021
+                if prices:
+                    run_cost = first_cost + second_cost  # @spec ALT-EVAL-COST-008
             else:
                 follow_up = {"status": "skipped"}
+                if status == "completed" and stop.is_set():
+                    interrupted = True  # stopped between its turns
+        if interrupted:
+            # @spec ALT-EVAL-RUN-008: an interrupt in either turn makes the whole run interrupted
+            status = "interrupted"
         # @spec ALT-EVAL-OUT-017
         capture(out)
         copy_project(scratch / "project", out)
@@ -699,6 +969,8 @@ def run_one(ctx, ev, n, run_dir):
             "tool_calls": summary["tool_calls"],
             "exit_code": exit_code,
             "error_message": error_message,
+            "timeout_limit": limit,  # @spec ALT-EVAL-OUT-019
+            "priced_cost_usd": first_cost,
         }
         if follow_up is not None:
             timing["follow_up"] = follow_up  # @spec ALT-EVAL-RUN-011: status stays the first turn's
@@ -706,13 +978,7 @@ def run_one(ctx, ev, n, run_dir):
         redact_tree(out, ctx["key"])
         run_dir.parent.mkdir(parents=True, exist_ok=True)
         shutil.move(str(out), str(run_dir))
-        if interrupted:
-            raise Interrupted()
-        return status, timing
-    except KeyboardInterrupt:
-        if harness is not None:
-            harness.stop()
-        raise Interrupted()
+        return status, timing, run_cost, time.monotonic() - t0
     finally:
         if harness is not None and harness.proc.poll() is None:
             harness.stop()
@@ -726,91 +992,69 @@ def run_one(ctx, ev, n, run_dir):
 def write_json(path, data):
     tmp = path.with_suffix(".tmp")
     tmp.write_text(json.dumps(data, indent=2) + "\n")
-    os.replace(str(tmp), str(path))
+    os.replace(tmp, path)
 
 
-def parse_args(argv):
-    def positive(text):
-        value = int(text)
-        if value < 1:
-            raise argparse.ArgumentTypeError("must be a positive integer")
-        return value
-
-    p = argparse.ArgumentParser(
-        prog="tools/alt-model-evals/run_eval.py",
-        description="Run a skill's eval suite on an OpenRouter model through opencode.")
-    p.add_argument("skill", help="skill directory name, e.g. lid-coach")
-    p.add_argument("eval_ids", help="'all', or a comma list of IDs and A-B ranges, e.g. 1,3-5")
-    p.add_argument("model", help="OpenRouter model ID, e.g. z-ai/glm-5.3-flash")
-    p.add_argument("--runs", type=positive, default=1, help="runs per eval (default 1)")
-    p.add_argument("--timeout", type=positive, default=DEFAULT_TIMEOUT,
-                   help="per-run limit on the harness, in seconds (default %d)" % DEFAULT_TIMEOUT)
-    p.add_argument("--effort", default=DEFAULT_EFFORT,
-                   help="reasoning effort pinned for the model, e.g. low, medium, high, max; "
-                        "'default' leaves the model's own default (default: %s)" % DEFAULT_EFFORT)
-    p.add_argument("--variant", default=None,
-                   help="reasoning-effort variant passed through to the harness's --variant, "
-                        "e.g. high or minimal (default: the model's own)")
-    p.add_argument("--no-container", action="store_true",
-                   help="run the harness directly on this machine, without a sandbox")
-    return p.parse_args(argv)
+def harness_figure(timing):
+    """A run's own harness cost figure: its turns' total_cost_usd, or None when none reported one."""
+    figures = [t.get("total_cost_usd") for t in (timing, timing.get("follow_up") or {}) if t]
+    figures = [f for f in figures if isinstance(f, (int, float))]
+    return sum(figures) if figures else None
 
 
-# @spec ALT-EVAL-CLI-001, ALT-EVAL-CLI-005, ALT-EVAL-CLI-006, ALT-EVAL-CLI-007,
-#       ALT-EVAL-CLI-008, ALT-EVAL-RUN-007, ALT-EVAL-RUN-008, ALT-EVAL-OUT-011, ALT-EVAL-OUT-012
-def main(argv):
-    args = parse_args(argv)
-    try:
-        key = read_key(os.environ)
-        skill_dir = find_skill(REPO_ROOT, args.skill)
-        suite = json.loads((skill_dir / "evals" / "evals.json").read_text())
-        by_id = {ev["id"]: ev for ev in suite["evals"]}
-        eval_ids = parse_selector(args.eval_ids, list(by_id))
-        validate_fixture_paths([by_id[i] for i in eval_ids])
-        image = None
-        if args.no_container:
-            # @spec ALT-EVAL-BOX-013
-            sys.stderr.write("WARNING: --no-container runs the harness directly on this machine. "
-                             "The model can read any file you can read.\n")
-        else:
-            check_docker()
-            check_runtime_memory()
-            image = ensure_image()
-    except UsageError as e:
-        sys.stderr.write("run_eval: %s\n" % e)
-        return 2
-
-    date = datetime.date.today().isoformat()
+# @spec ALT-EVAL-OUT-011, ALT-EVAL-OUT-012, ALT-EVAL-OUT-022, ALT-EVAL-RUN-007, ALT-EVAL-ROSTER-003,
+#       ALT-EVAL-ROSTER-010
+def run_batch(inv, common, spec):
+    """Run one batch. Returns its result, or None when it never started."""
+    model = spec["model"]
+    # A batch starts only when its first run is about to start.
+    if inv.stop_reason_for(model):
+        return None
+    skill_dir, by_id = spec["skill_dir"], spec["by_id"]
     workspace = skill_dir.parent / (skill_dir.name + "-workspace")
     # @spec ALT-EVAL-OUT-014
-    slug = (sanitize(args.model)
-            + ("-" + sanitize(args.effort) if args.effort != DEFAULT_EFFORT else "")
-            + ("-" + sanitize(args.variant) if args.variant else ""))
-    batch_dir = claim_batch_dir(workspace, date, slug)
-    head, head_tree = head_info(REPO_ROOT)
-    tree = plugins_tree(REPO_ROOT)
+    slug = (sanitize(model)
+            + ("-" + sanitize(common["effort"]) if common["effort"] != DEFAULT_EFFORT else "")
+            + ("-" + sanitize(common["variant"]) if common["variant"] else ""))
+    batch_dir = claim_batch_dir(workspace, common["date"], slug,
+                                prefix="cost-probe" if spec["probe"] else "alt-model")
+    started_at = time.monotonic()
+    prices = common["prices"].get(model)
     batch = {
-        "skill": args.skill,
-        "eval_ids": eval_ids,
-        "model": args.model,
-        "effort": args.effort,
-        "variant": args.variant,
+        "skill": spec["skill"],
+        "eval_ids": spec["eval_ids"],
+        "model": model,
+        "effort": common["effort"],
+        "variant": common["variant"],
         "harness": HARNESS,
-        "sandbox": "none" if args.no_container else "container",
-        "timeout": args.timeout,
-        "runs": args.runs,
-        "head_commit": head,
-        "plugins_tree": tree,
-        "plugins_tree_matches_head": tree == head_tree,
+        "sandbox": "none" if common["bare"] else "container",
+        "timeout": common["timeout"],
+        "idle_timeout": common["idle_timeout"],
+        "runs": spec["runs"],
+        "head_commit": common["head"],
+        "plugins_tree": common["tree"],
+        "plugins_tree_matches_head": common["tree"] == common["head_tree"],
+        "prices": prices,
+        "max_cost": inv.max_cost,
+        "probe": spec["probe"],
+        "roster": spec["roster"],
         "state": "running",
+        "stop_reason": None,
     }
     write_json(batch_dir / "batch.json", batch)
-
-    ctx = {"key": key, "model": args.model, "effort": args.effort, "variant": args.variant, "skill_dir": skill_dir, "date": date,
-           "timeout": args.timeout, "bare": args.no_container, "image": image}
-    results, consecutive_errors, state = [], 0, "complete"
+    ctx = {"key": common["key"], "model": model, "effort": common["effort"], "variant": common["variant"],
+           "skill_dir": skill_dir, "date": common["date"], "timeout": common["timeout"],
+           "idle_timeout": common["idle_timeout"], "bare": common["bare"], "image": common["image"],
+           "snapshot": common["snapshot"], "prices": prices, "inv": inv}
+    result = {"spec": spec, "dir": batch_dir, "runs": [], "priced": prices is not None, "failed": False}
+    plan = [(eval_id, n) for eval_id in spec["eval_ids"] for n in range(1, spec["runs"] + 1)]
+    state, reason, consecutive, current = "complete", None, 0, None
     try:
-        for eval_id in eval_ids:
+        for i, (eval_id, n) in enumerate(plan):
+            stop = inv.stop_reason_for(model)
+            if stop:
+                state, reason = "aborted", stop
+                break
             ev = by_id[eval_id]
             # @spec ALT-EVAL-OUT-004, ALT-EVAL-OUT-005
             eval_dir = batch_dir / ("eval-%s-%s" % (eval_id, sanitize(ev["eval_name"])))
@@ -821,43 +1065,374 @@ def main(argv):
                     "prompt": ev["prompt"], "assertions": ev["assertions"],
                     # @spec ALT-EVAL-OUT-018
                     **({"follow_up": ev["follow_up"]} if ev.get("follow_up") else {})})
-            for n in range(1, args.runs + 1):
-                status, timing = run_one(ctx, ev, n, eval_dir / "with_skill" / ("run-%d" % n))
-                results.append((eval_id, n, status, timing["total_cost_usd"],
-                                (timing.get("tokens") or {}).get("reasoning", 0) or 0))
-                consecutive_errors = consecutive_errors + 1 if status == "harness_error" else 0
-                if consecutive_errors >= 2:
-                    state = "aborted"
-                    sys.stderr.write("run_eval: two harness errors in a row; stopping the batch\n")
-                    raise StopIteration
-    except StopIteration:
-        pass
-    except Interrupted:
-        state = "aborted"
-        results.append((eval_id, n, "interrupted", None, None))
+            current = (eval_id, n)
+            status, timing, cost, elapsed = run_one(ctx, ev, n, eval_dir / "with_skill" / ("run-%d" % n))
+            current = None
+            inv.add_spend(model, cost)
+            fu = timing.get("follow_up") or {}
+            result["runs"].append({"eval": eval_id, "n": n, "status": status, "cost": cost,
+                                   "harness": harness_figure(timing), "elapsed": elapsed,
+                                   "reasoning": (timing.get("tokens") or {}).get("reasoning", 0) or 0,
+                                   "follow_up": fu.get("status"), "error": timing.get("error_message")
+                                   or fu.get("error_message")})
+            if status == "interrupted":
+                state, reason = "aborted", inv.cause or "interrupted"
+                break
+            consecutive = consecutive + 1 if status == "harness_error" else 0
+            if consecutive >= 2:
+                # @spec ALT-EVAL-ROSTER-007: stops the model's other batches, runs left here or not
+                inv.stop_model(model, "harness_errors")
+                if i < len(plan) - 1:
+                    state, reason = "aborted", "harness_errors"
+                    sys.stderr.write("run_eval: two harness errors in a row; stopping %s\n" % model)
+                break
     except BaseException:
-        state = "aborted"
-        raise
+        state, reason = "aborted", "runner_error"
+        result["failed"] = True
+        if current is not None:
+            result["runs"].append({"eval": current[0], "n": current[1], "status": "interrupted", "cost": None,
+                                   "harness": None, "elapsed": 0, "reasoning": 0, "follow_up": None,
+                                   "error": "runner failure"})
+        sys.stderr.write("run_eval: runner failure in %s %s:\n%s" % (model, spec["skill"], traceback.format_exc()))
+        inv.fail()
     finally:
-        batch["state"] = state
+        if state == "aborted" and inv.interrupted_at is not None and inv.interrupted_at >= started_at:
+            reason = "interrupted"
+        if state == "aborted" and reason == "runner_error" and inv.cause == "interrupted":
+            reason = "interrupted"
+        batch["state"], batch["stop_reason"] = state, reason
         write_json(batch_dir / "batch.json", batch)
+    result["state"], result["stop_reason"] = state, reason
+    return result
 
-    for eval_id, n, status, cost, _ in results:
-        print("eval %s run %d: %s  cost %s" % (
-            eval_id, n, status, "n/a" if cost is None else "$%.4f" % cost))
-    # @spec ALT-EVAL-OUT-015
-    reasoning = sorted(r for _, _, status, _, r in results if status == "completed")
+
+def money(value):
+    return "n/a" if value is None else "$%.4f" % value
+
+
+# @spec ALT-EVAL-CLI-008, ALT-EVAL-CLI-017, ALT-EVAL-OUT-015
+def print_batch_summary(result, effort):
+    lines = []
+    for r in result["runs"]:
+        if result["priced"]:
+            cost = money(r["cost"])
+        else:
+            cost = money(r["harness"]) + (" (harness)" if r["harness"] is not None else "")
+        lines.append("eval %s run %d: %s  cost %s" % (r["eval"], r["n"], r["status"], cost))
+    for line in lines:
+        print(line)
+    reasoning = sorted(r["reasoning"] for r in result["runs"] if r["status"] == "completed")
     if reasoning:
         mid = len(reasoning) // 2
         median = reasoning[mid] if len(reasoning) % 2 else (reasoning[mid - 1] + reasoning[mid]) / 2
         print("median reasoning tokens: %g" % median)
-        if args.effort != "default" and median < REASONING_WARN_BELOW:
+        if effort != "default" and median < REASONING_WARN_BELOW:
             print("WARNING: effort %r was requested but the model barely reasoned (median %g "
                   "reasoning tokens, under %d); the provider may be ignoring the setting."
-                  % (args.effort, median, REASONING_WARN_BELOW))
-    print("batch: %s" % batch_dir)
-    if state == "aborted":
-        return 130 if results and results[-1][2] == "interrupted" else 1
+                  % (effort, median, REASONING_WARN_BELOW))
+    print("total: %s" % total_text(result["runs"], result["priced"]))
+    print("batch: %s" % result["dir"])
+
+
+def total_text(runs, priced):
+    if priced:
+        return money(sum(r["cost"] or 0 for r in runs))
+    figures = [r["harness"] for r in runs if r["harness"] is not None]
+    missing = len(runs) - len(figures)
+    note = "harness figures" + ("; %d run%s reported none" % (missing, "" if missing == 1 else "s") if missing else "")
+    return "%s (%s)" % (money(sum(figures)), note)
+
+
+# ------------------------------------------------------------ queue
+
+# @spec ALT-EVAL-ROSTER-005, ALT-EVAL-ROSTER-008, ALT-EVAL-ROSTER-011
+def run_queue(inv, common, specs, lanes, roster):
+    """Run batches in queue order, up to `lanes` at once. Returns one result (or None) per spec."""
+    results = [None] * len(specs)
+    nxt = [0]
+    pick = threading.Lock()
+
+    def lane():
+        while True:
+            with pick:
+                if nxt[0] >= len(specs):
+                    return
+                i = nxt[0]
+                nxt[0] += 1
+            if inv.stop.is_set():
+                continue  # no further batch starts after an interrupt or a runner failure
+            try:
+                res = run_batch(inv, common, specs[i])
+            except BaseException:
+                # A failure before the batch could record itself (claiming its directory, say).
+                sys.stderr.write("run_eval: runner failure starting %s %s:\n%s" % (
+                    specs[i]["model"], specs[i]["skill"], traceback.format_exc()))
+                inv.fail()
+                res = None
+            results[i] = res
+            if res is not None and roster:
+                spec = res["spec"]
+                inv.say("batch done: %s %s evals %s %s %s" % (
+                    spec["model"], spec["skill"], ",".join(map(str, spec["eval_ids"])), res["state"],
+                    total_text(res["runs"], res["priced"])))
+
+    threads = [threading.Thread(target=lane, daemon=True) for _ in range(max(1, min(lanes, len(specs))))]
+    for t in threads:
+        t.start()
+    while any(t.is_alive() for t in threads):
+        for t in threads:
+            t.join(0.2)
+    return results
+
+
+# ------------------------------------------------------------ planning
+
+def load_presets():
+    try:
+        return json.loads(ROSTERS_FILE.read_text())
+    except (OSError, ValueError) as e:
+        raise UsageError("cannot read the roster presets in %s: %s" % (ROSTERS_FILE, e))
+
+
+class Suites:
+    """Each suite's evals.json, read once at the start of the invocation."""
+
+    def __init__(self):
+        self.cache = {}
+
+    # @spec ALT-EVAL-CLI-002, ALT-EVAL-STAGE-015
+    def get(self, skill):
+        if skill not in self.cache:
+            skill_dir = find_skill(REPO_ROOT, skill)
+            suite = json.loads((skill_dir / "evals" / "evals.json").read_text())
+            self.cache[skill] = (skill_dir, {ev["id"]: ev for ev in suite["evals"]})
+        return self.cache[skill]
+
+
+def make_spec(suites, skill, selector, runs, model, probe=False, roster=None):
+    # @spec ALT-EVAL-CLI-004, ALT-EVAL-STAGE-003
+    skill_dir, by_id = suites.get(skill)
+    if isinstance(selector, list):
+        selector = ",".join(str(i) for i in selector)
+    eval_ids = parse_selector(selector, list(by_id))
+    validate_fixture_paths([by_id[i] for i in eval_ids])
+    return {"skill": skill, "skill_dir": skill_dir, "by_id": by_id, "eval_ids": eval_ids, "runs": runs,
+            "model": model, "probe": probe, "roster": roster}
+
+
+# @spec ALT-EVAL-ROSTER-001, ALT-EVAL-ROSTER-004, ALT-EVAL-ROSTER-006
+def plan_roster(suites, preset, models, roster):
+    batches = preset["batches"]
+    return [make_spec(suites, b["skill"], b["evals"], b["runs"], m, roster=roster)
+            for b in batches for m in models]
+
+
+# @spec ALT-EVAL-COST-010, ALT-EVAL-COST-011, ALT-EVAL-ROSTER-002
+# (probe batches are ordinary batches, run through the same queue and lanes)
+def plan_probe(suites, args, models, preset, roster):
+    if preset is None:
+        skill_dir, by_id = suites.get(args.skill)
+        lowest = parse_selector(args.eval_ids, list(by_id))[0]
+        return [make_spec(suites, args.skill, [lowest], 1, models[0], probe=True)]
+    by_skill = []
+    for entry in preset["probe"]:
+        group = next((g for g in by_skill if g[0] == entry["skill"]), None)
+        if group is None:
+            by_skill.append((entry["skill"], [entry["eval"]]))
+        else:
+            group[1].append(entry["eval"])
+    return [make_spec(suites, skill, ids, 1, m, probe=True, roster=roster)
+            for skill, ids in by_skill for m in models]
+
+
+# ------------------------------------------------------------ estimate
+
+# @spec ALT-EVAL-COST-012, ALT-EVAL-COST-013, ALT-EVAL-COST-014, ALT-EVAL-COST-015
+def print_estimate(models, probe_specs, probe_results, real_specs, prices, lanes, roster):
+    """Print each model's projection; returns the models that got one."""
+    projected = {}
+    for model in models:
+        planned = [(s, e) for s in probe_specs if s["model"] == model for e in s["eval_ids"]]
+        done = {}
+        for spec, res in zip(probe_specs, probe_results):
+            if res is not None and spec["model"] == model:
+                for r in res["runs"]:
+                    done[(spec["skill"], r["eval"])] = r
+        rows, ok = [], True
+        for spec, eval_id in planned:
+            r = done.get((spec["skill"], eval_id))
+            if r is None:
+                ok = False
+                rows.append("    %s eval %s: not started" % (spec["skill"], eval_id))
+                continue
+            fine = r["status"] == "completed" and r["follow_up"] in (None, "completed")
+            ok = ok and fine
+            label = r["status"] if r["follow_up"] in (None, "completed", "skipped") else \
+                "%s, follow-up %s" % (r["status"], r["follow_up"])
+            rows.append("    %s eval %s: %s%s" % (spec["skill"], eval_id, label,
+                                                  "" if fine else " (%s)" % (r["error"] or "no error message")))
+        total_runs = sum(len(s["eval_ids"]) * s["runs"] for s in real_specs if s["model"] == model)
+        p = prices.get(model)
+        print("estimate for %s" % model)
+        if p:
+            print("  prices per million tokens: prompt $%.2f, completion $%.2f, reasoning $%.2f, "
+                  "cache read $%.2f, cache write $%.2f" % tuple(p[f] * 1e6 for f in PRICE_FIELDS))
+        runs = [done[(s["skill"], e)] for s, e in planned if (s["skill"], e) in done]
+        print("  probe: %d run%s, %s" % (len(runs), "" if len(runs) == 1 else "s",
+                                          money(sum(r["cost"] or 0 for r in runs))))
+        if ok and runs:
+            mean_cost = sum(r["cost"] for r in runs) / len(runs)
+            mean_elapsed = sum(r["elapsed"] for r in runs) / len(runs)
+            projected[model] = mean_elapsed
+            print("  projected cost: $%.2f for %d runs" % (mean_cost * total_runs, total_runs))
+            print("  projected run time: %s for %d runs" % (fmt_duration(mean_elapsed * total_runs), total_runs))
+        else:
+            print("  no projection; probe runs:")
+            for row in rows:
+                print(row)
+    if roster:
+        durations = [projected[s["model"]] * len(s["eval_ids"]) * s["runs"]
+                     for s in real_specs if s["model"] in projected]
+        left_out = [m for m in models if m not in projected]
+        print("projected wall-clock time with %d lane%s: %s%s" % (
+            lanes, "" if lanes == 1 else "s", fmt_duration(makespan(durations, lanes)),
+            " (leaves out %s: no projection)" % ", ".join(left_out) if left_out else ""))
+    return set(projected)
+
+
+# ------------------------------------------------------------ main
+
+def parse_args(argv):
+    def positive(text):
+        value = int(text)
+        if value < 1:
+            raise argparse.ArgumentTypeError("must be a positive integer")
+        return value
+
+    p = argparse.ArgumentParser(
+        prog="tools/alt-model-evals/run_eval.py",
+        usage="%(prog)s <skill> <eval-ids> <model> [--runs N] [options]\n"
+              "       %(prog)s --roster <preset> <model> [<model> ...] [--lanes N] [options]",
+        description="Run a skill's eval suite, or a roster preset across several suites, on "
+                    "OpenRouter models through opencode.")
+    p.add_argument("args", nargs="*", metavar="ARG",
+                   help="<skill> <eval-ids> <model>; with --roster, one or more model IDs")
+    p.add_argument("--roster", default=None, help="run the named preset from rosters.json")
+    p.add_argument("--lanes", type=positive, default=None, help="with --roster, batches run at once (default 1)")
+    p.add_argument("--estimate", action="store_true",
+                   help="run a small cost probe and print the projected cost instead of running")
+    # @spec ALT-EVAL-COST-016
+    p.add_argument("--max-cost", type=float, default=None, metavar="USD",
+                   help="stop starting runs of a model once its priced spend reaches USD")
+    p.add_argument("--runs", type=positive, default=None, help="runs per eval (default 1)")
+    p.add_argument("--timeout", type=positive, default=DEFAULT_TIMEOUT,
+                   help="run limit: the longest each turn may run, in seconds (default %d)" % DEFAULT_TIMEOUT)
+    p.add_argument("--idle-timeout", type=positive, default=DEFAULT_IDLE_TIMEOUT,
+                   help="inactivity limit: the longest each turn may go without writing to its "
+                        "event stream, in seconds (default %d)" % DEFAULT_IDLE_TIMEOUT)
+    p.add_argument("--effort", default=DEFAULT_EFFORT,
+                   help="reasoning effort pinned for the model, e.g. low, medium, high, max; "
+                        "'default' leaves the model's own default (default: %s)" % DEFAULT_EFFORT)
+    p.add_argument("--variant", default=None,
+                   help="reasoning-effort variant passed through to the harness's --variant, "
+                        "e.g. high or minimal (default: the model's own)")
+    p.add_argument("--no-container", action="store_true",
+                   help="run the harness directly on this machine, without a sandbox")
+    args = p.parse_args(argv)
+    # @spec ALT-EVAL-CLI-001, ALT-EVAL-CLI-014, ALT-EVAL-CLI-016
+    if args.roster is not None:
+        if not args.args:
+            p.error("--roster needs at least one model ID")
+        if args.runs is not None:
+            p.error("--runs does not apply to a roster; its preset sets each batch's runs")
+        args.models = list(args.args)
+    else:
+        if len(args.args) != 3:
+            p.error("expected <skill> <eval-ids> <model>")
+        if args.lanes is not None:
+            p.error("--lanes applies only with --roster")
+        args.skill, args.eval_ids, model = args.args
+        args.models = [model]
+    if len(set(args.models)) != len(args.models):
+        p.error("a model ID is named more than once")
+    if args.max_cost is not None and not args.max_cost > 0:
+        p.error("--max-cost must be above zero")
+    args.runs = args.runs or 1
+    args.lanes = args.lanes or 1
+    return args
+
+
+# @spec ALT-EVAL-CLI-007, ALT-EVAL-CLI-008, ALT-EVAL-CLI-018, ALT-EVAL-COST-009, ALT-EVAL-COST-020,
+#       ALT-EVAL-ROSTER-009, ALT-EVAL-ROSTER-012, ALT-EVAL-STAGE-014
+def main(argv):
+    args = parse_args(argv)
+    roster, preset = None, None
+    try:
+        key = read_key(os.environ)
+        suites = Suites()
+        if args.roster is not None:
+            presets = load_presets()
+            if args.roster not in presets:
+                # @spec ALT-EVAL-CLI-015
+                raise UsageError("no roster preset named %r; defined presets: %s"
+                                 % (args.roster, ", ".join(sorted(presets))))
+            preset = presets[args.roster]
+            roster = {"preset": args.roster, "id": datetime.datetime.now().strftime("%Y%m%dT%H%M%S-")
+                      + secrets.token_hex(3)}
+            real = plan_roster(suites, preset, args.models, roster)
+        else:
+            real = [make_spec(suites, args.skill, args.eval_ids, args.runs, args.models[0])]
+        specs = plan_probe(suites, args, args.models, preset, roster) if args.estimate else real
+        prices = model_prices(args.models, need_prices=args.estimate or args.max_cost is not None)
+        image = None
+        if args.no_container:
+            # @spec ALT-EVAL-BOX-013
+            sys.stderr.write("WARNING: --no-container runs the harness directly on this machine. "
+                             "The model can read any file you can read.\n")
+        else:
+            check_docker()
+            check_runtime_memory(min(args.lanes, len(specs)))
+            image = ensure_image()
+    except UsageError as e:
+        sys.stderr.write("run_eval: %s\n" % e)
+        return 2
+
+    inv = Invocation(max_cost=args.max_cost)
+    for sig in (signal.SIGINT, signal.SIGTERM, signal.SIGHUP):
+        signal.signal(sig, inv.interrupt)
+    head, head_tree = head_info(REPO_ROOT)
+    snapshot = make_scratch() / "plugins"
+    try:
+        tree = snapshot_plugins(REPO_ROOT, snapshot)
+        common = {"key": key, "effort": args.effort, "variant": args.variant,
+                  "date": datetime.date.today().isoformat(), "timeout": args.timeout,
+                  "idle_timeout": args.idle_timeout, "bare": args.no_container, "image": image,
+                  "snapshot": snapshot, "head": head, "head_tree": head_tree, "tree": tree, "prices": prices}
+        results = run_queue(inv, common, specs, args.lanes, roster is not None)
+    finally:
+        shutil.rmtree(snapshot.parent, ignore_errors=True)
+
+    started = [r for r in results if r is not None]
+    for res in started:
+        print_batch_summary(res, args.effort)
+    never = [s for s, r in zip(specs, results) if r is None]
+    if roster is not None:
+        for model in args.models:
+            mine = [r for r in started if r["spec"]["model"] == model]
+            runs = [run for r in mine for run in r["runs"]]
+            print("model total: %s %s" % (model, total_text(runs, prices.get(model) is not None)))
+        if not args.estimate:
+            for s in never:
+                print("not started: %s %s evals %s" % (s["model"], s["skill"], ",".join(map(str, s["eval_ids"]))))
+    if args.estimate:
+        got = print_estimate(args.models, specs, results, real, prices, args.lanes, roster is not None)
+        if inv.cause == "interrupted":
+            return 130
+        return 0 if len(got) == len(args.models) and inv.cause is None else 1
+    if inv.cause == "interrupted":
+        return 130
+    if inv.cause or never or any(r["state"] == "aborted" for r in started):
+        return 1
     return 0
 
 

@@ -1,0 +1,36 @@
+children:
+  - name: config
+    specs: 30
+    built: 30
+  - name: import
+    specs: 36
+    built: 36
+  - name: ledger-core
+    specs: 45
+    built: 45
+  - name: reports
+    specs: 20
+    built: 20
+  - name: runtime
+    specs: 29
+    built: 29
+  - name: sheets-view
+    specs: 24
+    built: 24
+  - name: store
+    specs: 30
+    built: 30
+  - name: summary
+    specs: 23
+    built: 23
+  - name: tax
+    specs: 45
+    built: 45
+  - name: tui
+    children:
+      - name: entry
+        specs: 30
+        built: 30
+      - name: views
+        specs: 53
+        built: 53

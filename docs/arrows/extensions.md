@@ -48,7 +48,7 @@ The third-party extensions segment — owns LID's discovery convention for indep
 
 1. **`EXTENSIONS.md` owned here despite repo-root location.** Ownership follows intent (ecosystem), not file location — the same pattern as `README.md` → `marketing-site`. `PROJ-STRUCT-055` is project-structure's pointer acknowledging this segment owns the file.
 2. **The `linked-intent-development` topic is in-arrow (`EXT-005`)** while generic discoverability topics stay out-of-arrow ops — it is load-bearing convention infrastructure.
-3. **`marketing-site` is a cascade consumer (`MKT-SITE-054`)** — it surfaces the ecosystem as a trust signal; the substance (convention + showcase) is owned here.
+3. **`marketing-site` is a cascade consumer (`ONB-SITE-054`)** — it surfaces the ecosystem as a trust signal; the substance (convention + showcase) is owned here.
 
 ## Work Required
 

@@ -4,21 +4,24 @@ The newcomer tour segment: the short introduction LID offers a person the first 
 
 ## Status
 
-**MAPPED**, landed with issue #84 in 1.4.3. All 129 specs implemented, including the by-eye render check (`TOUR-080`).
+**MAPPED**, landed with issue #84 in 1.4.3. All 129 specs implemented, including the by-eye render check (`ONB-TOUR-080`). Re-parented under the `onboarding` sub-HLD on 2026-11-15: its IDs moved from `TOUR-*` to `ONB-TOUR-*`, with every citation rewritten in the same change.
 
 ## References
+
+### Parent
+- `docs/intent/onboarding/onboarding-design.md` (sub-HLD `onboarding`: shared reader, voice, claims rule, the free-trial example, and content the site presents)
 
 ### HLD
 - `docs/high-level-design.md` § Goal 5; Tenets (*Friendly over exacting when introducing LID*, *Introduce LID fast*); Key Design Decisions *Introducing LID inside the agent*, *Product documents and the HLD*, and *Harness capabilities: used when present, never required*
 
 ### LLD
-- `docs/intent/tour/tour-design.md`
+- `docs/intent/onboarding/tour/tour-design.md`
 
 ### EARS
-- `docs/intent/tour/tour-specs.md` (129 specs, prefix `TOUR-*`)
+- `docs/intent/onboarding/tour/tour-specs.md` (129 specs, prefix `ONB-TOUR-*`)
 
 ### Tests / Evals
-- Scenario evals carrying `TOUR-*` IDs: `linked-intent-dev` evals 4–7, `update-lid` evals 21–23, `map-codebase` eval 3 (and one assertion on eval 2).
+- Scenario evals carrying `ONB-TOUR-*` IDs: `linked-intent-dev` evals 4–7, `update-lid` evals 21–23, `map-codebase` eval 3 (and one assertion on eval 2).
 - `PKG-CHECK-039` (packaging checks) keeps `tour.md` and `tour-topics.md` out of the workflow skill's reference list.
 - The content check: a blind reader given only the tour files and the specs checks the fixed text against the requirements.
 
@@ -43,19 +46,19 @@ The routes' own passages (the workflow skill, `update-lid`, `map-codebase`) and 
 
 | Category | Spec IDs | Implemented | Deferred | Gaps |
 |---|---|---|---|---|
-| Files, who sees it, card, answers | TOUR-001–021, 089–091, 111, 112, 129 | all `[x]` | 0 | 0 |
-| Opening and example | TOUR-022–047, 092–094, 113–122 | all `[x]` | 0 | 0 |
-| Topics | TOUR-048–054, 095–099, 123 | all `[x]` | 0 | 0 |
-| Notes | TOUR-055–061, 100–104 | all `[x]` | 0 | 0 |
-| Claims and words | TOUR-062–072, 105, 124–128 | all `[x]` | 0 | 0 |
-| Looks | TOUR-073–080 | all `[x]` | 0 | 0 |
-| Recording and hosts without plugins | TOUR-081–088, 106–110 | all `[x]` | 0 | 0 |
+| Files, who sees it, card, answers | ONB-TOUR-001–021, 089–091, 111, 112, 129 | all `[x]` | 0 | 0 |
+| Opening and example | ONB-TOUR-022–047, 092–094, 113–122 | all `[x]` | 0 | 0 |
+| Topics | ONB-TOUR-048–054, 095–099, 123 | all `[x]` | 0 | 0 |
+| Notes | ONB-TOUR-055–061, 100–104 | all `[x]` | 0 | 0 |
+| Claims and words | ONB-TOUR-062–072, 105, 124–128 | all `[x]` | 0 | 0 |
+| Looks | ONB-TOUR-073–080 | all `[x]` | 0 | 0 |
+| Recording and hosts without plugins | ONB-TOUR-081–088, 106–110 | all `[x]` | 0 | 0 |
 
 ## Key Findings
 
 1. **The routes own *when*; this segment owns *how*.** Each route's passage only checks memory and points to `tour-offer.md`, so changes to the tour's wording never reach the routes, and the arrow index has no loop.
 2. **Two files ship to hosts without plugins differently.** `tour-offer.md` rides in the workflow doc; `tour.md` and `tour-topics.md` are fetched by link only when asked for.
-3. **The tour is downstream of the workflow and of every capability its topics describe.** Changes there review the matching tour text (`TOUR-098`, `TOUR-099`).
+3. **The tour is downstream of the workflow and of every capability its topics describe.** Changes there review the matching tour text (`ONB-TOUR-098`, `ONB-TOUR-099`).
 
 ## Work Required
 

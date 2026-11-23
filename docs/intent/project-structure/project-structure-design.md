@@ -50,6 +50,7 @@ Sections:
 - **Minimum-surface gate** — quotes the HLD's gate question (*"Can the existing surface absorb this, or is the agent about to absorb it anyway?"*) verbatim and routes novel capabilities at `lid-experimental` first.
 - **Mechanics** — atomic-improvement framing (one PR equals one coherent intent change, walked end-to-end through whichever arrow phases it touches), propose-first guidance for new surface, PR-description conventions, and the packaging-checks command whose result line every pull request records (see the `packaging-checks` segment).
 - **Release / versioning** — when a merge raises the shared version and by how much, and the release step that goes with it (see *Versions and releases* below).
+- **Share a project you built** — how to add a project to the site's examples showcase: a pull request that adds one entry folder, opened with the example pull-request template. An entry is content within the `examples-showcase` segment's existing design, so adding one walks no arrow, and the maintainer records the packaging-checks line for it. The entry format itself belongs to `examples-showcase`; this section only routes contributors to it.
 
 ### `AGENTS.md` (with `CLAUDE.md` as symlink alias)
 
@@ -157,6 +158,7 @@ GitHub-native templates that meet a contributor at the moment of filing, complem
 
 - **Issue forms** (`.github/ISSUE_TEMPLATE/`) — two forms plus a `config.yml`. An **intent-proposal** form mirrors the structure the repository's substantive issues already converge on — *Context / Problem → Proposed change → Acceptance criteria → Scope & non-goals → Intent touchpoints (LID) → Related* — where *Intent touchpoints* maps the change to the design docs, specs, and prefix it lands in and flags novel intent. A lighter **bug / drift** form lowers the barrier for a quick report (what's wrong, where in the tree if known, which tool, how to reproduce). Neither form auto-applies labels; triage owns labeling. The `config.yml` routes open-ended questions to GitHub Discussions rather than issues.
 - **Pull-request template** (`.github/PULL_REQUEST_TEMPLATE.md`) — oriented to what reviewers of this repository actually find useful: *Why* (motivation and impact), *What changed*, *How it's been tested* (builds, evals, cold-reads, real-project checks), a *Packaging checks* line holding the result line of the run the merge rests on (see the `packaging-checks` segment), a **lightweight** *Arrow touched* line (segments and EARS IDs, or "trivial"), and optional reviewer notes. It deliberately is not a fixed HLD/LLD/EARS/tests/code compliance grid: in practice the heavier gate items (minimum-surface answers, dogfooding scenarios, cross-segment pause points) belong in a PR only when the change involves them, and leading with motivation and testing matches how the project's strongest PRs are already written.
+- **Example pull-request template** (`.github/PULL_REQUEST_TEMPLATE/example.md`) — the template a contributor picks, with `?template=example.md` on the pull request's URL, to add a project to the examples showcase. It sits beside the default template, which stays the default. Its contents belong to the `examples-showcase` segment, which owns the entry format it walks a contributor through.
 
 ## Cascade
 
@@ -235,7 +237,7 @@ The `packaging-checks` segment enforces this component's rules, so this segment'
 ## References
 
 - `docs/high-level-design.md` — Goal 2 (minimum-system); Goal 4 (dogfooding); Non-Goal *Not a linter or validator*; § Architecture / Methodology; § Architecture / Distribution; § Key Design Decisions / *The arrow for LID itself*; § Key Design Decisions / *Minimum-system discipline — the why*; § Key Design Decisions / *Cursor as a first-class plugin host*.
-- `docs/intent/marketing-site/marketing-site-design.md` — sibling component in the onboarding taxonomy bucket; owns `README.md`; defines the content-artifact verification pattern this LLD reuses.
+- `docs/intent/onboarding/marketing-site/marketing-site-design.md` — sibling component in the onboarding taxonomy bucket; owns `README.md`; defines the content-artifact verification pattern this LLD reuses.
 - `docs/intent/linked-intent-dev/linked-intent-dev-design.md` — defines the workflow `AGENTS.md` instantiates per-repo.
 - `docs/intent/project-structure/project-structure-specs.md` — EARS specs for this component.
 - `docs/intent/packaging-checks/packaging-checks-design.md` — the segment whose checks enforce this component's skill, command, version, CHANGELOG, and manifest rules, and whose workflow-doc assembly the release step runs.

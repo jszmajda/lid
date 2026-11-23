@@ -58,3 +58,7 @@ python3 site/brand/scripts/abstract_marks.py
 ```
 
 The third round, the Nodes drawings, and the two logo files are kept as SVG files only.
+
+## The link-preview card
+
+`social/social-card.html` is the source of the site's default link-preview card, `site/src/assets/social-card.png` (1200×630). It uses the site's own stylesheet, the wordmark, and the rings drawing as the home page draws it. To make the card again, build the site, copy this file into `site/_site/`, serve `site/_site/`, open the file in a browser at 1200×630 in the dark theme, and save a screenshot of the window over `site/src/assets/social-card.png`.
