@@ -1034,7 +1034,8 @@ def probe_options(text: str) -> dict[str, dict]:
         def opt(name: str) -> str | None:
             m = re.search(rf"(?m)^- \*\*{re.escape(name)}:\*\*\s*(.+?)\s*$", body)
             return m.group(1) if m else None
-        out[pid.strip()] = {"runs_only_if": opt("Runs only if"), "exercised_only_if": opt("Exercised only if")}
+        out[pid.strip()] = {"runs_only_if": opt("Runs only if"),
+                            "exercised_only_if": opt("Exercised only if") or opt("Precondition")}  # either name
     return out
 
 
@@ -1220,11 +1221,23 @@ def _judge_batch(ck, g: NodeGraders, batch: list, bid: str, out: Path, *, volume
         tries.append({"structured": rec.structured, "problems": problems, "usage": _usage(rec)})
         if not problems:
             break
-    final = ({v["probe"]: {**v, "batch": bid} for v in (tries[-1]["structured"] or {}).get("verdicts", [])}
-             if not tries[-1]["problems"] else {})
+    final = {pid: {**v, "batch": bid} for pid, v in
+             keep_valid((tries[-1]["structured"] or {}).get("verdicts", []), tries[-1]["problems"]).items()}
     (bdir / "judgment.json").write_text(json.dumps({"tries": tries, "verdicts": final, "lines": lines}, indent=1),
                                        encoding="utf-8")
     return final
+
+
+def keep_valid(verdicts: list[dict], problems: list[str]) -> dict[str, dict]:
+    """The verdicts of a judgment's last try that no problem names: a problem naming one probe ("P-…: …") drops that
+    probe's verdict only, so it reruns as a grader error; a problem naming none drops them all."""
+    named = set()
+    for p in problems:
+        m = re.match(r"(P-[\w-]+):", p)
+        if not m:
+            return {}
+        named.add(m.group(1))
+    return {v["probe"]: v for v in verdicts if v.get("probe") and v["probe"] not in named}
 
 
 def batches_by_package(probes: list, routes: dict[str, dict], size: int) -> list[list]:

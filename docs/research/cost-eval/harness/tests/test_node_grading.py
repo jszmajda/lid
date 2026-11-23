@@ -789,6 +789,19 @@ class RoutingTest(unittest.TestCase):
         self.assertEqual(ng.probe_path("P-OGM0104-a", ng.route(("fe",), "api")),
                          "frontend/src/__probes__/probe_p_ogm0104_a.test.jsx")
 
+    def test_a_precondition_field_is_read_as_the_probes_exercised_only_if_line(self):
+        # the drafter's DEP-10 probe writes "Precondition"; the judge may then rule "not exercised" on it
+        text = PROBES.replace("#### P-OGM0101-a\n", "#### P-OGM0101-a\n- **Precondition:** a distinct file is refused first.\n", 1)
+        self.assertEqual(ng.probe_options(text)["P-OGM0101-a"]["exercised_only_if"], "a distinct file is refused first.")
+
+    def test_a_judgment_still_wrong_on_one_probe_keeps_the_others_verdicts(self):
+        verdicts = [{"probe": "P-OGM1001-a", "verdict": "not met"}, {"probe": "P-OGM1002-a", "verdict": "met"},
+                    {"probe": "P-DEP10-a", "verdict": "not exercised"}]
+        kept = ng.keep_valid(verdicts, ['P-DEP10-a: "not exercised" for a probe with no precondition line'])
+        self.assertEqual(sorted(kept), ["P-OGM1001-a", "P-OGM1002-a"])  # only the probe the problem names is dropped
+        self.assertEqual(ng.keep_valid(verdicts, ["the verdicts don't cover the batch"]), {})  # a problem with no probe: none
+        self.assertEqual(sorted(ng.keep_valid(verdicts, [])), ["P-DEP10-a", "P-OGM1001-a", "P-OGM1002-a"])
+
     def test_optional_fields_and_conditions(self):
         opts = ng.probe_options(PROBES)
         self.assertEqual(opts["P-OGM0104-a"], {"runs_only_if": "OGM-0101 implemented",

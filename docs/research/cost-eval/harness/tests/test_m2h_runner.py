@@ -122,6 +122,15 @@ class M2hRunnerTest(unittest.TestCase):
         null = dry("null", runs=self.runs)
         self.assertTrue(any("run_clowder_repairs.py release --forks 'm2h-null-bare-c01'" in c for c in null))
 
+    def test_each_release_is_followed_by_a_trim_so_the_mac_gets_the_space_back(self):
+        text = (HARNESS / "run_opengym_m2h.sh").read_text()
+        body = text.split("release() {", 1)[1].split("\n}\n", 1)[0]
+        self.assertLess(body.index("run_clowder_repairs.py release"), body.index("trim.sh"))
+        repairs = text.split("repairs() {", 1)[1].split("\n}\n", 1)[0]
+        self.assertLess(repairs.index("run_clowder_repairs.py release"), repairs.index("trim.sh"))
+        m2f = (HARNESS / "run_clowder_m2f.sh").read_text().split("repairs() {", 1)[1].split("\n}\n", 1)[0]
+        self.assertLess(m2f.index("run_clowder_repairs.py release"), m2f.index("trim.sh"))
+
 
 if __name__ == "__main__":
     unittest.main()

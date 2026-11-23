@@ -272,7 +272,12 @@ def _graded_change(before: dict, after: dict, key: str) -> tuple[list[str], list
     return [t for t in passed if now.get(t) == "failed"], [t for t in passed if now.get(t) not in ("passed", "failed")]
 
 
-def record(args, docker: Callable) -> int:
+def trim_vm() -> None:
+    """Give removed volumes' space back to macOS (trim.sh): Colima's disk image shrinks only once trimmed."""
+    subprocess.run(["sh", str(HERE / "trim.sh")], capture_output=True)
+
+
+def record(args, docker: Callable, trim: Callable = trim_vm) -> int:
     fid = fix_id(args.of, args.item)
     meta = _json(args.runs / fid / "trajectory.json") or {}
     n = int(meta.get("change") or 0)
@@ -306,6 +311,7 @@ def record(args, docker: Callable) -> int:
            "measures": rot_cost.measures(args.runs / fid, write=True)}
     (args.runs / fid / "repair.json").write_text(json.dumps(rec, indent=1))
     _remove_volumes(docker, fid, meta)
+    trim()
     print(f"{fid}: {'fixed' if fixed else 'not fixed' if fixed is False else 'undetermined'}; "
           f"broke {len(rec['keeping']['items_broken'])} rows, {len(rec['keeping']['tests_broken'])} tests, "
           f"{len(rec['keeping']['dependency_probes_broken'])} dependency probes")
@@ -321,8 +327,9 @@ def _remove_volumes(docker: Callable, fid: str, meta: dict) -> None:
            text=True)
 
 
-def release(args, docker: Callable) -> int:
-    """A graded fork's volumes go once every miss it has is repaired and recorded."""
+def release(args, docker: Callable, trim: Callable = trim_vm) -> int:
+    """A graded fork's volumes go once every miss it has is repaired and recorded; the VM's disk is trimmed after."""
+    removed = False
     for fid in forks(args.runs, args.forks):
         meta = _json(args.runs / fid / "trajectory.json")
         summary, _ = _grading(args.runs, fid)
@@ -333,11 +340,16 @@ def release(args, docker: Callable) -> int:
         if left:
             continue
         _remove_volumes(docker, fid, meta)
+        removed = True
         print(f"{fid}: volumes removed")
+    if removed:
+        trim()
     return 0
 
 
-def main(argv=None, *, deps: rf.Deps | None = None, docker: Callable = subprocess.run) -> int:
+def main(argv=None, *, deps: rf.Deps | None = None, docker: Callable = subprocess.run, trim: Callable | None = None) -> int:
+    if trim is None:  # the real trim with real Docker; a stand-in Docker (tests) trims nothing unless given one
+        trim = trim_vm if docker is subprocess.run else (lambda: None)
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("what", choices=("plan", "run", "record", "release"))
     ap.add_argument("--forks", help="plan, release: a glob of fork ids under --runs")
@@ -359,8 +371,8 @@ def main(argv=None, *, deps: rf.Deps | None = None, docker: Callable = subproces
     if args.what == "run":
         return run_one(args, deps or rf.Deps())
     if args.what == "record":
-        return record(args, docker)
-    return release(args, docker)
+        return record(args, docker, trim)
+    return release(args, docker, trim)
 
 
 if __name__ == "__main__":

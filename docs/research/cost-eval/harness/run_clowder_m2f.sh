@@ -142,6 +142,7 @@ repairs() {
     echo "sh $0 repair-one $fid $item"
   done | run_queue "$JOBS"
   run "$PY run_clowder_repairs.py release --forks 'm2f-*' --runs $RUNS --seed-files $FILES"
+  run "sh trim.sh"  # the Mac gets the space back only once the VM's disk is trimmed
 }
 
 mkdir -p "$LOG"

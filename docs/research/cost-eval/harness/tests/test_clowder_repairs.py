@@ -214,6 +214,15 @@ class RecordTest(Base):
         self.assertEqual(self.record("DEP-01"), 0)
         self.assertIsNone(json.loads((fix / "repair.json").read_text())["fixed"])
 
+    def test_removing_a_forks_volumes_trims_the_vm_disk_after(self):
+        self.grading(self.fix, items={"BK-02": "met", "BK-03": "met"}, dependency_met=False,
+                     tests={"x::a": "ok", "x::b": "ok"}, probes={"t::probe_m2f_a": "passed"})
+        trims = []
+        with contextlib.redirect_stdout(io.StringIO()):
+            rcr.main(self.argv("record", "--of", ARM, "--item", "BK-02"),
+                     docker=lambda cmd, **kw: self.removed.append(cmd), trim=lambda: trims.append(1))
+        self.assertEqual(len(trims), 1)
+
     def test_the_dependency_is_fixed_when_its_probes_pass(self):
         with contextlib.redirect_stdout(io.StringIO()):
             rcr.main(self.argv("run", "--of", ARM, "--item", "DEP-01"), deps=self.f.deps())

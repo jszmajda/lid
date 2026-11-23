@@ -64,6 +64,7 @@ disk() {  # the disk gate before each fork (disk_gate.sh: Docker's free disk und
 
 release() {  # a graded fork's volumes go now unless it has a miss to repair (run_clowder_repairs.py release): <fork id>
   run "$PY run_clowder_repairs.py release --forks '$1' --runs $RUNS --seed-files $FILES >> $LOG/$1.grade.log 2>&1"
+  run "sh trim.sh"  # the Mac gets the space back only once the VM's disk is trimmed
 }
 
 run_queue() {  # run the commands on stdin, $1 at a time (-S: macOS xargs limits a replaced line to 255 bytes otherwise)
@@ -142,6 +143,7 @@ repairs() {
     echo "sh $0 repair-one $fid $item"
   done | run_queue "$JOBS"
   run "$PY run_clowder_repairs.py release --forks 'm2h-*' --runs $RUNS --seed-files $FILES"
+  run "sh trim.sh"
 }
 
 report() {
