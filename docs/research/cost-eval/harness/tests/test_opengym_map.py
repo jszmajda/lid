@@ -94,9 +94,14 @@ class Mapping(unittest.TestCase):
 
 
 class Workspace(unittest.TestCase):
-    def test_archive_paths_drop_only_the_omitted_folder(self):
+    def test_the_tree_is_the_whole_pinned_tree(self):
+        self.assertEqual(om.OMIT, ())
+        entries = {"": ["CLAUDE.md", "api", "catalogue"]}
+        self.assertEqual(om.archive_paths(entries), ["CLAUDE.md", "api", "catalogue"])
+
+    def test_archive_paths_drop_only_an_omitted_folder(self):
         entries = {"": ["CLAUDE.md", "api", "catalogue"], "catalogue": ["catalogue/data", "catalogue/media"]}
-        self.assertEqual(om.archive_paths(entries), ["CLAUDE.md", "api", "catalogue/data"])
+        self.assertEqual(om.archive_paths(entries, ("catalogue/media",)), ["CLAUDE.md", "api", "catalogue/data"])
 
     def test_start_is_one_commit_at_the_fixed_date(self):
         s = om.start_script()
@@ -153,6 +158,43 @@ diff --git a/CLAUDE.md b/CLAUDE.md
 """
 
 
+def _tar_names(script, cwd):
+    p = subprocess.run(["sh", "-c", script], cwd=cwd, capture_output=True)
+    if p.returncode != 0 or not p.stdout:
+        return None
+    import io, tarfile
+    with tarfile.open(fileobj=io.BytesIO(p.stdout)) as tf:
+        return sorted(m.name.removeprefix("./") for m in tf.getmembers() if m.isfile())
+
+
+class Collect(unittest.TestCase):
+    """The collection scripts, run against a folder laid out like the configuration volume."""
+
+    def setUp(self):
+        self.cfg = Path(tempfile.mkdtemp())
+        sub = self.cfg / "projects" / "-work" / "s1" / "subagents"
+        sub.mkdir(parents=True)
+        (self.cfg / "projects" / "-work" / "s1.jsonl").write_text("{}")
+        (sub / "agent-a.jsonl").write_text("{}")
+        (self.cfg / "projects" / "-work" / "other.jsonl").write_text("{}")
+        for name in ("plugins", "lid", "sessions", "backups", "shell-snapshots", "session-env"):
+            (self.cfg / name).mkdir()
+            (self.cfg / name / "x").write_text("x")
+        for name in (".claude.json", "policy-limits.json", "remote-settings.json", ".last-cleanup"):
+            (self.cfg / name).write_text("{}")
+        (self.cfg / "owner-questions.md").write_text("# q")
+        (self.cfg / "map-codebase-sweeps").mkdir()
+        (self.cfg / "map-codebase-sweeps" / "sweep-1.md").write_text("s")
+
+    def test_transcripts_are_found_under_a_project_folder_named_like_an_option(self):
+        names = _tar_names(om.transcripts_script("s1"), self.cfg / "projects")
+        self.assertEqual(names, ["-work/s1.jsonl", "-work/s1/subagents/agent-a.jsonl"])
+
+    def test_what_the_session_left_in_cfg_is_kept_and_claude_code_s_own_files_are_not(self):
+        names = _tar_names(om.extras_script(), self.cfg)
+        self.assertEqual(names, ["map-codebase-sweeps/sweep-1.md", "owner-questions.md"])
+
+
 class Check(unittest.TestCase):
     def test_annotations_pass_and_code_edits_are_flagged(self):
         r = om.classify_diff(DIFF)
@@ -167,6 +209,9 @@ class Check(unittest.TestCase):
             self.assertTrue(om.is_annotation(line), line)
         for line in ("// just a comment", "const x = 1; // @spec A-1"):
             self.assertFalse(om.is_annotation(line), line)
+
+    def test_the_routines_suite_runs_with_the_others(self):
+        self.assertIn("routines", [name for name, _, _ in om.SUITES])
 
     def test_suite_counts(self):
         node = "# tests 1084\n# pass 1081\n# fail 0\n# skipped 3\n"
