@@ -1224,6 +1224,38 @@ class GradeNodeMainTest(unittest.TestCase):
         self.assertEqual(data["suites"]["api"]["counts"], {"tests": 2, "pass": 2})
         self.assertEqual(sorted(data["suites"]["api"]["tests"]), ["api/test/a.test.js::one", "api/test/a.test.js::two"])
 
+    def test_graders_sharing_a_start_compute_its_baseline_once(self):
+        # several null forks of one start graded at once: the first computes the baseline under a lock, the rest wait
+        # for it and read the cache
+        import threading
+        root = Path(tempfile.mkdtemp())
+        made, outputs = [], {"baseline": {("baseline", "api"): BASE_API}}
+        factory = self.factory(made, outputs)
+        slow = threading.Event()
+
+        def make(name, commit, image):
+            ck = factory(name, commit, image)
+            orig = ck.export
+
+            def export(volume):
+                slow.wait(0.2)  # long enough for the other grader to reach the cache
+                return orig(volume)
+            ck.export = export
+            return ck
+        results = []
+
+        def one():
+            results.append(grade_node.baseline(make, name="g", commit="d96444e", image="img", volume="v", suites=["api"],
+                                               flaky=[], reruns=1, cache=root))
+        threads = [threading.Thread(target=one) for _ in range(3)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+        self.assertEqual(len(made), 1)  # one export, one run
+        self.assertEqual([r[2]["computed"] for r in results].count(True), 1)
+        self.assertTrue(all(r[0]["api"]["counts"] == {"tests": 2, "pass": 2} for r in results))
+
     def test_dependency_probes_run_after_the_code_only_checkout_and_roll_up(self):
         graded = {"files": {"dependency/change-01/d.test.jsx": "// probe\n"},
                   "manifest": {"version": 1, "dependency_probes": [

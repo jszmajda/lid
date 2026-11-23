@@ -37,6 +37,7 @@ for the fork (`<id>-cNN-grade`, `<id>-baseline-grade`) and removed at the end un
 from __future__ import annotations
 
 import argparse
+import fcntl
 import hashlib
 import json
 import os
@@ -77,8 +78,22 @@ def baseline(make: Callable, *, name: str, commit: str, image: str, volume: str,
     """The start's suites (cached per commit: only suites not cached yet run) and, for a change with an adjustment, the
     start's files that adjustment touches run again with it applied (cached per change and adjustment). The start is
     exported read-only from its own volume into `<name>-baseline-grade`, removed afterwards. Returns (runs, adjusted
-    runs or None, what was cached and computed)."""
+    runs or None, what was cached and computed). Graders sharing a start take a lock on its cache first, so the first
+    computes and the rest read what it wrote."""
     cdir = cache / commit
+    cdir.mkdir(parents=True, exist_ok=True)
+    with open(cache / f"{commit}.lock", "w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        try:
+            return _baseline(make, name=name, commit=commit, image=image, volume=volume, suites=suites, flaky=flaky,
+                             reruns=reruns, cdir=cdir, graded_dir=graded_dir, adjustment=adjustment, change=change)
+        finally:
+            fcntl.flock(lock, fcntl.LOCK_UN)
+
+
+def _baseline(make: Callable, *, name: str, commit: str, image: str, volume: str, suites: list[str], flaky: list[dict],
+              reruns: int, cdir: Path, graded_dir: Path | None, adjustment: dict | None,
+              change: int | None) -> tuple[dict, dict | None, dict]:
     bpath = cdir / "baseline.json"
     cached = json.loads(bpath.read_text()) if bpath.exists() else {"commit": commit, "suites": {}}
     todo = [s for s in suites if s not in cached["suites"]]
