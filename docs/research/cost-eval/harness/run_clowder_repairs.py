@@ -1,5 +1,6 @@
-"""Repair forks for Clowder forks (plan.md, M2f; the growth test's repair forks, costeval/repair.py, on Clowder): what
-it costs to fix a miss, and whether the fix holds without breaking what the fork kept.
+"""Repair forks for run_fork.py's forks (plan.md, M2f on Clowder variants and M2h on openGym's named starts; the
+growth test's repair forks, costeval/repair.py): what it costs to fix a miss, and whether the fix holds without breaking
+what the fork kept.
 
     python3.12 run_clowder_repairs.py plan --forks 'm2f-*'
     ../plumbing/with-token.sh python3.12 run_clowder_repairs.py run --of m2f-full-lid-full-c13-r1 --item CLX-1302
@@ -25,6 +26,14 @@ once graded).
 
 Records go to ../runs/<fork>-fix-<item>/ like a fork's (trajectory.json with "repair": {of, item}, change-NN/,
 owner-state-NN.json, rot-cost.json, grading/), plus repair.json. A repair already recorded is left alone.
+
+A repair takes everything else from the fork it repairs: its image (the Node executor image for M2h), its isolation and
+npm setting, its arm (for M2h's LID arm, both plugins installed fresh and checked against the fork's own LID tree hash),
+and its volume naming (ce-<id>-* for a Clowder fork, <id>-* for a named start's, so an M2h repair's are
+m2h-...-fix-<item>-ws and -cfg). Its seed must be the fork's: --brief defaults to the brief the fork recorded and
+--seed-files to the folder of the fork's oracle, and a brief, oracle or owner-items file that hashes otherwise than the
+fork's record stops the repair before anything runs. For M2h, --seed-files is seeds/opengym/hidden/m2h/ (the converted
+seed with its repair-reports.json) and grading is grade_node.py's.
 """
 
 from __future__ import annotations
@@ -49,6 +58,7 @@ from run_trajectory import CLAUDE_CODE, owner_model_from_arg, sha256  # noqa: E4
 
 FIX = "-fix-"
 SEED_FILES = HERE.parent / "seeds" / "clowder" / "hidden" / "m2f"
+BRIEF = HERE.parent / "seeds" / "clowder" / "brief.md"
 
 
 def fix_id(fork: str, item: str) -> str:
@@ -65,10 +75,19 @@ def _grading(runs: Path, fid: str) -> tuple[dict | None, dict | None]:
     return _json(g / "summary.json"), _json(g / "keeping.json")
 
 
+def report_text(reports: dict, item: str) -> str | None:
+    """An item's repair report; a dependency's is found under its change number however it is written (DEP-01, DEP-1)."""
+    text = repair.report_for(reports, item)
+    if text is None and item.startswith("DEP-") and item[4:].isdigit():
+        text = repair.report_for(reports, f"DEP-{int(item[4:])}")
+    return text
+
+
 def misses(summary: dict, change: int) -> list[str]:
     """The rows a fork's grading has as not met, and DEP-NN when its dependency probes didn't all pass."""
     out = sorted(i for i, v in (summary.get("items") or {}).items() if v == "not met")
-    if summary.get("dependency_met") is False:
+    node_dep = (summary.get("dependency") or {}).get("result") if isinstance(summary.get("dependency"), dict) else None
+    if summary.get("dependency_met") is False or node_dep == "broken":  # grade_rust's, or grade_node's (M2h)
         out.append(f"DEP-{change:02d}")
     return out
 
@@ -111,22 +130,33 @@ def run_one(args, deps: rf.Deps) -> int:
     if (_json(meta_path) or {}).get("changes", {}).get(str(n), {}).get("commit"):
         print(f"{fid} already recorded")
         return 0
-    reports_path = args.seed_files / repair.REPORTS
-    text = repair.report_for(_json(reports_path) or {}, args.item)
+    recorded = arm_meta.get("paths") or {}
+    seed_files = args.seed_files or (Path(recorded["oracle"]).parent if recorded.get("oracle") else SEED_FILES)
+    reports_path = seed_files / repair.REPORTS
+    text = report_text(_json(reports_path) or {}, args.item)
     if text is None:
         print(f"no repair report for {args.item} in {reports_path}", file=sys.stderr)
         return 2
-    oracle_path, script_path, items_path = (args.seed_files / "oracle.md", args.seed_files / "change-script.md",
-                                            args.seed_files / "owner-items.json")
+    oracle_path, script_path, items_path = (seed_files / "oracle.md", seed_files / "change-script.md",
+                                            seed_files / "owner-items.json")
+    brief_path = args.brief or (Path(recorded["brief"]) if recorded.get("brief") else BRIEF)
+    for name, path in (("brief", brief_path), ("oracle", oracle_path), ("owner_items", items_path)):
+        want = (arm_meta.get("hashes") or {}).get(name)
+        if want and sha256(path) != want:
+            print(f"{args.of} ran with another {name} than {path} ({want[:12]}, not {sha256(path)[:12]}); a repair "
+                  "runs with its fork's own seed", file=sys.stderr)
+            return 2
     oracle = simulator.parse_oracle(oracle_path.read_text(encoding="utf-8"))
     owner_items = simulator.load_owner_items(items_path, oracle)
-    brief = args.brief.read_text(encoding="utf-8")
+    brief = brief_path.read_text(encoding="utf-8")
     state_path = args.runs / args.of / f"owner-state-{n:02d}.json"
     arm = trajectory.load_arm(arm_meta["arm"])
     window = arm_meta.get("window") or "1m"
-    isolation = (executor.Isolation(window=window) if args.no_isolate else executor.Isolation.for_public_seed(window=window))
+    npm_network = arm_meta.get("npm_network", True)
+    isolation = rf.isolation_for(window, isolate=not args.no_isolate, npm_network=npm_network)
     image = arm_meta.get("image") or rf.IMAGE
-    ws_vol, cfg_vol = f"ce-{fid}-ws", f"ce-{fid}-cfg"
+    named = rf.is_named_start(arm_meta.get("fork_of"))
+    ws_vol, cfg_vol = rf.fork_volumes(fid, named)
     if meta_path.exists():
         import shutil
         shutil.rmtree(out)  # a repair that stopped partway runs again from its start
@@ -135,10 +165,13 @@ def run_one(args, deps: rf.Deps) -> int:
     rf._run(deps, ["docker", "run", "--rm", "-v", f"{arm_meta['volumes']['workspace']}:/src:ro", "-v", f"{ws_vol}:/work",
                    image, "sh", "-c", f"find /work -mindepth 1 -delete && cp -a /src/. /work/ && cd /work && "
                    f"test \"$(git rev-parse HEAD)\" = '{done['commit']}'"], what="copying the fork's workspace")
+    lid_tree = None
     if arm.lid_release:
         repo = args.lid_repo or Path(subprocess.run(["git", "-C", str(HERE), "rev-parse", "--show-toplevel"],
                                                     capture_output=True, text=True, check=True).stdout.strip())
         deps.install_lid(image, cfg_vol, repo, arm.lid_release)
+        if named:  # the same LID tree as the fork it repairs
+            lid_tree = rf.check_lid_tree(deps.docker, image, cfg_vol, arm_meta.get("lid_install_sha256"))
     workspace = (deps.workspace_for or trajectory.DockerWorkspace)(image, ws_vol)
     change = simulator.Change(number=n, title=f"Repair report for {args.item} after change {n}", request=text,
                               relies_on=simulator.ALL, probe=True)
@@ -158,8 +191,12 @@ def run_one(args, deps: rf.Deps) -> int:
                                             "image", "policy", "owner_model", "owner_model_config", "window",
                                             "lid_release", "owner_scope", "round_cap", "neutral_sentence")},
             "id": fid, "repair": {"of": args.of, "item": args.item, "report_sha256": hashlib.sha256(text.encode()).hexdigest()},
-            "replicate": replicate, "isolation": isolation.record(),
-            "hashes": {"oracle": sha256(oracle_path), "change_script": sha256(script_path),
+            "replicate": replicate, "isolation": isolation.record(), "npm_network": npm_network,
+            **({"lid_install_sha256": lid_tree} if lid_tree is not None else {}),
+            "paths": {"brief": str(brief_path.resolve()), "oracle": str(oracle_path.resolve()),
+                      "change_script": str(script_path.resolve()), "owner_items": str(items_path.resolve()),
+                      "repair_reports": str(reports_path.resolve())},
+            "hashes": {"brief": sha256(brief_path), "oracle": sha256(oracle_path), "change_script": sha256(script_path),
                        "owner_items": sha256(items_path), "repair_reports": sha256(reports_path)},
             "volumes": {"workspace": ws_vol, "config": cfg_vol}, "start_commit": done["commit"],
             "started": datetime.now(timezone.utc).isoformat(timespec="seconds"), "changes": {}}
@@ -179,7 +216,8 @@ def run_one(args, deps: rf.Deps) -> int:
                                     out_dir=out / f"change-{n:02d}", round_cap=int(arm_meta.get("round_cap") or
                                                                                    trajectory.ROUND_CAP))
     finally:
-        rf.clean_target(deps, image, ws_vol)
+        if not named:
+            rf.clean_target(deps, image, ws_vol)
     agent_cost = sum((t["usage"] or {}).get("reported_cost_usd") or 0 for t in res.turns)
     meta["changes"][str(n)] = {"title": res.title, "rounds": res.rounds, "finished": res.finished, "capped": res.capped,
                                "error": res.error, "commit": res.commit, "redirect": res.redirect,
@@ -194,6 +232,29 @@ def run_one(args, deps: rf.Deps) -> int:
         print(f"{fid}: no cost record yet ({exc})")
     print(f"{fid}: rounds {res.rounds}, finished {res.finished}, agent ${agent_cost:.2f}, error {res.error}", flush=True)
     return 0 if not res.error else 1
+
+
+def _dependency_fixed(summary: dict):
+    """grade_node.py (M2h): the dependency kept is fixed, broken is not, anything else undetermined."""
+    r = (summary.get("dependency") or {}).get("result")
+    return True if r == "kept" else False if r == "broken" else None
+
+
+def _dependency_change(before: dict, after: dict) -> tuple[list[str], list[str]]:
+    """grade_node.py (M2h): (broken, undetermined): the dependency probes kept before and broken after, and those kept
+    before and neither kept nor broken after."""
+    was = {t: (r or {}).get("result") for t, r in ((before.get("dependency") or {}).get("probes") or {}).items()}
+    now = {t: (r or {}).get("result") for t, r in ((after.get("dependency") or {}).get("probes") or {}).items()}
+    kept = [t for t, r in sorted(was.items()) if r == "kept"]
+    return [t for t in kept if now.get(t) == "broken"], [t for t in kept if now.get(t) not in ("kept", "broken")]
+
+
+def _broken_tests(before: dict | None, after: dict | None) -> list[str]:
+    """Keeping tests that broke: grade_rust's targets that passed and don't, or grade_node's failures (each against
+    the start's baseline) on the repair that weren't failures on the fork."""
+    if (after or {}).get("failures") is not None or (before or {}).get("failures") is not None:
+        return sorted(set((after or {}).get("failures") or {}) - set((before or {}).get("failures") or {}))
+    return sorted(_ok_tests(before) - _ok_tests(after))
 
 
 def _ok_tests(keeping: dict | None) -> set[str]:
@@ -220,8 +281,9 @@ def record(args, docker: Callable) -> int:
     if fixed_summary is None or arm_summary is None:
         print(f"{fid}: {'the repair' if fixed_summary is None else 'the fork'} isn't graded yet")
         return 1
+    node = isinstance(fixed_summary.get("dependency"), dict)  # grade_node.py's summary (M2h)
     if args.item.startswith("DEP-"):
-        fixed = fixed_summary.get("dependency_met")
+        fixed = _dependency_fixed(fixed_summary) if node else fixed_summary.get("dependency_met")
     else:
         v = (fixed_summary.get("items") or {}).get(args.item)
         fixed = True if v == "met" else False if v == "not met" else None
@@ -231,23 +293,32 @@ def record(args, docker: Callable) -> int:
     rec = {"of": args.of, "run": fid, "change": n, "item": args.item, "fixed": fixed,
            "keeping": {"items_broken": sorted(i for i in before_items if after_items.get(i) == "not met"),
                        "items_undetermined": sorted(i for i in before_items if after_items.get(i) not in ("met", "not met")),
-                       "tests_broken": sorted(_ok_tests(arm_keeping) - _ok_tests(fixed_keeping)),
-                       **{f"{key}_{what}": tests
-                          for key in ("dependency_probes", "held_out_tests")
-                          for what, tests in zip(("broken", "undetermined"),
-                                                 _graded_change(arm_summary, fixed_summary, key))}},
+                       "tests_broken": _broken_tests(arm_keeping, fixed_keeping),
+                       **({f"dependency_probes_{what}": tests for what, tests in
+                           zip(("broken", "undetermined"), _dependency_change(arm_summary, fixed_summary))} if node else
+                          {f"{key}_{what}": tests
+                           for key in ("dependency_probes", "held_out_tests")
+                           for what, tests in zip(("broken", "undetermined"),
+                                                  _graded_change(arm_summary, fixed_summary, key))})},
            "start_commit": meta.get("start_commit"), "commit": done.get("commit"),
            "agent_cost_usd": done.get("agent_cost_usd"), "owner_cost_usd": done.get("owner_cost_usd"),
            "rounds": done.get("rounds"), "minutes": done.get("minutes"),
            "measures": rot_cost.measures(args.runs / fid, write=True)}
     (args.runs / fid / "repair.json").write_text(json.dumps(rec, indent=1))
-    vols = meta.get("volumes") or {}
-    docker(["docker", "volume", "rm", "-f", vols.get("workspace", f"ce-{fid}-ws"), vols.get("config", f"ce-{fid}-cfg")],
-           capture_output=True, text=True)
+    _remove_volumes(docker, fid, meta)
     print(f"{fid}: {'fixed' if fixed else 'not fixed' if fixed is False else 'undetermined'}; "
           f"broke {len(rec['keeping']['items_broken'])} rows, {len(rec['keeping']['tests_broken'])} tests, "
           f"{len(rec['keeping']['dependency_probes_broken'])} dependency probes")
     return 0
+
+
+def _remove_volumes(docker: Callable, fid: str, meta: dict) -> None:
+    """A fork's own volumes, as its record names them (else by its naming: ce-<id>-* for Clowder, <id>-* for a named
+    start's); never a start's, which no fork records as its own."""
+    ws, cfg = rf.fork_volumes(fid, rf.is_named_start(meta.get("fork_of")))
+    vols = meta.get("volumes") or {}
+    docker(["docker", "volume", "rm", "-f", vols.get("workspace", ws), vols.get("config", cfg)], capture_output=True,
+           text=True)
 
 
 def release(args, docker: Callable) -> int:
@@ -261,9 +332,7 @@ def release(args, docker: Callable) -> int:
             i for i in misses(summary, int(meta["change"])) if not (args.runs / fix_id(fid, i) / "repair.json").exists()]
         if left:
             continue
-        vols = meta.get("volumes") or {}
-        docker(["docker", "volume", "rm", "-f", vols.get("workspace", f"ce-{fid}-ws"), vols.get("config", f"ce-{fid}-cfg")],
-               capture_output=True, text=True)
+        _remove_volumes(docker, fid, meta)
         print(f"{fid}: volumes removed")
     return 0
 
@@ -275,9 +344,11 @@ def main(argv=None, *, deps: rf.Deps | None = None, docker: Callable = subproces
     ap.add_argument("--of", help="run, record: the fork repaired")
     ap.add_argument("--item", help="run, record: the missed row, or DEP-NN for the change's dependency")
     ap.add_argument("--runs", type=Path, default=HERE.parent / "runs")
-    ap.add_argument("--seed-files", type=Path, default=SEED_FILES,
-                    help="oracle.md, change-script.md, owner-items.json and repair-reports.json")
-    ap.add_argument("--brief", type=Path, default=HERE.parent / "seeds" / "clowder" / "brief.md")
+    ap.add_argument("--seed-files", type=Path, default=None,
+                    help="oracle.md, change-script.md, owner-items.json and repair-reports.json (default: the folder of "
+                         "the fork's recorded oracle, else seeds/clowder/hidden/m2f; M2h: seeds/opengym/hidden/m2h)")
+    ap.add_argument("--brief", type=Path, default=None,
+                    help="default: the brief the fork recorded, else seeds/clowder/brief.md")
     ap.add_argument("--lid-repo", type=Path, default=None)
     ap.add_argument("--turn-timeout", type=int, default=3600)
     ap.add_argument("--isolate", action="store_true", help="isolated (the default)")

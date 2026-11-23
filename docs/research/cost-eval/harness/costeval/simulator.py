@@ -321,6 +321,8 @@ class OwnerItem:
     adds to a reply when the item is recalled. Written with the oracle and frozen with it."""
     tier: str
     recall: str
+    given_only: str | None = None  # a line said only when asked about this ("in answer to a question about privacy"):
+    # never drawn on review or on a broad question; a targeted question still discloses the item
 
 
 def recall_eligible(oracle: Oracle) -> list[Item]:
@@ -345,7 +347,9 @@ def complete_owner_items(oracle: Oracle, items: Mapping[str, OwnerItem],
 def parse_owner_items(data: Mapping, oracle: Oracle, *, default: OwnerItem | None = None) -> dict[str, OwnerItem]:
     """owner-items.json: {"<item>": {"tier": "low" | "medium" | "high", "recall": "<one sentence>"}, ...}, one entry
     for every askable item. The entries may instead sit under an "items" key, beside a record of how the tiers were
-    rated; that record is not read here."""
+    rated; that record is not read here. A "conditional_recall" map beside "items" ({"<item>": {"given_only": "<when>"}})
+    marks a line said only when the owner is asked about it."""
+    conditional = data.get("conditional_recall") or {} if "items" in data else {}
     if "items" in data:
         data = data["items"]
         if not isinstance(data, Mapping):
@@ -368,6 +372,15 @@ def parse_owner_items(data: Mapping, oracle: Oracle, *, default: OwnerItem | Non
         if id_pattern(known).search(line):
             raise ValueError(f"owner items: {iid}'s recall line mentions an identifier")
         out[iid] = OwnerItem(tier, line.strip())
+    for iid, cond in conditional.items():
+        if iid.startswith("_"):  # a note beside the conditions
+            continue
+        if iid not in out:
+            raise ValueError(f"owner items: the conditional recall for {iid} names no owner item")
+        when = cond.get("given_only") if isinstance(cond, Mapping) else None
+        if not isinstance(when, str) or not when.strip():
+            raise ValueError(f"owner items: {iid}'s conditional recall says nothing about when it is given")
+        out[iid] = OwnerItem(out[iid].tier, out[iid].recall, when.strip())
     return complete_owner_items(oracle, out, default)
 
 
@@ -534,7 +547,8 @@ class CourseChange:
 @dataclass(frozen=True)
 class IntentDistance:
     """How far a change's relevant intent sits from the code it edits, recorded before any run."""
-    kind: str  # same module, another module, set at change; or M2f's other crate, or other module, same crate
+    kind: str  # same module, another module, set at change; M2f's other crate, or other module, same crate; M2h's
+    # other part, or other file, same part
     set_at: int | None = None  # for "set at change N"
 
 
@@ -695,7 +709,8 @@ def _growth_fields(n: int, body: str) -> dict:
             raise ValueError(f"change {n}: can't read **Reliance for:** {v!r}")
         out["reliance_for"] = tuple(int(x) for x in re.findall(r"change (\d+)", v))
     if (v := _field(body, "Intent distance")) is not None:
-        m = re.fullmatch(r"(same module|another module|other crate|other module, same crate)\.?|set at change (\d+)\.?",
+        m = re.fullmatch(r"(same module|another module|other crate|other module, same crate|other part|"
+                         r"other file, same part)\.?|set at change (\d+)\.?",
                          v.strip())
         if not m:
             raise ValueError(f"change {n}: can't read **Intent distance:** {v!r}")
@@ -1715,7 +1730,7 @@ class Owner:
         fan = collections.Counter(t["passage"] for t in touches)
         recalled: list[dict] = []
         for item in dict.fromkeys(t["item"] for t in touches):
-            if item in self.disclosed:
+            if item in self.disclosed or self.owner_items[item].given_only:  # said only when asked about it
                 continue
             u = uniform(self.replicate, item, "recall", scope)
             for t in (t for t in touches if t["item"] == item):
@@ -1739,7 +1754,7 @@ class Owner:
                 continue
             got = []
             for item in ans["in_scope"]:
-                if item in self.disclosed:
+                if item in self.disclosed or self.owner_items[item].given_only:  # said only when asked about it
                     continue
                 r = recall_rate(self.model, self.owner_items[item].tier, direct=False,
                                 after_first_build=after_first_build and self.model.dormancy_on_broad)

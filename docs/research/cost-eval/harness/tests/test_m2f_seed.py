@@ -191,6 +191,11 @@ class IntentDistanceTest(unittest.TestCase):
         self.assertEqual(s[3].intent_distance.kind, "another module")
         self.assertEqual((s[9].intent_distance.kind, s[9].intent_distance.set_at), ("set at change", 2))
 
+    def test_m2hs_part_distances_parse(self):
+        s = sm.parse_change_script(script_of((13, "other part"), (21, "other file, same part")))
+        self.assertEqual(s[13].intent_distance.kind, "other part")
+        self.assertEqual(s[21].intent_distance.kind, "other file, same part")
+
     def test_anything_else_is_still_refused(self):
         for bad in ("other crates", "other module", "same crate", "other module same crate", "far away"):
             with self.assertRaisesRegex(ValueError, "Intent distance", msg=bad):

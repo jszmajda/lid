@@ -1,10 +1,13 @@
-"""Tests for run_fork: one change run from a repository variant's snapshot, recorded like a trajectory.
+"""Tests for run_fork: one change run from a repository variant's snapshot, or from a named start (M2h's bare and mapped
+starts), recorded like a trajectory.
 
 Docker, the agent's turns, and the owner's model calls are all fakes; the oracle and change script are the made-up
 bakery from test_simulator.
 """
 
+import contextlib
 import hashlib
+import io
 import json
 import subprocess
 import sys
@@ -72,7 +75,8 @@ class Fixture:
 
     def argv(self, *extra, variant="stripped", arm="bare"):
         return ["--variants", str(self.variants), "--variant", variant, "--arm", arm, "--change", "1", "--repeat", "2",
-                "--replicate", "r1", "--window", "200k", "--seed-dir", str(self.seed), "--runs", str(self.runs), *extra]
+                "--replicate", "r1", "--window", "200k", "--seed-dir", str(self.seed), "--runs", str(self.runs),
+                "--lid-repo", str(self.root), *extra]
 
     def deps(self, docker=None):
         def turn_for(session):
@@ -185,6 +189,188 @@ class ForkTest(unittest.TestCase):
         t = ctel.trajectory_telemetry(f.runs / "cf-stripped-bare-200k-c01-r2", window=None, fetch=None)
         self.assertEqual([c["change"] for c in t["changes"]], [1])
         self.assertEqual(t["window"], 200_000)
+
+
+NODE = "lid-cost-eval-executor-node:2.1.323"
+LID_TREE = "feedface"  # the map's /cfg/lid hash the starts file records, which a fresh install must match
+STARTS = {"image": NODE, "fork_prefix": "m2h-",
+          "starts": {"bare": {"volume": "ogmap-bare-ws", "commit": "d96444e", "vcs": "git", "map": "ogmap-bare"},
+                     "lid-r1": {"volume": "ogmap-2-ws", "commit": "489e0e0", "vcs": "git", "map": "ogmap-2",
+                                "config_volume": "ogmap-2-cfg", "lid_release": "v1.4.6", "lid_sha256": LID_TREE}}}
+BOTH = ("/cfg/lid/plugins/linked-intent-dev", "/cfg/lid/plugins/arrow-maintenance")
+
+
+class HashDocker(Docker):
+    """Docker that answers the LID tree hash with a fixed value, and commits a result patch as r1ght."""
+
+    def __init__(self, tree=LID_TREE, **kw):
+        super().__init__(**kw)
+        self.tree = tree
+
+    def __call__(self, cmd, **kw):
+        script = cmd[-1] if cmd and isinstance(cmd[-1], str) else ""
+        if "sha256sum" in script:
+            self.calls.append({"cmd": cmd, "input": kw.get("input")})
+            return subprocess.CompletedProcess(cmd, 0, f"{self.tree}  -\n", "")
+        if "commit -q" in script and "result.diff" in script:
+            self.calls.append({"cmd": cmd, "input": kw.get("input")})
+            return subprocess.CompletedProcess(cmd, 0, "r1ght\n", "")
+        return super().__call__(cmd, **kw)
+
+
+class StartFixture(Fixture):
+    """A starts file beside the seed: a bare start and one mapped LID start, as runs/opengym-m2h/starts.json holds."""
+
+    def __init__(self, starts=None, **kw):
+        super().__init__(**kw)
+        self.starts = self.root / "starts.json"
+        self.starts.write_text(json.dumps(STARTS if starts is None else starts))
+
+    def start_argv(self, *extra, start="bare", arm="bare"):
+        who = ["--null"] if arm is None else ["--arm", arm]
+        return ["--starts", str(self.starts), "--start", start, *who, "--change", "1", "--repeat", "2",
+                "--replicate", "m2h-r2", "--window", "1m", "--seed-dir", str(self.seed), "--runs", str(self.runs),
+                "--lid-repo", str(self.root), *extra]
+
+    def meta(self, fid):
+        return json.loads((self.runs / fid / "trajectory.json").read_text())
+
+
+def scripts(docker):
+    return [" ".join(c["cmd"]) for c in docker.calls]
+
+
+class StartForkTest(unittest.TestCase):
+    def test_a_fork_from_a_named_start_copies_it_read_only_into_volumes_named_for_the_fork(self):
+        f = StartFixture()
+        docker = HashDocker()
+        self.assertEqual(rf.main(f.start_argv(), deps=f.deps(docker)), 0)
+        fid = "m2h-bare-c01-r2"  # the starts file's prefix, the arm, the change and the repeat
+        meta = f.meta(fid)
+        self.assertEqual(meta["fork_of"], {"starts": str(f.starts), "start": "bare", "volume": "ogmap-bare-ws",
+                                           "commit": "d96444e", "vcs": "git", "map": "ogmap-bare", "config_volume": None,
+                                           "lid_sha256": None, "starts_sha256": rf.sha256(f.starts)})
+        self.assertEqual(meta["volumes"], {"workspace": f"{fid}-ws", "config": f"{fid}-cfg"})
+        self.assertEqual((meta["image"], meta["replicate"], meta["window"], meta["seed"]), (NODE, "m2h-r2", "1m", "seed"))
+        self.assertEqual(meta["isolation"], executor.Isolation.for_public_seed(window="1m").record())
+        # the start is only ever mounted read-only, and the copy proves it is at the start's commit with a clean tree
+        every = scripts(docker)
+        self.assertTrue(all("ogmap-bare-ws:/src:ro" in s for s in every if "ogmap-bare-ws" in s))
+        copy = docker.calls[0]["cmd"]
+        self.assertIn(f"{fid}-ws:/work", copy)
+        self.assertIn("rev-parse --verify 'd96444e^{commit}'", copy[-1])
+        self.assertIn("git status --porcelain", copy[-1])
+        self.assertFalse(any("ce-" in s for s in every))
+        self.assertFalse(any("rm -rf /work/target" in s for s in every))  # a Node start builds nothing into target/
+        self.assertEqual(f.sessions[0].image, NODE)
+        self.assertEqual(f.sessions[0].isolation, executor.Isolation.for_public_seed(window="1m"))
+        self.assertEqual(f.installed, [])
+
+    def test_the_lid_arm_loads_both_plugins_from_a_fresh_install_that_matches_the_maps(self):
+        f = StartFixture()
+        docker = HashDocker()
+        self.assertEqual(rf.main(f.start_argv(start="lid-r1", arm="lid-full-arrows"), deps=f.deps(docker)), 0)
+        fid = "m2h-lid-full-arrows-c01-r2"
+        self.assertEqual(f.installed, [(f"{fid}-cfg", "v1.4.6")])
+        session = f.sessions[0]
+        self.assertEqual(session.plugin_dirs, BOTH)
+        self.assertEqual(session.expected_plugins, frozenset({"linked-intent-dev", "arrow-maintenance"}))
+        self.assertEqual(session.config_volume, f"{fid}-cfg")
+        meta = f.meta(fid)
+        self.assertEqual((meta["arm"], meta["lid_release"], meta["lid_install_sha256"]), ("lid-full-arrows", "v1.4.6",
+                                                                                          LID_TREE))
+        tree = next(c["cmd"] for c in docker.calls if "sha256sum" in c["cmd"][-1])
+        self.assertIn(f"{fid}-cfg:/cfg:ro", tree)
+        self.assertFalse(any("ogmap-2-cfg" in s for s in scripts(docker)))  # the map's own configuration stays out
+
+    def test_the_arm_file_names_both_plugins_at_the_maps_release(self):
+        from costeval import trajectory
+        arm = trajectory.load_arm("lid-full-arrows")
+        self.assertEqual((arm.plugins, arm.lid_release, arm.plugin_dirs), (("linked-intent-dev", "arrow-maintenance"),
+                                                                           "v1.4.6", BOTH))
+        self.assertEqual((arm.workspace_files, arm.first_prompt_prefix), ({}, {}))
+
+    def test_a_lid_install_that_differs_from_the_maps_stops_the_fork_before_any_session(self):
+        f = StartFixture()
+        with self.assertRaisesRegex(RuntimeError, "LID install"):
+            rf.main(f.start_argv(start="lid-r1", arm="lid-full-arrows"), deps=f.deps(HashDocker(tree="0ther")))
+        self.assertEqual(f.sessions, [])
+        self.assertFalse((f.runs / "m2h-lid-full-arrows-c01-r2" / "change-01").exists())
+
+    def test_a_fork_id_without_the_prefix_or_that_would_reuse_a_starts_volume_is_refused(self):
+        f = StartFixture()
+        docker = HashDocker()
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(rf.main(f.start_argv("--id", "x-bare-c01-r2"), deps=f.deps(docker)), 2)
+        g = StartFixture(starts={k: v for k, v in STARTS.items() if k != "fork_prefix"})
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(rf.main(g.start_argv("--id", "ogmap-2"), deps=g.deps(docker)), 2)  # ogmap-2-ws, ogmap-2-cfg
+        self.assertEqual(docker.calls, [])
+
+    def test_a_named_start_needs_its_seed_dir_and_exactly_one_source(self):
+        f = StartFixture()
+        argv = f.start_argv()
+        no_seed = argv[:argv.index("--seed-dir")] + argv[argv.index("--seed-dir") + 2:]
+        both = [*argv, "--variants", str(f.variants), "--variant", "stripped"]
+        neither = argv[4:]
+        half = argv[2:]  # --start without --starts
+        for bad in (no_seed, both, neither, half):
+            with self.assertRaises(SystemExit), contextlib.redirect_stderr(io.StringIO()):
+                rf.main(bad, deps=f.deps())
+        argv[argv.index("--start") + 1] = "lid-r9"
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(rf.main(argv, deps=f.deps()), 2)
+
+    def test_a_null_fork_and_a_right_build_work_from_a_named_start(self):
+        f = StartFixture()
+        self.assertEqual(rf.main(f.start_argv(arm=None), deps=f.deps(HashDocker())), 0)
+        meta = f.meta("m2h-null-c01-r2")
+        self.assertEqual((meta["arm"], meta["fork_of"]["start"]), ("null", "bare"))
+        self.assertEqual(meta["changes"]["1"]["commit"], meta["start_commit"])
+        self.assertEqual(meta["volumes"]["workspace"], "m2h-null-c01-r2-ws")
+        self.assertEqual((f.sessions, f.installed), ([], []))
+        patch = f.root / "right.diff"
+        patch.write_text(PATCH)
+        docker = HashDocker()
+        self.assertEqual(rf.main(f.start_argv("--result-patch", str(patch), "--id", "m2h-right-c01", start="lid-r1",
+                                              arm=None), deps=f.deps(docker)), 0)
+        meta = f.meta("m2h-right-c01")
+        self.assertEqual(meta["changes"]["1"]["commit"], "r1ght")
+        self.assertEqual(meta["result_patch"]["sha256"], hashlib.sha256(PATCH.encode()).hexdigest())
+        self.assertIn("m2h-right-c01-ws:/work", next(c["cmd"] for c in docker.calls if "result.diff" in c["cmd"][-1]))
+        self.assertEqual(f.installed, [])  # a null fork loads nothing, from a LID start too
+
+    def test_npm_network_is_an_explicit_recorded_setting_on_by_default(self):
+        f = StartFixture()
+        rf.main(f.start_argv(), deps=f.deps(HashDocker()))
+        self.assertIs(f.meta("m2h-bare-c01-r2")["npm_network"], True)
+        rf.main(f.start_argv("--npm-network", "off", "--id", "m2h-bare-c01-r2-offline"), deps=f.deps(HashDocker()))
+        meta = f.meta("m2h-bare-c01-r2-offline")
+        self.assertIs(meta["npm_network"], False)
+        blocked = set(f.sessions[-1].isolation.blocked_hosts)
+        self.assertTrue(set(executor.GITHUB_HOSTS) <= blocked and set(rf.NPM_HOSTS) <= blocked)
+        self.assertEqual(set(meta["isolation"]["blocked_hosts"]), blocked)
+        self.assertEqual(f.sessions[-1].isolation.denied_tools, executor.WEB_TOOLS)
+
+    def test_the_image_flag_overrides_the_starts_image(self):
+        f = StartFixture()
+        rf.main(f.start_argv("--image", "other:1"), deps=f.deps(HashDocker()))
+        self.assertEqual((f.sessions[0].image, f.meta("m2h-bare-c01-r2")["image"]), ("other:1", "other:1"))
+
+    def test_a_clowder_fork_keeps_its_volumes_image_and_target_cleanup_and_records_npm_network(self):
+        f = Fixture()
+        docker = Docker()
+        self.assertEqual(rf.main(f.argv(), deps=f.deps(docker)), 0)
+        meta = json.loads((f.runs / "cf-stripped-bare-200k-c01-r2" / "trajectory.json").read_text())
+        self.assertEqual(meta["volumes"]["workspace"], "ce-cf-stripped-bare-200k-c01-r2-ws")
+        self.assertEqual((meta["image"], meta["npm_network"]), (rf.IMAGE, True))
+        self.assertNotIn("lid_install_sha256", meta)
+        self.assertIn("rm -rf /work/target", docker.calls[-1]["cmd"][-1])
+
+    def test_the_lid_tree_hash_is_read_from_the_configuration_volume(self):
+        docker = HashDocker(tree="abc123")
+        self.assertEqual(rf.lid_tree_sha256(docker, NODE, "m2h-x-cfg"), "abc123")
+        self.assertIn("m2h-x-cfg:/cfg:ro", docker.calls[0]["cmd"])
 
 
 class PlantedBugTest(unittest.TestCase):

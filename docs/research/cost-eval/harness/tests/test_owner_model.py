@@ -411,6 +411,34 @@ class DrawTest(unittest.TestCase):
         self.assertAlmostEqual(ps["diligent"], sm.recall_rate(M, "high", direct=True))
         self.assertAlmostEqual(ps["bounded"], 0.8)
 
+    def test_a_recall_line_given_only_on_a_question_is_never_drawn_on_review_or_on_a_broad_question(self):
+        # M2h's OGM-0405: its line is given only in answer to a question about privacy, so neither a passage that
+        # touches the row nor a broad question brings it back; a targeted question still discloses the row
+        items = sm.parse_owner_items({"items": OWNER_ITEMS, "conditional_recall": {
+            "BK-09": {"given_only": "in answer to a question about notes"}}}, oracle())
+        self.assertEqual(items["BK-09"].given_only, "in answer to a question about notes")
+        self.assertEqual(items["BK-02"], sm.OwnerItem("medium", OWNER_ITEMS["BK-02"]["recall"]))  # unchanged
+        for o in (out("approval", touches=[touch("BK-02", 1), touch("BK-09", 1)]),
+                  out("questions", [broad("Anything else?", ["BK-02", "BK-09"])])):
+            ask = FakeAsk(copy.deepcopy(o))
+            w = sm.Owner(oracle=oracle(), brief=BRIEF, policy="diligent", replicate="any", ask=ask, touch=ask.touch,
+                         model=sm.OwnerModel(), owner_items=items)
+            w.start_change(self.c[1])
+            r = w.respond("Orders and notes.", code_written=False)
+            self.assertNotIn("BK-09", [d["item"] for d in r.draws])
+            self.assertNotIn("BK-09", [x["item"] for x in r.recalled])
+        w, _ = owner("diligent", out("questions", [ans("Notes?", "Keep them as typed.", ["BK-09"])]))
+        w.owner_items = items
+        w.start_change(self.c[1])
+        w.respond("How should notes be kept?", code_written=False)
+        self.assertIn("BK-09", w.disclosed)
+
+    def test_a_conditional_recall_must_name_an_owner_item(self):
+        with self.assertRaises(ValueError):
+            sm.parse_owner_items({"items": OWNER_ITEMS, "conditional_recall": {"BK-99": {"given_only": "x"}}}, oracle())
+        with self.assertRaises(ValueError):
+            sm.parse_owner_items({"items": OWNER_ITEMS, "conditional_recall": {"BK-09": {}}}, oracle())
+
     def test_disclosure_ends_drawing(self):
         w, ask = owner("diligent", out("questions", [ans("Closing time?", "Six in the evening.", ["BK-02"])]),
                        out("approval", touches=[touch("BK-02", 1, "direct")]), replicate="any")

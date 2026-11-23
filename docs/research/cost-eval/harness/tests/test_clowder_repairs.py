@@ -1,5 +1,6 @@
-"""Tests for Clowder repair forks (run_clowder_repairs.py): for each miss in a graded Clowder fork, a fork from that
-fork's own result, opened by the owner's repair report, then graded and recorded against the fork it repairs.
+"""Tests for repair forks (run_clowder_repairs.py): for each miss in a graded fork (a Clowder variant's, M2f, or a named
+start's, M2h), a fork from that fork's own result, opened by the owner's repair report, then graded and recorded against
+the fork it repairs.
 
 Docker, the agent's turns and the owner's model calls are fakes; the seed is test_simulator's made-up bakery.
 """
@@ -20,7 +21,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import run_clowder_repairs as rcr  # noqa: E402
 import run_fork as rf  # noqa: E402
 from costeval import trajectory as tj  # noqa: E402
-from test_run_fork import Docker, Fixture  # noqa: E402
+from test_run_fork import BOTH, LID_TREE, NODE, Docker, Fixture, HashDocker, StartFixture  # noqa: E402
 from test_simulator import FakeAsk, out  # noqa: E402
 
 ARM = "m2f-lid-lid-full-c01-r2"
@@ -57,7 +58,7 @@ class Base(unittest.TestCase):
 
     def argv(self, what, *extra):
         return [what, "--runs", str(self.f.runs), "--seed-files", str(self.files), "--brief", str(self.f.seed / "brief.md"),
-                *extra]
+                "--lid-repo", str(self.f.root), *extra]
 
 
 class PlanTest(Base):
@@ -71,6 +72,28 @@ class PlanTest(Base):
         self.assertEqual(rcr.misses({"items": {}, "dependency_met": None,
                                      "dependency_missing": [{"test": "t::probe_m2f_a", "cause": "E0061"}]}, 1), [])
         self.assertEqual(rcr.misses({"items": {}, "dependency_met": False}, 1), ["DEP-01"])
+
+    def test_the_node_graders_dependency_plans_a_repair_only_when_broken(self):
+        # grade_node.py (M2h): the dependency's result is kept, broken, not exercised or missing
+        for result, want in (("broken", ["DEP-01"]), ("kept", []), ("not exercised", []), ("missing", [])):
+            self.assertEqual(rcr.misses({"items": {}, "dependency": {"result": result}}, 1), want, result)
+
+    def test_node_keeping_and_dependency_compare_by_their_own_records(self):
+        arm = {"dependency": {"result": "kept", "probes": {"P1": {"result": "kept"}, "P2": {"result": "kept"}}}}
+        fix = {"dependency": {"result": "broken", "probes": {"P1": {"result": "broken"}, "P2": {"result": "missing"}}}}
+        self.assertEqual(rcr._dependency_change(arm, fix), (["P1"], ["P2"]))
+        self.assertEqual(rcr._dependency_fixed({"dependency": {"result": "kept"}}), True)
+        self.assertEqual(rcr._dependency_fixed({"dependency": {"result": "broken"}}), False)
+        self.assertIsNone(rcr._dependency_fixed({"dependency": {"result": "not exercised"}}))
+        # keeping: the tests failing on the repair (against the start's baseline) that didn't fail on the fork
+        self.assertEqual(rcr._broken_tests({"failures": {"a.test.js::x": {}}},
+                                           {"failures": {"a.test.js::x": {}, "b.test.js::y": {}}}), ["b.test.js::y"])
+
+    def test_a_dependency_report_is_found_under_the_change_number_written_either_way(self):
+        # M2h's seed keys its dependency reports DEP-1 ... DEP-8; planning names them DEP-01
+        self.assertEqual(rcr.report_text({"DEP-1": {"report": "It broke."}}, "DEP-01"), "It broke.")
+        self.assertEqual(rcr.report_text({"DEP-13": {"report": "x"}}, "DEP-13"), "x")
+        self.assertIsNone(rcr.report_text({"DEP-2": {"report": "x"}}, "DEP-01"))
 
     def test_a_fork_not_yet_graded_and_a_repair_fork_are_not_planned(self):
         (self.arm / "grading" / "change-01" / "summary.json").unlink()
@@ -221,6 +244,130 @@ class RecordTest(Base):
         with contextlib.redirect_stdout(io.StringIO()):
             rcr.main(self.argv("release", "--forks", "m2f-*"), docker=lambda cmd, **kw: self.removed.append(cmd))
         self.assertTrue(any(f"ce-{ARM}-ws" in c and f"ce-{ARM}-cfg" in c for c in self.removed))
+
+
+M2H = "m2h-lid-full-arrows-c01-r2"
+
+
+class M2hBase(unittest.TestCase):
+    """An M2h LID fork from a mapped start, graded with misses; its seed is synthetic (the bakery), in the place of
+    seeds/opengym/hidden/m2h/."""
+
+    npm = "on"
+
+    def setUp(self):
+        self.f = StartFixture()
+        self.f.ask = FakeAsk(*[out("completion") for _ in range(8)])
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(rf.main(self.f.start_argv("--id", M2H, "--npm-network", self.npm, start="lid-r1",
+                                                       arm="lid-full-arrows"), deps=self.f.deps(HashDocker())), 0)
+        self.arm = self.f.runs / M2H
+        self.meta = json.loads((self.arm / "trajectory.json").read_text())
+        self.files = self.f.seed / "hidden"
+        write(self.files / "repair-reports.json", {"BK-02": {"report": "An order came in after six."},
+                                                   "DEP-01": {"report": "The list and the count disagree.", "change": 1}})
+        g = self.arm / "grading" / "change-01"
+        write(g / "summary.json", {"items": {"BK-02": "not met", "BK-03": "met"}, "dependency_met": False,
+                                   "dependency_probes": {"t::dep": {"result": "passed"}}, "held_out_tests": {}})
+        write(g / "keeping.json", {"targets": {}})
+        self.removed = []
+
+    def argv(self, what, *extra):  # no --brief: a repair takes the brief its fork recorded
+        return [what, "--runs", str(self.f.runs), "--seed-files", str(self.files), "--lid-repo", str(self.f.root), *extra]
+
+    def run_repair(self, item="BK-02", *extra, docker=None):
+        self.f.sessions.clear()
+        docker = docker or HashDocker()
+        with contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
+            rc = rcr.main(self.argv("run", "--of", M2H, "--item", item, *extra), deps=self.f.deps(docker))
+        return rc, docker
+
+
+class M2hRepairTest(M2hBase):
+    def test_a_repair_copies_the_arm_forks_own_volume_with_its_lid_setup_image_and_isolation(self):
+        rc, docker = self.run_repair()
+        self.assertEqual(rc, 0)
+        fid = f"{M2H}-fix-BK-02"
+        meta = json.loads((self.f.runs / fid / "trajectory.json").read_text())
+        self.assertEqual(meta["volumes"], {"workspace": f"{fid}-ws", "config": f"{fid}-cfg"})
+        self.assertEqual(meta["fork_of"], self.meta["fork_of"])
+        self.assertEqual((meta["image"], meta["arm"], meta["start_commit"]),
+                         (NODE, "lid-full-arrows", self.meta["changes"]["1"]["commit"]))
+        self.assertEqual((meta["npm_network"], meta["isolation"]), (True, self.meta["isolation"]))
+        self.assertEqual(meta["lid_install_sha256"], LID_TREE)
+        copy = docker.calls[0]["cmd"]
+        self.assertIn(f"{M2H}-ws:/src:ro", copy)  # the arm fork's own workspace, never the start
+        self.assertIn(f"{fid}-ws:/work", copy)
+        every = [" ".join(c["cmd"]) for c in docker.calls]
+        self.assertFalse(any("ce-" in s or "ogmap-" in s or "rm -rf /work/target" in s for s in every))
+        self.assertEqual(self.f.installed[-1], (f"{fid}-cfg", "v1.4.6"))
+        session = self.f.sessions[0]
+        self.assertEqual((session.image, session.plugin_dirs, session.config_volume), (NODE, BOTH, f"{fid}-cfg"))
+        self.assertEqual(session.isolation.record(), self.meta["isolation"])
+        first_prompt = (self.f.runs / fid / "change-01" / "prompt-00.txt").read_text()
+        self.assertTrue(first_prompt.startswith("An order came in after six."))
+
+    def test_a_dependency_repair_opens_with_its_own_report(self):
+        self.assertEqual(self.run_repair("DEP-01")[0], 0)
+        first_prompt = (self.f.runs / f"{M2H}-fix-DEP-01" / "change-01" / "prompt-00.txt").read_text()
+        self.assertTrue(first_prompt.startswith("The list and the count disagree."))
+
+    def test_a_repairs_lid_install_must_match_its_forks(self):
+        with self.assertRaisesRegex(RuntimeError, "LID install"):
+            self.run_repair(docker=HashDocker(tree="0ther"))
+        self.assertEqual(self.f.sessions, [])
+
+    def test_a_brief_or_oracle_other_than_the_forks_is_refused(self):
+        other = self.f.root / "other-brief.md"
+        other.write_text("# Some other project\n")
+        rc, docker = self.run_repair("BK-02", "--brief", str(other))
+        self.assertEqual((rc, docker.calls), (2, []))
+        oracle = self.files / "oracle.md"
+        oracle.write_text(oracle.read_text() + "\nA line added later.\n")
+        rc, docker = self.run_repair()
+        self.assertEqual((rc, docker.calls), (2, []))
+
+    def test_record_and_release_remove_the_volumes_named_for_each_fork(self):
+        self.assertEqual(self.run_repair()[0], 0)
+        fix = self.f.runs / f"{M2H}-fix-BK-02"
+        g = fix / "grading" / "change-01"
+        write(g / "summary.json", {"items": {"BK-02": "met", "BK-03": "met"}, "dependency_met": False,
+                                   "dependency_probes": {"t::dep": {"result": "passed"}}, "held_out_tests": {}})
+        write(g / "keeping.json", {"targets": {}})
+        drop = lambda cmd, **kw: self.removed.append(cmd)  # noqa: E731
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(rcr.main(self.argv("record", "--of", M2H, "--item", "BK-02"), docker=drop), 0)
+        self.assertIn(["docker", "volume", "rm", "-f", f"{M2H}-fix-BK-02-ws", f"{M2H}-fix-BK-02-cfg"], self.removed)
+        self.assertTrue(json.loads((fix / "repair.json").read_text())["fixed"])
+        self.assertEqual(self.run_repair("DEP-01")[0], 0)
+        fix = self.f.runs / f"{M2H}-fix-DEP-01"
+        write(fix / "grading" / "change-01" / "summary.json",
+              {"items": {"BK-02": "not met", "BK-03": "met"}, "dependency_met": True,
+               "dependency_probes": {"t::dep": {"result": "passed"}}, "held_out_tests": {}})
+        write(fix / "grading" / "change-01" / "keeping.json", {"targets": {}})
+        with contextlib.redirect_stdout(io.StringIO()):
+            rcr.main(self.argv("record", "--of", M2H, "--item", "DEP-01"), docker=drop)
+            rcr.main(self.argv("release", "--forks", "m2h-*"), docker=drop)
+        self.assertIn(["docker", "volume", "rm", "-f", f"{M2H}-ws", f"{M2H}-cfg"], self.removed)
+        self.assertFalse(any("ogmap-" in " ".join(c) for c in self.removed))  # the starts are never released
+
+    def test_plan_lists_an_m2h_forks_misses(self):
+        out_ = io.StringIO()
+        with contextlib.redirect_stdout(out_):
+            rcr.main(self.argv("plan", "--forks", "m2h-*"))
+        self.assertEqual(out_.getvalue().split("\n"), [f"{M2H} BK-02", f"{M2H} DEP-01", ""])
+
+
+class M2hOfflineRepairTest(M2hBase):
+    npm = "off"
+
+    def test_a_repair_keeps_its_forks_npm_setting(self):
+        rc, _ = self.run_repair()
+        self.assertEqual(rc, 0)
+        meta = json.loads((self.f.runs / f"{M2H}-fix-BK-02" / "trajectory.json").read_text())
+        self.assertIs(meta["npm_network"], False)
+        self.assertTrue(set(rf.NPM_HOSTS) <= set(self.f.sessions[0].isolation.blocked_hosts))
+        self.assertEqual(meta["isolation"], self.meta["isolation"])
 
 
 if __name__ == "__main__":
