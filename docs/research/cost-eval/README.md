@@ -1,6 +1,6 @@
 # Research notebook: what LID costs, compared with other ways of working
 
-**Status: pilot work; no counted runs yet.** Last updated 2026-11-21.
+**Status: pilot work; no counted runs yet.** Last updated 2026-11-24.
 
 ## The question
 
@@ -32,7 +32,7 @@ Read this section first when you pick the work up in a new session. Update it at
 - **The harness** ([harness/](harness/README.md)) runs trajectories, probe forks, grading, re-judging, owner audits, touchpoint classification, and spot-check sampling, with 372 tests. Runs are recorded in the git-ignored `runs/` folder, which stays private because the owner's prompts hold the hidden oracle.
 - **The graders are calibrated** (2026-11-14). Sonnet 5.5 judges and Haiku 5.5 executes. The judge agreed with itself on all 44 probes, and a whole-pipeline regrade agreed on all 44. Four seeded violations were each caught, and Claude Fable, standing in for the maintainer, agreed with 35 of 36 sampled verdicts. Grading costs about $1 per checkpoint notional. The three prior-data probes aren't implemented and are reported as not run. Calibration notes are in `seeds/benchtime/hidden/calibration/`.
 - **Pilot stage 0 passed:** all three arms on Sonnet 5.5, a build plus two changes. Plumbing only.
-- **Pilot stage 1 settled the executor.** A bare arm on Opus 5.5 met 88% to 92% of BenchTime's items even with a silent owner, which is above the ceiling threshold. On Sonnet 5.5 it met 76% to 80%. Under the maintainer's rule, Sonnet is BenchTime's main executor, and Opus results there are reported as limited by the ceiling.
+- **Pilot stage 1 settled the executor.** A bare arm on Opus 5.5 met 88% of BenchTime's items with a silent owner and 90% to 92% with a diligent one, above the ceiling threshold. On Sonnet 5.5 it met 76% to 80%. Under the maintainer's rule, Sonnet is BenchTime's main executor, and Opus results there are reported as limited by the ceiling.
 - **Pilot stage 2 on BenchTime passes all four thresholds** (Sonnet 5.5, diligent owner, three trajectories per arm). Pilot numbers only:
   - items met at change 10: bare 92%, bare A/A 92%, cheap discipline 89%, LID Full 96%, positive control 80%;
   - agent cost for the build plus ten changes: $2.32, $2.35, $4.48, $11.54, and $0.97;
@@ -43,13 +43,7 @@ Read this section first when you pick the work up in a new session. Update it at
 - **BenchTime's probes are at version 5**, and the judge now says whether each "couldn't exercise" came from the executor or the build; grading reruns executor-caused ones once.
 - **The simulated owner is now an imperfect person** (maintainer's decision, 2026-11-16): it hides nothing on purpose but doesn't realise what it left unsaid, can be reminded by what the agent shows, and misses more as it reads more. Attention and memory are separate seeded draws, with constants from published research ([owner-model-research.md](owner-model-research.md); design in [design.md](design.md), "Attention and recall"). It is built and reviewed (212 tests); both seeds' salience tiers and recall lines are frozen in `owner-items.json`. Trajectories now need `--replicate`, shared by the arms being compared. Fidelity is reported as surfacing and keeping. It passed its leak gate on the final prompt (0 confirmed leaks in 260 replies; a recognised-on-sight objection in 18 of 20 runs) and a live smoke check. **BenchTime under the rebuilt owner is done** (bounded policy, three trajectories per arm; [log.md](log.md), 2026-11-17; `runs/stage3b/report.md`): items met at change 10 were bare 95%, cheap discipline 93%, LID Full 97%, at agent costs of $2.53, $4.54, and $11.17.
 - **ReleaseDesk, the second seed, is ready, and its ceiling check is done** ([seeds/releasedesk/README.md](seeds/releasedesk/README.md)). The bare arm under a silent owner met 90 to 91% of all items but only 44 to 56% of latent items. The maintainer chose to read its ceiling on latent items, and to grow ReleaseDesk into the large greenfield test later, sized by what Clowder shows.
-- **The Clowder falsification test is prepared, not yet run** ([seeds/clowder/README.md](seeds/clowder/README.md); design.md, "Later seeds and variants"; plan.md milestone M2c). It tests "LID pays off once a codebase is larger than the agent can hold" on the maintainer's public LID-built Rust game. The setup:
-  - **forks:** twelve changes, each forked from the final snapshot;
-  - **arms:** bare on a stripped repository, bare on the full repository, and LID Full;
-  - **the dose:** a 1M or a 200k context window;
-  - **grading:** held-out tests for keeping, and probes against each arm's own API for new intent.
-
-  The changes were reviewed by Claude Fable and GPT-6.2 Astra, and the harness is built and tested.
+- **The Clowder pilot ran** (2026-11-18; [seeds/clowder/README.md](seeds/clowder/README.md); plan.md milestone M2c): bare on a stripped copy, bare on the full repository as an inheritance check, and LID Full, one run per cell at a 1M and a 200k window. The bare agent on the full repository copied LID's artifacts, so the study turned to a greenfield growth test and then to cross-crate and brownfield changes.
 - **The Docker VM** has 6 CPUs and 10 GB (resized 2026-11-22 with the maintainer's approval), and runs four forks at a time. Its disk is 100 GiB; M2h's runner releases each fork's volumes after grading unless a repair needs them, and waits while free disk is under 20 GB.
 - **Start long jobs as tracked background tasks, or with a watch.** A job started detached sends no notice when it finishes.
 - **The maintainer has handed the pilot to the main session** (2026-11-14): run it on your own judgment, and bring the maintainer only decisions that are really theirs. Pushing to the draft pull request is allowed; marking it ready, merging, and releasing are not. Claude Fable stands in for the maintainer's detailed reviews (probes, oracles, verdict spot-checks).

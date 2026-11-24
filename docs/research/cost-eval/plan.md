@@ -68,22 +68,22 @@ Alongside the stages:
 - `[ ]` Two people label about 100 requests to check the touchpoint rubric (target kappa 0.7 or better).
 - `[ ]` A small cross-family grader sample (GPT-6.1 Terra) measures self-preference.
 
-## M2c: Clowder, the falsification test at scale `[ ]`
+## M2c: Clowder, the falsification test at scale `[x]` (ran as a pilot, 2026-11-18)
 
 See design.md, "Later seeds and variants". Feasibility is checked:
 - Rust 1.89 plus `procps` builds and passes all 1,753 tests on the 2-CPU VM, in about 45 seconds for an edit-rebuild-test cycle;
 - a hosts block stops GitHub while the model API stays reachable;
 - `CLAUDE_CODE_DISABLE_1M_CONTEXT=1` gives a 200k window.
 
-- `[ ]` An executor image with Rust 1.89 and `procps`; GitHub blocked and web tools denied for Clowder runs; a window setting per run.
-- `[ ]` The three repository variants from the final snapshot: stripped (tests thinned to a 0.6 test-to-source ratio, at random across modules), full, and LID. A held-out slice of tests is removed from all three.
-- `[ ]` Twelve changes in the owner's voice, drafted by GPT-6.1 Sol and reviewed by Claude Fable, each with new intent written outside the existing specs, its predicted direction, and its dispersion class.
-- `[ ]` A fork runner that starts each change from a variant snapshot, and grading for a Rust library:
+- `[x]` An executor image with Rust 1.89 and `procps`; GitHub blocked and web tools denied for Clowder runs; a window setting per run.
+- `[x]` The three repository variants from the final snapshot: stripped (tests thinned to a 0.6 test-to-source ratio, at random across modules), full, and LID. A held-out slice of tests is removed from all three.
+- `[x]` Twelve changes in the owner's voice, drafted by GPT-6.1 Sol and reviewed by Claude Fable, each with new intent written outside the existing specs, its predicted direction, and its dispersion class.
+- `[x]` A fork runner that starts each change from a variant snapshot, and grading for a Rust library:
   - held-out tests for keeping;
   - probes for new intent, written against each arm's own API after interface extraction;
   - the existing tests each arm edited or deleted;
   - intent reach and context telemetry.
-- `[ ]` The pilot: bare stripped first as a ceiling check, then all three arms at both windows.
+- `[x]` The pilot: bare stripped first as a ceiling check, then all three arms at both windows.
 
 ## M2d: The growth test `[x]` (banked as a pilot)
 
@@ -91,13 +91,13 @@ Banked as a pilot on 2026-11-21: the instrument gate passed and the trial ran (b
 
 ReleaseDesk grown by each arm through 40 changes (design.md, "The growth test").
 
-- `[ ]` Draft the thirty new changes with Sol, blind to the hypotheses: six course changes per block, a reliance change for each, three re-reversals, and new oracle rows with disclosure points and lifetimes.
-- `[ ]` Review by Claude Fable and GPT-6.2 Astra, and apply their fixes; record each change's predicted direction and intent distance.
-- `[ ]` Rate the new askable items with the salience panel; draft and review the probes, including flip checks for every retirement and reversal.
-- `[ ]` Build the harness pieces: the one-line arm, course-change forks, the drift floor, intent from tests and docs at checkpoints (with its baseline, stripped variant and positive control), the stale-intent audit, and fidelity per owner-hour.
-- `[ ]` Trial: one bare and one LID trajectory through change 20. Gate: bare shows stale claims after course changes, the positive control fires, and flip checks behave.
-- `[ ]` Fix X and Y for the predictions from the trial's spread, and record them.
-- `[ ]` Full run: bare ×5 (plus the drift floor), LID Full ×5, one-line bare ×3.
+- `[x]` Draft the thirty new changes with Sol, blind to the hypotheses: six course changes per block, a reliance change for each, three re-reversals, and new oracle rows with disclosure points and lifetimes.
+- `[x]` Review by Claude Fable and GPT-6.2 Astra, and apply their fixes; record each change's predicted direction and intent distance.
+- `[x]` Rate the new askable items with the salience panel; draft and review the probes, including flip checks for every retirement and reversal.
+- `[x]` Build the harness pieces: the one-line arm, course-change forks, the drift floor, intent from tests and docs at checkpoints (with its baseline, stripped variant and positive control), the stale-intent audit, and fidelity per owner-hour.
+- `[x]` Trial: one bare and one LID trajectory through change 20. Gate: bare shows stale claims after course changes, the positive control fires, and flip checks behave.
+- `[D]` Fix X and Y for the predictions from the trial's spread, and record them.
+- `[D]` Full run: bare ×5 (plus the drift floor), LID Full ×5, one-line bare ×3.
 
 ## M2e: The checklist arm and the cost of rework, a first look `[ ]`
 
