@@ -10,7 +10,9 @@ what the fork kept.
 
 plan prints "<fork> <item>" for every miss of each graded fork the glob names (never a repair fork): each of the
 change's rows its grading has as not met, and DEP-NN when one of the change's dependency probes ran and failed
-(dependency_met false; a dependency left undecided because a probe is missing plans no repair). run forks
+(dependency_met false, or grade_node's dependency broken; once, by that verdict: grade_node's per-build DEP-NN row
+plans nothing of its own; a dependency left undecided because a probe is missing plans no repair). Only one run of a
+repair goes at a time (a lock under ../runs/.locks/; a second stops before it touches anything). run forks
 from that fork's own result: its workspace copied as it stands (its last commit is the change's result, and a jj
 repository keeps its history), a fresh configuration with the arm's setup, and the fork's owner as it stood after its
 change; one fresh session opens with the owner's repair report for the item (repair-reports.json in --seed-files: the
@@ -39,6 +41,7 @@ seed with its repair-reports.json) and grading is grade_node.py's.
 from __future__ import annotations
 
 import argparse
+import fcntl
 import fnmatch
 import hashlib
 import json
@@ -84,8 +87,10 @@ def report_text(reports: dict, item: str) -> str | None:
 
 
 def misses(summary: dict, change: int) -> list[str]:
-    """The rows a fork's grading has as not met, and DEP-NN when its dependency probes didn't all pass."""
-    out = sorted(i for i, v in (summary.get("items") or {}).items() if v == "not met")
+    """The rows a fork's grading has as not met, and DEP-NN when its dependency probes didn't all pass. A DEP-NN row
+    among the items (grade_node.py's per-build dependency probe) plans nothing of its own: the dependency is planned
+    once, by its verdict."""
+    out = sorted(i for i, v in (summary.get("items") or {}).items() if v == "not met" and not i.startswith("DEP-"))
     node_dep = (summary.get("dependency") or {}).get("result") if isinstance(summary.get("dependency"), dict) else None
     if summary.get("dependency_met") is False or node_dep == "broken":  # grade_rust's, or grade_node's (M2h)
         out.append(f"DEP-{change:02d}")
@@ -114,7 +119,28 @@ def plan(args) -> int:
     return 0
 
 
+def repair_lock_path(runs: Path, fid: str) -> Path:
+    return runs / ".locks" / f"{fid}.lock"
+
+
 def run_one(args, deps: rf.Deps) -> int:
+    """One repair, while no other run of it holds its lock: two at once would copy into one volume and write one
+    record, each undoing the other's."""
+    lock_path = repair_lock_path(args.runs, fix_id(args.of, args.item))
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(lock_path, "w") as lock:
+        try:
+            fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            print(f"{fix_id(args.of, args.item)} is already running", file=sys.stderr)
+            return 2
+        try:
+            return _run_one(args, deps)
+        finally:
+            fcntl.flock(lock, fcntl.LOCK_UN)
+
+
+def _run_one(args, deps: rf.Deps) -> int:
     arm_meta = _json(args.runs / args.of / "trajectory.json")
     if not arm_meta:
         print(f"no fork {args.of}", file=sys.stderr)

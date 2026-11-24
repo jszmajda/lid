@@ -43,6 +43,8 @@ keeps. The pieces, in the order grade_node.py runs them:
 
 from __future__ import annotations
 
+import contextlib
+import fcntl
 import hashlib
 import json
 import re
@@ -72,6 +74,7 @@ class Suite:
     timeout: int
     install: str | None = None  # run first, with the network (watch-zepp's dev dependencies)
     npm_test: bool = False  # run through `npm test --` (mcp), as the project's own command is
+    serial: bool = False  # a whole run takes the lock every grading shares (SUITE_LOCKS): one at a time, for memory
 
     def command(self, out_base: str, files: list[str] | None = None) -> str:
         """The run, with the grader's machine-readable report at out_base + .jsonl (node) or .json (vitest) beside the
@@ -90,7 +93,7 @@ class Suite:
 
 SUITES = {
     "api": Suite("api", "api", "node-test", "test/*.test.js", 1800),
-    "frontend": Suite("frontend", "frontend", "vitest", "", 3600),
+    "frontend": Suite("frontend", "frontend", "vitest", "", 3600, serial=True),
     "mcp": Suite("mcp", "mcp", "vitest", "", 600, npm_test=True),
     "zepp": Suite("zepp", "watch-zepp", "node-test", "test/*.test.js", 600, install="npm ci --no-audit --no-fund"),
     # CI's routines job (needs the catalogue's media); not one of the plan's four suites
@@ -100,6 +103,10 @@ DEFAULT_SUITES = ("api", "frontend", "mcp", "zepp")
 FLAKY_DEFAULT = ({"suite": "frontend", "name": "useStore.stale-sync"},  # fails at the pin too (draws.txt)
                  {"suite": "api", "name": "server-origin-hint"})  # under load
 FLAKY_RERUNS = 3
+# Where the lock files every grading on this machine shares live (grade_node.py sets it): the web app's whole suite,
+# run by four gradings at once, outgrew the VM's 10 GB and was killed, so a whole run of a serial suite waits for the
+# others'. None: no lock (one grading at a time, or tests).
+SUITE_LOCKS: Path | None = None
 
 
 def suite_of(path: str) -> str | None:
@@ -426,6 +433,21 @@ def is_flaky(r: dict, suite: str, flaky: list[dict]) -> bool:
 # ---------------------------------------------------------------------------------------------- running suites
 
 
+@contextlib.contextmanager
+def _suite_lock(suite: Suite | None):
+    """The lock a whole run of a serial suite holds while it runs (none for any other run, or with no SUITE_LOCKS)."""
+    if suite is None or not suite.serial or SUITE_LOCKS is None:
+        yield
+        return
+    Path(SUITE_LOCKS).mkdir(parents=True, exist_ok=True)
+    with open(Path(SUITE_LOCKS) / f"{suite.name}.lock", "a") as f:
+        fcntl.flock(f, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(f, fcntl.LOCK_UN)
+
+
 def run_suite(ck, suite: Suite, label: str, *, files: list[str] | None = None) -> dict:
     """One run of a suite (or of some of its files, paths in the checkout) in the checkpoint, with no network. Returns
     the parsed run with "exit", "minutes" and "log"; "error" when the runner wrote no report."""
@@ -435,8 +457,9 @@ def run_suite(ck, suite: Suite, label: str, *, files: list[str] | None = None) -
     script = (f"mkdir -p {RUNS}/{label} && rm -f {RUNS}/{label}/{suite.name}.* && exec > {base}.log 2>&1 && "
               f"trap 'echo $? > {base}.exit' EXIT && cd {APP}/{suite.package} && "
               f"NO_COLOR=1 GRADER_ROOT={APP} timeout {suite.timeout} {suite.command(base, rel)}")
-    t0 = time.monotonic()
-    ck.sh(script, check=False)
+    with _suite_lock(suite if files is None else None):
+        t0 = time.monotonic()
+        ck.sh(script, check=False)
     m = re.search(r"\d+", ck.get(f"{base}.exit") or "")
     log = ck.get(f"{base}.log") or ""
     report = ck.get(f"{base}{suite.report_ext}")
@@ -833,7 +856,8 @@ def run_dependency_probe(ck, entry: dict, graded_dir: Path, *, repair_reports: d
     result = dependency_outcome(run, repair_reports=repair_reports)
     result["notes"] = probe_notes(log)
     # the probe's checks leave the checkout: no later grader (another probe's adapter, the extraction) reads them
-    placed = [entry["dest"], *(entry.get("support") or {}), *([entry["adapter"]["dest"]] if entry.get("adapter") else [])]
+    placed = [entry["dest"], *(entry.get("support") or {}),
+              *([entry["adapter"]["dest"], impl_path(entry["adapter"]["dest"])] if entry.get("adapter") else [])]
     ck.sh(f"cd {APP} && rm -f " + " ".join(f"'{p}'" for p in placed), check=False)
     return result
 
@@ -844,6 +868,57 @@ def run_dependency_probe(ck, entry: dict, graded_dir: Path, *, repair_reports: d
 def absent_module(reason: str) -> str:
     return ("// Written by the grader: this build has nothing that provides the adapter's functions.\n"
             f"export const available = false\nexport const reason = {json.dumps(reason)}\n")
+
+
+_EXPORTED = re.compile(r"(?m)^[ \t]*export[ \t]+(?:async[ \t]+)?function[ \t]*\*?[ \t]*([A-Za-z_$][\w$]*)"
+                       r"|^[ \t]*export[ \t]+(?:const|let|var)[ \t]+([A-Za-z_$][\w$]*)")
+_EXPORT_LIST = re.compile(r"(?m)^[ \t]*export[ \t]*\{([^}]*)\}")
+
+
+def adapter_exports(source: str) -> list[str]:
+    """The names an adapter module exports by declaration or list (a default export, or one this misses, still passes
+    through the guard's `export *`, unguarded)."""
+    names = [m.group(1) or m.group(2) for m in _EXPORTED.finditer(source or "")]
+    for m in _EXPORT_LIST.finditer(source or ""):
+        for part in m.group(1).split(","):
+            name = part.strip().split(" as ")[-1].strip()
+            if name and name != "default":
+                names.append(name)
+    return list(dict.fromkeys(names))
+
+
+def impl_path(dest: str) -> str:
+    """Where the build's own adapter goes, beside the guard the probe imports at dest."""
+    stem, dot, ext = dest.rpartition(".")
+    return f"{stem}.impl.{ext}" if dot and "/" not in ext else f"{dest}.impl"
+
+
+def guarded_adapter(source: str, impl: str) -> str:
+    """The module a probe imports as its adapter: everything the build's adapter (at the import specifier impl)
+    exports, with each function made a setup step. A throw or a rejection in one becomes `setup: the adapter's
+    <name>(): <message>`, which dependency_outcome reads as the grader's setup failing (the probe missing), never as
+    the build's precondition failing (not exercised). Values (available, reason) and classes pass through as they are."""
+    names = adapter_exports(source)
+    lines = ["// Written by the grader: the build's adapter, with each function it exports a setup step: a throw or a",
+             "// rejection in one is the grader's setup failing (the probe is then missing), never the build's precondition.",
+             f"import * as impl from '{impl}'", f"export * from '{impl}'",
+             "const setupFailed = (name, e) => { const err = new Error(`setup: the adapter's ${name}(): ${e?.message ?? e}`);"
+             " err.cause = e; return err }",
+             "const guard = (name, f) => (typeof f !== 'function' || /^class\\b/.test(Function.prototype.toString.call(f))) ? f"
+             " : function (...args) {",
+             "  let r",
+             "  try { r = f.apply(this, args) } catch (e) { throw setupFailed(name, e) }",
+             "  return r && typeof r.then === 'function' ? r.then(v => v, e => { throw setupFailed(name, e) }) : r",
+             "}"]
+    lines += [f"export const {n} = guard({json.dumps(n)}, impl[{json.dumps(n)}])" for n in names]
+    return "\n".join(lines) + "\n"
+
+
+def _place_adapter(ck, dest: str, source: str) -> None:
+    """The build's adapter beside the probe's, and the guard in the place the probe imports."""
+    impl = impl_path(dest)
+    ck.put(f"{APP}/{impl}", source)
+    ck.put(f"{APP}/{dest}", guarded_adapter(source, "./" + impl.rsplit("/", 1)[-1]))
 
 
 def adapter_prompt(entry: dict, graded_dir: Path) -> str:
@@ -893,12 +968,12 @@ def adapt(ck, g: "NodeGraders | None", entry: dict, graded_dir: Path, *, run_rol
     a = entry.get("adapter")
     if not a:
         return None
-    dest = f"{APP}/{a['dest']}"
+    dest = a["dest"]
     d = Path(graded_dir)
     if g is None:
         if not a.get("default"):
             return {"status": "unusable", "problems": ["no adapter step and no default adapter"]}
-        ck.put(dest, (d / a["default"]).read_text(encoding="utf-8"))
+        _place_adapter(ck, dest, (d / a["default"]).read_text(encoding="utf-8"))
         return {"status": "default", "problems": []}
     prompt = adapter_prompt(entry, d)
     ck.sh(f"mkdir -p /work/out/adapters && rm -f /work/out/adapters/{entry['id']}.*", check=False)
@@ -912,9 +987,9 @@ def adapt(ck, g: "NodeGraders | None", entry: dict, graded_dir: Path, *, run_rol
     raw, source = ck.get(f"/work/out/adapters/{entry['id']}.json"), ck.get(f"/work/out/adapters/{entry['id']}.js")
     status, problems, record = check_adapter(raw, source, a.get("forbid") or [])
     if status == "adapted":
-        ck.put(dest, source)
+        _place_adapter(ck, dest, source)
     elif status == "absent":
-        ck.put(dest, absent_module(record.get("note") or "absent"))
+        _place_adapter(ck, dest, absent_module(record.get("note") or "absent"))
     result = {"status": status, "problems": problems, "record": record, "notes": record.get("notes") or {}, "session": session}
     if out is not None:
         out.mkdir(parents=True, exist_ok=True)

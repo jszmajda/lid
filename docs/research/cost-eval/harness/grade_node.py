@@ -32,6 +32,13 @@ node_grading.load_graded gives the format). Writes under ../runs/<id>/grading/ch
 Baselines are cached per start commit under ../runs/opengym-m2h/baselines/<commit>/ (baseline.json, logs/, and
 adjusted/change-NN-<key>.json for each change's adjustment): --baseline-only fills one without a fork. Volumes are named
 for the fork (`<id>-cNN-grade`, `<id>-baseline-grade`) and removed at the end unless --keep.
+
+A repair fork (run_clowder_repairs.py; its trajectory.json names the fork it repairs) starts from that fork's result,
+and is graded from that fork's start, as the fork was: the same cached baseline, the start's test files put back, its
+diff from the start (so its keeping compares with the fork's, test by test). The summary names the fork and its commit.
+
+The web app's whole suite takes a lock every grading shares (--suite-locks) before it runs, so gradings running at
+once run it one at a time, within the VM's memory; the command is unchanged, so it matches the cached baselines.
 """
 
 from __future__ import annotations
@@ -201,6 +208,9 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--graded-dir", type=Path, help="default: <seed-dir>/hidden/m2h-graded")
     ap.add_argument("--baselines", type=Path, help="default: <runs>/opengym-m2h/baselines")
     ap.add_argument("--baseline-volume", help="the start's volume; default: the fork's fork_of.volume")
+    ap.add_argument("--suite-locks", type=Path,
+                    help="where the lock files every grading shares live (a whole web-app run takes one, so only one "
+                         "runs at a time); default: <runs>/opengym-m2h/locks")
     ap.add_argument("--suites", default=",".join(node.DEFAULT_SUITES), help="of " + ", ".join(node.SUITES))
     ap.add_argument("--flaky", help="known flaky tests: 'none', a JSON list or file; default: graded.json's, else "
                                     "useStore.stale-sync (frontend) and server-origin-hint (api)")
@@ -230,6 +240,7 @@ def main(argv=None, *, checkpoint: Callable | None = None, run_role: Callable = 
     ap = build_parser()
     args = ap.parse_args(argv)
     make = checkpoint or (lambda name, c, img: node.NodeCheckpoint(name=name, commit=c, image=img))
+    node.SUITE_LOCKS = args.suite_locks or args.runs / "opengym-m2h" / "locks"
     suites = [s for s in args.suites.split(",") if s]
     unknown = [s for s in suites if s not in node.SUITES]
     if unknown:
@@ -258,6 +269,11 @@ def main(argv=None, *, checkpoint: Callable | None = None, run_role: Callable = 
     if n is None:
         ap.error("--change is needed")
     commit, base = meta["changes"][str(n)]["commit"], meta["start_commit"]
+    repair = None
+    if meta.get("repair"):  # a repair starts from its fork's result, and is graded from its fork's start, as the fork was
+        of = json.loads((args.runs / meta["repair"]["of"] / "trajectory.json").read_text())
+        repair = {"of": meta["repair"]["of"], "item": meta["repair"].get("item"), "fork_commit": base}
+        base = of["start_commit"]
     image = args.image or meta.get("image") or node.IMAGE
     out = run / "grading" / f"change-{n:02d}"
     out.mkdir(parents=True, exist_ok=True)
@@ -277,6 +293,8 @@ def main(argv=None, *, checkpoint: Callable | None = None, run_role: Callable = 
                      "seed_files": {"changes_sha256": _sha(changes_path), "guard_rows_sha256": _sha(guards_path),
                                     "probes_sha256": _sha(probes_path),
                                     "graded_sha256": _sha(graded_dir / node.GRADED_JSON)}}
+    if repair:
+        summary["repair"] = repair
     if not changes.get(n):
         summary["change_text_missing"] = f"no change {n} in {changes_path}"
     classify = None

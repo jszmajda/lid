@@ -117,6 +117,65 @@ class ReportTest(Base):
         self.assertIn("never counted as kept", text)
         self.assertIn("| m2h-bare-c01-r3 | bare | 1 | 3 | hidden | partly | not exercised |", text)
 
+    def test_repairs_per_arm_and_per_repair_with_the_misses_left_after_them(self):
+        fork(self.runs, "m2h-bare-c01-r1", 1, items={"OGM-0101": "met"}, dep="broken", implemented="yes", tier="hidden")
+        fork(self.runs, "m2h-bare-c01-r2", 1, items={"OGM-0101": "not met", "DEP-01": "not met"}, dep="broken",
+             implemented="no", tier="hidden")
+        fork(self.runs, "m2h-lid-c09-r1", 9, arm="lid-full-arrows", items={"OGM-0901": "not met"}, dep="kept",
+             implemented="no", tier="one-step grep")
+        write(self.runs / "m2h-bare-c01-r1-fix-DEP-01" / "repair.json", {
+            "of": "m2h-bare-c01-r1", "item": "DEP-01", "fixed": True, "agent_cost_usd": 0.2, "owner_cost_usd": 0.1,
+            "minutes": 3.0, "rounds": 2, "keeping": {"items_broken": [], "tests_broken": ["a::x"], "dependency_probes_broken": []}})
+        write(self.runs / "m2h-bare-c01-r2-fix-OGM-0101" / "repair.json", {
+            "of": "m2h-bare-c01-r2", "item": "OGM-0101", "fixed": False, "agent_cost_usd": 0.5, "owner_cost_usd": 0.2,
+            "minutes": 4.0, "rounds": 3, "keeping": {"items_broken": ["OGM-0102"], "tests_broken": [],
+                                                     "dependency_probes_broken": []}})
+        rc, text, rec = self.report()
+        bare, lid = rec["repairs"]["arms"]["bare"], rec["repairs"]["arms"]["lid"]
+        # the planner's misses: c01-r1 DEP-01; c01-r2 OGM-0101 and DEP-01 (its DEP-01 row is the dependency's, once)
+        self.assertEqual((bare["misses"], bare["recorded"], bare["fixed"], bare["not_fixed"], bare["undetermined"]), (3, 2, 1, 1, 0))
+        self.assertEqual((bare["left"], bare["not_run"]), (2, 1))  # not fixed, and c01-r2's DEP-01 never run
+        self.assertEqual((bare["rows_broken"], bare["tests_broken"], bare["dependency_probes_broken"]), (1, 1, 0))
+        self.assertAlmostEqual(bare["agent_cost_usd"], 0.7)
+        self.assertAlmostEqual(bare["owner_cost_usd"], 0.3)
+        self.assertEqual((lid["misses"], lid["recorded"], lid["left"], lid["not_run"]), (1, 0, 1, 1))
+        self.assertIn("## Repairs", text)
+        self.assertIn("| m2h-bare-c01-r1-fix-DEP-01 | m2h-bare-c01-r1 | DEP-01 | fixed | 0 | 1 | 0 | $0.20 | $0.10 | 3.0 | 2 |",
+                      text)
+        self.assertIn("| m2h-bare-c01-r2 | DEP-01 | not run |", text)
+
+    def test_a_repair_of_a_miss_the_forks_current_grading_no_longer_has_is_listed_apart(self):
+        # regraded, the fork kept the dependency its first grading had as broken: the repair stays on record, apart
+        fork(self.runs, "m2h-lid-c01-r2", 1, arm="lid-full-arrows", items={"OGM-0101": "met"}, dep="kept",
+             implemented="yes", tier="hidden")
+        write(self.runs / "m2h-lid-c01-r2-fix-DEP-01" / "repair.json", {
+            "of": "m2h-lid-c01-r2", "item": "DEP-01", "fixed": True, "agent_cost_usd": 0.4, "owner_cost_usd": 0.1,
+            "minutes": 2.0, "rounds": 2, "keeping": {}})
+        rc, text, rec = self.report()
+        self.assertEqual(rec["repairs"]["arms"]["lid"]["misses"], 0)
+        self.assertEqual(rec["repairs"]["moot"], [{"repair": "m2h-lid-c01-r2-fix-DEP-01", "fork": "m2h-lid-c01-r2",
+                                                   "arm": "lid", "item": "DEP-01", "fixed": True, "agent_cost_usd": 0.4}])
+        self.assertIn("## Repairs", text)
+        self.assertIn("no longer have", text)
+        self.assertIn("| m2h-lid-c01-r2-fix-DEP-01 | m2h-lid-c01-r2 | DEP-01 | fixed | $0.40 |", text)
+
+    def test_forks_graded_again_compare_the_first_grading_with_the_second(self):
+        fork(self.runs, "m2h-bare-c12-r1", 12, items={"OGM-1201": "met", "DEP-12": "met"}, dep="kept", implemented="yes",
+             tier="one-step grep")
+        write(self.runs / "m2h-bare-c12-r1" / "grading-v1" / "change-12" / "summary.json", {
+            "items": {"OGM-1201": "met", "DEP-12": "not met"}, "dependency": {"result": "not exercised"},
+            "joint": {"implemented": "yes", "dependent_behaviour": "not exercised"}})
+        fork(self.runs, "m2h-bare-c11-r1", 11, items={}, dep="kept", implemented="yes", tier="documented")  # graded once
+        rc, text, rec = self.report()
+        self.assertIn("the same git tree", text)
+        self.assertNotIn("content, hunk positions", text)
+        self.assertEqual(rec["v1_v2"], [{"id": "m2h-bare-c12-r1", "arm": "bare", "change": 12,
+                                         "v1": {"implemented": "yes", "dependent": "not exercised"},
+                                         "v2": {"implemented": "yes", "dependent": "kept"},
+                                         "rows_changed": {"DEP-12": ["not met", "met"]}, "rebuilt": None}])
+        self.assertIn("## First grading against the second", text)
+        self.assertIn("| m2h-bare-c12-r1 | bare | 12 | yes, not exercised | yes, kept | DEP-12: not met → met | – |", text)
+
 
 if __name__ == "__main__":
     unittest.main()

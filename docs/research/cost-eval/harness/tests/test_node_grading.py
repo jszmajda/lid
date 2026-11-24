@@ -4,6 +4,8 @@ joint outcome. Docker and the model roles are fakes."""
 
 import json
 import re
+import shutil
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -556,6 +558,33 @@ class RunSuitesTest(unittest.TestCase):
         self.assertEqual(runs["api"]["tests"][f"{f}::hint"]["status"], "failed")
         self.assertEqual(runs["api"]["tests"][f"{f}::hint"]["flaky_runs"], ["failed", "failed", "failed"])
 
+    def test_a_whole_web_app_run_holds_a_lock_shared_by_every_grading_so_only_one_runs_at_a_time(self):
+        # the web app's whole suite, run by four gradings at once, outgrew the VM's memory; each whole run now waits for
+        # the others' (a lock file every grading shares), with the command unchanged, so it matches the cached baselines
+        import fcntl
+        locks = Path(tempfile.mkdtemp())
+        self.addCleanup(setattr, ng, "SUITE_LOCKS", ng.SUITE_LOCKS)
+        ng.SUITE_LOCKS = locks
+        held = {}
+
+        class Watching(FakeCk):
+            def sh(self, script, stdin=None, check=True, network=False):
+                m = re.search(r"/work/out/runs/([\w.-]+)/([\w-]+)\.(jsonl|json) ", script + " ")
+                if m:
+                    with open(locks / "frontend.lock", "a") as f:
+                        try:
+                            fcntl.flock(f, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                            fcntl.flock(f, fcntl.LOCK_UN)
+                            held[m.group(1), m.group(2)] = False
+                        except BlockingIOError:
+                            held[m.group(1), m.group(2)] = True
+                return super().sh(script, stdin=stdin, check=check, network=network)
+        ck = Watching()
+        ng.run_suites(ck, ["api", "frontend"], "fork", flaky=[], reruns=1)
+        ng.run_suite(ck, ng.SUITES["frontend"], "dep-x", files=["frontend/src/__graded__/d.test.jsx"])
+        self.assertEqual(held, {("fork", "api"): False, ("fork", "frontend"): True, ("dep-x", "frontend"): False})
+        self.assertNotIn("maxWorkers", ng.SUITES["frontend"].command("/b"))
+
     def test_a_suite_with_no_report_says_so(self):
         runs = ng.run_suites(FakeCk(), ["mcp"], "fork", flaky=[], reruns=1)
         self.assertEqual(runs["mcp"]["tests"], {})
@@ -738,7 +767,11 @@ class DependencyRunTest(unittest.TestCase):
         r, ck, calls = self.run_adapter({"status": "adapted", "evidence": [{"file": "api/server.js"}], "note": "a route",
                                          "notes": {"storage": "route"}}, "export const available = true\nexport function pair () {}\n")
         self.assertEqual(r["status"], "adapted")
-        self.assertEqual(ck.files["/work/app/frontend/src/__graded__/adapter.js"], "export const available = true\nexport function pair () {}\n")
+        # the build's adapter sits beside the module the probe imports, which guards each of its functions
+        self.assertEqual(ck.files["/work/app/frontend/src/__graded__/adapter.impl.js"],
+                         "export const available = true\nexport function pair () {}\n")
+        self.assertEqual(ck.files["/work/app/frontend/src/__graded__/adapter.js"],
+                         ng.guarded_adapter("export const available = true\nexport function pair () {}\n", "./adapter.impl.js"))
         prompt = calls[0]["prompt"]
         self.assertIn("Export `pair(code)`.", prompt)
         self.assertIn("call the build's own pairing route", prompt)
@@ -751,7 +784,8 @@ class DependencyRunTest(unittest.TestCase):
     def test_a_build_without_the_interface_gets_an_adapter_that_says_so_and_an_unclear_one_is_missing(self):
         r, ck, _ = self.run_adapter({"status": "absent", "evidence": [{"file": "api/server.js"}], "note": "no route"}, None)
         self.assertEqual(r["status"], "absent")
-        self.assertIn("export const available = false", ck.files["/work/app/frontend/src/__graded__/adapter.js"])
+        self.assertIn("export const available = false", ck.files["/work/app/frontend/src/__graded__/adapter.impl.js"])
+        self.assertIn("export * from './adapter.impl.js'", ck.files["/work/app/frontend/src/__graded__/adapter.js"])
         r, _, _ = self.run_adapter({"status": "unclear", "evidence": [], "note": "?"}, None)
         self.assertEqual(r["status"], "unusable")
         r, _, _ = self.run_adapter(None, None)
@@ -769,7 +803,64 @@ class DependencyRunTest(unittest.TestCase):
         ck = FakeCk()
         r = ng.adapt(ck, None, entry, d, run_role=None)
         self.assertEqual(r["status"], "default")
-        self.assertEqual(ck.files["/work/app/frontend/src/__graded__/adapter.js"], "export const available = true\n")
+        self.assertEqual(ck.files["/work/app/frontend/src/__graded__/adapter.impl.js"], "export const available = true\n")
+        self.assertIn("export * from './adapter.impl.js'", ck.files["/work/app/frontend/src/__graded__/adapter.js"])
+
+    def test_both_adapter_files_leave_the_checkout_once_the_probe_has_run(self):
+        d = self.graded(self.adapter())
+        entry = ng.dependency_entries(ng.load_graded(d), 1)[0]
+        ck = FakeCk()
+        ng.adapt(ck, None, entry, d, run_role=None)
+        ng.run_dependency_probe(ck, entry, d)
+        rm = next(x for x in ck.scripts if x.startswith("cd /work/app && rm -f"))
+        self.assertIn("'frontend/src/__graded__/adapter.js'", rm)
+        self.assertIn("'frontend/src/__graded__/adapter.impl.js'", rm)
+
+
+@unittest.skipUnless(shutil.which("node"), "needs node")
+class GuardedAdapterTest(unittest.TestCase):
+    """The module a probe imports in place of the build's adapter: each function the adapter exports is a setup step, so
+    a throw or a rejection reads as the grader's setup failing (the probe missing), never as the build's precondition
+    failing (not exercised)."""
+
+    SOURCE = ("export const available = true\nexport const reason = null\n"
+              "export function boom () { throw new TypeError(\"Cannot read properties of undefined (reading 'click')\") }\n"
+              "export async function later (x) { if (x) throw new Error('cycle log sheet did not open'); return 'ok' }\n"
+              "export const arrow = (a, b) => a + b\n"
+              "const hidden = () => 'h'\nexport { hidden as shown }\n"
+              "export class Thing { constructor () { this.n = 1 } }\n")
+
+    def run_node(self, body: str) -> str:
+        d = Path(tempfile.mkdtemp())
+        (d / "a.impl.mjs").write_text(self.SOURCE)
+        (d / "a.mjs").write_text(ng.guarded_adapter(self.SOURCE, "./a.impl.mjs"))
+        (d / "t.mjs").write_text("import * as A from './a.mjs'\n" + body)
+        p = subprocess.run(["node", str(d / "t.mjs")], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0, p.stderr)
+        return p.stdout
+
+    def test_a_throw_or_rejection_in_an_adapter_function_reads_as_a_setup_step_failing(self):
+        out = self.run_node(
+            "try { A.boom() } catch (e) { console.log('sync|' + e.message) }\n"
+            "try { await A.later(1) } catch (e) { console.log('async|' + e.message) }\n"
+            "console.log('ok|' + await A.later(0) + '|' + A.arrow(2, 3) + '|' + A.shown())\n"
+            "console.log('values|' + A.available + '|' + A.reason + '|' + new A.Thing().n)\n")
+        lines = dict(line.split("|", 1) for line in out.strip().splitlines())
+        self.assertEqual(lines["sync"], "setup: the adapter's boom(): Cannot read properties of undefined (reading 'click')")
+        self.assertEqual(lines["async"], "setup: the adapter's later(): cycle log sheet did not open")
+        self.assertEqual(lines["ok"], "ok|5|h")
+        self.assertEqual(lines["values"], "true|null|1")
+        for msg in (lines["sync"], lines["async"]):
+            self.assertTrue(ng.SETUP_MESSAGE.match(msg), msg)  # what dependency_outcome reads as a setup failure
+
+    def test_an_adapter_the_grader_wrote_to_say_absent_still_loads(self):
+        absent = ng.absent_module("no cycle log")
+        d = Path(tempfile.mkdtemp())
+        (d / "a.impl.mjs").write_text(absent)
+        (d / "a.mjs").write_text(ng.guarded_adapter(absent, "./a.impl.mjs"))
+        (d / "t.mjs").write_text("import * as A from './a.mjs'\nconsole.log(A.available, A.reason)\n")
+        p = subprocess.run(["node", str(d / "t.mjs")], capture_output=True, text=True)
+        self.assertEqual(p.stdout.strip(), "false no cycle log", p.stderr)
 
 
 # ---------------------------------------------------------------------------------------------- new-row probes
@@ -1177,6 +1268,33 @@ class GradeNodeMainTest(unittest.TestCase):
         self.assertEqual(len(made2), 1)
         s2 = json.loads((out / "summary.json").read_text())
         self.assertFalse(s2["keeping"]["baseline"]["computed"])
+
+    def test_a_repair_is_graded_from_its_forks_start_like_the_fork_it_repairs(self):
+        # a repair fork starts from its fork's result, a commit only the fork's and the repair's own volumes hold; it is
+        # graded as the fork was, against the start's baseline (cached, from the start's volume), its test files put
+        # back to the start's, its diff from the start
+        runs, seed, fid = m2h_fork(probes=False)
+        rid = f"{fid}-fix-DEP-01"
+        fork_meta = json.loads((runs / fid / "trajectory.json").read_text())
+        (runs / rid).mkdir()
+        (runs / rid / "trajectory.json").write_text(json.dumps({
+            **fork_meta, "id": rid, "repair": {"of": fid, "item": "DEP-01"}, "start_commit": "f0rk",
+            "volumes": {"workspace": f"{rid}-ws", "config": f"{rid}-cfg"},
+            "changes": {"1": {"commit": "r3pair", "finished": True}}}))
+        outputs = {"baseline": {("baseline", "api"): BASE_API}, "fork": {("fork", "api"): FORK_API}}
+        made = []
+        argv = ["--id", rid, "--runs", str(runs), "--seed-dir", str(seed), "--suites", "api", "--no-classify"]
+        self.addCleanup(setattr, ng, "SUITE_LOCKS", ng.SUITE_LOCKS)
+        self.assertEqual(grade_node.main(argv, checkpoint=self.factory(made, outputs), run_role=None), 0)
+        self.assertEqual(ng.SUITE_LOCKS, runs / "opengym-m2h" / "locks")  # every grading of these runs shares it
+        repair_ck, base_ck = made
+        self.assertEqual((repair_ck.exported_from, repair_ck.commit), (f"{rid}-ws", "r3pair"))
+        self.assertEqual((base_ck.exported_from, base_ck.commit), ("ogmap-bare-ws", "d96444e"))
+        self.assertTrue(any("git checkout d96444e --" in x for x in repair_ck.scripts))
+        self.assertTrue(any("git diff --no-color d96444e r3pair" in x for x in repair_ck.scripts))
+        s = json.loads((runs / rid / "grading" / "change-01" / "summary.json").read_text())
+        self.assertEqual((s["commit"], s["start_commit"]), ("r3pair", "d96444e"))
+        self.assertEqual(s["repair"], {"of": fid, "item": "DEP-01", "fork_commit": "f0rk"})
 
     def test_an_adjustment_is_applied_on_the_fork_and_compared_with_the_adjusted_start(self):
         patch = ("diff --git a/api/test/a.test.js b/api/test/a.test.js\n--- a/api/test/a.test.js\n+++ b/api/test/a.test.js\n"

@@ -8,8 +8,10 @@ behaviour (kept, broken, not exercised, or missing), from grade_node.py's summar
 Per fork, per change and arm, pooled per arm, and by searchability tier (documented, one-step grep, hidden; the
 changes the seed reports both ways, 3 and 8, are also left out of the documented tier in a row of their own), the joint
 counts over all forks and breakage among implemented forks: broken / (kept + broken), over "implemented: yes". A
-dependency that wasn't exercised is never counted as kept. With each, the forks' agent cost and turns. Writes the
-Markdown report and the same numbers as JSON beside it.
+dependency that wasn't exercised is never counted as kept. With each, the forks' agent cost and turns. Then the
+repairs (each miss the repair planner lists, with its repair's record: fixed, what it broke, what it cost, and the
+misses left), and, for forks graded twice (grading-v1/ beside grading/), the first grading against the second.
+Writes the Markdown report and the same numbers as JSON beside it.
 """
 
 from __future__ import annotations
@@ -22,6 +24,9 @@ import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
+sys.path.insert(0, str(HERE))
+import run_clowder_repairs as rcr  # noqa: E402
+
 MAIN = Path("/Users/jess/src/lid-cost-eval/docs/research/cost-eval")
 IMPLEMENTED = ("yes", "partly", "no", "N/A", "undecided")
 DEPENDENT = ("kept", "broken", "not exercised", "missing")
@@ -90,6 +95,70 @@ def build(runs: Path, pattern: str, kept: dict) -> dict:
     for n in sorted({f["change"] for f in forks}):
         out["changes"][str(n)] = {arm: tally([f for f in forks if f["change"] == n and f["arm"] == arm])
                                   for arm in sorted({f["arm"] for f in forks if f["change"] == n})}
+    out["repairs"] = repairs(runs, forks)
+    out["v1_v2"] = first_and_second(runs, forks)
+    return out
+
+
+def _summary(runs: Path, fid: str, n: int, grading: str = "grading") -> dict | None:
+    return _json(runs / fid / grading / f"change-{n:02d}" / "summary.json")
+
+
+def repairs(runs: Path, forks: list[dict]) -> dict:
+    """Every miss of the reported forks (the repair planner's: a non-DEP row not met, or a broken dependency, once),
+    with its repair's record (repair.json) where there is one: fixed, not fixed or undetermined, what it broke, what
+    it cost. Misses left: not fixed, undetermined, or never run."""
+    rows, arms = [], {}
+    for f in forks:
+        s = _summary(runs, f["id"], f["change"]) or {}
+        for item in rcr.misses(s, f["change"]):
+            rid = rcr.fix_id(f["id"], item)
+            rec = _json(runs / rid / "repair.json")
+            k = (rec or {}).get("keeping") or {}
+            rows.append({"repair": rid, "fork": f["id"], "arm": f["arm"], "item": item, "recorded": rec is not None,
+                         "fixed": (rec or {}).get("fixed"), "rows_broken": len(k.get("items_broken") or []),
+                         "tests_broken": len(k.get("tests_broken") or []),
+                         "dependency_probes_broken": len(k.get("dependency_probes_broken") or []),
+                         **{x: (rec or {}).get(x) for x in ("agent_cost_usd", "owner_cost_usd", "minutes", "rounds")}})
+    for arm in sorted({f["arm"] for f in forks}):
+        mine = [r for r in rows if r["arm"] == arm]
+        done = [r for r in mine if r["recorded"]]
+        arms[arm] = {"misses": len(mine), "recorded": len(done), "fixed": sum(r["fixed"] is True for r in done),
+                     "not_fixed": sum(r["fixed"] is False for r in done), "undetermined": sum(r["fixed"] is None for r in done),
+                     "not_run": len(mine) - len(done),
+                     **{x: sum(r[x] for r in done) for x in ("rows_broken", "tests_broken", "dependency_probes_broken")},
+                     **{x: sum(r[x] or 0 for r in done) for x in ("agent_cost_usd", "owner_cost_usd", "minutes", "rounds")}}
+        arms[arm]["left"] = arms[arm]["misses"] - arms[arm]["fixed"]
+    # repairs on record of misses the forks' current gradings no longer have (a fork graded again): kept apart
+    planned = {r["repair"] for r in rows}
+    moot = []
+    for f in forks:
+        for d in sorted(runs.glob(f"{f['id']}{rcr.FIX}*")):
+            rec = _json(d / "repair.json")
+            if rec is None or "." in d.name or d.name in planned:
+                continue
+            moot.append({"repair": d.name, "fork": f["id"], "arm": f["arm"], "item": rec.get("item"),
+                         "fixed": rec.get("fixed"), "agent_cost_usd": rec.get("agent_cost_usd")})
+    return {"arms": arms, "rows": rows, "moot": moot}
+
+
+def _outcome(s: dict) -> dict:
+    joint = s.get("joint") or {}
+    dep = joint.get("dependent_behaviour") or (s.get("dependency") or {}).get("result")
+    return {"implemented": joint.get("implemented"), "dependent": dep}
+
+
+def first_and_second(runs: Path, forks: list[dict]) -> list[dict]:
+    """Each reported fork graded twice (grading-v1/ beside grading/): its joint outcome and the rows that changed."""
+    out = []
+    for f in forks:
+        first, second = _summary(runs, f["id"], f["change"], "grading-v1"), _summary(runs, f["id"], f["change"])
+        if first is None or second is None:
+            continue
+        a, b = first.get("items") or {}, second.get("items") or {}
+        out.append({"id": f["id"], "arm": f["arm"], "change": f["change"], "v1": _outcome(first), "v2": _outcome(second),
+                    "rows_changed": {i: [a.get(i), b.get(i)] for i in sorted(set(a) | set(b)) if a.get(i) != b.get(i)},
+                    "rebuilt": (second.get("rebuilt") or {}).get("diff_match")})
     return out
 
 
@@ -139,6 +208,55 @@ def render(r: dict, kept: dict) -> str:
         lines.append(f"| {f['id']} | {f['arm']} | {f['change']} | {f['repeat']} | {f['tier'] or '–'} | {f['implemented']} | "
                      f"{f['dependent']} | {money(f['agent_cost_usd'])} | {f['turns'] if f['turns'] is not None else '–'} | "
                      f"{notes or '–'} |")
+    rep = r.get("repairs") or {}
+    if rep.get("rows"):
+        lines += ["", "## Repairs", "",
+                  "A miss is a non-guard row not met, or a broken dependency (once); each has one repair fork, graded "
+                  "from its fork's start as the fork was. Fixed: the row met, or the dependency kept. Broken: the "
+                  "fork's other rows met before and not now, keeping tests failing on the repair that didn't on the "
+                  "fork, dependency probes kept before and broken now. Left: misses not fixed (not fixed, undetermined, "
+                  "or never run).", "",
+                  "| Arm | Misses | Repairs recorded | Fixed | Not fixed | Undetermined | Not run | Left | Rows broken | "
+                  "Tests broken | Dependency probes broken | Agent cost | Owner cost | Minutes | Rounds |",
+                  "|---" * 15 + "|"]
+        for arm, a in rep["arms"].items():
+            lines.append(f"| {arm} | {a['misses']} | {a['recorded']} | {a['fixed']} | {a['not_fixed']} | {a['undetermined']} | "
+                         f"{a['not_run']} | {a['left']} | {a['rows_broken']} | {a['tests_broken']} | "
+                         f"{a['dependency_probes_broken']} | {money(a['agent_cost_usd'])} | {money(a['owner_cost_usd'])} | "
+                         f"{a['minutes']:.1f} | {a['rounds']} |")
+        lines += ["", "| Repair | Fork | Item | Fixed | Rows broken | Tests broken | Dependency probes broken | Agent cost | "
+                  "Owner cost | Minutes | Rounds |", "|---" * 11 + "|"]
+        word = {True: "fixed", False: "not fixed", None: "undetermined"}
+        for x in rep["rows"]:
+            if not x["recorded"]:
+                lines.append(f"| – | {x['fork']} | {x['item']} | not run | – | – | – | – | – | – | – |")
+                continue
+            lines.append(f"| {x['repair']} | {x['fork']} | {x['item']} | {word[x['fixed']]} | {x['rows_broken']} | "
+                         f"{x['tests_broken']} | {x['dependency_probes_broken']} | {money(x['agent_cost_usd'])} | "
+                         f"{money(x['owner_cost_usd'])} | {x['minutes'] if x['minutes'] is not None else '–'} | "
+                         f"{x['rounds'] if x['rounds'] is not None else '–'} |")
+    if rep.get("moot"):
+        word = {True: "fixed", False: "not fixed", None: "undetermined"}
+        if not rep.get("rows"):
+            lines += ["", "## Repairs"]
+        lines += ["", "Repairs on record of misses their forks' current gradings no longer have (graded again, the fork "
+                  "meets the row or no longer breaks the dependency); left out of the counts above:", "",
+                  "| Repair | Fork | Item | Fixed | Agent cost |", "|---|---|---|---|---|"]
+        for x in rep["moot"]:
+            lines.append(f"| {x['repair']} | {x['fork']} | {x['item']} | {word.get(x['fixed'], x['fixed'])} | "
+                         f"{money(x['agent_cost_usd'])} |")
+    if r.get("v1_v2"):
+        both = lambda o: f"{o['implemented'] or '–'}, {o['dependent'] or '–'}"  # noqa: E731
+        lines += ["", "## First grading against the second", "",
+                  "Forks graded twice (grading-v1/ kept beside grading/): the joint outcome each time, and the rows "
+                  "whose verdict changed. Rebuilt: how the tree the second grading graded was checked against the "
+                  "first's diff, rebuilt from it: exact (the same diff, byte for byte), or tree (each diff applied to "
+                  "the start gives the same git tree); – when graded again in its own volume.", "",
+                  "| Fork | Arm | Change | First | Second | Rows changed | Rebuilt |", "|---|---|---|---|---|---|---|"]
+        for x in r["v1_v2"]:
+            changed = "; ".join(f"{i}: {a or '–'} → {b or '–'}" for i, (a, b) in x["rows_changed"].items())
+            lines.append(f"| {x['id']} | {x['arm']} | {x['change']} | {both(x['v1'])} | {both(x['v2'])} | {changed or '–'} | "
+                         f"{x['rebuilt'] or '–'} |")
     return "\n".join(lines) + "\n"
 
 

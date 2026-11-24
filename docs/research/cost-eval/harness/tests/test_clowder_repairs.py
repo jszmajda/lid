@@ -78,6 +78,13 @@ class PlanTest(Base):
         for result, want in (("broken", ["DEP-01"]), ("kept", []), ("not exercised", []), ("missing", [])):
             self.assertEqual(rcr.misses({"items": {}, "dependency": {"result": result}}, 1), want, result)
 
+    def test_a_dependency_is_planned_once_and_only_by_its_dependency_verdict(self):
+        # grade_node.py's items carry the per-build dependency probe's row (DEP-05) beside the change's own rows; that
+        # row never plans a repair of its own, so a broken dependency is one repair fork, not two run at once
+        s = {"items": {"DEP-05": "not met", "OGM-0501": "not met", "OGM-0502": "met"}, "dependency": {"result": "broken"}}
+        self.assertEqual(rcr.misses(s, 5), ["OGM-0501", "DEP-05"])
+        self.assertEqual(rcr.misses({"items": {"DEP-05": "not met"}, "dependency": {"result": "kept"}}, 5), [])
+
     def test_node_keeping_and_dependency_compare_by_their_own_records(self):
         arm = {"dependency": {"result": "kept", "probes": {"P1": {"result": "kept"}, "P2": {"result": "kept"}}}}
         fix = {"dependency": {"result": "broken", "probes": {"P1": {"result": "broken"}, "P2": {"result": "missing"}}}}
@@ -165,6 +172,21 @@ class RunTest(Base):
         self.run_repair("BK-02")
         rc, docker = self.run_repair("BK-02")
         self.assertEqual((rc, docker.calls), (0, []))
+
+    def test_a_repair_already_running_is_refused_before_it_touches_anything(self):
+        # two runs of one repair at once would copy into one volume and write one record: the second stops at once
+        import fcntl
+        lock = rcr.repair_lock_path(self.f.runs, f"{ARM}-fix-BK-02")
+        lock.parent.mkdir(parents=True, exist_ok=True)
+        with open(lock, "w") as held:
+            fcntl.flock(held, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                rc, docker = self.run_repair("BK-02")
+        self.assertEqual((rc, docker.calls), (2, []))
+        self.assertIn("already running", err.getvalue())
+        self.assertFalse((self.f.runs / f"{ARM}-fix-BK-02").exists())
+        self.assertEqual(self.run_repair("BK-02")[0], 0)  # once the other run lets go, it runs
 
 
 class RecordTest(Base):
