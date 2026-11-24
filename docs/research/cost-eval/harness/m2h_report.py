@@ -119,6 +119,7 @@ def repairs(runs: Path, forks: list[dict]) -> dict:
                          "fixed": (rec or {}).get("fixed"), "rows_broken": len(k.get("items_broken") or []),
                          "tests_broken": len(k.get("tests_broken") or []),
                          "dependency_probes_broken": len(k.get("dependency_probes_broken") or []),
+                         "tests_rerun": k.get("tests_rerun") or [],
                          **{x: (rec or {}).get(x) for x in ("agent_cost_usd", "owner_cost_usd", "minutes", "rounds")}})
     for arm in sorted({f["arm"] for f in forks}):
         mine = [r for r in rows if r["arm"] == arm]
@@ -235,6 +236,10 @@ def render(r: dict, kept: dict) -> str:
                          f"{x['tests_broken']} | {x['dependency_probes_broken']} | {money(x['agent_cost_usd'])} | "
                          f"{money(x['owner_cost_usd'])} | {x['minutes'] if x['minutes'] is not None else '–'} | "
                          f"{x['rounds'] if x['rounds'] is not None else '–'} |")
+    reruns = [(x["repair"], t) for x in rep.get("rows") or [] for t in x.get("tests_rerun") or []]
+    if reruns:
+        lines += ["", "Tests a repair's keeping had as broken, rerun alone in its tree:", ""]
+        lines += [f"- {rid}, {t['test']}: {t['settled']} (rerun alone: {', '.join(t['reruns'])})" for rid, t in reruns]
     if rep.get("moot"):
         word = {True: "fixed", False: "not fixed", None: "undetermined"}
         if not rep.get("rows"):

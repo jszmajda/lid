@@ -220,6 +220,8 @@ def build_parser() -> argparse.ArgumentParser:
     ap.add_argument("--no-classify", action="store_true", help="leave keeping failures unclassified")
     ap.add_argument("--no-dependency", action="store_true")
     ap.add_argument("--no-adapters", action="store_true", help="dependency probes run with the pin's adapters")
+    ap.add_argument("--adapter-note", action="append", default=[], metavar="ID=TEXT",
+                    help="a note for one probe's adapter writer on this build (repeatable); recorded in the summary")
     ap.add_argument("--no-probes", action="store_true")
     ap.add_argument("--batch-size", type=int, default=4)
     ap.add_argument("--extraction-model", default="claude-sonnet-5-5")
@@ -295,6 +297,9 @@ def main(argv=None, *, checkpoint: Callable | None = None, run_role: Callable = 
                                     "graded_sha256": _sha(graded_dir / node.GRADED_JSON)}}
     if repair:
         summary["repair"] = repair
+    adapter_notes = dict(x.split("=", 1) for x in args.adapter_note)
+    if adapter_notes:
+        summary["adapter_notes"] = adapter_notes
     if not changes.get(n):
         summary["change_text_missing"] = f"no change {n} in {changes_path}"
     classify = None
@@ -329,7 +334,8 @@ def main(argv=None, *, checkpoint: Callable | None = None, run_role: Callable = 
             summary["dependency"] = {"result": None, "skipped": "--no-dependency"}
         else:
             dep = node.grade_dependency(ck, None if args.no_adapters else g, node.dependency_entries(graded, n) if graded else [],
-                                        graded_dir, change, run_role=run_role, out=out / "dependency")
+                                        graded_dir, change, run_role=run_role, out=out / "dependency",
+                                        adapter_notes=adapter_notes)
             (out / "dependency.json").write_text(json.dumps(dep, indent=1))
             summary["dependency"] = dep
         ck.sh("rm -rf /work/out/runs /work/grader", check=False)  # the grader's own runs stay out of the graders' view

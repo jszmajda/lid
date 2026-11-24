@@ -54,15 +54,14 @@ Read this section first when you pick the work up in a new session. Update it at
 - **Start long jobs as tracked background tasks, or with a watch.** A job started detached sends no notice when it finishes.
 - **The maintainer has handed the pilot to the main session** (2026-11-14): run it on your own judgment, and bring the maintainer only decisions that are really theirs. Pushing to the draft pull request is allowed; marking it ready, merging, and releasing are not. Claude Fable stands in for the maintainer's detailed reviews (probes, oracles, verdict spot-checks).
 - **M2f, Clowder's cross-crate test, has run** (log.md, 2026-11-23; analysis in `runs/clowder-m2f/analysis/`). The arms finish close in total (new rows 69 and 70 of 72; dependencies kept 18 and 19 of 24) but miss different dependencies. LID's arm ran under Clowder's own standing override of phase reviews.
-- **M2h, the openGym brownfield test, is prepared** ([seeds/opengym/README.md](seeds/opengym/README.md)): four `/map-codebase` draws, twelve reviewed changes, validated probes, and a merged harness (`run_opengym_m2h.sh`). Its null check is running.
+- **M2h, the openGym brownfield test, has run** (log.md, 2026-11-24; `runs/opengym-m2h/m2h.md` and `analysis/`). LID built every requested change and bare 33 of 36; breakage of the dependent component is level (7 of 33 against 6 of 35), at about 3× the agent cost before LID's one-time mapping.
 
-**Next actions** (plan.md, M2f and M2h):
+**Next actions:**
 
-1. **M2h:** finish the null and right checks, then run main (bare against LID, 12 changes × 3 replicates) and repairs, and write up the joint-outcome report by searchability tier.
-3. **Write the first report** across BenchTime, the growth pilot, M2e, M2f and M2h, and publish it on the LID site with the maintainer.
-4. **Review the specification-explicitness paper's deferred ideas** with the maintainer (plan.md, "After the growth test"), and the competitor arms (M5).
-5. **Finish the owner checks:** labelled judgments on about 100 replayed stops, the constants sweep, and the three replayed stops where the owner still errs.
-6. **Still to build:** prior-data probes, grading for the probe request, and a scripted check for operating requirements.
+1. **Write the first report** across BenchTime, the growth pilot, M2e, M2f and M2h, and publish it on the LID site with the maintainer.
+2. **Review the specification-explicitness paper's deferred ideas** with the maintainer (plan.md, "After the growth test"), and the competitor arms (M5).
+3. **Finish the owner checks:** labelled judgments on about 100 replayed stops, the constants sweep, and the three replayed stops where the owner still errs.
+4. **Still to build:** prior-data probes, grading for the probe request, and a scripted check for operating requirements.
 
 ## Files
 

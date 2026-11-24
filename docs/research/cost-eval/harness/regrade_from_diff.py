@@ -272,10 +272,14 @@ def node_rebuild_argv(runs: Path, fid: str, change: int, *, seed_dir: Path, file
     """run_fork.py's arguments for an M2h fork rebuilt as a null fork of its own start, its diff recounted."""
     meta = _json(runs / fid / "trajectory.json") or {}
     starts = regrade_starts(runs, meta)
-    patch = runs / "opengym-m2h" / "regrade" / "patches" / f"{fid}-c{change:02d}.diff"
-    patch.parent.mkdir(parents=True, exist_ok=True)
-    patch.write_text(applicable(_patch(runs, fid, change).read_text(encoding="utf-8")), encoding="utf-8")
-    return ["--starts", str(starts), "--start", meta["fork_of"]["start"], "--null", "--result-patch", str(patch),
+    done = (meta.get("changes") or {}).get(str(change)) or {}
+    result = []
+    if not (done.get("null") and not done.get("result_patch")):  # a null control's result is its start alone
+        patch = runs / "opengym-m2h" / "regrade" / "patches" / f"{fid}-c{change:02d}.diff"
+        patch.parent.mkdir(parents=True, exist_ok=True)
+        patch.write_text(applicable(_patch(runs, fid, change).read_text(encoding="utf-8")), encoding="utf-8")
+        result = ["--result-patch", str(patch)]
+    return ["--starts", str(starts), "--start", meta["fork_of"]["start"], "--null", *result,
             "--change", str(change), "--repeat", str(meta.get("repeat") or 1), "--replicate", meta.get("replicate") or "m2h-r1",
             "--window", meta.get("window") or "1m", "--seed-dir", str(seed_dir),
             *[f.format(files=files) for f in SEED_FLAGS], "--brief", str(seed_dir / "brief.md"),

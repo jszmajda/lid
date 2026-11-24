@@ -26,6 +26,9 @@ with cost, turns, model calls, wall time and files read (costeval/rot_cost.py). 
 go. release removes a fork's own volumes once every miss it has is repaired and recorded (or it has none; a null fork's,
 once graded).
 
+settle-test settles a test the record has as broken by its reruns alone: load-sensitive (every rerun passed), so not
+broken, or broken.
+
 Records go to ../runs/<fork>-fix-<item>/ like a fork's (trajectory.json with "repair": {of, item}, change-NN/,
 owner-state-NN.json, rot-cost.json, grading/), plus repair.json. A repair already recorded is left alone.
 
@@ -344,6 +347,27 @@ def record(args, docker: Callable, trim: Callable = trim_vm) -> int:
     return 0
 
 
+def settle_test(args) -> int:
+    """A test the record has as broken, rerun alone (--results, each rerun's status in order): load-sensitive, not
+    broken, when every rerun passed; broken otherwise. Both kept under keeping.tests_rerun."""
+    path = args.runs / fix_id(args.of, args.item) / "repair.json"
+    rec = _json(path)
+    k = (rec or {}).get("keeping") or {}
+    if args.test not in (k.get("tests_broken") or []):
+        print(f"{path}: {args.test} isn't among its broken tests", file=sys.stderr)
+        return 2
+    results = [x.strip() for x in args.results.split(",") if x.strip()]
+    settled = "load-sensitive" if results and all(x == "passed" for x in results) else "broken"
+    k.setdefault("tests_rerun", []).append({"test": args.test, "reruns": results, "settled": settled})
+    if settled == "load-sensitive":
+        k["tests_broken"] = [t for t in k["tests_broken"] if t != args.test]
+        k.setdefault("tests_load_sensitive", []).append({"test": args.test, "reruns": results})
+    rec["keeping"] = k
+    path.write_text(json.dumps(rec, indent=1))
+    print(f"{fix_id(args.of, args.item)}: {args.test}: {settled} ({', '.join(results)})")
+    return 0
+
+
 def _remove_volumes(docker: Callable, fid: str, meta: dict) -> None:
     """A fork's own volumes, as its record names them (else by its naming: ce-<id>-* for Clowder, <id>-* for a named
     start's); never a start's, which no fork records as its own."""
@@ -377,7 +401,9 @@ def main(argv=None, *, deps: rf.Deps | None = None, docker: Callable = subproces
     if trim is None:  # the real trim with real Docker; a stand-in Docker (tests) trims nothing unless given one
         trim = trim_vm if docker is subprocess.run else (lambda: None)
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("what", choices=("plan", "run", "record", "release"))
+    ap.add_argument("what", choices=("plan", "run", "record", "release", "settle-test"))
+    ap.add_argument("--test", help="settle-test: the test id the record has as broken")
+    ap.add_argument("--results", help="settle-test: each rerun's status, in order (passed,failed,...)")
     ap.add_argument("--forks", help="plan, release: a glob of fork ids under --runs")
     ap.add_argument("--of", help="run, record: the fork repaired")
     ap.add_argument("--item", help="run, record: the missed row, or DEP-NN for the change's dependency")
@@ -398,6 +424,8 @@ def main(argv=None, *, deps: rf.Deps | None = None, docker: Callable = subproces
         return run_one(args, deps or rf.Deps())
     if args.what == "record":
         return record(args, docker, trim)
+    if args.what == "settle-test":
+        return settle_test(args)
     return release(args, docker, trim)
 
 

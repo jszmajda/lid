@@ -4,6 +4,23 @@ Newest entries first. Each entry says what was done, what was decided, and who d
 
 Older entries move to [log-archive/](log-archive/) when this file passes about 2,000 words, and 'Earlier, in brief' at the bottom summarizes them.
 
+## 2026-11-24: M2h's results on openGym
+
+**M2h ran** (bare on the pinned tree against LID Full starting from one `/map-codebase` draw per replicate; 12 changes × 3 forks; Sonnet 5.5 at the 1M window; a repair fork for every miss). Both checks of the grading were clean before the runs: the untouched starts read "not exercised" on every dependency and met no new row, and a right build of every change met every row and kept every dependency. The finished runs' analysis then found instrument faults, all fixed and regraded before the numbers below: four probes too narrow for builds that did the right thing another way, adapter failures read as "not exercised" instead of missing, repairs never graded, every dependency repair queued twice into one workspace, and web-app suites killed for memory. Regrades rebuilt each fork from its saved diff, checked against the first grading's tree.
+
+| | bare | LID Full |
+|---|---|---|
+| Built the requested change (every stated row met) | 33 of 36 | 36 of 36 |
+| New rows met, stated and askable | 95 of 109 | 103 of 110 |
+| Broke the dependent component, of forks that built the change | 7 of 33 | 6 of 35 |
+| Hidden dependency (change 1) kept | 1 of 3 | 1 of 3 |
+| Agent cost per change (notional) | $0.28 | $0.91 |
+| Mapping, a one-time adoption cost (three draws) | – | $125.54 |
+| Owner words shown per change, median | 2,336 | 13,117 |
+| Misses repaired / fixed; repair cost | 14 / 10; $2.58 | 7 / 7; $2.27 |
+
+LID's edge here is building what was asked; on breakage the arms are level. Two bare forks built admin sign-up invites instead of the gym join code, and repairs didn't fix them; LID made the same mistake in two forks and corrected it in its first phase. No map recorded the hidden dependency: one LID fork had the line on screen and asked the owner only about wording, another found and fixed it in its edge audit, and bare's one success came through the project's own docs. M2f's "stops at the segment boundary" pattern doesn't recur, because the maps slice by domain across the API and the app, so both sides of a dependency usually share a segment; LID's misses came from under-reading inside it. A blind spot check upheld 14 of 15 verdicts before the fixes, and the one overturned is among them. Three forks per cell is grade C evidence at best, and only one change tests the hidden tier.
+
 ## 2026-11-23: M2f's results, openGym mapped, and M2h prepared
 
 **M2f ran** (bare on the stripped repository against LID Full; 12 changes × 3 forks; Sonnet 5.5 at the 1M window; a renaming dose on three changes; a repair fork for every miss). Before any run the grading was checked both ways, and both checks caught flaws first: keep-as-before rows voided as conflicts (now guard rows), rows met through untouched code voided (now an "inherited" extraction status), one wrong right build, and one incomplete retired-test list. In the end the untouched snapshot met no new row, and a right build of every change met every row.

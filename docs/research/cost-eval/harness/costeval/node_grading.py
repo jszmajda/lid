@@ -921,11 +921,15 @@ def _place_adapter(ck, dest: str, source: str) -> None:
     ck.put(f"{APP}/{dest}", guarded_adapter(source, "./" + impl.rsplit("/", 1)[-1]))
 
 
-def adapter_prompt(entry: dict, graded_dir: Path) -> str:
+def adapter_prompt(entry: dict, graded_dir: Path, note: str | None = None) -> str:
+    """The adapter writer's prompt; a note a grading gives for this build (grade_node.py --adapter-note) follows the
+    permitted operations."""
     a = entry["adapter"]
     d = Path(graded_dir)
     default = (d / a["default"]).read_text(encoding="utf-8") if a.get("default") else "// (none)\n"
     ops = "\n".join(f"- {o}" for o in a.get("operations") or []) or "- (none listed)"
+    if note:
+        ops += f"\n\nFor this build: {note}"
     return grading._template("dependency-adapter-node.md", INTERFACE=(d / a["interface"]).read_text(encoding="utf-8").strip(),
                              OPERATIONS=ops, DEFAULT=default.rstrip(), ID=entry["id"], DEST=a["dest"])
 
@@ -960,7 +964,7 @@ def check_adapter(raw: str | None, source: str | None, forbid: list[str]) -> tup
 
 
 def adapt(ck, g: "NodeGraders | None", entry: dict, graded_dir: Path, *, run_role: Callable | None,
-          out: Path | None = None) -> dict | None:
+          out: Path | None = None, note: str | None = None) -> dict | None:
     """Put the probe's adapter in place. With no adapter step (g None), the pin's adapter; else a model, blind to the
     arm (the code-only checkout, a neutral prompt), writes one for this build from the frozen interface and permitted
     operations, keeping the pin's where the build still fits it. Returns the status: default, adapted, absent (the
@@ -975,7 +979,7 @@ def adapt(ck, g: "NodeGraders | None", entry: dict, graded_dir: Path, *, run_rol
             return {"status": "unusable", "problems": ["no adapter step and no default adapter"]}
         _place_adapter(ck, dest, (d / a["default"]).read_text(encoding="utf-8"))
         return {"status": "default", "problems": []}
-    prompt = adapter_prompt(entry, d)
+    prompt = adapter_prompt(entry, d, note)
     ck.sh(f"mkdir -p /work/out/adapters && rm -f /work/out/adapters/{entry['id']}.*", check=False)
     session: dict = {}
     try:
@@ -990,7 +994,8 @@ def adapt(ck, g: "NodeGraders | None", entry: dict, graded_dir: Path, *, run_rol
         _place_adapter(ck, dest, source)
     elif status == "absent":
         _place_adapter(ck, dest, absent_module(record.get("note") or "absent"))
-    result = {"status": status, "problems": problems, "record": record, "notes": record.get("notes") or {}, "session": session}
+    result = {"status": status, "problems": problems, "record": record, "notes": record.get("notes") or {}, "session": session,
+              **({"note_given": note} if note else {})}
     if out is not None:
         out.mkdir(parents=True, exist_ok=True)
         (out / f"{entry['id']}.adapter.json").write_text(json.dumps({**result, "prompt": prompt}, indent=1), encoding="utf-8")
@@ -1000,12 +1005,12 @@ def adapt(ck, g: "NodeGraders | None", entry: dict, graded_dir: Path, *, run_rol
 
 
 def grade_dependency(ck, g, entries: list[dict], graded_dir: Path, change: ChangeInfo | None, *, run_role: Callable | None,
-                     out: Path | None = None) -> dict:
+                     out: Path | None = None, adapter_notes: dict[str, str] | None = None) -> dict:
     """Every dependency probe (or comparison row) of the change, adapted and run, and the change's roll-up over those
     that count (a probe with "counts": false is a kept-row extra, recorded but not in the rate)."""
     probes: dict[str, dict] = {}
     for e in entries:
-        ad = adapt(ck, g, e, graded_dir, run_role=run_role, out=out)
+        ad = adapt(ck, g, e, graded_dir, run_role=run_role, out=out, note=(adapter_notes or {}).get(e["id"]))
         if ad is not None and ad["status"] == "unusable":
             probes[e["id"]] = {"result": "missing", "cause": "adapter: " + "; ".join(ad["problems"]), "adapter": ad["status"]}
             continue

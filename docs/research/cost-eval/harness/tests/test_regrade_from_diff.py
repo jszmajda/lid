@@ -209,6 +209,23 @@ class NodeRebuildTest(NodeFixture):
         self.assertEqual(tree(first), git(repo, "rev-parse", "HEAD^{tree}").strip())
         self.assertNotEqual(tree(first), tree(regrade.replace("+z", "+w")))
 
+    def test_a_null_control_rebuilds_as_its_start_alone_and_a_right_build_with_its_diff(self):
+        # the null control's result is its start (an empty diff, which git won't apply); the right build's, its diff
+        files = self.root / "seed" / "hidden" / "m2h"
+        for fid, result_patch in (("m2h-null-bare-c04", False), ("m2h-right-c04", True)):
+            write(self.runs / fid / "trajectory.json", {
+                "id": fid, "arm": "null", "change": 4, "repeat": 1, "replicate": "m2h-r1", "window": "1m",
+                "fork_of": {"starts": str(self.starts), "start": "bare", "volume": "v", "commit": "c"},
+                "changes": {"4": {"commit": "x", "null": True, **({"result_patch": True} if result_patch else {})}}})
+            write(self.runs / fid / "grading" / "change-04" / "arm.diff", FIRST if result_patch else "")
+        null = rg.node_rebuild_argv(self.runs, "m2h-null-bare-c04", 4, seed_dir=self.root / "seed", files=files)
+        right = rg.node_rebuild_argv(self.runs, "m2h-right-c04", 4, seed_dir=self.root / "seed", files=files)
+        self.assertIn("--null", null)
+        self.assertNotIn("--result-patch", null)
+        self.assertEqual(null[null.index("--id") + 1], "rg-m2h-null-bare-c04")
+        self.assertEqual(Path(right[right.index("--result-patch") + 1]).read_text(), rg.applicable(FIRST))
+        self.assertEqual(rg.match_kind("", "", None), "exact")
+
     def test_two_diffs_match_exactly_or_by_the_tree_each_gives_on_the_start(self):
         self.assertEqual(rg.match_kind(FIRST, FIRST, None), "exact")
         rebuilt = rg.recount(FIRST).replace("2222222", "4444444")

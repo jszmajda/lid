@@ -255,6 +255,23 @@ class RecordTest(Base):
         rec = json.loads((fix / "repair.json").read_text())
         self.assertEqual((rec["fixed"], rec["keeping"]["items_broken"]), (True, []))
 
+    def test_a_broken_test_rerun_alone_is_load_sensitive_when_every_rerun_passes_and_broken_otherwise(self):
+        write(self.fix / "repair.json", {"of": ARM, "item": "BK-02", "fixed": True,
+                                         "keeping": {"items_broken": [], "tests_broken": ["a::x", "b::y"]}})
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(rcr.main(self.argv("settle-test", "--of", ARM, "--item", "BK-02", "--test", "a::x",
+                                                "--results", "passed,passed,passed")), 0)
+            self.assertEqual(rcr.main(self.argv("settle-test", "--of", ARM, "--item", "BK-02", "--test", "b::y",
+                                                "--results", "passed,failed,passed")), 0)
+        k = json.loads((self.fix / "repair.json").read_text())["keeping"]
+        self.assertEqual(k["tests_broken"], ["b::y"])
+        self.assertEqual(k["tests_load_sensitive"], [{"test": "a::x", "reruns": ["passed", "passed", "passed"]}])
+        self.assertEqual(k["tests_rerun"], [{"test": "a::x", "reruns": ["passed", "passed", "passed"], "settled": "load-sensitive"},
+                                            {"test": "b::y", "reruns": ["passed", "failed", "passed"], "settled": "broken"}])
+        with contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(rcr.main(self.argv("settle-test", "--of", ARM, "--item", "BK-02", "--test", "c::z",
+                                                "--results", "passed")), 2)  # not one the record has as broken
+
     def test_an_ungraded_repair_records_nothing(self):
         self.assertEqual(self.record(), 1)
         self.assertFalse((self.fix / "repair.json").exists())

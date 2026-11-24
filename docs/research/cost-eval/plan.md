@@ -127,14 +127,14 @@ Agents find a dependency by searching for the names they're changing, so a cross
 - `[x]` The survey ran (log, 2026-11-21).
 - `[x]` Then: injected renaming on Clowder as a dose for M2f (the UI renames shared concepts; LID's variant renames consistently through its docs, keeping its spec links), and the choice of the brownfield project, one where names really drift.
 
-## M2h: Brownfield on a project not built with LID `[~]`
+## M2h: Brownfield on a project not built with LID `[x]`
 
 The subject must be code the executor model can't have seen. Paperless-ngx, picked first from the name-drift survey, proved memorised (decisions.md, 2026-11-22). The subject is openGym, a multi-component app created after the model's training cutoff ([seeds/opengym/README.md](seeds/opengym/README.md)).
 
 - `[x]` Feasibility: build and run it in the executor setup with its test suites; size; real hidden dependencies, mined the way Clowder's were.
 - `[x]` Seed: changes written around genuine hidden dependencies (Sol), oracle and probes, reviews by Claude Fable and GPT-6.2 Astra, and a validated matrix of right builds, one-sided builds and mutants.
-- `[~]` Null and right checks of the grading.
-- `[ ]` Arms: bare against LID Full, three forks per change, with LID's onboarding (`/map-codebase`, one draw per replicate, done) metered as a cost of adoption; repair forks for every miss.
+- `[x]` Null and right checks of the grading.
+- `[x]` Arms: bare against LID Full, three forks per change, with LID's onboarding (`/map-codebase`, one draw per replicate, done) metered as a cost of adoption; repair forks for every miss.
 - Known limits: openGym cross-references heavily, so only one of its eight cross-component dependencies is hidden from search; results are stratified by searchability tier.
 
 ## After the growth test: ideas to review with the maintainer `[ ]`

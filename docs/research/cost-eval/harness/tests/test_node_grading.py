@@ -747,7 +747,7 @@ class DependencyRunTest(unittest.TestCase):
                 "interface": "dependency/change-01/adapter.md", "operations": ["call the build's own pairing route"],
                 "forbid": [r"writeFileSync"], **kw}
 
-    def run_adapter(self, record, source):
+    def run_adapter(self, record, source, note=None):
         d = self.graded(self.adapter())
         entry = ng.dependency_entries(ng.load_graded(d), 1)[0]
         ck, calls = FakeCk(), []
@@ -761,7 +761,18 @@ class DependencyRunTest(unittest.TestCase):
             return SimpleNamespace(structured=None, text="ok", usage=SimpleNamespace(reported_cost_usd=0.1, models={}),
                                    duration_s=1.0)
         g = ng.NodeGraders(image="img", roles_volume="roles", claude_code="v")
-        return ng.adapt(ck, g, entry, d, run_role=run_role), ck, calls
+        return ng.adapt(ck, g, entry, d, run_role=run_role, **({"note": note} if note else {})), ck, calls
+
+    def test_a_grading_can_give_the_adapter_writer_a_note_for_this_build_and_records_it(self):
+        note = "Drive the build's own cycle sheet as a member would; don't call the store yourself."
+        r, _, calls = self.run_adapter({"status": "adapted", "evidence": [{"file": "x"}], "note": "x"},
+                                       "export const available = true\n", note=note)
+        self.assertIn("For this build: " + note, calls[0]["prompt"])
+        self.assertEqual(r["note_given"], note)
+        _, _, plain = self.run_adapter({"status": "adapted", "evidence": [{"file": "x"}], "note": "x"},
+                                       "export const available = true\n")
+        self.assertNotIn("For this build", plain[0]["prompt"])
+        self.assertEqual(plain[0]["prompt"], calls[0]["prompt"].replace("\n\nFor this build: " + note, ""))
 
     def test_an_adapter_is_written_blind_to_the_arm_from_its_frozen_interface_and_operations(self):
         r, ck, calls = self.run_adapter({"status": "adapted", "evidence": [{"file": "api/server.js"}], "note": "a route",
@@ -1386,6 +1397,27 @@ class GradeNodeMainTest(unittest.TestCase):
         self.assertEqual(len(made), 1)  # one export, one run
         self.assertEqual([r[2]["computed"] for r in results].count(True), 1)
         self.assertTrue(all(r[0]["api"]["counts"] == {"tests": 2, "pass": 2} for r in results))
+
+    def test_an_adapter_note_given_to_the_grading_reaches_that_probes_adapter_writer(self):
+        graded = {"files": {"dependency/change-01/d.test.jsx": "// probe\n", "dependency/change-01/a.js": "export const available = true\n",
+                            "dependency/change-01/a.md": "Export `pair()`.\n"},
+                  "manifest": {"version": 1, "dependency_probes": [
+                      {"id": "dep-01", "change": 1, "row": "dependency", "suite": "frontend",
+                       "file": "dependency/change-01/d.test.jsx", "dest": "frontend/src/__graded__/d.test.jsx",
+                       "adapter": {"dest": "frontend/src/__graded__/a.js", "default": "dependency/change-01/a.js",
+                                   "interface": "dependency/change-01/a.md", "operations": ["call the build's own code"]}}]}}
+        runs, seed, fid = m2h_fork(graded=graded, probes=False)
+        prompts = []
+
+        def run_role(role, prompt, json_schema=None):
+            prompts.append(prompt)
+            raise executor.RoleFailed("no adapter written in this test")
+        argv = ["--id", fid, "--runs", str(runs), "--seed-dir", str(seed), "--no-keeping",
+                "--adapter-note", "dep-01=Use the sheet, not the store."]
+        self.assertEqual(grade_node.main(argv, checkpoint=self.factory([], {}), run_role=run_role), 0)
+        self.assertIn("For this build: Use the sheet, not the store.", prompts[0])
+        s = json.loads((runs / fid / "grading" / "change-01" / "summary.json").read_text())
+        self.assertEqual(s["adapter_notes"], {"dep-01": "Use the sheet, not the store."})
 
     def test_dependency_probes_run_after_the_code_only_checkout_and_roll_up(self):
         graded = {"files": {"dependency/change-01/d.test.jsx": "// probe\n"},

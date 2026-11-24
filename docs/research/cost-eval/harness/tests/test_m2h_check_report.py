@@ -144,6 +144,19 @@ class ReportTest(Base):
                       text)
         self.assertIn("| m2h-bare-c01-r2 | DEP-01 | not run |", text)
 
+    def test_a_broken_test_settled_by_reruns_is_reported_with_them(self):
+        fork(self.runs, "m2h-lid-c06-r3", 6, arm="lid-full-arrows", items={}, dep="broken", implemented="yes",
+             tier="one-step grep")
+        write(self.runs / "m2h-lid-c06-r3-fix-DEP-06" / "repair.json", {
+            "of": "m2h-lid-c06-r3", "item": "DEP-06", "fixed": True, "agent_cost_usd": 0.3, "owner_cost_usd": 0.1,
+            "minutes": 3.0, "rounds": 2, "keeping": {"tests_broken": [], "tests_load_sensitive": [
+                {"test": "api/t.test.js::sign-in", "reruns": ["passed"] * 3}], "tests_rerun": [
+                {"test": "api/t.test.js::sign-in", "reruns": ["passed"] * 3, "settled": "load-sensitive"}]}})
+        rc, text, rec = self.report()
+        self.assertEqual(rec["repairs"]["arms"]["lid"]["tests_broken"], 0)
+        self.assertIn("- m2h-lid-c06-r3-fix-DEP-06, api/t.test.js::sign-in: load-sensitive (rerun alone: passed, passed, "
+                      "passed)", text)
+
     def test_a_repair_of_a_miss_the_forks_current_grading_no_longer_has_is_listed_apart(self):
         # regraded, the fork kept the dependency its first grading had as broken: the repair stays on record, apart
         fork(self.runs, "m2h-lid-c01-r2", 1, arm="lid-full-arrows", items={"OGM-0101": "met"}, dep="kept",
