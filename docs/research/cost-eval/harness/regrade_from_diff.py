@@ -88,8 +88,10 @@ def gs_base(variants: Path, *, image: str = "lid-cost-eval-executor-rust:2.1.323
                    "--date='2026-01-01T00:00:00+00:00' -m Start && git rev-parse HEAD").strip()
     volume = f"ce-cv-{src.get('seed')}-gs-{source_variant}"
     subprocess.run(["docker", "volume", "rm", "-f", volume], capture_output=True)
-    subprocess.run(["docker", "run", "--rm", "-v", f"{ck.volume}:/from:ro", "-v", f"{volume}:/to", image, "sh", "-c",
-                    "cp -a /from/app/. /to/"], check=True, capture_output=True)
+    # mounted at the image's own /work, a new volume takes that directory's owner (the image's user), as
+    # clowder_variants.load_volume's volumes do
+    subprocess.run(["docker", "run", "--rm", "-v", f"{ck.volume}:/from:ro", "-v", f"{volume}:/work", image, "sh", "-c",
+                    "find /work -mindepth 1 -delete && cp -a /from/app/. /work/"], check=True, capture_output=True)
     subprocess.run(["docker", "volume", "rm", "-f", ck.volume], capture_output=True)
     return write_gs_manifest(variants, commit=commit, volume=volume, source_variant=source_variant)
 
