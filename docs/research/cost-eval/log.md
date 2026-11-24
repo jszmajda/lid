@@ -10,15 +10,15 @@ Older entries move to [log-archive/](log-archive/) when this file passes about 2
 
 | | bare, stripped | LID Full |
 |---|---|---|
-| New-behaviour rows met, change 15 aside | 60 of 63 | 62 of 63 |
-| Cross-crate dependencies kept, as graded | 16 of 24 | 16 of 24 |
+| New-behaviour rows met | 69 of 72 | 70 of 72 |
+| Cross-crate dependencies kept | 18 of 24 | 19 of 24 |
 | Agent cost per change (notional) | $0.14 | $0.51 |
 | Owner words shown per change, median | 312 | 1,639 |
 | Main runs plus repairs of every miss | $7.91 | $25.56 |
 
 Every kept dependency came with the change fully implemented. The tie hides different misses. On change 20, LID kept the dependency in 3 of 3 forks and bare in 0 of 3; repairs fixed bare's misses there in none of three. LID's docs say the shell reads the retained report, and two bare forks never opened the file that does. On changes 16 to 18, bare kept 7 of 9 and LID 4 of 9. Four of LID's five misses searched the design docs and the crate being edited, then stopped at the segment boundary ("I touched only the colonies segment"). The shell's specs restate the rules, but nothing on the core side points at them. A fifth found the shell's counts in its edge audit, asked, and was told "no preference" by an owner who doesn't know the code. Bare agents grep the whole tree, where the shell's literal strings come up first.
 
-LID's arm ran under Clowder's own instruction file, which tells agents to resolve phase reviews below the HLD against the tenets rather than ask the owner; it still stopped 60 times across 36 forks. Renaming shared concepts made no clear difference. A blind spot check upheld 9 of 9 verdicts outside change 15. Change 15's probes read one accessor while seven of twelve builds added another, so its verdicts are set aside until a second probe version regrades it from each fork's saved diff. Three forks per cell is grade C evidence at best, and the setup favours LID: full docs against a stripped copy with thinned tests.
+LID's arm ran under Clowder's own instruction file, which tells agents to resolve phase reviews below the HLD against the tenets rather than ask the owner; it still stopped 60 times across 36 forks. Renaming shared concepts made no clear difference. Change 15's first probes read one accessor while seven of twelve builds added another. A second version, testing what the owner sees, regraded its main and dose forks from each fork's saved diff, on trees checked byte for byte against what was first graded; the numbers above use it. A blind spot check upheld 12 of 12 verdicts against the final grading. Three forks per cell is grade C evidence at best, and the setup favours LID: full docs against a stripped copy with thinned tests.
 
 **openGym mapped.** LID's arm on openGym starts from `/map-codebase`, run as an executor session that answers the owner's questions itself. Four draws took 10 to 21 minutes and 59M to 153M tokens each, and produced 815 to 1,195 specs; each LID replicate gets its own draw. Each recorded rules inside components but rarely the ties between them, and each departed from the skill: it chose a segmentation without reading its own survey, accepted sampled reading, and invented a cap on specs per file. Claude Fable judged the maps fair samples of what the skill delivers at this model and effort. The skill's faults are filed as LID issues #133 and #134.
 

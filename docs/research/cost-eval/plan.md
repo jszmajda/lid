@@ -108,7 +108,7 @@ On ReleaseDesk's growth seed through change 20, paired with the trial's bare and
 - `[x]` From data already collected: module count and coupling at every snapshot; LID's spend by phase; owner reading by review depth.
 - `[ ]` Then decide: if the checklist arm lands near LID on latent rules at a fraction of the cost, add replicates 2 and 3 for all three arms (the trial's runs are replicate 1).
 
-## M2f: Clowder with cross-crate changes `[~]`
+## M2f: Clowder with cross-crate changes `[x]`
 
 The scale question, recast: agents search a codebase rather than load it, so "too big to hold" means "the intent you need isn't near the code you're editing". Clowder has two crates of similar size (core simulation and terminal UI), much like an app and its backend.
 
@@ -116,7 +116,7 @@ The scale question, recast: agents search a codebase rather than load it, so "to
 - `[x]` Review by Claude Fable and GPT-6.2 Astra; record predicted directions; draft and review probes, including probes and held-out tests for intent held in the other crate; repair reports for every item.
 - `[x]` Null-arm check of the grading on the untouched snapshot, and a right-build check of every change (log, 2026-11-23).
 - `[x]` Runs: bare on the stripped repository and LID Full, three forks per change each, at the 1M window; repair forks for every miss, measuring rounds and cost to fix (log, 2026-11-23).
-- `[ ]` Regrade change 15 with its second probe version, from each fork's saved diff, and fold it into the results.
+- `[x]` Regrade change 15 with its second probe version, from each fork's saved diff, and fold it into the results.
 
 ## M2g: A name-drift survey `[x]`
 
