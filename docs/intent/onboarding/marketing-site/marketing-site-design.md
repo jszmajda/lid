@@ -98,16 +98,18 @@ Readers who already use LID and want to understand it better are part of the par
 graph LR
   Home[Home<br/>pitch · demo · framing] --> Start[Start<br/>paths by audience]
   Home --> Examples[Examples<br/>a page per project built with LID]
+  Home --> Research[Research<br/>what LID costs and what it buys]
   Home --> AntiPatterns[Anti-patterns<br/>when LID is wrong]
   Home --> Tour[Tour<br/>the in-agent introduction, as a page]
   Start --> Tour
   Start --> Repo[GitHub repo<br/>plugins · docs · README]
   Examples --> Repo
+  Research --> Repo
   AntiPatterns --> Repo
   Tour --> Repo
 ```
 
-Five top-level pages, one outbound destination. Beneath Examples, each showcased project has a page of its own, and some host their story (see `examples-showcase`). The Tour page also has a way in from outside the site: the offer card LID shows inside the agent links to it. The repo is the terminal node — every path eventually ends there, and the site's job is to make sure the user arrives at the repo oriented enough to find what they need.
+Six top-level pages, one outbound destination. Beneath Examples, each showcased project has a page of its own, and some host their story (see `examples-showcase`). Beneath Research, each published report has a page of its own (see `research`). The Tour page also has a way in from outside the site: the offer card LID shows inside the agent links to it. The repo is the terminal node — every path eventually ends there, and the site's job is to make sure the user arrives at the repo oriented enough to find what they need.
 
 ### Page: Home
 
@@ -195,6 +197,10 @@ Each section is short (~150 words). Depth is a README click away.
 
 The Examples pages are owned by the `examples-showcase` segment (`docs/intent/onboarding/examples-showcase/examples-showcase-design.md`): the index at `/examples/`, a page for each showcased project, and hosted stories. This segment provides what they sit on: the navigation entry, the visual identity, the build, and the copy register, which binds the index's own copy and each project's tagline and brief.
 
+### Page: Research
+
+The Research pages are owned by the `research` segment (`docs/intent/onboarding/research/research-design.md`): the index at `/research/` and a page for each published report. This segment provides what they sit on: the navigation entry, the visual identity, and the build. The copy register binds the index's own heading and lede; a report is its study's words, which the register does not cover.
+
 ### Page: Anti-Patterns
 
 Honest list of when LID is the wrong choice. Starting set (to be refined from real user feedback, not guessed indefinitely):
@@ -208,7 +214,7 @@ The page frames these as *fit problems*, not deficiencies in LID. A user who rec
 
 ### Page: Tour
 
-The newcomer tour's five steps and its topics as one page, at `/tour`, and one of the site's five top-level pages. The introduction LID offers inside the agent (the `tour` segment) has readers who would rather leave the agent to read it, and hosts without a plugin system reach the tour most simply through a link. The offer card in the agent links here, and the Start page links here for a reader who wants to see how LID works before installing it.
+The newcomer tour's five steps and its topics as one page, at `/tour`, and one of the site's six top-level pages. The introduction LID offers inside the agent (the `tour` segment) has readers who would rather leave the agent to read it, and hosts without a plugin system reach the tour most simply through a link. The offer card in the agent links here, and the Start page links here for a reader who wants to see how LID works before installing it.
 
 - **The content comes from the `tour` segment.** The site's build reads the steps from `plugins/linked-intent-dev/skills/linked-intent-dev/references/tour.md`, at the commit being built, and renders them, so the page and the in-agent tour share one source. The site does not edit or paraphrase them.
 - **Agent-only parts are left out**: the **next** and **done** choices, the **trace** offer, the notes, and the instructions to the agent. The tour files mark them.
@@ -403,7 +409,7 @@ Once `docs/arrows/` is bootstrapped for this repository, the site appears as a *
 
 1. ✅ Site lives at `site/` in this repo.
 2. ✅ Eleventy as the static site generator.
-3. ✅ Five top-level pages; no discussion or interactive features.
+3. ✅ Six top-level pages; no discussion or interactive features.
 4. ✅ EARS spec file at `docs/intent/onboarding/marketing-site/marketing-site-specs.md` — linkage uniformity over content-variant specialization.
 5. ✅ Asciinema via official embed; the scenario is the change explainer's change, made by Claude Code in a small project that matches the cards, recorded by the `cascade-recording` tool.
 6. ✅ Build-time Mermaid rendering.

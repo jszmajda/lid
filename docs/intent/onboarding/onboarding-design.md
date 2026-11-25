@@ -7,7 +7,7 @@ prefix: ONB
 
 ## Context and Design Philosophy
 
-Onboarding is the material people read or watch to understand LID: the marketing site and the repository README, the newcomer tour, the examples of what people have built, and the recording that shows one change moving through every level. LID is quick to adopt and needs no deep understanding to start, so most people learn it by using it, in conversation with their agent. This subtree serves the other way in: a person who would rather come and read, whether they are deciding to try LID or want to understand it better after months of use. It is the realization of HLD Goal 5 (*Make LID legible to people who learn it by reading, from first contact to deeper understanding*), and it is load-bearing intent like any other part of the tree: what it claims must stay true of the system it describes.
+Onboarding is the material people read or watch to understand LID: the marketing site and the repository README, the newcomer tour, the examples of what people have built, the research on what LID costs and what it buys, and the recording that shows one change moving through every level. LID is quick to adopt and needs no deep understanding to start, so most people learn it by using it, in conversation with their agent. This subtree serves the other way in: a person who would rather come and read, whether they are deciding to try LID or want to understand it better after months of use. It is the realization of HLD Goal 5 (*Make LID legible to people who learn it by reading, from first contact to deeper understanding*), and it is load-bearing intent like any other part of the tree: what it claims must stay true of the system it describes.
 
 This document is a **sub-HLD**: an HLD-shaped node in LID's design tree that owns no EARS of its own. It holds what its children share: the reader they are written for, the rule that their claims trace to the HLD, the voice they speak in, the one example they all use, and how the site presents content another segment owns. Its children are:
 
@@ -15,6 +15,7 @@ This document is a **sub-HLD**: an HLD-shaped node in LID's design tree that own
 - **`tour`** (`docs/intent/onboarding/tour/tour-design.md`, segment `ONB-TOUR`): the short introduction LID offers inside the agent, and its topics.
 - **`cascade-recording`** (`docs/intent/onboarding/cascade-recording/cascade-recording-design.md`, segment `ONB-REC`): the repository tool that records the home page's cascade demo.
 - **`examples-showcase`** (`docs/intent/onboarding/examples-showcase/examples-showcase-design.md`, segment `ONB-SHOWCASE`): the site's showcase of projects built with LID, the entry format they arrive in, and the drawing of their intent trees.
+- **`research`** (`docs/intent/onboarding/research/research-design.md`, segment `ONB-RESEARCH`): the site's section of research reports on what LID costs and what it buys, and the entry format a report arrives in.
 
 The node roots the `ONB` prefix, so `grep ONB` gathers the whole subtree. Terms like *arrow*, *segment*, *cascade*, and *sub-HLD* are defined in the HLD's Glossary.
 
@@ -26,7 +27,7 @@ The children are written so a reader at any depth gets something from them. The 
 
 ## Claims Trace to the HLD
 
-Everything in this subtree makes claims about LID, and each claim traces to the HLD section or LLD that makes it true. A child that says LID does something LID does not do fails Goal 5 as cleanly as a broken test fails its spec. Each child records, in its own design doc, where the claims it makes trace. When the HLD or a plugin LLD changes, the children whose claims depend on it are reviewed in the same change.
+Everything in this subtree makes claims about LID, and each claim traces to the HLD section or LLD that makes it true. A child that says LID does something LID does not do fails Goal 5 as cleanly as a broken test fails its spec. A research report makes a different kind of claim: what a study measured when LID was used, not what LID's mechanism does. Its claims trace to the study's own records, and each report states what was tested (the LID version, the coding agent and model, and the date) so a reader can scope every number. Each child records, in its own design doc, where the claims it makes trace. When the HLD or a plugin LLD changes, the children whose claims depend on it are reviewed in the same change.
 
 ## Voice
 
@@ -60,6 +61,7 @@ The site is onboarding's web surface, and it presents content that other segment
 | `tour` | `ONB-TOUR` | The introduction offered inside the agent: the offer, the five steps, the topics, and the notes. Owns `docs/intent/onboarding/tour/tour-specs.md`. |
 | `cascade-recording` | `ONB-REC` | The tool that records the home page's cascade demo in a trial project that matches the page. Owns `docs/intent/onboarding/cascade-recording/cascade-recording-specs.md`. |
 | `examples-showcase` | `ONB-SHOWCASE` | The showcase's index, project pages, and hosted stories; the entry format and tree file; the tree drawing and the counter that measures a tree; the pull-request route projects arrive by. Owns `docs/intent/onboarding/examples-showcase/examples-showcase-specs.md`. |
+| `research` | `ONB-RESEARCH` | The research section's index and report pages, and the entry format a report arrives in. Owns `docs/intent/onboarding/research/research-specs.md`. |
 
 ## Cascade
 
@@ -76,6 +78,7 @@ The site is onboarding's web surface, and it presents content that other segment
 | Where the shared example lives | Here, in the parent | In the `tour` segment, with the others following it | A decision lives at the lowest node whose subtree contains everything it affects, and the example affects all three children. |
 | Which example | A 30-day free trial | The marketing site's account-scoped sign-in; a tax holding period; a split bill | Most people have met a free trial as users. The question of when day 30 ends, and in whose time zone, is concrete and has a real cost when guessed wrong. The site's sign-in example traces cleanly but has no natural boundary question to show a pause catching. |
 | Who owns content the site shows | The segment that owns its substance; the site owns its presentation | The site owns all text it shows | One source per piece of content: the tour stays the same inside the agent and on the page, and future guides can live beside the skills that carry them. |
+| Where published research sits | A child of this sub-HLD, `research`, beside the showcase | A top-level `research` node beside `onboarding`; a page inside `marketing-site` | A report is read by the same reader, in the same voice, and presented under the same rule as the other children, so it shares their parent. The studies themselves, their notebooks and harnesses, sit outside the design tree, so a top-level node would hold one section of the site. A page inside `marketing-site` would put a study's words under the site's copy register, which the rule for content the site presents keeps apart. |
 
 ## References
 

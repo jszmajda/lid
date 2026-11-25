@@ -1,0 +1,32 @@
+---
+layout: base.njk
+pagination:
+  data: research.reports
+  size: 1
+  alias: r
+permalink: "/research/{{ r.slug }}/"
+eleventyComputed:
+  title: "{{ r.title }}"
+  description: "{{ r.summary }}"
+eleventyExcludeFromCollections: true
+---
+
+<!-- @spec ONB-RESEARCH-010, ONB-RESEARCH-011, ONB-RESEARCH-012, ONB-RESEARCH-014, ONB-RESEARCH-017, ONB-RESEARCH-018, ONB-RESEARCH-020, ONB-RESEARCH-021, ONB-RESEARCH-022, ONB-RESEARCH-031 -->
+<div class="page wrap research">
+  <p class="crumb"><a href="/research/">Research</a> <span class="ptr" aria-hidden="true"></span></p>
+  <article class="post report">
+    <header class="report-head">
+      <h1>{{ r.title }}</h1>
+      {% if r.supersededBy %}
+      <p class="supersede-note node">A later report replaces this one: <a href="/research/{{ r.supersededBy.slug }}/">{{ r.supersededBy.title }}</a>.</p>
+      {% endif %}
+      {% if r.replaces.length %}
+      <p class="supersede-note node">This report replaces {% for p in r.replaces %}<a href="/research/{{ p.slug }}/">{{ p.title }}</a>{% if not loop.last %}{% if loop.revindex0 == 1 %} and {% else %}, {% endif %}{% endif %}{% endfor %}.</p>
+      {% endif %}
+      <p class="kicker"><span>{{ r.date | showcaseDate }}</span>{% if r.revised %} · <span class="revised">revised {{ r.revised | showcaseDate }}</span>{% endif %} · <span class="status status-{{ r.status }}">{{ r.statusLabel }}</span></p>
+      <p class="tested"><span class="tested-h">What was tested</span>: LID {{ r.tested.lid }} · {{ r.tested.agent }} · {{ r.tested.model }}</p>
+      <p class="records"><a href="{{ r.records }}">The study's records</a></p>
+    </header>
+    <div class="prose">{{ r.body | reportMarkdown | safe }}</div>
+  </article>
+</div>

@@ -1,0 +1,33 @@
+---
+layout: base.njk
+title: Research
+eleventyNavigation:
+  key: Research
+  order: 3.5
+permalink: /research/
+description: Studies of what Linked-Intent Development costs and what it buys, each with what it tested and a link to its records.
+---
+
+<!-- @spec ONB-RESEARCH-001, ONB-RESEARCH-002, ONB-RESEARCH-003, ONB-RESEARCH-004, ONB-RESEARCH-005, ONB-RESEARCH-006, ONB-RESEARCH-013, ONB-RESEARCH-017, ONB-RESEARCH-018, ONB-RESEARCH-030 -->
+<div class="page wrap research">
+
+  <header class="page-head">
+    <h1>Research on what LID costs and what it buys.</h1>
+    <p class="lede">
+      Each report says which version of LID it tested, with which coding agent and model, and how much weight its numbers can bear. Each one links to its study's records, so you can check the numbers for yourself.
+    </p>
+  </header>
+
+  <div class="report-list">
+    {% for r in research.reports %}
+    <article class="report-card node">
+      <p class="kicker"><span>{{ r.date | showcaseDate }}</span> · <span class="status status-{{ r.status }}">{{ r.statusLabel }}</span></p>
+      <h2><a href="/research/{{ r.slug }}/">{{ r.title }}</a></h2>
+      <p class="teaser">{{ r.summary }}</p>
+      <p class="tested muted tiny">Tested: LID {{ r.tested.lid }} · {{ r.tested.agent }} · {{ r.tested.model }}</p>
+      <p class="where"><a href="/research/{{ r.slug }}/">Read the report <span class="ptr" aria-hidden="true"></span></a></p>
+    </article>
+    {% endfor %}
+  </div>
+
+</div>
