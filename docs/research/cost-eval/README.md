@@ -54,7 +54,7 @@ Read this section first when you pick the work up in a new session. Update it at
 
 1. **Publish the first report** ([report-1-draft.md](report-1-draft.md)) in a research section of the LID site, built through LID's own workflow in the main repository (maintainer's decision, 2026-11-24).
 2. **The maintainer is taking on LID issues the study raised first:** #135 (cross-segment links), document length, and test-quality guidance. After #135, rerun M2f's changes 16 to 18 as a before-and-after.
-3. **Long-horizon evidence:** an anonymised before-and-after from the private project's history, Scott's cost data if he shares it, and a public project of realistic size for a long-horizon growth test, which the maintainer is choosing.
+3. **Long-horizon evidence:** an anonymised before-and-after from the private project's history, cost data from a friend's large LID project if they share it, and a public project of realistic size for a long-horizon growth test, which the maintainer is choosing.
 4. **Review the specification-explicitness paper's deferred ideas** with the maintainer (plan.md, "After the growth test"), and the competitor arms (M5).
 5. **Finish the owner checks:** labelled judgments on about 100 replayed stops, the constants sweep, and the three replayed stops where the owner still errs.
 6. **Still to build:** prior-data probes, grading for the probe request, and a scripted check for operating requirements.
@@ -71,6 +71,8 @@ Read this section first when you pick the work up in a new session. Update it at
 | [sources.md](sources.md) | Papers, benchmarks, and articles, each labelled by how closely we read it |
 | [log.md](log.md) | A dated journal: what was done, what was decided, and who decided it. Older entries are in [log-archive/](log-archive/) |
 | [decisions.md](decisions.md) | Every decision that still stands, with its date and who made it |
+| [report-1-draft.md](report-1-draft.md) | The first report's draft: what LID cost and bought in the pilot runs, what that shows and doesn't, and open questions |
+| [observations.md](observations.md) | Leads noticed along the way about LID, about measuring it, and about running a study like this with agents |
 | [harness/](harness/README.md) | The harness code, with its tests |
 | [plumbing/](plumbing/README.md) | Throwaway scripts from the plumbing test: the executor image, the clock check, the grading tool, and a draft extraction template |
 | [upkeep/](upkeep/) | Procedures for keeping the notebook, such as compacting the log |
