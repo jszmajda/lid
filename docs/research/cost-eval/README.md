@@ -1,6 +1,6 @@
 # Research notebook: what LID costs, compared with other ways of working
 
-**Status: pilot work; no counted runs yet.** Last updated 2026-11-24. Every run so far tested LID 1.4.6, run in Claude Code 2.1.323 on Claude Sonnet 5.5 at medium effort (Opus 5.5 only in ceiling checks).
+**Status: pilot phase finished and published; no counted runs yet.** Last updated 2026-11-25. Every run so far tested LID 1.4.6, run in Claude Code 2.1.323 on Claude Sonnet 5.5 at medium effort (Opus 5.5 only in ceiling checks).
 
 ## The question
 
@@ -20,44 +20,31 @@ The work happens in public. The draft pull request [#120](https://github.com/jsz
 
 Read this section first when you pick the work up in a new session. Update it at the end of every working session.
 
-**Where things stand.**
+**Where things stand (2026-11-25).** The pilot phase is finished and published.
 
-- **The design** in [design.md](design.md) is a second full draft. It merges the kickoff takes, a fresh review of the plan, and the maintainer's decisions recorded in [log.md](log.md).
-- **The pilot seed** is BenchTime, a reservation service for shared lab instruments. Each arm designs its own interface from a brief in the owner's words. A step before grading extracts the interface, and graders follow the grading protocol in [design.md](design.md): probes, separate execution and judgment, and checks on the graders.
-- **The seed's materials** are accepted, and their hashes are recorded in the seed's README (the brief and change script at version 1, the oracle at version 2, the probes at version 1). The public [brief](seeds/benchtime/brief.md) is in the repository. The oracle, change script, and edit log are in `seeds/benchtime/hidden/`, which git ignores, so they exist only in this workspace on the maintainer's machine. See [seeds/benchtime/README.md](seeds/benchtime/README.md).
-- **Claude roles** (executors, the simulator, and graders) run on the maintainer's subscription to keep costs down.
-- **The plumbing test is done** (see [log.md](log.md) and [log-archive/](log-archive/)). LID's phase stops work headless, cost accounting is understood, and executor sessions run in a Linux container with the maintainer's subscription token.
-- **BenchTime's probes** (92, for all 53 graded items) are at version 2, after Claude Fable's spot-check of grader verdicts found six asking more than their oracle items. The oracle is at version 3 and the change script at version 2.
-- **The simulated owner passed its leak threshold** (2026-11-14): 15 live scenarios × 10 runs with no confirmed leaks, judged by Opus. In real runs so far, the leak audit has flagged about 1 judged reply in 40. "The user simulator" in [design.md](design.md) describes how it works.
-- **The harness** ([harness/](harness/README.md)) runs trajectories, probe forks, grading, re-judging, owner audits, touchpoint classification, and spot-check sampling, with 372 tests. Runs are recorded in the git-ignored `runs/` folder, which stays private because the owner's prompts hold the hidden oracle.
-- **The graders are calibrated** (2026-11-14). Sonnet 5.5 judges and Haiku 5.5 executes. The judge agreed with itself on all 44 probes, and a whole-pipeline regrade agreed on all 44. Four seeded violations were each caught, and Claude Fable, standing in for the maintainer, agreed with 35 of 36 sampled verdicts. Grading costs about $1 per checkpoint notional. The three prior-data probes aren't implemented and are reported as not run. Calibration notes are in `seeds/benchtime/hidden/calibration/`.
-- **Pilot stage 0 passed:** all three arms on Sonnet 5.5, a build plus two changes. Plumbing only.
-- **Pilot stage 1 settled the executor.** A bare arm on Opus 5.5 met 88% of BenchTime's items with a silent owner and 90% to 92% with a diligent one, above the ceiling threshold. On Sonnet 5.5 it met 76% to 80%. Under the maintainer's rule, Sonnet is BenchTime's main executor, and Opus results there are reported as limited by the ceiling.
-- **Pilot stage 2 on BenchTime passes all four thresholds** (Sonnet 5.5, diligent owner, three trajectories per arm). Pilot numbers only:
-  - items met at change 10: bare 92%, bare A/A 92%, cheap discipline 89%, LID Full 96%, positive control 80%;
-  - agent cost for the build plus ten changes: $2.32, $2.35, $4.48, $11.54, and $0.97;
-  - grader agreement 38 of 40 (Claude Fable's spot-check), test-retest 0 flips in 264, positive control worse, A/A no difference.
+- **The first report** is on the LID site, in its research section (`site/src/research/first-results/` in the repository, published at `/research/first-results/`). It covers every pilot run: BenchTime, ReleaseDesk (the growth trial and the checklist arm), the Clowder pilot, Clowder's cross-crate changes (M2f), and openGym (M2h). [observations.md](observations.md) holds the leads behind its list of LID changes.
+- **What was tested:** LID 1.4.6, in Claude Code 2.1.323, with Claude Sonnet 5.5 at medium effort as the executor; Opus 5.5 only in ceiling checks. A later LID release is a new condition, reported apart.
+- **The evidence is pilot grade.** Nothing is pre-registered, and every comparison rests on three runs or fewer per cell. [log.md](log.md) has each phase's results, and [decisions.md](decisions.md) every decision that still stands.
+- **Issues the study raised for LID:** #133 and #134 (`/map-codebase`), and #135 (links between segments, so a change can find what relies on it).
+- **Seed material.** Each seed's oracle, change script, probes, and edit log are in its git-ignored `hidden/` folder, on the maintainer's machine only. Some rule wording also appears in the harness's seed converters and tests, and in the authoring prompts, which the seed READMEs list as public. A later comparison that needs material no agent could have seen should use new seeds.
+- **Run records** are in the git-ignored `runs/` folder, including each phase's analysis (`runs/clowder-m2f/analysis/`, `runs/opengym-m2h/analysis/`, `runs/growth/`).
 
-  The verdicts to use are each checkpoint's `rejudge-v4.json`. Cheap-discipline trajectories 1 to 3 are left out. The results carry a leak caveat: the owner leaked through corrections in a few replies, mostly to cheap discipline, and counting those verdicts as not met changes no ordering. `harness/report.py` regenerates the tables (`runs/stage2/report.md`).
-- **The simulated owner was fixed after stage 2** so that a correction quotes words wrong in themselves and never adds what a list left out. It was checked by replaying the real stops and the scripted scenarios (`harness/replay_owner.py`). Every later run uses the fixed owner.
-- **BenchTime's probes are at version 5**, and the judge now says whether each "couldn't exercise" came from the executor or the build; grading reruns executor-caused ones once.
-- **The simulated owner is now an imperfect person** (maintainer's decision, 2026-11-16): it hides nothing on purpose but doesn't realise what it left unsaid, can be reminded by what the agent shows, and misses more as it reads more. Attention and memory are separate seeded draws, with constants from published research ([owner-model-research.md](owner-model-research.md); design in [design.md](design.md), "Attention and recall"). It is built and reviewed (212 tests); both seeds' salience tiers and recall lines are frozen in `owner-items.json`. Trajectories now need `--replicate`, shared by the arms being compared. Fidelity is reported as surfacing and keeping. It passed its leak gate on the final prompt (0 confirmed leaks in 260 replies; a recognised-on-sight objection in 18 of 20 runs) and a live smoke check. **BenchTime under the rebuilt owner is done** (bounded policy, three trajectories per arm; [log.md](log.md), 2026-11-17; `runs/stage3b/report.md`): items met at change 10 were bare 95%, cheap discipline 93%, LID Full 97%, at agent costs of $2.53, $4.54, and $11.17.
-- **ReleaseDesk, the second seed, is ready, and its ceiling check is done** ([seeds/releasedesk/README.md](seeds/releasedesk/README.md)). The bare arm under a silent owner met 90 to 91% of all items but only 44 to 56% of latent items. The maintainer chose to read its ceiling on latent items, and to grow ReleaseDesk into the large greenfield test later, sized by what Clowder shows.
-- **The Clowder pilot ran** (2026-11-18; [seeds/clowder/README.md](seeds/clowder/README.md); plan.md milestone M2c): bare on a stripped copy, bare on the full repository as an inheritance check, and LID Full, one run per cell at a 1M and a 200k window. The bare agent on the full repository copied LID's artifacts, so the study turned to a greenfield growth test and then to cross-crate and brownfield changes.
-- **The Docker VM** has 6 CPUs and 10 GB (resized 2026-11-22 with the maintainer's approval), and runs four forks at a time. Its disk is 100 GiB; M2h's runner releases each fork's volumes after grading unless a repair needs them, and waits while free disk is under 20 GB.
-- **Start long jobs as tracked background tasks, or with a watch.** A job started detached sends no notice when it finishes.
-- **The maintainer has handed the pilot to the main session** (2026-11-14): run it on your own judgment, and bring the maintainer only decisions that are really theirs. Pushing to the draft pull request is allowed; marking it ready, merging, and releasing are not. Claude Fable stands in for the maintainer's detailed reviews (probes, oracles, verdict spot-checks).
-- **M2f, Clowder's cross-crate test, has run** (log.md, 2026-11-23; analysis in `runs/clowder-m2f/analysis/`). The arms finish close in total (new rows 69 and 70 of 72; dependencies kept 18 and 19 of 24) but miss different dependencies. LID's arm ran under Clowder's own standing override of phase reviews.
-- **M2h, the openGym brownfield test, has run** (log.md, 2026-11-24; `runs/opengym-m2h/m2h.md` and `analysis/`). LID built every requested change and bare 33 of 36; breakage of the dependent component is level (7 of 33 against 6 of 35), at about 3× the agent cost before LID's one-time mapping.
+**How the work runs.**
+
+- **The harness** ([harness/](harness/README.md)) runs every phase in Docker (Colima, 6 CPUs and 10 GB) with the maintainer's subscription token, through `plumbing/with-token.sh`. Its unit tests run with `python3.12 -m unittest discover -s tests` from `harness/`.
+- **Check the grading both ways before any counted run:** the untouched start must meet no new rule, and a correct build of every change must meet every rule. Both checks caught faults in every phase.
+- **Watch long jobs yourself.** Start them as tracked background tasks, or start a watcher on any job a subagent leaves running; once a finished job sat unnoticed for five hours.
+- **Disk:** freed container volumes return space to macOS only after the VM's disk is trimmed (`harness/trim.sh`); the runners trim after every release and wait while free disk is low.
+- **Other model families** draft and review test material through OpenRouter, from the main session only; spend so far is about $18.
+- **The maintainer has handed the work to the main session** (2026-11-14): run it on your own judgment, and bring the maintainer only decisions that are really theirs. Opening and merging pull requests, and releases, need the maintainer's approval. Claude Fable stands in for the maintainer's detailed reviews.
 
 **Next actions:**
 
-1. **Publish the first report** ([report-1-draft.md](report-1-draft.md)) in a research section of the LID site, built through LID's own workflow in the main repository (maintainer's decision, 2026-11-24).
-2. **The maintainer is taking on LID issues the study raised first:** #135 (cross-segment links), document length, and test-quality guidance. After #135, rerun M2f's changes 16 to 18 as a before-and-after.
-3. **Long-horizon evidence:** an anonymised before-and-after from the private project's history, cost data from a friend's large LID project if they share it, and a public project of realistic size for a long-horizon growth test, which the maintainer is choosing.
-4. **Review the specification-explicitness paper's deferred ideas** with the maintainer (plan.md, "After the growth test"), and the competitor arms (M5).
-5. **Finish the owner checks:** labelled judgments on about 100 replayed stops, the constants sweep, and the three replayed stops where the owner still errs.
-6. **Still to build:** prior-data probes, grading for the probe request, and a scripted check for operating requirements.
+1. **The maintainer is taking on LID issues the study raised:** #135 (cross-segment links), document length, and test-quality guidance. After #135, rerun M2f's changes 16 to 18 as a before-and-after.
+2. **Long-horizon evidence:** cost data from a friend's large LID project if they share it; the private project's history, though its adoption was gradual, so its before and after won't split cleanly; and a public project of realistic size for a long-horizon growth test, which the maintainer is choosing.
+3. **Review the specification-explicitness paper's deferred ideas** with the maintainer (plan.md, "After the growth test"), and the competitor arms (M5).
+4. **Finish the owner checks:** labelled judgments on about 100 replayed stops, the constants sweep, and the three replayed stops where the owner still errs.
+5. **Still to build:** prior-data probes, grading for the probe request, and a scripted check for operating requirements.
 
 ## Files
 
@@ -71,7 +58,7 @@ Read this section first when you pick the work up in a new session. Update it at
 | [sources.md](sources.md) | Papers, benchmarks, and articles, each labelled by how closely we read it |
 | [log.md](log.md) | A dated journal: what was done, what was decided, and who decided it. Older entries are in [log-archive/](log-archive/) |
 | [decisions.md](decisions.md) | Every decision that still stands, with its date and who made it |
-| [report-1-draft.md](report-1-draft.md) | The first report's draft: what LID cost and bought in the pilot runs, what that shows and doesn't, and open questions |
+| [report-1-draft.md](report-1-draft.md) | Where the first report lives now: on the LID site, from `site/src/research/first-results/` |
 | [observations.md](observations.md) | Leads noticed along the way about LID, about measuring it, and about running a study like this with agents |
 | [harness/](harness/README.md) | The harness code, with its tests |
 | [plumbing/](plumbing/README.md) | Throwaway scripts from the plumbing test: the executor image, the clock check, the grading tool, and a draft extraction template |
