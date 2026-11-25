@@ -139,7 +139,7 @@ arrows:
 
   onboarding:
     status: MAPPED
-    children: [marketing-site, tour, cascade-recording, examples-showcase]   # sub-HLD; no arrow doc — detail points to its design doc
+    children: [marketing-site, tour, cascade-recording, examples-showcase, research]   # sub-HLD; no arrow doc — detail points to its design doc
     sampled: 2026-11-15
     audited: null
     audited_sha: null
@@ -159,7 +159,19 @@ arrows:
     parent: onboarding
     detail: onboarding/marketing-site.md
     next: "Close the 12 active ONB-SITE gaps (notably ONB-SITE-009 README/Quickstart cascade and the build-time checks -026/-027/-028/-029); reconcile the audited-SHA mismatch between marketing-site.md and this entry."
-    drift: "103 of 114 ONB-SITE specs [x]; 11 [ ] (2026-11-19: ONB-SITE-140 checks links into the repository; 2026-11-17: link previews, ONB-SITE-135-139) (build-time checks + process specs). 2026-11-16: the Examples pages moved to the examples-showcase segment (ONB-SITE-013-016 and -065 removed; -021 now allows only showcased projects merged by pull request; -069 receipt links the Examples page). 101 of 113 ONB-SITE specs [x]; 12 [ ] (build-time checks + process specs). The 2026-11 site refresh replaced the Logo Ideas page (MKT-SITE-083–098, removed before the re-parent) and the five-panel trace (MKT-SITE-039/041/047/048/049, removed before the re-parent) with the free-trial Home: the gap, two scrolling explainers over the rings drawing, check it yourself, and where your time goes (ONB-SITE-099–124, with the hero drawing set small beside the h1 on narrow screens in ONB-SITE-133), plus the Nodes visual identity and sticky navigation (ONB-SITE-125–132); ONB-SITE-007, -038, -045, -046, -055–057, -062–064, -067–069 re-homed to the new sections."
+    drift: "103 of 114 ONB-SITE specs [x]; 11 [ ] (2026-11-25: Research joins the navigation, the sixth top-level page (ONB-SITE-019, -020), owned by the research segment; 2026-11-19: ONB-SITE-140 checks links into the repository; 2026-11-17: link previews, ONB-SITE-135-139) (build-time checks + process specs). 2026-11-16: the Examples pages moved to the examples-showcase segment (ONB-SITE-013-016 and -065 removed; -021 now allows only showcased projects merged by pull request; -069 receipt links the Examples page). 101 of 113 ONB-SITE specs [x]; 12 [ ] (build-time checks + process specs). The 2026-11 site refresh replaced the Logo Ideas page (MKT-SITE-083–098, removed before the re-parent) and the five-panel trace (MKT-SITE-039/041/047/048/049, removed before the re-parent) with the free-trial Home: the gap, two scrolling explainers over the rings drawing, check it yourself, and where your time goes (ONB-SITE-099–124, with the hero drawing set small beside the h1 on narrow screens in ONB-SITE-133), plus the Nodes visual identity and sticky navigation (ONB-SITE-125–132); ONB-SITE-007, -038, -045, -046, -055–057, -062–064, -067–069 re-homed to the new sections."
+
+  research:
+    status: MAPPED
+    parent: onboarding
+    sampled: 2026-11-25
+    audited: null
+    audited_sha: null
+    blocks: [marketing-site]
+    blockedBy: []
+    detail: onboarding/research.md
+    next: "When the cost-eval notebook merges to main, point the first report's records link at main."
+    drift: "New leaf segment. 42 of 43 ONB-RESEARCH specs [x]; ONB-RESEARCH-080 (the maintainer's review before an entry merges) is a process step. First report: first-results (pilot results of LID 1.4.6). Adds Research to the site's navigation (ONB-SITE-019, -020)."
 
   examples-showcase:
     status: MAPPED

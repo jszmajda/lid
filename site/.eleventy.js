@@ -3,6 +3,7 @@ import { cpSync, mkdirSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import markdownIt from "markdown-it";
 import { loadEntries } from "./scripts/entries.js";
+import { loadReports } from "./scripts/research-entries.js";
 import { renderPreviewTags } from "./scripts/previews.js";
 
 // Light syntax coloring for the Tour page's fenced code: diff lines in red and
@@ -44,6 +45,13 @@ function highlight(code, lang) {
 
 const markdown = markdownIt({ html: true, linkify: true, highlight });
 
+// Reports render with each table in its own frame, which scrolls sideways when the table is
+// wider than the screen. Raw HTML never reaches here: the entry rules reject it.
+// @spec ONB-RESEARCH-014, ONB-RESEARCH-015
+const reportMarkdown = markdownIt({ html: false, linkify: true, highlight });
+reportMarkdown.renderer.rules.table_open = () => '<div class="table-frame">\n<table>\n';
+reportMarkdown.renderer.rules.table_close = () => "</table>\n</div>\n";
+
 export default function (eleventyConfig) {
   eleventyConfig.addPlugin(eleventyNavigationPlugin);
 
@@ -70,6 +78,22 @@ export default function (eleventyConfig) {
     }
   });
 
+  // The research section's entries are data, read by src/_data/research.js, never pages of
+  // their own. After each build, each report's images are copied beside its page.
+  // @spec ONB-RESEARCH-040, ONB-RESEARCH-042
+  eleventyConfig.ignores.add("src/research/**");
+  eleventyConfig.addWatchTarget("src/research/");
+  eleventyConfig.on("eleventy.after", ({ directories, dir }) => {
+    const output = (directories || dir).output;
+    const researchDir = process.env.LID_RESEARCH_DIR || join("src", "research");
+    const today = process.env.LID_RESEARCH_TODAY;
+    for (const report of loadReports(researchDir, today ? { today } : {})) {
+      const to = join(output, "research", report.slug);
+      mkdirSync(to, { recursive: true });
+      for (const file of report.images) cpSync(join(researchDir, report.slug, file), join(to, file));
+    }
+  });
+
   // Pass through static assets untouched.
   eleventyConfig.addPassthroughCopy("src/assets");
   eleventyConfig.addPassthroughCopy({ "src/robots.txt": "robots.txt" });
@@ -91,6 +115,7 @@ export default function (eleventyConfig) {
 
   // Renders Markdown read from the tour's files (see src/_data/tour.js).
   eleventyConfig.addFilter("markdown", (text) => markdown.render(text || ""));
+  eleventyConfig.addFilter("reportMarkdown", (text) => reportMarkdown.render(text || ""));
 
   // Build-time timestamp for cache-busting static asset URLs. Every build
   // gets a new value, so references like `/assets/css/main.css?v={{ buildId }}`

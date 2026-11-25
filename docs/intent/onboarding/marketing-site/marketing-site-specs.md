@@ -108,8 +108,8 @@ Status markers: `[x]` implemented · `[ ]` active gap · `[D]` deferred
 
 ## Structure and Navigation
 
-- `[x]` **ONB-SITE-019**: The site SHALL contain exactly five top-level pages: Home, Start, Examples, Anti-patterns, Tour.
-- `[x]` **ONB-SITE-020**: When a user visits any top-level page, the site SHALL provide navigation to the other four top-level pages and to the GitHub repository.
+- `[x]` **ONB-SITE-019**: The site SHALL contain exactly six top-level pages: Home, Start, Examples, Research, Anti-patterns, Tour.
+- `[x]` **ONB-SITE-020**: When a user visits any top-level page, the site SHALL provide navigation to the other five top-level pages (Home, Start, Examples, Research, Anti-patterns, and Tour) and to the GitHub repository.
 - `[x]` **ONB-SITE-021**: The site SHALL NOT contain forums, comment threads, discussion features, or newsletter signups, and SHALL NOT accept content from outside the repository other than showcased projects merged by pull request.
 - `[x]` **ONB-SITE-022**: The site SHALL NOT contain calls-to-action beyond "install and use."
 - `[ ]` **ONB-SITE-023**: The site SHALL NOT duplicate content from the README beyond the orientation material needed for an evaluator to decide whether to click through to it.

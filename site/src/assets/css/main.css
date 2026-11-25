@@ -467,6 +467,30 @@ img, svg { max-width: 100%; }
 .prose ul, .prose ol { padding-left: 1.3em; display: grid; gap: 6px; }
 .prose code { font: 500 .9em var(--mono); }
 
+/* 17c. Research ───────────────────────────────────────────────────────── */
+/* The index of reports and each report's page (see the research segment). The report is set in
+   the reading measure of a post; its tables keep their columns and scroll sideways in a frame.
+   @spec ONB-RESEARCH-014, ONB-RESEARCH-015 */
+.research .report-list { display: grid; gap: 18px; margin-top: 26px; max-width: 46rem; }
+.report-card { padding: 22px 24px; display: grid; gap: 8px; }
+.report-card h2 { font-size: 1.35rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; }
+.report-card h2 a { color: var(--ink); text-decoration: none; }
+.research .status { font-weight: 600; color: var(--ink); }
+.research .status-superseded { color: var(--ink-2); }
+.report-head { display: grid; gap: 10px; }
+.report-head .tested { font-size: 15px; color: var(--ink-2); }
+.report-head .tested-h { font-weight: 600; color: var(--ink); }
+.report-head .records { font-size: 15px; font-weight: 600; }
+.supersede-note { padding: 12px 16px; border-radius: 14px; font-size: 15px; }
+.report .prose h3 { font-size: 1.15rem; font-weight: 700; margin-top: 8px; }
+.report .prose blockquote { border-left: 3px solid var(--line); padding-left: 14px; color: var(--ink-2); }
+.table-frame { overflow-x: auto; -webkit-overflow-scrolling: touch; border: 1px solid var(--line); border-radius: 14px; }
+.table-frame table { border-collapse: collapse; min-width: 100%; font-size: 14.5px; line-height: 1.45; }
+.table-frame th, .table-frame td { padding: 8px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--line); }
+.table-frame th { font-weight: 600; white-space: nowrap; }
+.table-frame tr:last-child td { border-bottom: 0; }
+.table-frame td:first-child { min-width: 12rem; }
+
 /* 18. Tour page ────────────────────────────────────────────────────────── */
 /* A sidebar of links on wide screens (ONB-SITE-080), a collapsible list above the content on
    narrow ones (ONB-SITE-081), and a short rule between steps and between topics (ONB-SITE-082). */

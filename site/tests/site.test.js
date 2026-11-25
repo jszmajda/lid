@@ -45,9 +45,9 @@ const rule = (selector) => {
 
 describe("structure and navigation", () => {
   // @spec ONB-SITE-019
-  it("has exactly the five top-level pages", () => {
+  it("has exactly the six top-level pages", () => {
     const labels = [...nav(html.Home).match(/<ul class="nav-links">[\s\S]*?<\/ul>/)[0].matchAll(/<a [^>]*>([^<]+)<\/a>/g)].map((m) => m[1].trim());
-    assert.deepEqual(labels, ["Start", "Examples", "Anti-patterns", "Tour", "GitHub"]);
+    assert.deepEqual(labels, ["Start", "Examples", "Research", "Anti-patterns", "Tour", "GitHub"]);
     assert.equal(existsSync(join(out, "logo-ideas")), false);
   });
 
@@ -55,7 +55,7 @@ describe("structure and navigation", () => {
   it("links every page to the others and to the repository", () => {
     for (const page of Object.values(html)) {
       const n = nav(page);
-      for (const href of ["/start/", "/examples/", "/anti-patterns/", "/tour/", repoUrl]) assert.ok(n.includes(`href="${href}"`), href);
+      for (const href of ["/start/", "/examples/", "/research/", "/anti-patterns/", "/tour/", repoUrl]) assert.ok(n.includes(`href="${href}"`), href);
       assert.match(n, /<a class="home" href="\/"/);
     }
   });
