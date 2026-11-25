@@ -2,6 +2,8 @@
 
 Clowder is the maintainer's public Rust terminal game ([github.com/jszmajda/clowder](https://github.com/jszmajda/clowder)), built entirely under LID. It serves one narrow purpose here: **a falsification test of "LID pays off once a codebase is larger than the agent can hold"** (see [design.md](../../design.md), "Later seeds and variants", and milestone M2c in [plan.md](../../plan.md)). Its non-test source is about 270k tokens: it fits in a 1M-token context window but not in a 200k one.
 
+**Versions tested:** LID 1.4.6, run in Claude Code 2.1.323 on Claude Sonnet 5.5 at medium effort.
+
 **Status:** prepared, not yet run.
 
 - **The changes:** twelve, drafted by GPT-6.1 Sol in two rounds. Claude Fable and then GPT-6.2 Astra reviewed them, and both reviews' fixes were applied.

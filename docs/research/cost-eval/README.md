@@ -1,6 +1,6 @@
 # Research notebook: what LID costs, compared with other ways of working
 
-**Status: pilot work; no counted runs yet.** Last updated 2026-11-24.
+**Status: pilot work; no counted runs yet.** Last updated 2026-11-24. Every run so far tested LID 1.4.6, run in Claude Code 2.1.323 on Claude Sonnet 5.5 at medium effort (Opus 5.5 only in ceiling checks).
 
 ## The question
 

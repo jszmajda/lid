@@ -1,6 +1,6 @@
 # What LID costs, and what it buys: first results
 
-**Draft, 2026-11-24.** Every number here comes from pilot runs. None of the analyses were fixed in advance, the samples are small, and one model did all the work. The results show which way each difference points; they are too small to measure how big it is.
+**Draft, 2026-11-24.** Every number here comes from pilot runs of LID 1.4.6, in Claude Code 2.1.323 on Claude Sonnet 5.5. None of the analyses were fixed in advance, the samples are small, and one model did all the work. The results show which way each difference points; they are too small to measure how big it is.
 
 ## The question
 
@@ -28,7 +28,7 @@ We haven't yet compared LID with the other spec-driven systems people ask about,
 
 ## How we tested
 
-**The executor.** Claude Sonnet 5.5 at medium reasoning effort made every change, whichever way of working it followed. Opus 5.5 ran only in two checks of how well a bare agent could do at its best. The runs on the last two projects used LID 1.4.6. The notebook records the versions for every run.
+**The executor.** Claude Sonnet 5.5 at medium reasoning effort made every change, whichever way of working it followed. Opus 5.5 ran only in two checks of how well a bare agent could do at its best. Every run that followed LID used LID 1.4.6, in Claude Code 2.1.323, and on openGym both of LID's plugins, because its map uses the second one's navigation files. The notebook records the versions for every run.
 
 **The owner.** A real person can't sit through hundreds of runs, so a model plays the owner. The study wrote the owner's real intent down in advance as a list of requirements. The owner states some of them in its request. It shares others only when the agent asks, and objects to others only when the agent proposes something that contradicts them. The owner is an imperfect reader on purpose: it misses more as it reads more, and something the agent shows it can remind it of a requirement it forgot to mention. The settings for that come from published research on attention and memory ([owner-model-research.md](owner-model-research.md)). The owner never reads code.
 

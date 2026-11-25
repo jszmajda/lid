@@ -1,6 +1,6 @@
 # Observations
 
-Things the study noticed along the way that aren't results in their own right, but that may matter to LID, to measuring it, or to running a study like this with agents. Each one says what was seen, where the evidence is, and what it might mean. Most rest on a handful of runs, so treat them as leads.
+Things the study noticed along the way that aren't results in their own right, but that may matter to LID, to measuring it, or to running a study like this with agents. Each one says what was seen, where the evidence is, and what it might mean. Most rest on a handful of runs, so treat them as leads. Every observation about LID is about LID 1.4.6, run in Claude Code 2.1.323 on Claude Sonnet 5.5 at medium effort.
 
 ## About LID
 
