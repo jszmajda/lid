@@ -186,12 +186,31 @@ Spread over twelve changes, the mapping raises LID's cost from about $0.91 to ab
 
 **One model.** Everything ran on Sonnet 5.5 at medium effort. Other models may follow a long workflow differently.
 
-## What we haven't tested
+## What this shows, and what it doesn't
 
-- **The other spec-driven systems.** That's the comparison people ask for most, and it needs setups that their maintainers can check first.
-- **Long projects.** Our projects are small or were changed a dozen times. Testing whether LID's written intent pays off as a project ages needs a larger project built from scratch and changed many more times. Our first attempt didn't grow enough to test it.
-- **What a miss costs a real owner** to notice, report and live with.
-- **Lighter ways of running LID,** such as an owner who reviews only the design, or LID applied to only part of a codebase (its Scoped mode).
+**It shows what LID does to a single change, on a small project or a frozen snapshot of a large one.** Every result above is either a small project changed 10 to 20 times, or a large project where each change started from the same code. That design answers a narrow question well: when an agent makes one change, does following LID cost more, and does it get closer to what the owner meant? On that question the answer is fairly consistent. LID costs several times as much and asks the owner to read much more. It gets closer to what the owner meant, mostly by asking about what the owner left unsaid and by catching a misreading of the request before writing code.
+
+**It doesn't show what happens over a project's life.** People who like LID, including its maintainer, usually describe a benefit that builds up over months. The written intent stays true as the project changes, so the hundredth change is still easy to make safely, and coming back after a break doesn't mean rediscovering why things are the way they are. Runs that each start from the same snapshot can't show that, because nothing builds up between them. The one test we designed for it, growing a project through forty changes with planned changes of direction, stopped after twenty because the project stayed small enough for a bare agent to read in full every time. So these results neither support nor contradict the long-horizon benefit. They leave it untested.
+
+**It shows that linking intent across parts of a system matters, in both directions.** Where LID's documents said which other part of the system relied on a rule, the LID agent kept that part working and the bare agent mostly didn't. Where the documents didn't say so, LID's segment boundaries told the agent its work was done, and it did worse than an agent with no structure at all. That points at something specific in LID to fix (#135), rather than at the method as a whole.
+
+**It suggests that the owner's reading is the cost that matters.** LID's extra agent cost was between $0.40 and $1.30 per change at list prices, which is small next to a person's time. Five to eleven times as much to read is not small, and our simulated owner caught far fewer problems in long documents than in short messages. If LID is worth it, a large part of the case depends on how much of its output a person needs to read.
+
+**It can't measure two things that may explain why people like LID.**
+
+- **Our owner's intent was fixed in advance.** A real owner often works out what they want while writing and reading a design, so LID's stops may help the person think, and not only help the agent understand. Our simulated owner had nothing to work out, so the study can't see that effect, in either direction.
+- **Liking a method is weaker evidence than it feels.** The care a method demands can make people value it more, and nobody sees the misses that a different method would have made. That doesn't make anyone's experience wrong. It means experience alone can't settle the question, and neither can these runs.
+
+## Open questions for further research
+
+- **Does LID pay off over a long life?** This needs a realistically sized project, built in public, ideally an app with a backend, grown from scratch over fifty or more changes with real changes of direction. It also needs to grow beyond what a bare agent can read at once. It's the most expensive test and the one that matters most.
+- **What do long-running real projects show?** A project that adopted LID partway through has a natural before and after in its own history: regressions, reverts and fixes that cross components, per change, in each period. Model improvements over the same months confound that comparison, but it's real use over months, which no simulation gives.
+- **Does fixing the missing cross-segment links change the result?** Once #135 is addressed, rerunning the same Clowder changes with the same setup would show whether the boundary failure goes away.
+- **How much reading can an owner skip?** An owner who reviews only the design, or only the conversation, reads far less. We estimated the savings but didn't test what they cost in fidelity.
+- **Does LID help weaker models more, or less?** Everything here ran on one strong model. A model that misreads requests more often might gain more from LID's questions and stops, or might fail to follow a long workflow at all.
+- **How does LID compare with the other spec-driven systems?** We need setups their maintainers can check first.
+- **What does a miss cost a real owner?** That means the time to notice it, report it, and live with it in the meantime. That cost decides whether fixing a cheap agent's misses later beats paying for LID up front.
+- **Can `/map-codebase` record the ties between components?** On openGym the maps recorded each part's own rules but rarely what one part relied on in another, which is exactly what cross-component changes need (#133, #134).
 
 ## Where the details are
 

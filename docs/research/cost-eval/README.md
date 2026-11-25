@@ -52,10 +52,12 @@ Read this section first when you pick the work up in a new session. Update it at
 
 **Next actions:**
 
-1. **Write the first report** across BenchTime, the growth pilot, M2e, M2f and M2h, and publish it on the LID site with the maintainer.
-2. **Review the specification-explicitness paper's deferred ideas** with the maintainer (plan.md, "After the growth test"), and the competitor arms (M5).
-3. **Finish the owner checks:** labelled judgments on about 100 replayed stops, the constants sweep, and the three replayed stops where the owner still errs.
-4. **Still to build:** prior-data probes, grading for the probe request, and a scripted check for operating requirements.
+1. **Publish the first report** ([report-1-draft.md](report-1-draft.md)) in a research section of the LID site, built through LID's own workflow in the main repository (maintainer's decision, 2026-11-24).
+2. **The maintainer is taking on LID issues the study raised first:** #135 (cross-segment links), document length, and test-quality guidance. After #135, rerun M2f's changes 16 to 18 as a before-and-after.
+3. **Long-horizon evidence:** an anonymised before-and-after from the private project's history, Scott's cost data if he shares it, and a public project of realistic size for a long-horizon growth test, which the maintainer is choosing.
+4. **Review the specification-explicitness paper's deferred ideas** with the maintainer (plan.md, "After the growth test"), and the competitor arms (M5).
+5. **Finish the owner checks:** labelled judgments on about 100 replayed stops, the constants sweep, and the three replayed stops where the owner still errs.
+6. **Still to build:** prior-data probes, grading for the probe request, and a scripted check for operating requirements.
 
 ## Files
 
