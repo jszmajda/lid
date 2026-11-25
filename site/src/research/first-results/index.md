@@ -7,7 +7,7 @@ tested:
   lid: "1.4.6"
   agent: "Claude Code 2.1.323"
   model: "Claude Sonnet 5.5, medium effort"
-records: "https://github.com/jszmajda/lid/tree/cost-eval-research/docs/research/cost-eval"
+records: "https://github.com/jszmajda/lid/tree/main/docs/research/cost-eval"
 ---
 
 Every number here comes from pilot runs of LID 1.4.6, in Claude Code 2.1.323 on Claude Sonnet 5.5. The cost ratios came out much the same on every project. The differences in what each approach built show which way things point, but they rest on three runs or fewer per comparison, so none of them is a precise measurement.
@@ -64,7 +64,7 @@ In this case, LID's extra step bought a correct change for a few tens of cents m
 
 **The executor.** Claude Sonnet 5.5 at medium reasoning effort made every change, whichever way of working it followed. Opus 5.5 ran only in two checks of how well a bare agent could do at its best. Every run that followed LID used LID 1.4.6, in Claude Code 2.1.323, and on openGym both of LID's plugins, because its map uses the second plugin's navigation files. The notebook records the versions for every run.
 
-**The owner.** A real person can't sit through hundreds of runs, so a model plays the owner. The study wrote the owner's real intent down in advance as a list of requirements. The owner states some of them in its request. It shares others only when the agent asks, and objects to others only when the agent proposes something that contradicts them. The owner is an imperfect reader on purpose: it misses more as it reads more, and something the agent shows it can remind it of a requirement it forgot to mention. The settings for that come from published research on attention and memory ([owner-model-research.md](https://github.com/jszmajda/lid/blob/cost-eval-research/docs/research/cost-eval/owner-model-research.md)). The owner never reads code.
+**The owner.** A real person can't sit through hundreds of runs, so a model plays the owner. The study wrote the owner's real intent down in advance as a list of requirements. The owner states some of them in its request. It shares others only when the agent asks, and objects to others only when the agent proposes something that contradicts them. The owner is an imperfect reader on purpose: it misses more as it reads more, and something the agent shows it can remind it of a requirement it forgot to mention. The settings for that come from published research on attention and memory ([owner-model-research.md](https://github.com/jszmajda/lid/blob/main/docs/research/cost-eval/owner-model-research.md)). The owner never reads code.
 
 **The projects.**
 
@@ -220,4 +220,4 @@ These come from what we saw in the runs. None of them has shipped.
 
 ## Where the details are
 
-Everything behind this report is in the study's research notebook, on the [`cost-eval-research` branch](https://github.com/jszmajda/lid/tree/cost-eval-research/docs/research/cost-eval) of the LID repository ([pull request #120](https://github.com/jszmajda/lid/pull/120)): the design, the decisions and who made them, a dated log, the observations behind the list of LID changes above, and the code that ran the study. Each project's test material stays private, because later comparisons will reuse it.
+Everything behind this report is in the study's research notebook, [`docs/research/cost-eval/`](https://github.com/jszmajda/lid/tree/main/docs/research/cost-eval) in the LID repository ([pull request #120](https://github.com/jszmajda/lid/pull/120)): the design, the decisions and who made them, a dated log, the observations behind the list of LID changes above, and the code that ran the study. Each project's test material stays private, because later comparisons will reuse it.

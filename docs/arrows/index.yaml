@@ -170,7 +170,7 @@ arrows:
     blocks: [marketing-site]
     blockedBy: []
     detail: onboarding/research.md
-    next: "When the cost-eval notebook merges to main, point the first report's records link at main."
+    next: null
     drift: "New leaf segment. 42 of 43 ONB-RESEARCH specs [x]; ONB-RESEARCH-080 (the maintainer's review before an entry merges) is a process step. First report: first-results (pilot results of LID 1.4.6). Adds Research to the site's navigation (ONB-SITE-019, -020)."
 
   examples-showcase:
