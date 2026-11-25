@@ -1,0 +1,26 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.00s
+     Running tests/heldout_cats/main.rs (/work/target/debug/deps/heldout_cats-35bb584ca11a392b)
+
+running 3 tests
+test cats::a_helper_kitten_is_two ... ok
+test cats::a_kitten_is_greeted ... ok
+test cats::every_arrival_is_described ... FAILED
+
+failures:
+
+---- cats::every_arrival_is_described stdout ----
+
+thread 'cats::every_arrival_is_described' panicked at crates/fixture/tests/heldout_cats/cats.rs:33:45:
+internal error: entered unreachable code: grader adaptation: a variant the arm added
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    cats::every_arrival_is_described
+
+test result: FAILED. 2 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--test heldout_cats`
+error: 1 target failed:
+    `--test heldout_cats`
+EXIT=101

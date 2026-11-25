@@ -1,0 +1,1 @@
+**Archive time zone.** If the service's archive time zone can only be set when it starts (for example by an environment variable or a start-up option), set it to `Africa/Nairobi` in the start spec. If it is set through an operation or setup data instead, leave it out of the start spec.

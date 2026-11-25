@@ -1,0 +1,9 @@
+{
+  "name": "cheap-discipline",
+  "description": "Plan mode for the first turn of every change, and a short AGENTS.md asking for tests and a NOTES.md of decisions.",
+  "plugins": [],
+  "lid_release": null,
+  "workspace_files": {"AGENTS.md": "cheap-discipline-AGENTS.md"},
+  "first_turn_mode": "plan",
+  "first_prompt_prefix": {}
+}

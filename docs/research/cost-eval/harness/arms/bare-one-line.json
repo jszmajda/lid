@@ -1,0 +1,9 @@
+{
+  "name": "bare-one-line",
+  "description": "Bare, plus one sentence in an AGENTS.md at the repository root: When a rule changes, update its tests and their names. The cheapest answer to test rot (design.md, \"The growth test\").",
+  "plugins": [],
+  "lid_release": null,
+  "workspace_files": {"AGENTS.md": "bare-one-line-AGENTS.md"},
+  "first_turn_mode": "bypassPermissions",
+  "first_prompt_prefix": {}
+}

@@ -1,0 +1,33 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.00s
+     Running tests/heldout_saves/main.rs (/work/target/debug/deps/heldout_saves-d9a11111be8e55bb)
+
+running 2 tests
+test saves::a_resaved_kitten_keeps_its_shape ... FAILED
+test saves::a_saved_kitten_is_exact ... FAILED
+
+failures:
+
+---- saves::a_resaved_kitten_keeps_its_shape stdout ----
+
+thread 'saves::a_resaved_kitten_keeps_its_shape' panicked at crates/fixture/tests/heldout_saves/saves.rs:18:5:
+the saved kitten changed: {"name":"Fern","age":2} -> {"name":"Fern","age":2,"nickname":null}
+
+---- saves::a_saved_kitten_is_exact stdout ----
+
+thread 'saves::a_saved_kitten_is_exact' panicked at crates/fixture/tests/heldout_saves/saves.rs:11:5:
+assertion `left == right` failed
+  left: "{\"name\":\"Fern\",\"age\":2,\"nickname\":null}"
+ right: "{\"name\":\"Fern\",\"age\":2}"
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    saves::a_resaved_kitten_keeps_its_shape
+    saves::a_saved_kitten_is_exact
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+error: test failed, to rerun pass `--test heldout_saves`
+error: 1 target failed:
+    `--test heldout_saves`
+EXIT=101

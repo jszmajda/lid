@@ -1,0 +1,9 @@
+{
+  "name": "lid-full-arrows",
+  "description": "LID Full on a mapped brownfield start (M2h): the linked-intent-dev and arrow-maintenance plugins from LID's repository at the release the map was made with, loaded with --plugin-dir as the openGym mapping sessions loaded them (opengym_map.py). Every change is a plain request: the map's own instruction file (update-lid's LID block) sends the agent to the skill, and the arrow overlay (docs/arrows/) is there for arrow-maintenance.",
+  "plugins": ["linked-intent-dev", "arrow-maintenance"],
+  "lid_release": "v1.4.6",
+  "workspace_files": {},
+  "first_turn_mode": "bypassPermissions",
+  "first_prompt_prefix": {}
+}
