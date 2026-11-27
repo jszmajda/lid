@@ -4,7 +4,8 @@
 #
 # title: the report's title, as shown on its card and as its page's h1.
 title: "What a study found"
-# date: the day the report was first published, YYYY-MM-DD; it orders the index, newest first.
+# date: the day the study's results were in (its last run or analysis), YYYY-MM-DD, which can be
+# well before the report is published; it orders the index, newest first.
 date: 2026-01-15
 # revised: the day of its latest revision, later than date. Leave it out until it's revised.
 revised: 2026-02-01

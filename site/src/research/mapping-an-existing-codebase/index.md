@@ -1,6 +1,6 @@
 ---
 title: "Mapping a codebase LID didn't build: a first look"
-date: 2026-11-27
+date: 2026-11-23
 status: pilot
 summary: "Pilot runs of LID's /map-codebase on openGym, one model, no owner. Three usable maps cost $27 to $54 and wrote 815 to 1,195 requirements each, but none read its own survey in full, and each linked both sides of only 1 of 13 known ties between components. A lead to study, not a measurement."
 tested:

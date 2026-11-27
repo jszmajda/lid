@@ -1,6 +1,6 @@
 ---
 title: "What each approach leaves for the next reader"
-date: 2026-11-27
+date: 2026-11-21
 status: pilot
 summary: "A fresh reader rebuilt each project's rules from one approach's tests or documents. LID's files beat a bare agent's tests; a single spec file did as well or slightly better, on a project small enough for one file to hold every rule. The projects were too small to show stale files misleading anyone."
 tested:
