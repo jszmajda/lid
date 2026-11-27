@@ -52,7 +52,7 @@ An entry is one folder, `site/src/research/<slug>/`, whose name is the report's 
 | Front-matter field | Required | Meaning |
 |---|---|---|
 | `title` | yes | The report's title as shown. |
-| `date` | yes | The date the report was first published; orders the index. A published report keeps its slug, because a static site can't redirect; renaming one means a new entry and the old one superseded. |
+| `date` | yes | The date the study's results were in: the last day of the runs or analysis the report rests on, which can be well before the report is published; orders the index. A published report keeps its slug, because a static site can't redirect; renaming one means a new entry and the old one superseded. |
 | `revised` | no | The date of its latest revision, when it has been revised. |
 | `status` | yes | `pilot`, `counted`, or `superseded`. |
 | `superseded_by` | with `superseded` | The slug of the report that replaces it. |
@@ -107,6 +107,7 @@ This segment is a content artifact, verified as the parent's other children are:
 | Stating what was tested | Required on every report and shown beside its title | Left to each report's text | A measurement holds only for the version, agent, and model that produced it, and readers skim. Requiring it makes every number scoped where it is read. |
 | Status labels | Pilot, counted, superseded | No status; free text | A reader needs to know at a glance whether a result was fixed in advance, and whether a newer report replaces it. Free text would drift between reports. |
 | Report format | Markdown only | Markdown or a self-contained HTML page, as stories allow | Reports are prose and tables. Charts can arrive as images in the entry folder. HTML would invite scripts and outside assets into a section whose job is to be checkable. |
+| What a report's date means | When the study's results were in | The day the report was published | A report can appear months after its runs. Dated by publication, it would sit above newer evidence on the index and read as more current than its numbers are; the date beside the title should say when the numbers are from. |
 | Links inside a report | Absolute, or to files in the entry folder | Relative paths into the repository | A path into the repository resolves only on GitHub, and a study's raw records live in another repository. |
 | Where a study's raw records live | Its notebook in `docs/research/`; run outputs, grades, and tallies too large or raw for the notebook in a separate public repository, [`lid-research-records`](https://github.com/jszmajda/lid-research-records), one folder per study | All of it in this repository; a branch of this repository; a public storage bucket; the site itself | Most people clone this repository to use or contribute to LID, not to check a study, so raw records here, or on a branch a default clone fetches, would be downloaded by everyone. A separate repository is browsable file by file, so a reader can follow a report's link straight to the number it backs, which a bucket without an index can't offer, and it is versioned like the notebook. The site deploys from this repository, so it would carry the same weight. |
 

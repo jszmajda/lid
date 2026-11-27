@@ -1,6 +1,6 @@
 ---
 title: "Does the bidirectional differential catch planted gaps?"
-date: 2026-11-27
+date: 2026-08-03
 status: counted
 summary: "On one 24-requirement segment of one project, fresh Claude Sonnet auditors caught 23 of 24 planted gaps, past a pre-registered bar of 0.70. The exam was too easy to tell auditors apart, the one miss sat in code no annotation reached, and the skill LID ships differs from what we tested."
 tested:

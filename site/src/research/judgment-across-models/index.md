@@ -1,6 +1,6 @@
 ---
 title: "Which judgments a model can be left to make: the first 29 configurations"
-date: 2026-11-27
+date: 2026-11-20
 status: pilot
 summary: "How LID measures which judgments a model misses, so it can bring them to the user. In pilot runs, 9 of 29 configurations missed one or both of the two judgments tested. Neither size nor release date sorted which, and every Claude model ran in a different harness from the rest."
 tested:
