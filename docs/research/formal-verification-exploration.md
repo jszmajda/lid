@@ -17,7 +17,7 @@ This document is written against several pieces of context that live outside it.
 - **Cascade discipline** — the existing LID rule: when one level of the arrow changes, downstream levels update in the same session. Within a segment, cascade is free; across segment boundaries, the agent pauses and verifies before propagating.
 - **Status markers** (existing on EARS) — `[x]` implemented, `[ ]` active gap, `[D]` deferred. This document proposes verification markers (`[V] [Vp] [Vx] [Vn] [?]`) that *compose* with the EARS markers — e.g. `[x][V]` = implemented and verified.
 
-**The case-study codebase** is a separate, real project the experiments run against — a long-running LID user with a populated arrow, kept anonymous in this published write-up. Throughout this doc, `FEAT-*` and `FLT-*` EARS IDs (e.g. `FEAT-DET-018`, `FEAT-LIFE-001`, `FEAT-DATA-001`, `FEAT-NAR-003`, `FLT-SCORE-001`) belong to the case-study's specs; generic paths like `<case-study>/docs/llds/FEAT.md`, `<case-study>/docs/specs/FEAT.md`, and generic source paths referenced below all live in the case-study's repo, not in this one. EARS prefix decoder: `DET` = daily/weekly classification, `LIFE` = lifecycle, `DATA` = data shape, `NAR` = narrative/LLM-shaped, `TIER` = retention-tier invariants, `FLT` = agent-filter processing.
+**The case-study codebase** is a separate, real project the experiments run against — a long-running LID user with a populated arrow: Threadkeeper, the maintainer's private app. Its code and design docs stay private, so this write-up describes them rather than quoting them. Throughout this doc, `FEAT-*` and `FLT-*` EARS IDs (e.g. `FEAT-DET-018`, `FEAT-LIFE-001`, `FEAT-DATA-001`, `FEAT-NAR-003`, `FLT-SCORE-001`) belong to the case-study's specs; generic paths like `<case-study>/docs/llds/FEAT.md`, `<case-study>/docs/specs/FEAT.md`, and generic source paths referenced below all live in the case-study's repo, not in this one. EARS prefix decoder: `DET` = daily/weekly classification, `LIFE` = lifecycle, `DATA` = data shape, `NAR` = narrative/LLM-shaped, `TIER` = retention-tier invariants, `FLT` = agent-filter processing.
 
 **External references used here**:
 
@@ -206,9 +206,9 @@ Examples below reference case-study specs (see §0). "LLM-shaped / qualitative" 
 | EARS shape | Example (case-study) | Default engine |
 |---|---|---|
 | Structural / flow invariant | FEAT-DET-018 (keep existing group assignments) | CodeQL |
-| Behavioral / scenario | FEAT-DET-021 "zero daily assignments ⇒ escalate to weekly" | Test-witness |
+| Behavioral / scenario | FEAT-DET-021 (an empty daily result escalates to the weekly mode) | Test-witness |
 | Functional / pre-post | FEAT-DET-014 (item count incremented by N, newest-item timestamp = max...) | LemmaScript/Dafny |
-| Configuration / data-shape | FEAT-DATA-001 "stores records with these fields" | Type-system-native |
+| Configuration / data-shape | FEAT-DATA-001 (the shape of a stored record) | Type-system-native |
 | LLM-shaped / qualitative | FEAT-NAR-003 (preserve the user's voice) | `[Vn]` (or manual-review signoff) |
 
 The overlay *dispatches* on shape; it doesn't force everything through one engine. **One EARS may dispatch to multiple engines** — demonstrated by the Wave 1 CodeQL experiment (see §11.1), where FEAT-DET-018 needed both CodeQL (code-side) and a pre-existing unit test (prompt-side) to cover both halves of the EARS.

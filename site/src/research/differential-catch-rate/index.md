@@ -10,15 +10,15 @@ tested:
 records: "https://github.com/jszmajda/lid-research-records/tree/main/b10-differential-catch-rate"
 ---
 
-Every number here comes from one experiment, B10, run on 2 and 3 August 2026 on one segment of one project: the 24 requirements behind the Google Sheets view of portfolio-tracker, a personal-finance tool that LID's maintainer built with LID. The headline auditor was Claude Sonnet, with smaller runs on Claude Opus, Claude Haiku and two GPT-5.6 models; the exact Claude versions weren't recorded. The audit ran as a harness written for the experiment, not as the skill LID ships, and the two differ in ways that matter, set out below. The hypothesis, pass mark and readouts were written down before any audit ran, and we label what came afterwards. Only the documents' own dates show when that was, since the design was first committed together with the results.
+Every number here comes from one experiment, B10, run on 2 and 3 August 2026 on one segment of one project: the 24 requirements behind the Google Sheets view of portfolio-tracker, a personal-finance tool that LID's maintainer built with LID. The headline auditor was Claude Sonnet, with smaller runs on Claude Opus, Claude Haiku and two GPT-5.6 models; the exact Claude versions weren't recorded. The audit ran as a harness written for the experiment, not as the skill LID ships, and the two differ in ways that matter, set out below. The hypothesis, pass mark and readouts were written down before any audit ran, and we label what came afterwards. That is what "counted" means here: the analysis was fixed before the runs, not that the numbers are precise. Only the documents' own dates show when that was, since the design was first committed together with the results.
 
 ## The question
 
-LID's case for lighter review is that once intent is written down as requirements and linked to the code, a reviewer can stop reading every line and check instead that what landed traces back to what was meant. That holds only if the checking catches what a careful reader would.
+LID's case for lighter review is that once intent is written down as requirements and linked to the code by annotations, comments beside the code that name the requirement it meets, a reviewer can stop reading every line and check instead that what landed traces back to what was meant. That holds only if the checking catches what a careful reader would.
 
 One such instrument is the bidirectional differential, which audits one requirement from both ends. In the A direction, a fresh session gets only the requirement's text and writes code for it. In the B direction, a fresh session gets only the code, with documents and requirement IDs stripped out, and writes down the requirement it enforces. A classifier compares each with the real thing and lists the gaps.
 
-Earlier experiments ran this audit on Threadkeeper, the maintainer's private app, and found real gaps: [B9](https://github.com/jszmajda/lid/blob/main/docs/research/experiments/b9-bidirectional-differential-filter/RESULTS.md), for one, judged five of six requirements out of step with their code, and [B1](https://github.com/jszmajda/lid/blob/main/docs/research/experiments/b1-differential-thr-det-021/RESULTS.md) and [B2](https://github.com/jszmajda/lid/blob/main/docs/research/experiments/b2-differential-llds-ears-primary/RESULTS.md) found others. None had an answer key, so they showed that the method finds things, not how much it misses. B10 planted gaps with the answers written down in advance, eight of each of three kinds:
+Earlier experiments on Threadkeeper, the maintainer's private app, found real gaps. [B9](https://github.com/jszmajda/lid/blob/main/docs/research/experiments/b9-bidirectional-differential-filter/RESULTS.md) ran this two-way version on six requirements and judged five of them out of step with their code, and the one-way differentials [B1](https://github.com/jszmajda/lid/blob/main/docs/research/experiments/b1-differential-thr-det-021/RESULTS.md) and [B2](https://github.com/jszmajda/lid/blob/main/docs/research/experiments/b2-differential-llds-ears-primary/RESULTS.md) found others. None had an answer key, so they showed that the method finds things, not how much it misses. B10 planted gaps with the answers written down in advance, eight of each of three kinds:
 
 - **Unstated intent.** The code and its tests gain a behaviour no requirement states. One seed made the code trim and upper-case a stock symbol before looking it up.
 - **Phantom requirements.** A requirement gains a claim nothing in the code enforces.
@@ -33,7 +33,7 @@ Earlier experiments ran this audit on Threadkeeper, the maintainer's private app
 | The one miss | In code no requirement annotation reached, so no auditor was shown it. |
 | More independent auditors | Bought nothing we could measure. On 8 of the seeds, self-audit, Opus, GPT-5.6 Terra and GPT-5.6 Luna each caught 7. The exam was too easy to separate them. |
 | A cheaper model | Haiku caught 5 of 8. |
-| The verdict per requirement | Told planted gaps from untouched code not at all: all 48 of Sonnet's units were labelled as drifting. |
+| The label per requirement | Told planted gaps from untouched code not at all: all 48 of Sonnet's audits were labelled as drifting. |
 | False alarms on untouched requirements | 0% to 7.5% of findings per auditor, after a judge model ruled on each. Sonnet still raised about five findings per untouched requirement. |
 | Cost | About 343,000 Claude tokens per requirement audited. |
 | The skill LID ships | Differs from what we tested in what it reads, what it reports, and what it says it costs. |
@@ -82,9 +82,9 @@ Self-audit, fresh Sonnet, Opus, Terra and Luna all caught the same 7 of 8. That 
 
 Haiku is where a cheaper model gave way. It also missed one hollow test, and on another seed it found the planted mechanism but called it harmless, which the human pass ruled a miss. Luna caught 7 of 8, for $0.43 across its 16 units.
 
-### The verdict per requirement carried no signal
+### The label per requirement carried no signal
 
-The audit labels each requirement with a code saying whether, and in which direction, requirement and code have drifted apart. All 48 of Sonnet's units got a drifting label, the 24 untouched ones included, and so did all 16 of Opus's. That's partly real, because the untouched requirements had genuine gaps, but the label couldn't tell planted gaps from the background. It wasn't stable either: when the Sonnet arm accidentally ran twice, 3 of the 24 untouched units changed label. What separated seeds from controls was the list of findings, matched against the key.
+The audit gives each requirement a label saying whether, and in which direction, requirement and code have drifted apart. All 48 of Sonnet's units got a drifting label, the 24 untouched ones included, and so did all 16 of Opus's. That's partly real, because the untouched requirements had genuine gaps, but the label couldn't tell planted gaps from the background. It wasn't stable either: when the Sonnet arm ran twice, 3 of the 24 untouched units changed label between the two executions. What separated seeds from controls was the list of findings, matched against the key.
 
 ### Findings on untouched requirements
 
@@ -106,15 +106,15 @@ Fable and Sol agreed on 112 of 134 sampled verdicts, 83.6%, below the trigger. S
 
 Sonnet's three A-direction runs agreed closely on 30 of its 48 units and poorly on 2; its B-direction runs agreed closely on 45. Haiku's A-direction runs agreed poorly on 8 of its 16.
 
-Claude audit calls used about 46.1 million tokens, 16.6 million of them an accidental second run of the Sonnet arm, and judging about 5.5 million more. Each Sonnet unit took about 343,000. The Claude side was recorded as tokens per arm, not dollars. The OpenAI side was priced per call: Terra cost $3.94 for 16 units, Luna $0.43, and Sol's cross-checks about $2.33.
+Claude calls inside the experiment, seeding and pilot included, used about 46.1 million tokens, and judging about 5.5 million more. 16.6 million of the 46.1 million came from the Sonnet arm running twice after a workflow resume; the second execution was scored, and the first kept as superseded. Each Sonnet unit took about 343,000. The Claude side was recorded as tokens per arm, not dollars. The OpenAI side was priced per call: Terra cost $3.94 for 16 units, Luna $0.43, and Sol's cross-checks about $2.33.
 
 ## What the shipped skill does differently
 
 LID ships this audit as the experimental [bidirectional-differential skill](https://github.com/jszmajda/lid/tree/main/plugins/lid-experimental/skills/bidirectional-differential), which isn't what B10 measured:
 
 - **It leaves tests out by default.** B10's B direction read test files and was asked for behaviour pinned only by tests. The skill omits test files unless the user opts in ([audit-protocol.md](https://github.com/jszmajda/lid/blob/main/plugins/lid-experimental/skills/bidirectional-differential/references/audit-protocol.md)). No B10 arm ran without them, so we don't know how much the result depended on them.
-- **It leads with the label B10 found carries no signal.** Each audit record is headed by the per-requirement code, and the summary leads with counts of codes. With no answer key and no judge, a user sees every finding, about five per untouched requirement in B10, with nothing sorting real gaps from missing cross-references and false alarms.
-- **It describes a different cost.** The design gives an audit as about six short calls costing "a few cents" at Sonnet rates ([design](https://github.com/jszmajda/lid/blob/main/docs/intent/lid-experimental/bidirectional-differential/bidirectional-differential-design.md)). B10's took seven calls and about 343,000 tokens, and Terra, Sonnet's peer, cost about 25 cents a unit. We didn't price the Claude side, so we can't check the design's figure directly.
+- **It leads with the label B10 found carries no signal.** Each audit record is headed by the per-requirement label, and the summary leads with counts of labels. With no answer key and no judge, a user sees every finding, about five per untouched requirement in B10, with nothing sorting real gaps from missing cross-references and false alarms.
+- **It describes a different cost.** The design gives an audit as about six short calls costing "a few cents" at Sonnet rates ([design](https://github.com/jszmajda/lid/blob/main/docs/intent/lid-experimental/bidirectional-differential/bidirectional-differential-design.md)). B10's took seven calls, the seventh a separate classifier where the skill classifies in its own session, and about 343,000 tokens, and Terra, Sonnet's peer, cost about 25 cents a unit. We didn't price the Claude side, so we can't check the design's figure directly.
 
 The prompts differ too: B10's A direction listed every assumption it invented, where the skill's asks for code alone. That leaves questions for LID, none of them settled:
 
@@ -136,7 +136,7 @@ The prompts differ too: B10's A direction listed every assumption it invented, w
 
 ## How sure we are
 
-**The exam was too easy.** The audit cleared its bar by a wide margin and every auditor but one tied, which is what a saturated exam looks like. B10 is best read as a calibration pilot: the harness works, and the next exam needs to be harder. 23 of 24 has a wide interval, and 8 of 8 in a kind is consistent with a true rate as low as about 0.68.
+**The exam was too easy.** The audit cleared its bar by a wide margin and every auditor but one tied, which is what a saturated exam looks like. B10 is best read as a calibration pilot: the harness works, and the next exam needs to be harder. 23 of 24 has a wide interval, and 8 of 8 in a kind is consistent with a true rate as low as about 0.68, on a Wilson interval.
 
 **What was fixed in advance.** The hypothesis, the 0.70 bar, the readouts and the 85% trigger are in the [design](https://github.com/jszmajda/lid/blob/main/docs/research/experiments/b10-differential-catch-rate/DESIGN.md), with an amendment dated before seeding and adjustments dated after the pilot but before the main runs. The view without the unseen seed, and the human pass's principles, came later.
 
@@ -146,7 +146,7 @@ The prompts differ too: B10's A direction listed every assumption it invented, w
 
 **What survives.** Sonnet's untouched units from both runs, the Opus and Haiku arms, and the pilot's judging files were kept. Sonnet's seeded units, the Terra and Luna outputs and the main judging outputs weren't, so 23 of 24 rests on the scoring files' tallies, not on outputs anyone can re-read.
 
-**The critique.** After the results, eight model reviewers, six Claude-family and two on GPT-5.6 Sol, attacked the design and its reading ([CRITIQUE.md](https://github.com/jszmajda/lid/blob/main/docs/research/experiments/b10-differential-catch-rate/CRITIQUE.md)). They read a prose summary, not the records, and only the Sol reviewers raised the missing comparison. That review shapes this report, but it was models reviewing a model-run study.
+**The critique.** After the results, eight model reviewer set-ups attacked the design and its reading, in twelve Claude-family reviews over two rounds and two reviews on GPT-5.6 Sol ([CRITIQUE.md](https://github.com/jszmajda/lid/blob/main/docs/research/experiments/b10-differential-catch-rate/CRITIQUE.md)). They read a prose summary, not the records, and only the two Sol reviews raised the missing comparison. That review shapes this report, but it was models reviewing a model-run study.
 
 ## Where the details are
 

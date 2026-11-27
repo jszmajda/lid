@@ -1,9 +1,9 @@
 """Map openGym with LID's own /map-codebase skill, run as an executor session (plan.md, M2h; decisions.md, 2026-11-22).
 
-    ../plumbing/with-token.sh python3.12 opengym_map.py run --id ogmap-1
+    ../plumbing/with-token.sh python3.12 opengym_map.py run --id ogmap-1 --repo <openGym clone>
     python3.12 opengym_map.py check --id ogmap-1     # what the map changed, beyond docs
     python3.12 opengym_map.py test --id ogmap-1      # the project's suites on the bare and LID starts
-    python3.12 opengym_map.py prepare --id ogmap-bare  # the shared bare start alone, in its own volume
+    python3.12 opengym_map.py prepare --id ogmap-bare --repo <openGym clone>  # the shared bare start alone, in its own volume
 
 The LID arm of the brownfield test starts from a snapshot mapped once; the mapping is a one-time adoption cost.
 
@@ -336,6 +336,9 @@ def totals(u: usage.Usage | None) -> dict:
 
 
 def run(args, deps: Deps) -> int:
+    if args.repo is None:
+        print("run needs --repo, a clone of openGym at PIN")
+        return 2
     out = args.runs / "opengym-map" / args.id
     if (out / "mapping.json").exists():
         print(f"{out} already exists; a rerun starts from scratch under a new --id")
@@ -539,6 +542,9 @@ def test(args, deps: Deps) -> int:
 
 def prepare(args, deps: Deps) -> int:
     """The bare arm's start alone: the workspace step of run, with no session, in <id>-ws."""
+    if args.repo is None:
+        print("prepare needs --repo, a clone of openGym at PIN")
+        return 2
     out = args.runs / "opengym-map" / args.id
     if (out / "mapping.json").exists():
         print(f"{out} already exists")
@@ -560,7 +566,7 @@ def build_parser() -> argparse.ArgumentParser:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("command", choices=("run", "check", "test", "prepare"))
     ap.add_argument("--id", required=True, help="names the records folder and the volumes (<id>-ws, <id>-cfg)")
-    ap.add_argument("--repo", type=Path, required=True, help="a clone of openGym at PIN")
+    ap.add_argument("--repo", type=Path, help="a clone of openGym at PIN (run and prepare need it)")
     ap.add_argument("--image", default=IMAGE)
     ap.add_argument("--model", default=MODEL)
     ap.add_argument("--effort", default=EFFORT)

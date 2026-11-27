@@ -28,7 +28,7 @@ PY=${PY:-$(command -v python3.12 || echo $HOME/.local/share/uv/python/cpython-3.
 RUNS=${RUNS:-../runs}
 HIDDEN=${HIDDEN:-../seeds/clowder/hidden}
 FILES=${FILES:-$HIDDEN/m2f}
-REPO=${REPO:-/Users/jess/src/clowder}
+REPO=${REPO:-$HOME/src/clowder}
 LOG=$RUNS/clowder-m2f
 export PACE_LOG=${PACE_LOG:-$LOG/pacing.log} PACE_MARK=${PACE_MARK:-$LOG/.pacing-unread}
 JOBS=${JOBS:-2}

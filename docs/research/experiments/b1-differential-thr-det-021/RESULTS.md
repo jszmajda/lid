@@ -78,14 +78,14 @@ The minimal `derives_from:` extension that would make this threadable:
 # In the overlay for FEAT-DET-021, per conjunct:
 conjuncts:
   C1:
-    text: "in daily classification mode"
+    text: "the classifier is in its daily mode"
     derives_from:
       - doc: <runner source file>
         section: "<escalation guard lines>, daily-mode clause"
     witnessed_by:
       - test: "<escalation describe> > <weekly-mode negation test>"
   C2:
-    text: "zero total assignments across all entries"
+    text: "no entry received any assignment"
     derives_from:
       - doc: <runner source file>
         section: "<escalation guard lines>, zero-assignments clause"
