@@ -16,6 +16,18 @@ Every number here comes from four pilot runs of LID's `/map-codebase` skill on o
 
 Most of what we know about LID comes from projects it built, but many people would first meet it in an existing codebase, through `/map-codebase`, the part of LID we've studied least. Our [first report](https://linked-intent.dev/research/first-results/) started LID's runs on openGym from these maps and counted them as a one-time cost; this report looks at the maps themselves.
 
+## The short answer
+
+| | What we saw |
+|---|---|
+| Cost and size | Each usable map took 12 to 21 minutes, cost $27 to $54 at list prices, and wrote 815 to 1,195 requirements. The same prompt on the same code gave maps that differed twofold in cost. |
+| Reading before deciding | No session read its own survey of the code in full before choosing how to divide it, and in every draw some survey workers skimmed. |
+| Requirement counts | Each session set its own cap on requirements per segment, which the skill doesn't, so a map's count says as much about its cap as about the code. |
+| Coverage | It varied most. By a rough count, 26 to 472 of 936 source files went unnamed, depending on the draw. The one map that checked its own coverage named far more. |
+| Ties between components | Each map linked both sides of only 1 of 13 known dependencies, and recorded most on one side only. |
+| The skill's own text | A review found ten places where the skill's files contradict each other or leave a gap, filed as [#133](https://github.com/jszmajda/lid/issues/133) and [#134](https://github.com/jszmajda/lid/issues/134). |
+| Not yet tested | An owner steering the map, other models, other codebases, and whether a better map leads to better changes. |
+
 ## What the skill asks for
 
 [The skill](https://github.com/jszmajda/lid/blob/main/plugins/arrow-maintenance/skills/map-codebase/SKILL.md) has the agent read every file in scope, "Not a sample", usually through parallel workers that each write a survey of their share. From the survey it proposes several ways to divide the code; the owner picks one, then a level of detail, then approves the segments. Only then does it write LID's documents, a high-level design and each segment's design doc and requirements, stopping after each segment for the owner. Every session here handed each segment's writing to a subagent, which we call a writer. A longer [reference](https://github.com/jszmajda/lid/blob/main/plugins/arrow-maintenance/skills/map-codebase/references/brownfield-bootstrap.md) expands on each step.
