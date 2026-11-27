@@ -152,4 +152,4 @@ The five lifecycle events (split, merge, rename, re-parent, status transition) a
 - `docs/intent/arrow-maintenance/map-codebase/map-codebase-design.md` — sibling leaf; the brownfield-bootstrap skill that produces the overlay this skill maintains.
 - `docs/intent/linked-intent-dev/linked-intent-dev-design.md` — core plugin LLD; authoritative for the spec-file header format and `@spec` placement rule this skill's reference-coherence audit relies on.
 - `plugins/arrow-maintenance/skills/arrow-maintenance/` — the compiled skill (`SKILL.md` + `references/`).
-- `/Users/jess/src/personal-log/docs/arrows/` — the working reference implementation this design is modeled on.
+- Threadkeeper's `docs/arrows/` overlay (a private project) — the working reference implementation this design is modeled on.

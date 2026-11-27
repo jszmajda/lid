@@ -35,7 +35,7 @@ Audit performed cold — only this file was read. Items are organized by categor
 | B1 | **the case-study codebase** | l.156, l.272 | Introduced as if known — the case-study project the experiments run against. No one-liner about what it is. |
 | B2 | **FEAT-DET-018, FEAT-DET-014, FEAT-DET-021, FEAT-LIFE-001..003, FEAT-DATA-001, FEAT-NAR-003** | l.102, l.156–161 | EARS IDs with no legend — prefix meanings (DET = classification, LIFE = lifecycle, DATA = data, NAR = narrative?) are guessable but undocumented. |
 | B3 | **`docs/llds/FEAT.md`, `docs/specs/FEAT.md`, `docs/arrows/FEAT.md`** | l.102, l.168–170 | File paths into the case-study repo, not this one. Reader will look in this repo and not find them. |
-| B4 | **`runner.ts`, `runner.test.ts` (generic placeholders)** | l.198, l.200 | Same issue — case-study paths shown without saying "these paths live in the case-study repo." |
+| B4 | **the runner source and test file names (generic placeholders)** | l.198, l.200 | Same issue — case-study paths shown without saying "these paths live in the case-study repo." |
 | B5 | **`node_modules/lemmascript/tools/dist/dafny-emit.js:337`** | l.331 | File path into the case-study's `node_modules`; not reproducible from this repo. |
 | B6 | **the existing cascade rule** | l.228 | Assumes the reader knows LID already has one. |
 | B7 | **arrow overlay (plugin)** | l.241 | Presumed-known plugin / tooling. |

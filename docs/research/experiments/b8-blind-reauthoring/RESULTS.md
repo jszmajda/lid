@@ -34,9 +34,9 @@ Raw outputs are in `b8{a,b,c}-blind-run-{1,2,3}.raw.md`. No blind run received a
 
 ### B8a — CodeQL for FEAT-DET-018
 
-All three blind runs interpreted the EARS at the **prompt-literal layer** — finding string/template literals that contain `<assigned-groups>` and checking whether the surrounding text instructs the LLM to preserve existing assignments ("never remove", "only add", etc.).
+All three blind runs interpreted the EARS at the **prompt-literal layer** — finding string/template literals that contain the tag the prompt uses to show existing group assignments and checking whether the surrounding text instructs the LLM to preserve existing assignments ("never remove", "only add", etc.).
 
-Wave 1's artifact went one layer deeper: it checked every DynamoDB write to `groupIds` and required `list_append` rather than bare `SET`. That verifies a stronger property — the code's architecture makes LLM drop-outs impossible even if the prompt instruction is violated.
+Wave 1's artifact went one layer deeper: it checked every DynamoDB write to the entry's group list and required `list_append` rather than bare `SET`. That verifies a stronger property — the code's architecture makes LLM drop-outs impossible even if the prompt instruction is violated.
 
 Neither is wrong. The Wave 1 experiment itself noted that a pre-existing unit test in the processor test file covers the prompt side. The full overlay for FEAT-DET-018 in intra-spec dispatch needs both halves: blind-shaped prompt-check *plus* Wave-1-shaped architecture-check. The Wave 1 CodeQL artifact alone covers only one half, and the code-aware choice of which half was driven by reading the code.
 
@@ -46,7 +46,7 @@ See `comparison/b8a.md` for line-level detail.
 
 ### B8b — test-witness for FEAT-DET-021
 
-All three blind runs produced contracts with **two-conjunct enabling conditions** (zero daily assignments + ≥1 threadless entry), matching the EARS text verbatim. Wave 1's contract has **three-conjunct** enabling condition — the missing conjunct being "while detection is running in daily mode."
+All three blind runs produced contracts with **two-conjunct enabling conditions** (zero daily assignments + ≥1 unassigned entry), matching the EARS text verbatim. Wave 1's contract has **three-conjunct** enabling condition — the missing conjunct being "while detection is running in daily mode."
 
 This is the cleanest confirmation of the medium hypothesis across the whole experiment. B1's earlier differential experiment already showed that a B-side agent (reading only the code) reconstructs all three conjuncts, and an A-side agent (reading only the EARS) reconstructs only two. B8b now confirms the same pattern for contract authoring: code-aware authors include the third conjunct; blind authors don't.
 
@@ -58,9 +58,9 @@ See `comparison/b8b.md` for line-level detail.
 
 ### B8c — LemmaScript for FEAT-DET-014
 
-All three blind runs produced annotation sets with **essentially the same semantic content** as Wave 1: exact entryCount increment, lastEntryAt max-witness disjunction with upper-bound forall, daySpan arithmetic identity, createdAt immutability. Differences are shape-level (input preconditions, invented fields like a record `id`, minor monotonicity strengthenings).
+All three blind runs produced annotation sets with **essentially the same semantic content** as Wave 1: exact entry-count increment, newest-timestamp max-witness disjunction with upper-bound forall, day-span arithmetic identity, creation-time immutability. Differences are shape-level (input preconditions, invented fields like a record `id`, minor monotonicity strengthenings).
 
-The EARS for FEAT-DET-014 is arithmetic — "entryCount incremented by new assignments", "daySpan recalculated from record creation to newest item". These are unambiguous. Blind and code-aware agents both recover the arithmetic identity as `== Math.floor(...)`.
+The EARS for FEAT-DET-014 is arithmetic — the entry count goes up by the number of new assignments, and the day span is recalculated from the record's creation to its newest item. These are unambiguous. Blind and code-aware agents both recover the arithmetic identity as `== Math.floor(...)`.
 
 **Classification: (i)** — convergence. Code-bias not meaningfully present for this EARS.
 
@@ -90,7 +90,7 @@ After the initial shape-comparison (above) was written, the blind artifacts were
 
 - **b8a-1 query**: 5 compilation errors. Invented `TemplateLiteral.getRawValue()` which doesn't exist (real API has this method on `TemplateElement` only). Query cannot run.
 - **b8a-2 query**: 1 compilation error, same root cause. Query cannot run.
-- **b8a-3 query**: compiles, evaluates, returns 8 rows flagging alleged violations. **All 8 are FALSE POSITIVES** — the preservation instruction exists in the real prompt but uses the word "drop" (the production prompt literal is *"Never drop a pre-existing assignment"*), and b8a-3's regex alternatives only check for `remove`, `preserve`, `keep`, `retain`. The blind query's regex vocabulary was too narrow to recognize the actual phrasing.
+- **b8a-3 query**: compiles, evaluates, returns 8 rows flagging alleged violations. **All 8 are FALSE POSITIVES** — the preservation instruction exists in the real prompt but uses the word "drop", and b8a-3's regex alternatives only check for `remove`, `preserve`, `keep`, `retain`. The blind query's regex vocabulary was too narrow to recognize the actual phrasing.
 
 The Wave 1 artifact, by contrast, runs clean with 3 classified-safe hits against the same DB.
 
@@ -184,7 +184,7 @@ Three concrete updates worth carrying back to `formal-verification-exploration.m
 
 ## Artifacts
 
-In `/Users/jess/src/lid/docs/research/experiments/b8-blind-reauthoring/`:
+In `docs/research/experiments/b8-blind-reauthoring/`:
 
 | File | Purpose |
 |---|---|

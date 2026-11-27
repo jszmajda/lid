@@ -235,4 +235,4 @@ Active experiments at this document's current version:
 - `docs/intent/arrow-maintenance/maintenance/maintenance-design.md` — leaf LLD for the dual-mode `/arrow-maintenance` skill (segment `SCALE-MAINT`).
 - `docs/intent/arrow-maintenance/map-codebase/map-codebase-design.md` — leaf LLD for the `/map-codebase` brownfield-bootstrap skill (segment `SCALE-MAP`).
 - `docs/intent/linked-intent-dev/linked-intent-dev-design.md` — core plugin LLD; the ownership split is specified there as well, and the spec-file header / `@spec` placement schemas this overlay's audit relies on are authoritative there.
-- `/Users/jess/src/personal-log/docs/arrows/` — the working reference implementation this design is modeled on.
+- Threadkeeper's `docs/arrows/` overlay (a private project) — the working reference implementation this design is modeled on.

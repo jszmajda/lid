@@ -2,7 +2,7 @@
 
 **Date**: 2026-04-22
 **Experimenter**: Claude (Opus 4.7, 1M context) for Jess Szmajda
-**Target EARS**: FEAT-DET-014 — "When the batch processor assigns items to existing groups, it shall update lastItemAt (newest item timestamp), itemCount (incremented by new assignments), and daySpan (recalculated from group creation to newest item)."
+**Target EARS**: FEAT-DET-014 — a requirement that when the batch processor adds items to an existing group, it updates the group's newest-item timestamp, its item count and its day span.
 **Baseline**: Wave 1 artifact `FEAT-DET-014.annotated.ts` — verified in `lemmascript-thr-det-014/` with 3 VCs, 0 errors, 0 manual proof additions.
 **Research question**: Does the overlay behave as an **inductive coherence invariant** under change — correctly rejecting breaking diffs and accepting compatible ones — across a systematically constructed variant matrix?
 
@@ -25,24 +25,24 @@ After attributing compat-02's failure to the LemmaScript→Dafny emitter (which 
 
 **Final inductive closure**: the Wave 1 annotation set (2 `requires`, 9 `ensures`, 4 `invariants`, 1 `decreases`) is the closure. The matrix did not force strengthening. No annotation is superfluous — every one is load-bearing for at least one variant. No annotation is missing — no break in the matrix slipped through.
 
-**CI-hookable**: yes, with one caveat. The overlay can CI-gate changes to `applyBatch` today. Compat-02 recommends a parallel style rule or a small emitter patch to prevent false positives from object-literal reorderings.
+**CI-hookable**: yes, with one caveat. The overlay can CI-gate changes to the batch-update function today. Compat-02 recommends a parallel style rule or a small emitter patch to prevent false positives from object-literal reorderings.
 
 ---
 
 ## 1. The setup
 
-The Wave 1 artifact verifies `applyBatch(record, newEntries)`, a pure function that updates `{entryCount, lastEntryAt, daySpan, createdAt}` given a batch of new entries. The Wave 1 LemmaScript overlay encodes eight post-conditions:
+The Wave 1 artifact verifies the batch-update function: a pure function that, given a record and a batch of new entries, updates the record's entry count, newest-entry timestamp, day span and creation time. The Wave 1 LemmaScript overlay encodes eight post-conditions:
 
-- `entryCount == record.entryCount + |newEntries|` (exact increment)
-- `entryCount >= record.entryCount` (monotonicity)
-- `lastEntryAt >= record.lastEntryAt` (timestamp monotonicity)
-- `∀ k < |newEntries|. lastEntryAt >= newEntries[k].createdAt` (upper bound over inputs)
-- `lastEntryAt == record.lastEntryAt ∨ ∃ k. lastEntryAt == newEntries[k].createdAt` (witness)
-- `daySpan >= 0` (non-negativity)
-- `daySpan == JSFloorDiv(lastEntryAt - createdAt, MS_PER_DAY)` (exact identity)
-- `createdAt == record.createdAt` (immutability)
+- the new count is the old count plus the number of new entries (exact increment)
+- the count never decreases (monotonicity)
+- the newest-entry timestamp never moves backward (timestamp monotonicity)
+- the newest-entry timestamp is at least every new entry's creation time (upper bound over inputs)
+- the newest-entry timestamp equals either its old value or some new entry's creation time (witness)
+- the day span is never negative (non-negativity)
+- the day span equals the JS floor division of the time from creation to newest entry by the length of a day (exact identity)
+- the creation time is unchanged (immutability)
 
-Together with two preconditions (`entryCount >= 0`, `createdAt <= lastEntryAt`) and four loop invariants, these constitute the *annotation-layer global invariant* for FEAT-DET-014.
+Together with two preconditions (the count is non-negative; the creation time is no later than the newest-entry timestamp) and four loop invariants, these constitute the *annotation-layer global invariant* for FEAT-DET-014.
 
 Experiment B3 treats the overlay as a **Basilisk-style inductive invariant**: a conjunction of simple local obligations that should be preserved across every code/spec diff ("protocol step"). Breaking diffs should violate at least one conjunct; compatible diffs should preserve all of them. Over a matrix of deliberate edits, I tested whether this property holds.
 
@@ -56,7 +56,7 @@ For each variant, a shell wrapper (`run-variant.sh`) runs:
 2. `dafny verify variants/<name>.dfy`  →  records stdout/stderr in `<name>.log`.
 3. Determines `PASS` / `FAIL` from Dafny's exit code.
 
-Dafny 4.11.0 + Z3 4.15.4 at `/opt/homebrew/bin/dafny`. LemmaScript installed once into `/Users/jess/src/lid/docs/research/experiments/lemmascript-thr-det-014/node_modules` and reused here via a symlink. Total pipeline wall-clock per variant: ~2 seconds.
+Dafny 4.11.0 + Z3 4.15.4 at `/opt/homebrew/bin/dafny`. LemmaScript installed once into `docs/research/experiments/lemmascript-thr-det-014/node_modules` and reused here via a symlink. Total pipeline wall-clock per variant: ~2 seconds.
 
 ### Variant construction
 
@@ -64,26 +64,26 @@ Each variant is a self-contained copy of the Wave 1 `.ts`, modified by a single 
 
 Breaking diffs attack specific properties:
 
-- **B1, B7**: lastEntryAt-tracks-max (drop the guard; flip the comparison)
-- **B2, B4**: entryCount exact (off-by-one; silent truncation via `Math.min`)
-- **B3**: createdAt immutability
+- **B1, B7**: newest-timestamp-tracks-max (drop the guard; flip the comparison)
+- **B2, B4**: entry-count exact (off-by-one; silent truncation via `Math.min`)
+- **B3**: creation-time immutability
 - **B5**: annotation self-consistency (strict-`>` invariant that can't hold at entry)
-- **B6**: precondition load-bearing (drop `createdAt <= lastEntryAt` and watch `daySpan >= 0` fall)
-- **B8, B10**: daySpan formula (wrong divisor; swapped subtraction sign)
-- **B9**: loop coverage (start at `i = 1`, skip `newEntries[0]`)
+- **B6**: precondition load-bearing (drop the creation-before-newest precondition and watch day-span non-negativity fall)
+- **B8, B10**: day-span formula (wrong divisor; swapped subtraction sign)
+- **B9**: loop coverage (start at `i = 1`, skip the first new entry)
 
 Compatible diffs preserve semantics:
 
-- **C1**: rename a local (`newestAt → latest`)
+- **C1**: rename a local variable
 - **C2**: reorder the return-object keys
 - **C3**: add ensures that are corollaries of the existing set
 - **C4**: strengthen an invariant with a conjunct that follows from the requires
 - **C5**: add an observability ghost variable (`seenCount`) with its own invariant
 - **C6**: ternary instead of if (`n = e > n ? e : n`)
-- **C7**: extract a local `const entryAt = newEntries[i].createdAt` inside the loop
-- **C8**: introduce a `const seed = record.lastEntryAt` alias for the seed
-- **C9**: extract the loop into a helper function `computeNewest(entries, seed)` with its own pre/post
-- **C10**: bind `const n = newEntries.length` once and iterate against it
+- **C7**: extract a local for the current entry's creation time inside the loop
+- **C8**: introduce a local alias for the loop's seed value
+- **C9**: extract the loop into a helper function with its own pre/post
+- **C10**: bind the number of new entries to a local once and iterate against it
 - **C11**: add docstrings and comments
 - **C12**: drop a redundant postcondition (monotonicity corollary of exactness)
 
@@ -99,47 +99,29 @@ The full per-variant table lives in `variants-matrix.md`. Tally:
 
 Representative break details:
 
-- **break-01** (drop `if (e > newestAt) newestAt = e`): fails at the loop invariant `∀ k<i. newestAt >= newEntries[k].createdAt`. This is the *right* diagnostic — the property the change destroys is exactly the upper-bound invariant.
-- **break-05** (change `invariant newestAt >= record.lastEntryAt` to strict `>`): fails at "invariant could not be proved on entry." This is a *spec-break*, not a code-break — the annotation is self-inconsistent. The overlay catches this too, which is important: annotation drift is as real a failure mode as code drift.
-- **break-06** (drop the `createdAt <= lastEntryAt` precondition): fails at `ensures daySpan >= 0`. The Wave 1 iteration-log already noted this precondition is load-bearing; this experiment confirms the finding mechanically.
-- **break-09** (start the loop at `i = 1`): fails at two invariants on entry. Dafny sees that with `i = 1`, the `∀ k < i = 1` case includes `k = 0`, and the loop hasn't inspected `newEntries[0]`, so the upper-bound invariant can't hold. Subtle off-by-one, surfaced immediately.
+- **break-01** (drop the guarded update of the running newest timestamp): fails at the loop invariant that the running newest timestamp is at least the creation time of every entry inspected so far. This is the *right* diagnostic — the property the change destroys is exactly the upper-bound invariant.
+- **break-05** (change the invariant that the running newest timestamp is at least the record's old one to strict `>`): fails at "invariant could not be proved on entry." This is a *spec-break*, not a code-break — the annotation is self-inconsistent. The overlay catches this too, which is important: annotation drift is as real a failure mode as code drift.
+- **break-06** (drop the creation-before-newest precondition): fails at the `ensures` that the day span is non-negative. The Wave 1 iteration-log already noted this precondition is load-bearing; this experiment confirms the finding mechanically.
+- **break-09** (start the loop at `i = 1`): fails at two invariants on entry. Dafny sees that with `i = 1`, the `∀ k < i = 1` case includes `k = 0`, and the loop hasn't inspected the first new entry, so the upper-bound invariant can't hold. Subtle off-by-one, surfaced immediately.
 
 No break was "accidentally caught via an unrelated invariant." Every break hits the specific conjunct it attacks. This is what you want from an inductive decomposition: local provenance, localized failure attribution.
 
 ## 4. The compat-02 result — positional emission of object literals
 
-This was the most instructive single result. The diff:
+This was the most instructive single result. The diff reverses the order of
+the four keys in the function's returned object literal (count, newest
+timestamp, day span, creation time becomes creation time, day span, newest
+timestamp, count), with every value unchanged.
 
-```diff
-   return {
--    entryCount: record.entryCount + newEntries.length,
--    lastEntryAt: newestAt,
--    daySpan: newDaySpan,
--    createdAt: record.createdAt,
-+    createdAt: record.createdAt,
-+    daySpan: newDaySpan,
-+    lastEntryAt: newestAt,
-+    entryCount: record.entryCount + newEntries.length,
-   };
-```
-
-In TypeScript this is semantically a no-op: the `RecordCounters` type has fixed field names, and `Object.keys()` order is effectively the only observable consequence of literal key order. Expected: PASS.
+In TypeScript this is semantically a no-op: the record type has fixed field names, and `Object.keys()` order is effectively the only observable consequence of literal key order. Expected: PASS.
 
 Actual: FAIL, 3 errors.
 
-The generated Dafny reads:
+The generated Dafny passes the four values to the record datatype's
+constructor in the new literal order, while the datatype declares its fields
+in the original order.
 
-```dafny
-return RecordCounters(record.createdAt, newDaySpan, newestAt, (record.entryCount + |newEntries|));
-```
-
-…against the declaration
-
-```dafny
-datatype RecordCounters = RecordCounters(entryCount: int, lastEntryAt: int, daySpan: int, createdAt: int)
-```
-
-So `res.entryCount = record.createdAt` (!), `res.lastEntryAt = newDaySpan`, `res.daySpan = newestAt`, `res.createdAt = entryCount + |newEntries|`. The entire struct is **rotated**. The overlay's ensures (rightly) flag three violations: counter equality, lastEntryAt monotonicity, and the upper-bound invariant.
+So the result's count field receives the creation time (!), its newest-timestamp field the day span, its day-span field the newest timestamp, and its creation-time field the new count. The entire struct is **rotated**. The overlay's ensures (rightly) flag three violations: counter equality, newest-timestamp monotonicity, and the upper-bound invariant.
 
 Inspection of `node_modules/lemmascript/tools/dist/dafny-emit.js` around line 337 confirms the cause. For a record literal whose field count equals the datatype's field count, the emitter takes values in TS literal order:
 
@@ -171,7 +153,7 @@ The matrix exposed one very minor interaction: when I added `//@ type seenCount 
 
 ### 5.3 Source-untouched discipline
 
-**Confirmed.** The case-study codebase was not read or modified during this experiment (verified via `git status` before and after). All artifacts live under `/Users/jess/src/lid/docs/research/experiments/b3-inductive-maintenance-thr-det-014/`. The baseline `variants/baseline.ts` is a copy of the Wave 1 annotated TS, unchanged; every other `variants/*.ts` is a single-diff derivative.
+**Confirmed.** The case-study codebase was not read or modified during this experiment (verified via `git status` before and after). All artifacts live under `docs/research/experiments/b3-inductive-maintenance-thr-det-014/`. The baseline `variants/baseline.ts` is a copy of the Wave 1 annotated TS, unchanged; every other `variants/*.ts` is a single-diff derivative.
 
 ### 5.4 Inductive closure
 
@@ -179,7 +161,7 @@ The matrix exposed one very minor interaction: when I added `//@ type seenCount 
 
 The Wave 1 annotations constitute the *minimum inductive closure* for the TS-layer semantics expressible in LemmaScript: no annotation can be dropped (compat-12 shows the monotonicity corollary is drop-safe, but every other ensures contributes to catching at least one break), and no break required a new one.
 
-This is the single most important finding of the experiment. The Wave 1 choice to strengthen from "lastEntryAt monotonicity alone" (iteration 1) to "monotonicity + upper bound + witness" (iteration 2) was the right call: that three-conjunct decomposition is what catches break-01, break-07, and break-09 cleanly at invariant-level, whereas a weaker version would bounce the error up to the witness postcondition and give less localized diagnostics.
+This is the single most important finding of the experiment. The Wave 1 choice to strengthen from "newest-timestamp monotonicity alone" (iteration 1) to "monotonicity + upper bound + witness" (iteration 2) was the right call: that three-conjunct decomposition is what catches break-01, break-07, and break-09 cleanly at invariant-level, whereas a weaker version would bounce the error up to the witness postcondition and give less localized diagnostics.
 
 At the **pipeline layer** (TS → Dafny emission), the closure is not fully reached — compat-02's emitter issue is a real gap. The fix is small (3-line emitter patch, or an ESLint style rule), but it belongs in the `pipeline_gap` section of the v2 manifest and should be tracked.
 
@@ -220,12 +202,12 @@ The near-free iteration cost is the thing to emphasize. Once the pipeline is scr
 - Off-by-one indexing errors (breaks 2, 4, 9): caught.
 - Invariant flips (breaks 1, 7): caught.
 - Precondition drops (break 6): caught.
-- daySpan formula errors (breaks 8, 10): caught.
+- Day-span formula errors (breaks 8, 10): caught.
 - Annotation-only drift (break 5): caught.
 
 The only category the matrix exposes as fragile is the emitter-level "record literal key order" — and that fragility is bounded (affects only the emission step, not the verification layer).
 
-**Direct answer to "is the overlay stable enough to CI-hook?"**: yes, with one recommendation. The raw overlay as-is, running `lsc gen && dafny verify` on each commit that touches `applyBatch`, is ready to ship. The single recommendation is to pair it with either (a) a 3-line emitter patch, or (b) an ESLint rule enforcing declared-type field order in verified functions. Either is small.
+**Direct answer to "is the overlay stable enough to CI-hook?"**: yes, with one recommendation. The raw overlay as-is, running `lsc gen && dafny verify` on each commit that touches the batch-update function, is ready to ship. The single recommendation is to pair it with either (a) a 3-line emitter patch, or (b) an ESLint rule enforcing declared-type field order in verified functions. Either is small.
 
 ## 6. What v2 would look like
 
@@ -242,7 +224,7 @@ The v2 manifest (`FEAT-DET-014-inductive.overlay.yaml`) captures:
 
 Basilisk's key technical claim is that *complex global invariants decompose into many simple local provenance invariants, each provably inductive across every protocol step*. This experiment provides a small but clean instance of that claim at the documentation-verification layer:
 
-- **Global invariant**: "FEAT-DET-014's EARS is faithfully implemented by `applyBatch`."
+- **Global invariant**: "FEAT-DET-014's EARS is faithfully implemented by the batch-update function."
 - **Decomposition**: 2 requires + 9 ensures + 4 invariants, each a simple local obligation.
 - **Protocol steps**: 22 concrete diffs to the implementation and/or annotations.
 - **Inductive maintenance**: every step preserves or violates each conjunct independently; no step produces an unclassifiable outcome.
@@ -268,7 +250,7 @@ The matrix shape (breaks targeted at specific conjuncts, compats meant to preser
 - `FEAT-DET-014-inductive.overlay.yaml` — v2 overlay manifest with per-variant CI expectations.
 - `run-variant.sh` — minimal reproducible pipeline for any future variant.
 
-All under `/Users/jess/src/lid/docs/research/experiments/b3-inductive-maintenance-thr-det-014/`. Nothing in the case-study codebase was read or modified.
+All under `docs/research/experiments/b3-inductive-maintenance-thr-det-014/`. Nothing in the case-study codebase was read or modified.
 
 ## 10. What the experiment says about LID
 
@@ -278,6 +260,6 @@ Three load-bearing findings for the LID research program:
 
 2. **The emitter is a real, identified brittleness.** This is the kind of finding that only surfaces under inductive testing. A one-shot verification of the baseline would never catch it; only the compat-02 diff surfaces it. That is an argument for the variant-matrix methodology being a first-class part of a future LID verification layer, not just a research exercise.
 
-3. **The overlay is near-zero-cost to run.** Under 2 seconds per variant, the whole matrix in ~45 seconds. A CI hook on `applyBatch`-adjacent commits would add imperceptible wall-clock. The limiting cost is authoring the annotations — and the Wave 1 experiment already showed that cost is one-off and mechanical for EARS of this shape.
+3. **The overlay is near-zero-cost to run.** Under 2 seconds per variant, the whole matrix in ~45 seconds. A CI hook on commits near the batch-update function would add imperceptible wall-clock. The limiting cost is authoring the annotations — and the Wave 1 experiment already showed that cost is one-off and mechanical for EARS of this shape.
 
 This experiment, combined with Wave 1, argues that LemmaScript + Dafny is ready to serve as a production verification layer for pre/post-shaped EARS in LID. Not every EARS fits this shape (the research doc's §4 table is right about that), but when one does, the overlay is tight, inductive, and cheap to re-verify.

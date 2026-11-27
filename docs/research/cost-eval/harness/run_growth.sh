@@ -30,7 +30,7 @@
 # Concurrency is kept low for a 2-CPU Docker VM (JOBS, default 2). Logs go under runs/growth/.
 # Run from harness/ with the token set: ../plumbing/with-token.sh sh run_growth.sh trial
 # DRY=1 prints what would run instead of running it.
-PY=${PY:-$(command -v python3.12 || echo /Users/jess/.local/share/uv/python/cpython-3.12-macos-aarch64-none/bin/python3.12)}  # a fresh shell may lack python3.12 on PATH
+PY=${PY:-$(command -v python3.12 || echo $HOME/.local/share/uv/python/cpython-3.12-macos-aarch64-none/bin/python3.12)}  # a fresh shell may lack python3.12 on PATH
 RUNS=${RUNS:-../runs}
 SEED=${SEED:-releasedesk-growth}  # assembled by assemble_growth_seed.py
 SEED_DIR=${SEED_DIR:-../seeds/$SEED}

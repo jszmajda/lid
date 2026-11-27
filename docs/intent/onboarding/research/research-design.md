@@ -18,7 +18,7 @@ The section is a child of the `onboarding` sub-HLD and inherits its reader, its 
 
 **What a report claims.** A report makes empirical claims: what the study measured when LID was used. Those claims trace to the study's own records, which each report links to, not to an HLD section. Because a measurement only holds for what was tested, every report states the LID version, the coding agent, the model, and the date of its runs, and the page shows them beside the title.
 
-**Terms.** A **report** is one published write-up of a study's results, described by one **entry**. A report's **records** are the study's notebook, data, and code, wherever they live.
+**Terms.** A **report** is one published write-up of a study's results, described by one **entry**. A report's **records** are the study's notebook, data, and code: the notebook in this repository's `docs/research/`, and run outputs, grades, and tallies too large or raw for it in the separate [`lid-research-records`](https://github.com/jszmajda/lid-research-records) repository, one folder per study.
 
 ## Pages
 
@@ -58,7 +58,7 @@ An entry is one folder, `site/src/research/<slug>/`, whose name is the report's 
 | `superseded_by` | with `superseded` | The slug of the report that replaces it. |
 | `summary` | yes | One or two sentences in the study's words, as plain text of at most 300 characters, shown on the card and in link previews. |
 | `tested` | yes | `{lid, agent, model}`: the LID version, the coding agent and its version, and the model and effort, as plain strings shown exactly as written. |
-| `records` | yes | A public URL for the study's records. |
+| `records` | yes | A public URL for the study's records: its folder in `lid-research-records` when it has one, otherwise its notebook. |
 
 ## Rules the Build Enforces
 
@@ -107,7 +107,8 @@ This segment is a content artifact, verified as the parent's other children are:
 | Stating what was tested | Required on every report and shown beside its title | Left to each report's text | A measurement holds only for the version, agent, and model that produced it, and readers skim. Requiring it makes every number scoped where it is read. |
 | Status labels | Pilot, counted, superseded | No status; free text | A reader needs to know at a glance whether a result was fixed in advance, and whether a newer report replaces it. Free text would drift between reports. |
 | Report format | Markdown only | Markdown or a self-contained HTML page, as stories allow | Reports are prose and tables. Charts can arrive as images in the entry folder. HTML would invite scripts and outside assets into a section whose job is to be checkable. |
-| Links inside a report | Absolute, or to files in the entry folder | Relative paths into the repository | A path into the repository resolves only on GitHub, and a study's records may be on a branch. |
+| Links inside a report | Absolute, or to files in the entry folder | Relative paths into the repository | A path into the repository resolves only on GitHub, and a study's raw records live in another repository. |
+| Where a study's raw records live | Its notebook in `docs/research/`; run outputs, grades, and tallies too large or raw for the notebook in a separate public repository, [`lid-research-records`](https://github.com/jszmajda/lid-research-records), one folder per study | All of it in this repository; a branch of this repository; a public storage bucket; the site itself | Most people clone this repository to use or contribute to LID, not to check a study, so raw records here, or on a branch a default clone fetches, would be downloaded by everyone. A separate repository is browsable file by file, so a reader can follow a report's link straight to the number it backs, which a bucket without an index can't offer, and it is versioned like the notebook. The site deploys from this repository, so it would carry the same weight. |
 
 ## Open Questions & Future Decisions
 

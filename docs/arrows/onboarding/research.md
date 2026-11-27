@@ -4,7 +4,7 @@ The site's research section: the index at `/research/`, a page for each publishe
 
 ## Status
 
-**MAPPED**, a new leaf segment sampled 2026-11-25 and not yet audited. 42 of the 43 `ONB-RESEARCH` specs are implemented and covered by `site/tests/research.test.js`; ONB-RESEARCH-080, the maintainer's review before an entry merges, is a process step. The index and a report's page were checked by eye in both themes and at phone width. First report: `first-results`, the cost study's pilot results for LID 1.4.6.
+**MAPPED**, a new leaf segment sampled 2026-11-25 and not yet audited. 42 of the 43 `ONB-RESEARCH` specs are implemented and covered by `site/tests/research.test.js`; ONB-RESEARCH-080, the maintainer's review before an entry merges, is a process step. The index and a report's page were checked by eye in both themes and at phone width. Reports: `first-results`, `intent-recovery`, and `mapping-an-existing-codebase` (the cost study, pilot); `judgment-across-models` (capability flags, pilot); and `differential-catch-rate` (B10, counted). Raw records too large for a study's notebook live in the separate `lid-research-records` repository (LLD, Decisions & Alternatives).
 
 ## References
 

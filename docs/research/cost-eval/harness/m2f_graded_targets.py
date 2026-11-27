@@ -1,7 +1,7 @@
 """M2f's graded targets: each dependency probe and each held-out test function as a self-contained test target, built
 from the snapshot and kept outside the arms' view (in the variant set's graded/ folder).
 
-    python3.12 m2f_graded_targets.py --repo /Users/jess/src/clowder --commit 86db995 \\
+    python3.12 m2f_graded_targets.py --repo /path/to/clowder --commit 86db995 \\
         --probes ../seeds/clowder/hidden/m2f-dependency-probes --holdouts ../seeds/clowder/hidden/m2f-holdouts.json \\
         --out <variant-set>/graded
 

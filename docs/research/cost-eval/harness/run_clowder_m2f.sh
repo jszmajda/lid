@@ -24,11 +24,11 @@
 # Run from harness/ with the token set: ../plumbing/with-token.sh sh run_clowder_m2f.sh main
 # DRY=1 prints what would run instead of running it. Before each job, pace.sh waits while the subscription's weekly
 # usage is at or above USAGE_PAUSE (90%) until it falls below USAGE_RESUME (50%).
-PY=${PY:-$(command -v python3.12 || echo /Users/jess/.local/share/uv/python/cpython-3.12-macos-aarch64-none/bin/python3.12)}  # a fresh shell may lack python3.12 on PATH
+PY=${PY:-$(command -v python3.12 || echo $HOME/.local/share/uv/python/cpython-3.12-macos-aarch64-none/bin/python3.12)}  # a fresh shell may lack python3.12 on PATH
 RUNS=${RUNS:-../runs}
 HIDDEN=${HIDDEN:-../seeds/clowder/hidden}
 FILES=${FILES:-$HIDDEN/m2f}
-REPO=${REPO:-/Users/jess/src/clowder}
+REPO=${REPO:-$HOME/src/clowder}
 LOG=$RUNS/clowder-m2f
 export PACE_LOG=${PACE_LOG:-$LOG/pacing.log} PACE_MARK=${PACE_MARK:-$LOG/.pacing-unread}
 JOBS=${JOBS:-2}

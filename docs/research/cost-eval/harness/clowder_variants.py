@@ -1,6 +1,6 @@
 """Build the falsification test's repository variants from one Clowder commit (design.md, "Later seeds and variants").
 
-    python3.12 clowder_variants.py --repo /Users/jess/src/clowder --commit 86db995 --seed v1 \\
+    python3.12 clowder_variants.py --repo /path/to/clowder --commit 86db995 --seed v1 \\
         --out ../runs/clowder-variants/v1 --volumes --cargo-test
 
 Each variant is a single-commit git repository with fresh history, so no arm can recover what was removed from
@@ -27,7 +27,7 @@ tokens by class, each variant's commit and volume, and with --cargo-test each va
 --seed names the set (its folder's manifest, its volumes); --draw-seed (default: --seed) seeds the held-out draw and the
 thinning, so a later set can take exactly an earlier set's files:
 
-    python3.12 clowder_variants.py --repo /Users/jess/src/clowder --commit 86db995 --seed v2 --draw-seed v1 \\
+    python3.12 clowder_variants.py --repo /path/to/clowder --commit 86db995 --seed v2 --draw-seed v1 \\
         --holdouts ../seeds/clowder/hidden/m2f-holdouts.json --out ../runs/clowder-variants/v2 --volumes --cargo-test
 
 --holdouts holds out single test functions (`{"tests": [{"change", "status", "test": "<crate>/tests/.../<file>.rs::<fn>"}]}`)

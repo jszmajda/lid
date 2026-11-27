@@ -7,7 +7,7 @@
 
 This document is written against several pieces of context that live outside it. Readers landing here fresh can use this section as a pointer sheet.
 
-**LID (Linked-Intent Development)** is the methodology this repo documents. It treats code as compiled output and *intent* as the authoritative artifact, with intent structured as a one-way chain: `HLD → LLDs → EARS → Tests → Code`. For the full framing, see `/Users/jess/src/lid/docs/high-level-design.md`.
+**LID (Linked-Intent Development)** is the methodology this repo documents. It treats code as compiled output and *intent* as the authoritative artifact, with intent structured as a one-way chain: `HLD → LLDs → EARS → Tests → Code`. For the full framing, see `docs/high-level-design.md`.
 
 - **HLD** (high-level design) — one project-level document (problem, approach, architecture). Lives at `docs/high-level-design.md`.
 - **LLD** (low-level design) — component-level design documents, one per intent component. Live in `docs/llds/`.
@@ -17,7 +17,7 @@ This document is written against several pieces of context that live outside it.
 - **Cascade discipline** — the existing LID rule: when one level of the arrow changes, downstream levels update in the same session. Within a segment, cascade is free; across segment boundaries, the agent pauses and verifies before propagating.
 - **Status markers** (existing on EARS) — `[x]` implemented, `[ ]` active gap, `[D]` deferred. This document proposes verification markers (`[V] [Vp] [Vx] [Vn] [?]`) that *compose* with the EARS markers — e.g. `[x][V]` = implemented and verified.
 
-**The case-study codebase** is a separate, real project the experiments run against — a long-running LID user with a populated arrow, kept anonymous in this published write-up. Throughout this doc, `FEAT-*` and `FLT-*` EARS IDs (e.g. `FEAT-DET-018`, `FEAT-LIFE-001`, `FEAT-DATA-001`, `FEAT-NAR-003`, `FLT-SCORE-001`) belong to the case-study's specs; generic paths like `<case-study>/docs/llds/FEAT.md`, `<case-study>/docs/specs/FEAT.md`, and generic source paths referenced below all live in the case-study's repo, not in this one. EARS prefix decoder: `DET` = daily/weekly classification, `LIFE` = lifecycle, `DATA` = data shape, `NAR` = narrative/LLM-shaped, `TIER` = retention-tier invariants, `FLT` = agent-filter processing.
+**The case-study codebase** is a separate, real project the experiments run against — a long-running LID user with a populated arrow: Threadkeeper, the maintainer's private app. Its code and design docs stay private, so this write-up describes them rather than quoting them. Throughout this doc, `FEAT-*` and `FLT-*` EARS IDs (e.g. `FEAT-DET-018`, `FEAT-LIFE-001`, `FEAT-DATA-001`, `FEAT-NAR-003`, `FLT-SCORE-001`) belong to the case-study's specs; generic paths like `<case-study>/docs/llds/FEAT.md`, `<case-study>/docs/specs/FEAT.md`, and generic source paths referenced below all live in the case-study's repo, not in this one. EARS prefix decoder: `DET` = daily/weekly classification, `LIFE` = lifecycle, `DATA` = data shape, `NAR` = narrative/LLM-shaped, `TIER` = retention-tier invariants, `FLT` = agent-filter processing.
 
 **External references used here**:
 
@@ -149,7 +149,7 @@ Every artifact at every layer should know *why it exists* — which upstream thi
 FEAT-DET-021:
   derives_from:
     - doc: docs/llds/FEAT.md
-      section: "Processing Architecture > Daily classification > Escalation heuristic"
+      section: "<LLD section for the escalation heuristic>"
 ```
 
 With the reverse half populated, the overlay becomes a **provenance graph**, and orphan detection at every layer becomes mechanical:
@@ -205,11 +205,11 @@ Examples below reference case-study specs (see §0). "LLM-shaped / qualitative" 
 
 | EARS shape | Example (case-study) | Default engine |
 |---|---|---|
-| Structural / flow invariant | FEAT-DET-018 "never remove existing group assignments" | CodeQL |
-| Behavioral / scenario | FEAT-DET-021 "zero daily assignments ⇒ escalate to weekly" | Test-witness |
-| Functional / pre-post | FEAT-DET-014 "itemCount incremented by N, lastItemAt = max..." | LemmaScript/Dafny |
-| Configuration / data-shape | FEAT-DATA-001 "stores records with these fields" | Type-system-native |
-| LLM-shaped / qualitative | FEAT-NAR-003 "preserve exact vocabulary" | `[Vn]` (or manual-review signoff) |
+| Structural / flow invariant | FEAT-DET-018 (keep existing group assignments) | CodeQL |
+| Behavioral / scenario | FEAT-DET-021 (an empty daily result escalates to the weekly mode) | Test-witness |
+| Functional / pre-post | FEAT-DET-014 (item count incremented by N, newest-item timestamp = max...) | LemmaScript/Dafny |
+| Configuration / data-shape | FEAT-DATA-001 (the shape of a stored record) | Type-system-native |
+| LLM-shaped / qualitative | FEAT-NAR-003 (preserve the user's voice) | `[Vn]` (or manual-review signoff) |
 
 The overlay *dispatches* on shape; it doesn't force everything through one engine. **One EARS may dispatch to multiple engines** — demonstrated by the Wave 1 CodeQL experiment (see §11.1), where FEAT-DET-018 needed both CodeQL (code-side) and a pre-existing unit test (prompt-side) to cover both halves of the EARS.
 
@@ -236,7 +236,7 @@ spec_id: FEAT-DET-021
 arrow: primary
 derives_from:
   - doc: docs/llds/FEAT.md
-    section: "Processing Architecture > Daily classification"
+    section: "<LLD section for daily classification>"
 engines:                                       # list — intra-spec dispatch
   - engine: test-witness
     artifact: FEAT-DET-021.test-witness.yaml
@@ -246,10 +246,10 @@ engines:                                       # list — intra-spec dispatch
     status: Vp
 targets:
   - type: function
-    selector: "runner.ts::runDailyClassification"
+    selector: "<runner source>::<daily classification entry point>"
 witnesses:
-  - path: "runner.test.ts"
-    describes: "daily-to-weekly escalation"
+  - path: "<runner test file>"
+    describes: "<escalation describe block>"
 limitations:                                    # new in v0.2
   - "mock fidelity — real classification may diverge"
   - "structural assertion matching, not semantic equivalence"
@@ -446,11 +446,11 @@ See `docs/research/experiments/{b8-blind-reauthoring, b9-bidirectional-different
 
 Three examples from the B9 audit that illustrate the classification codes in practice:
 
-**BD-COHERENT — FLT-SCORE-001 (four-case scoring matrix).** The EARS enumerates all four `(domainTag × focus)` combinations with explicit point values. Real code: a 3-case if-ladder with default-zero. Every A-run reconstructs the function; every B-run reconstructs the matrix. The bounded output domain `{0,1,2,3}` plus exhaustive enumeration closes the drift gap by construction. **Why coherent**: EARS leaves the implementer zero sub-decisions.
+**BD-COHERENT — FLT-SCORE-001 (four-case scoring matrix).** The EARS enumerates all four combinations of its two boolean flags with explicit point values. Real code: a 3-case if-ladder with default-zero. Every A-run reconstructs the function; every B-run reconstructs the matrix. The bounded output domain `{0,1,2,3}` plus exhaustive enumeration closes the drift gap by construction. **Why coherent**: EARS leaves the implementer zero sub-decisions.
 
-**BD-DRIFT (missing sub-decision) — FLT-UE-004 (prefer normalizedText over content).** EARS says only "prefer." Real code: `item.normalizedText || item.content || ''` then `if (!text) continue;` (drops item if both missing). Three A-runs diverged on the operator (2× `??`, 1× explicit length check); none drop the item. Three B-runs convergently split the real EARS into 004a (selection with "present and non-empty" qualifier) + 004b (unwanted-behavior: omit item on both-missing). **Why bidirectional**: EARS silent on two behaviorally-meaningful sub-decisions; A-runs invent different answers; B-runs elevate both missing EARS-level obligations.
+**BD-DRIFT (missing sub-decision) — FLT-UE-004 (prefer the normalized text over the raw content).** EARS says only "prefer." Real code: falls back from the normalized text to the raw content to an empty string with `||`, then skips the item when the result is empty (drops item if both missing). Three A-runs diverged on the operator (2× `??`, 1× explicit length check); none drop the item. Three B-runs convergently split the real EARS into 004a (selection with "present and non-empty" qualifier) + 004b (unwanted-behavior: omit item on both-missing). **Why bidirectional**: EARS silent on two behaviorally-meaningful sub-decisions; A-runs invent different answers; B-runs elevate both missing EARS-level obligations.
 
-**BD-DRIFT (operational halo) — FLT-UE-001 (four-conjunct incorporated predicate + fallback).** Central rule (four conjuncts, empty-summary override) reconstructs cleanly both directions. What drifts is the *halo* around the rule: partial-results-on-error contract (silent degradation on DynamoDB mid-scan failure), unconfigured-table short-circuit (misconfiguration yields zero entries rather than error), missing-`processedAt` default, whitespace-only summary treated as empty. A-direction misses all of these; B-direction elevates them as separate unwanted-behavior EARS. **Why halo-shaped**: unbounded output domain (a filter over an entry list); enumeration alone can't close the gap; companion unwanted-behavior EARS are needed.
+**BD-DRIFT (operational halo) — FLT-UE-001 (four-conjunct incorporated predicate + fallback).** Central rule (four conjuncts, empty-summary override) reconstructs cleanly both directions. What drifts is the *halo* around the rule: partial-results-on-error contract (silent degradation on DynamoDB mid-scan failure), unconfigured-table short-circuit (misconfiguration yields zero entries rather than error), missing processed-time default, whitespace-only summary treated as empty. A-direction misses all of these; B-direction elevates them as separate unwanted-behavior EARS. **Why halo-shaped**: unbounded output domain (a filter over an entry list); enumeration alone can't close the gap; companion unwanted-behavior EARS are needed.
 
 ### Bug vs. spec-drift classification
 
@@ -495,7 +495,7 @@ Schema v0.3 gains a `last_blind_audit:` field alongside `last_run:` (see Appendi
 **7. Every existing overlay artifact is under suspicion until re-audited.** If Wave 1 artifacts were code-biased (and at least B8b proves one of them was), promoting any existing artifact without a blind-audit pass would bake the bias in. Three remediation paths, specific to the Wave 1 cases:
 - FEAT-DET-021 test-witness: either promote the three-conjunct daily-mode premise to the EARS text (recommended; captured in an auxiliary recommendations artifact, not published), or drop it from the contract
 - FEAT-DET-018 CodeQL: add a prompt-literal sibling artifact to the overlay (intra-spec dispatch) alongside the existing architecture query
-- FEAT-DET-014 LemmaScript: no remediation needed (B8c showed convergence); optional cheap strengthening to explicit `daySpan` monotonicity
+- FEAT-DET-014 LemmaScript: no remediation needed (B8c showed convergence); optional cheap strengthening to explicit day-span monotonicity
 
 **8. Cost characterization for Wave 3 audits.** Per-EARS bidirectional differential: ~6 `claude -p` calls (3 A + 3 B), ~2-3 min wall-clock at parallel execution, plain text in/out. Per-engine blind re-authoring: ~3 `claude -p` calls per engine per EARS, plus toolchain normalization pre-pass, ~5-10 min wall-clock including execution. Both are cheap enough to run on every EARS promotion; neither is cheap enough to run on every commit (use the cache layers in §8.1 instead).
 
@@ -701,9 +701,9 @@ by_arrow:                              # NEW in v0.3 — for cross-arrow rollups
   <arrow-name>: [<spec-id>, ...]
 
 shards:                                # NEW in v0.3 — coherence shards
-  - name: classifyStatus
+  - name: status-classifier
     specs: [FEAT-LIFE-001, FEAT-LIFE-002, FEAT-LIFE-003]
-    derives_from: "docs/llds/FEAT.md#lifecycle-thresholds"
+    derives_from: "docs/llds/FEAT.md#<lifecycle-section>"
 
 gaps:
   - spec: <id>
@@ -719,30 +719,27 @@ Canonical form for single-aggregate cross-prefix temporal invariants. Use when y
 Return the full trajectory of intermediate states alongside (or instead of) the final result. Quantify over trajectory indices in `//@ ensures`.
 
 ```typescript
-interface DigestSlot {
-  digest?: string;
-  tags?: string[];
-  generatedAt?: number;
+interface Slot {
+  value?: string;
+  setAt?: number;
 }
 
 interface Op {
-  kind: 'Short' | 'Long';
-  digest: string;
-  tags: string[];
+  value: string;
   at: number;
 }
 
-function applyOp(slot: DigestSlot, op: Op): DigestSlot { /* ... */ }
+function applyOp(slot: Slot, op: Op): Slot { /* ... */ }
 
 //@ ensures \result.length === ops.length + 1
 //@ ensures \result[0] === initial                                   // initial state preserved
 //@ ensures forall(i, 0 <= i && i < ops.length ==>                   // step-correctness
 //@   \result[i + 1] === applyOp(\result[i], ops[i]))
 //@ ensures forall(i, forall(j, 0 <= i && i < j && j < \result.length &&
-//@   \result[i].digest !== undefined ==>
-//@   \result[i].digest === \result[j].digest))                     // immutability across prefixes
-export function runTrajectory(initial: DigestSlot, ops: Op[]): DigestSlot[] {
-  const trajectory: DigestSlot[] = [initial];
+//@   \result[i].value !== undefined ==>
+//@   \result[i].value === \result[j].value))                       // immutability across prefixes
+export function runTrajectory(initial: Slot, ops: Op[]): Slot[] {
+  const trajectory: Slot[] = [initial];
   let i = 0;
   while (i < ops.length) {
     //@ invariant trajectory.length === i + 1

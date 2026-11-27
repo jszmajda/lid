@@ -50,5 +50,7 @@ Expected detection direction by class (key default, may be refined per seed in K
 ## Status
 
 - [x] Pilot seeds authored (U-MAP-001, H-MARK-002) — both ci-green, KEY.md entries + patches + T1 records archived
-- [ ] Remaining 22 seeds authored
-- [ ] KEY.md complete (all 24 entries, written before grid audits)
+- [x] Remaining 22 seeds authored
+- [x] KEY.md complete (all 24 entries, written before grid audits)
+
+(Ticked 2026-11-27: the 24 patches and KEY.md's 24 entries are in this folder. KEY.md's own header states each entry was written before that seed's audits; no separate record dates them.)

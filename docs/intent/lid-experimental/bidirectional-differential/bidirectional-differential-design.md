@@ -273,4 +273,4 @@ Promotion, retirement, and community feedback are governed by the parent LLD (§
 - Parent LLD: `docs/intent/lid-experimental/lid-experimental-design.md`
 - Arrow-maintenance LLD: `docs/intent/arrow-maintenance/arrow-maintenance-design.md` §"Experiment-produced artifacts (reserved namespace)"
 - LID LLD template: `plugins/linked-intent-dev/skills/linked-intent-dev/references/lld-templates.md`
-- Research provenance: `docs/research/formal-verification-exploration.md` §11.4, §11.5, Appendix I; underlying experiments at `docs/research/experiments/{b1,b2,b8-blind-reauthoring,b9-bidirectional-differential-keepers}/`
+- Research provenance: `docs/research/formal-verification-exploration.md` §11.4, §11.5, Appendix I; underlying experiments at `docs/research/experiments/{b1-differential-thr-det-021,b2-differential-llds-ears-primary,b8-blind-reauthoring,b9-bidirectional-differential-filter}/`

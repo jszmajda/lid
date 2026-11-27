@@ -105,7 +105,7 @@ class M2hRunnerTest(unittest.TestCase):
 
     def test_with_no_python312_on_path_the_runners_use_the_uv_interpreter(self):
         # a fresh shell has no python3.12 on PATH; PY defaults to uv's, so the queued commands still run
-        uv = "/Users/jess/.local/share/uv/python/cpython-3.12-macos-aarch64-none/bin/python3.12"
+        uv = str(Path.home() / ".local/share/uv/python/cpython-3.12-macos-aarch64-none/bin/python3.12")
         for script, phase in (("run_opengym_m2h.sh", "main"), ("run_clowder_m2f.sh", "main"), ("run_growth.sh", "trial"),
                               ("run_clowder_pilot.sh", "phase1")):
             env = {k: v for k, v in os.environ.items() if k != "PY"}
