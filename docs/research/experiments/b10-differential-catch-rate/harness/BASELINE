@@ -1,5 +1,5 @@
-repo: /Users/jess/src/portfolio-tracker (local clone source; nothing pushed)
+repo: a local clone of https://github.com/jszmajda/portfolio-tracker (clone source; nothing pushed)
 baseline_sha: ba94c01af8eb725292340d83e7923d7ecc136c90
 preflight: 2026-08-02, scripts/ci.sh exit 0 (build+test, Verus 6/6, Kani OK, @spec-coverage 365/365)
 segment: sheets-view (24 EARS, prefix SHEET)
-scratch_root: /private/tmp/claude-502/-Users-jess-src-lid/1838e261-34f7-4c11-9c59-217e9d78a77f/scratchpad/b10
+scratch_root: {scratch} (a temporary directory holding the per-seed clones and audit trees, deleted after the run; KEY.md's clone lines and the raw records write paths under it as {scratch}/...)

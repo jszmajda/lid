@@ -51,8 +51,8 @@ Cross-sample:
 ### FEAT-TIER-014 (CodeQL) — V
 
 Classic `□ ¬overwrite` pattern. Same query template as Wave 1's FEAT-DET-018
-("never remove"). Reused the existing CodeQL DB (`/tmp/codeql-thr-det-018/
-db`). Query classifies every `groupDigests` write site into one of four
+("never remove"). Reused the existing CodeQL DB (`<scratch>/codeql-thr-det-018/
+db`). Query classifies every write site of the per-group digest map into one of four
 safe categories; zero `UNCLASSIFIED-REVIEW` hits on production code.
 
 **Iterations to converge: 2**. First run hit issue I1 (`.toString()`
@@ -61,12 +61,12 @@ Fixed by rewriting the guard-detector to walk the IfStmt's child
 Identifiers structurally instead of string-matching the rendered form.
 
 **Verdict after fix**: 2 hits, both `GUARDED-SKIP-DDB` (production + cdk.out
-duplicate). Confirms the `if (existingDigests[groupId]?.[tier]) return`
-short-circuit at `writeEntryDigest:760` protects the single write path.
+duplicate). Confirms the early return in the digest-writing function, taken
+when a digest for that group and tier already exists, protects the single write path.
 
 ### FEAT-DET-017 (CodeQL) — V
 
-"Auxiliary notes shall NOT be included in existing-group summaries."
+A requirement that auxiliary notes stay out of existing-group summaries.
 Structural negative over template literals inside the prompt-builder.
 
 **Iterations to converge: 3**. First: missed the CodeQL API — `TemplateLiteral`
@@ -82,8 +82,8 @@ predicate walking parents via `AstNode.getParent()`. Third: small typo
 
 ### FEAT-LIFE-005 (CodeQL) — V
 
-"While archived, shall not generate narrative updates." Every narrative-
-generating call must be preceded/enclosed by a `status === 'archived'`
+A requirement that archived groups get no narrative updates. Every narrative-
+generating call must be preceded/enclosed by an archived-status
 guard.
 
 **Iterations to converge: 2**. First: the `.getEnclosingFunction()` on
@@ -92,12 +92,12 @@ guard.
 unscoped query returned 16 review hits (8 tests + 8 cdk.out duplicates)
 that buried the single production call. Added scope filter (I2).
 
-**Verdict**: 0 hits after scope-aware scoping. Production code at
-`processor.service.ts:644` properly guarded.
+**Verdict**: 0 hits after scope-aware scoping. The single production call
+site is properly guarded.
 
 ### FEAT-LIFE-004 (test-witness) — V
 
-"When archived group receives new item → active." Two MC/DC-style
+A requirement that an archived group becomes active when it receives a new item. Two MC/DC-style
 negations (stale-entry stays archived; active-status stays active).
 Three existing tests already carry `@spec FEAT-LIFE-004` and cover the
 positive + both negations.
@@ -109,8 +109,8 @@ match).
 
 ### FEAT-NAR-011 (test-witness) — V
 
-Two-arm-exception shape: "when all_old AND has_narrative → skip; unless
-no_narrative → always generate". This is the **first EARS in the sample
+Two-arm-exception shape: skip generation when every entry is old and a
+narrative already exists, except that a group with no narrative always gets one. This is the **first EARS in the sample
 that breaks the MC/DC negation pattern**. Required two negation cases for
 the two arms.
 
@@ -123,7 +123,7 @@ candidate I4 (`ears_logical_structure:` field).
 
 ### FLT-SCORE-001 (LemmaScript/Dafny) — V
 
-Decision-table: (isSuggested × isFocus) → score ∈ {0, 1, 2, 3}. Pure
+Decision-table: two boolean flags map to a score from 0 to 3. Pure
 function on two booleans + a list membership check.
 
 **Iterations to converge: 1**. Dafny verified with 3 VCs, 0 errors, zero
@@ -133,13 +133,13 @@ analysis directly).
 **Verdict**: verified end-to-end. Confirms the LemmaScript row of the §7
 dispatch table for simple decision-table pre/post.
 
-**Cross-arrow note**: FLT-SCORE-001 lives in the `agent-filter processing`
-arrow, not the primary arrow. First cross-arrow EARS in the 10-sample. The
+**Cross-arrow note**: FLT-SCORE-001 lives in a different arrow (the one the
+FLT IDs belong to), not the primary arrow. First cross-arrow EARS in the 10-sample. The
 `_status.yaml` rollup added `by_arrow:` to handle this (issue I6).
 
 ### FEAT-DET-012 (LemmaScript/Dafny) — V
 
-"Proposals with < 3 entries silently dropped." Modeled as a pure
+A requirement that proposals with fewer than 3 entries are silently dropped. Modeled as a pure
 filter-with-threshold. Dafny verified with 2 VCs, 0 errors.
 
 **Iterations to converge: 1**.
@@ -148,27 +148,27 @@ filter-with-threshold. Dafny verified with 2 VCs, 0 errors.
 
 ### FEAT-DATA-001 (type-system / tsc) — V
 
-"The record shall store these 14 fields." Type-assertion overlay
-(`AssertExact<T, Record>`).
+A requirement that names the 14 fields a record stores. Type-assertion overlay
+(an exact-type assertion against the record type).
 
 **Iterations to converge: 1**. First compile against node_modules failed
 because the shipped package has no `.d.ts`; fixed by pointing `paths:` at
-`packages/types/src/`.
+the types package's source directory.
 
 **Verdict**: tsc clean (0 errors). Negative control (`sed` rename of
-`title` field) flags correctly with 1 error.
+one field) flags correctly with 1 error.
 
 ### FEAT-TIER-022 (type-system / tsc) — V
 
-"Each digest level shall contain digest, spices, generatedAt." Trivial
-type-shape assertion.
+A requirement that each digest level carries three named fields (its text,
+its tags and its generation time). Trivial type-shape assertion.
 
 **Iterations to converge: 1**. tsc clean.
 
 ### FEAT-NAR-003 (manual-review) — Vn
 
-Qualitative: "preserve exact vocabulary, emotional intensity, hedging,
-pronouns." No mechanical engine applies. Produced a manual-review markdown
+Qualitative: a requirement that narratives preserve the user's own voice.
+No mechanical engine applies. Produced a manual-review markdown
 artifact capturing the prompt-provenance chain (voice-preservation
 instructions in the narrative prompt) + a review cadence template + a
 sign-off ledger.
@@ -213,15 +213,15 @@ consolidation.
 
 **Confirmed**. The case-study codebase was read-only throughout.
 All artifacts live in
-`/Users/jess/src/lid/docs/research/experiments/b4-scale-10-ears/`. Scratch
-CodeQL databases and type-check workdirs live in `/tmp/`.
+`docs/research/experiments/b4-scale-10-ears/`. Scratch
+CodeQL databases and type-check workdirs live in a scratch directory outside the repo.
 
 Commands that accessed the source:
 - `grep` / `Read` of EARS specs and implementation code
-- `codeql database create` (read from `/tmp/codeql-thr-det-018/db/src.zip`
+- `codeql database create` (read from `<scratch>/codeql-thr-det-018/db/src.zip`
   — already unpacked from a prior Wave 1 run)
 - `vitest run` against test files (run-time only; no mutations)
-- `tsc --noEmit` against `@pkg/types`
+- `tsc --noEmit` against the case study's types package
 
 No writes to anything under the case-study codebase.
 
@@ -292,15 +292,15 @@ CodeQL query run ~5s after compile; tsc <1s; vitest <2s. Compute cost is
 
 | Spec | Regression that would be auto-caught | Regression that would slip |
 |---|---|---|
-| FEAT-TIER-014 | any PutCommand/plain-SET write to groupDigests | semantic-equivalent refactor renaming the guard variable |
-| FEAT-DET-017 | direct interpolation of auxiliary notes into a prompt builder | routing auxiliary notes through a helper like `stringifyGroup()` |
-| FEAT-LIFE-005 | removing the `if (group.status === 'archived')` guard | moving the check into a decorator / middleware |
+| FEAT-TIER-014 | any PutCommand/plain-SET write to the digest map | semantic-equivalent refactor renaming the guard variable |
+| FEAT-DET-017 | direct interpolation of auxiliary notes into a prompt builder | routing auxiliary notes through a helper that stringifies the group |
+| FEAT-LIFE-005 | removing the archived-status guard | moving the check into a decorator / middleware |
 | FEAT-LIFE-004 | changing the status classifier to not return 'active' for recent items | changing the classifier to read a status-history field |
 | FEAT-NAR-011 | removing the "skip-if-all-older" branch | adding a third arm that breaks the two-arm model |
 | FLT-SCORE-001 | any change to the score matrix | renaming a field in the upstream tagging type |
 | FEAT-DET-012 | reducing the constant below 3 | swapping `continue` for soft-warn-and-accept |
 | FEAT-DATA-001 | renaming/removing any record field | type narrowing within a field (branded strings) |
-| FEAT-TIER-022 | renaming `digest`/`tags`/`generatedAt` | adding a 4th required field silently |
+| FEAT-TIER-022 | renaming any of the three digest fields | adding a 4th required field silently |
 | FEAT-NAR-003 | — (manual) | — |
 
 Strong maintenance signal across the stack. The two recurring blind spots:
@@ -350,8 +350,8 @@ overlay infrastructure. The overlay treating `Vn` as terminal-complete
 
 ### 5.6 Coherence shards fall out mechanically once you look
 
-`_status.yaml` generated three shards (classifyStatus,
-group-digest-writes, classification-prompt-shape) just from the 10 specs'
+`_status.yaml` generated three shards (the status classifier, the
+group-digest writes, the classification prompt's shape) just from the 10 specs'
 target functions. The second of these spans Wave 1's FEAT-DET-018. **At
 20+ specs, shards will dominate the maintenance-efficiency story** — this
 is where the Basilisk-inspired §5.5 framing starts paying off.
@@ -419,7 +419,7 @@ catches drift) but real — the sign-off ledger forces human eyeballs on a
 recurring schedule.
 
 **Cross-spec maintenance observation**: coherence shards concentrate risk.
-If `classifyStatus` is refactored, four EARS must re-verify together.
+If the status classifier is refactored, four EARS must re-verify together.
 Without `shard:` metadata (proposed in v0.3), the CI dispatcher re-runs
 each independently — 4× the cost, 4× the cache-miss surface. **At 20+
 specs, shard-awareness flips from nice-to-have to essential**.
@@ -453,7 +453,7 @@ first) before the next scale jump.
 ## Appendix: artifact inventory
 
 All files in
-`/Users/jess/src/lid/docs/research/experiments/b4-scale-10-ears/`:
+`docs/research/experiments/b4-scale-10-ears/`:
 
 - `selection.md`
 - `_status.yaml`
@@ -472,10 +472,10 @@ All files in
 - `FEAT-NAR-003.overlay.yaml` + `.manual-review.md`
 
 Plus scratch workdirs (not in repo):
-- `/tmp/b4-codeql/` — CodeQL query pack + run logs
-- `/tmp/b4-codeql-neg/` — negative-control DB for FEAT-DET-017
-- `/tmp/b4-types/` — tsc workdir for type-system checks
-- `/tmp/codeql-thr-det-018/db/` — reused from Wave 1
+- `<scratch>/b4-codeql/` — CodeQL query pack + run logs
+- `<scratch>/b4-codeql-neg/` — negative-control DB for FEAT-DET-017
+- `<scratch>/b4-types/` — tsc workdir for type-system checks
+- `<scratch>/codeql-thr-det-018/db/` — reused from Wave 1
 
 Source tree (the case-study codebase): read-only. No commits, no
 modifications.

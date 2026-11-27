@@ -2,13 +2,11 @@
 
 **Date:** 2026-04-22
 **Experimenter:** Claude (Opus 4.7, 1M context) for Jess Szmajda
-**Target property** (from the case-study codebase's LLD §"Retention Tiers > Key Properties"):
+**Target property** (one of the key properties listed in the case-study codebase's retention-tier LLD): a digest stays immutable once generated. Each digest is generated once, when an item crosses a tier boundary, and is not changed afterwards.
 
-> **Immutable after generation.** Digests are generated once when an item crosses a tier boundary, then never changed.
+Formally, for every item and group: once the item's short-horizon digest for that group is written, no subsequent operation changes its content, tags or generation time. The same holds for the long-horizon digest. This is a cross-call temporal property, not a single-function pre/post.
 
-Formally, for every `(itemId, groupId)` pair: once `item.groupDigests[groupId].shd` is written, no subsequent operation changes its `digest`, `tags`, or `generatedAt` fields. Same for `.lhd`. This is a cross-call temporal property, not a single-function pre/post.
-
-**EARS/code linkage:** `FEAT-TIER-020` (short-horizon digest generation, `generateShortDigest`) and `FEAT-TIER-021` (long-horizon digest generation, `generateLongDigest`). Both functions already implement the immutability guard by checking the slot and returning `null` when set.
+**EARS/code linkage:** `FEAT-TIER-020` (short-horizon digest generation) and `FEAT-TIER-021` (long-horizon digest generation). Both generator functions already implement the immutability guard by checking the slot and returning nothing when it is already set.
 
 ---
 
@@ -47,14 +45,11 @@ For this specific EARS, the trajectory IS computable in one function (it's a sim
 
 **Score: YES, for the specific shape of "linear trajectory of operations on a single data structure."**
 
-The trajectory reformulation in Approach H captures the full temporal invariant:
-
-```
-// In LemmaScript TS:
-//@ ensures forall(i: nat, i < \result.length ==>
-//@   forall(j: nat, i <= j && j < \result.length && \result[i].generatedAt !== 0
-//@     ==> \result[j].generatedAt === \result[i].generatedAt))
-```
+The trajectory reformulation in Approach H captures the full temporal invariant
+as a three-line `//@ ensures` in the LemmaScript TS: two nested `forall`s over
+indices `i <= j` of the returned trajectory, stating that once the slot at `i`
+has a nonzero generation time, the slot at every later `j` has the same
+generation time.
 
 This is **stronger** than per-call protocol (Approach A) and **equivalent to** the hand-written Dafny prefix-immutability lemma (`short_immutable_across_prefixes`). It's discharged without hand-written proof, purely from the loop invariant.
 
@@ -70,26 +65,23 @@ This is **stronger** than per-call protocol (Approach A) and **equivalent to** t
 
 **Answer: Approach H captured the property in pure LemmaScript. No escape-hatch needed for the core invariant.**
 
-The EARS text reads: *"Immutable after generation. Digests are generated once when an entry crosses a tier boundary, then never changed."*
+The property is the immutable-after-generation one above: a digest is generated once, at a tier boundary, and never changed.
 
-The Approach H postcondition:
+The Approach H postcondition, in the emitted Dafny, is a two-line `ensures`:
+for all indices `i <= j` in the result, if the slot at `i` has a nonzero
+generation time, the slot at `j` equals the slot at `i`.
 
-```
-ensures forall i, j: i <= j && j < |res| && res[i].generatedAt != 0
-        ==> res[j] == res[i]
-```
+This is a line-by-line translation of "once set (a nonzero generation time), never changed (every later slot equals it)". No invention required.
 
-This is a line-by-line translation of "once set (`res[i].generatedAt != 0`), never changed (`res[j] == res[i]` for any later `j`)". No invention required.
-
-The hand-written Dafny version is richer — it models the keyed (`itemId`, `groupId`) structure with both short-horizon and long-horizon slots, adds the long-horizon-requires-short-horizon hierarchy as a state invariant, and gives a more case-study-shaped data model. But the *core cross-call immutability claim* is the same shape as Approach H's. The hand-written version is not needed for the core claim; it's needed for **wider property stacking** (long-horizon-requires-short-horizon, hierarchy ordering).
+The hand-written Dafny version is richer — it models the structure keyed by item and group, with both short-horizon and long-horizon slots, adds the long-horizon-requires-short-horizon hierarchy as a state invariant, and gives a more case-study-shaped data model. But the *core cross-call immutability claim* is the same shape as Approach H's. The hand-written version is not needed for the core claim; it's needed for **wider property stacking** (long-horizon-requires-short-horizon, hierarchy ordering).
 
 Translation fidelity score: **mechanical for the headline property (Approach H); invention required for the stretch properties (hand-written).**
 
 ### 3. Source-untouched discipline
 
-**Confirmed.** The case-study codebase was not modified for this experiment. `git status` shows only pre-existing unrelated changes on a separate branch. None of those are in the primary arrow or touch `processor.service.ts` or the primary LLD.
+**Confirmed.** The case-study codebase was not modified for this experiment. `git status` shows only pre-existing unrelated changes on a separate branch. None of those are in the primary arrow or touch the digest-generating service or the primary LLD.
 
-The experiment lives entirely under `/Users/jess/src/lid/docs/research/experiments/b5-lemmascript-immutable-digest/`. Its references to the real code shape are by inspection only (via `grep`), not by modifying source.
+The experiment lives entirely under `docs/research/experiments/b5-lemmascript-immutable-digest/`. Its references to the real code shape are by inspection only (via `grep`), not by modifying source.
 
 ### 4. Coherence-stack fit — does this validate that different layers want different engines?
 
@@ -101,14 +93,10 @@ The experiment lives entirely under `/Users/jess/src/lid/docs/research/experimen
 | Hand-written Dafny | Cross-call immutability + long-requires-short state invariant over keyed map | 190 lines Dafny, all hand-written | Richer data model + stackable invariants |
 | TLA+ (sketch) | All of the above + liveness + multi-actor ordering | 30 lines TLA+, no proof work in the sketch | Protocol/state-machine shapes |
 
-TLA+ expressed the same property in **one line** per field:
-
-```tla
-ShortImmutableStrong ==
-    \A e \in Items, t \in Groups, x \in SlotType :
-        [] (x # UNSET /\ groupDigests[e][t].shd = x =>
-            [] (groupDigests[e][t].shd = x))
-```
+TLA+ expressed the same property in **one line** per field: a single
+always-implies-always formula saying that, for every item, group and slot
+value, once the short-horizon slot holds a set value it holds that value
+forever after.
 
 Compare to the ~140 lines of Dafny proof (5 core + 5 supporting lemmas) that establish the same property in `hand-written.dfy`. Ratio: **1:40** for specification. TLA+ is drastically more concise for this shape.
 
@@ -118,7 +106,7 @@ This is exactly what §4 of `formal-verification-exploration.md` predicted: **di
 
 ### 5. Cost — iteration count, wall-clock, manual lemma effort
 
-**Setup cost:** Zero. Dafny 4.11.0 and LemmaScript 0.x were already installed from Wave 1 (`/Users/jess/src/lid/docs/research/experiments/lemmascript-thr-det-014/node_modules`). Reused via symlink.
+**Setup cost:** Zero. Dafny 4.11.0 and LemmaScript 0.x were already installed from Wave 1 (`docs/research/experiments/lemmascript-thr-det-014/node_modules`). Reused via symlink.
 
 **Iteration count:** 12 distinct attempts — A, B, C, C2, D (blocked), E (needed hand proof), F, G, H-iter1 (parse error), H-iter2 (worked), hand-written, negative fixture. 15+ Dafny verification runs total.
 
@@ -138,39 +126,33 @@ This is exactly what §4 of `formal-verification-exploration.md` predicted: **di
 
 **Yes, concretely and at the precise call site that matters.**
 
-Demonstrated via `DIGEST-IMMUT.negative-fixture.ts`:
-
-```typescript
-// BROKEN applyOp — unconditionally overwrites. Should fail verification.
-export function applyOpBroken(current: DigestSlot, op: GenOp): DigestSlot {
-  //@ requires op.now > 0
-  //@ ensures current.generatedAt !== 0 ==> \result.generatedAt === current.generatedAt
-  //@ ensures current.generatedAt !== 0 ==> \result.digest === current.digest
-  return { generatedAt: op.now, digest: op.digest };  // no check — bug!
-}
-```
+Demonstrated via `DIGEST-IMMUT.negative-fixture.ts`: a deliberately broken
+`applyOp` that overwrites the slot unconditionally, with no
+check, under two `ensures` clauses saying a set slot keeps its generation time
+and its digest.
 
 Dafny output:
 ```
 DIGEST-IMMUT.negative-fixture.dfy(17,0): Error: a postcondition could not be proved on this return path
-   Related location: ensures ((current.generatedAt != 0) ==> (applyOpBroken(current, op).generatedAt == current.generatedAt))
 ```
+Dafny's related location points at the `ensures` clause that a set slot keeps
+its generation time.
 
-If a future refactor of `generateShortDigest` accidentally removes the `if (existingDigest) return null` guard (lines 827-835 of `processor.service.ts`), the overlay's equivalent annotated model would raise the identical error.
+If a future refactor of the real short-horizon digest generator accidentally removes its existing-digest guard (an early return), the overlay's equivalent annotated model would raise the identical error.
 
 **Specific regressions the overlay would catch:**
 
 | Change | What breaks | Specific error |
 |---|---|---|
 | Remove existing-digest guard | applyOp ensures fails | "postcondition could not be proved: if current was set, result equals current" |
-| Change `generatedAt` to a mutable counter | loop invariant fails in applyOps | "loop invariant does not hold" |
+| Change the generation timestamp to a mutable counter | loop invariant fails in applyOps | "loop invariant does not hold" |
 | Change immutability to "re-generate if old" | postcondition H fails for `i < j, both set` case | "forall i, j... does not hold" |
 | Add a third digest tier (PP?) | datatype mismatch in overlay; type error | "member 'pp' not found" (immediate break) |
 | Change long-horizon to allow generation without short-horizon | long-requires-short state invariant fails | "invariant LongImpliesShort does not hold" (hand-written) |
 
 The LemmaScript-side signal is *sharp*: the error points at the exact postcondition line that the code broke. This is substantially more precise than a failing integration test.
 
-**Caveat:** The overlay verifies a *model*, not the real code directly. Emitter-fidelity assumption: the annotated TS's applyOp function has the same "check-then-write" shape as the real `generateShortDigest`. If the shape diverges (e.g., if generation starts *always* happening, with mutation guarded inside the write path instead of the read path), the overlay's model is no longer faithful. The test is then: does the overlay detect its own staleness? Partial — the `@spec` / filename linkage is a human-readable pointer, but the "is this still the right model" check is not automatic.
+**Caveat:** The overlay verifies a *model*, not the real code directly. Emitter-fidelity assumption: the annotated TS's applyOp function has the same "check-then-write" shape as the real short-horizon digest generator. If the shape diverges (e.g., if generation starts *always* happening, with mutation guarded inside the write path instead of the read path), the overlay's model is no longer faithful. The test is then: does the overlay detect its own staleness? Partial — the `@spec` / filename linkage is a human-readable pointer, but the "is this still the right model" check is not automatic.
 
 ---
 
@@ -292,7 +274,7 @@ Node dependencies linked from `../lemmascript-thr-det-014/node_modules/`.
 
 **Caveats:**
 
-1. **Emitter-fidelity assumption is load-bearing.** The annotated TS models a "check-then-write" fold; the real code has the check inside `generateShortDigest` and the write happens in a runner. These have the same *logical shape* (no write unless unset) but diverge on code structure. If the real code's check-pattern changes (e.g., moves to a different guard or becomes implicit via DDB conditional writes), the overlay's model might no longer match without someone noticing. Human inspection is still the validator of emitter fidelity.
+1. **Emitter-fidelity assumption is load-bearing.** The annotated TS models a "check-then-write" fold; the real code has the check inside the short-horizon digest generator and the write happens in a runner. These have the same *logical shape* (no write unless unset) but diverge on code structure. If the real code's check-pattern changes (e.g., moves to a different guard or becomes implicit via DDB conditional writes), the overlay's model might no longer match without someone noticing. Human inspection is still the validator of emitter fidelity.
 
 2. **The trajectory reformulation is elegant but not "universal."** It works when the property is "invariant over a sequence of operations on a single aggregate." Properties like "whenever item A's short-horizon digest is set, item B's long-horizon digest was not changed in any subsequent operation" — relating two distinct aggregates — cannot be folded into a single trajectory without loss.
 
@@ -321,5 +303,5 @@ The §3 engine-selection recommendation stands, with one update: **LemmaScript's
 
 - Propose to LemmaScript upstream: `//@ lemma` form for standalone inductive lemmas; `//@ pure` annotation to force `function` emission; two-variable `forall(a, b, P)` parsing; `//@ ghost predicate` for top-level state invariants.
 - If LID adopts the trajectory pattern as canonical: document in `docs/overlay/README.md` (or wherever the engine-dispatch recommendations live) with Approach H as the reference exemplar.
-- Run TLC on the TLA+ sketch (needs `brew install tla+`; ~2 min) to confirm `GEImmutableStrong` and `LPImpliesGE` check under TLC's bounded model. This would add a fourth data point and is ~30 min of work.
+- Run TLC on the TLA+ sketch (needs `brew install tla+`; ~2 min) to confirm the sketch's short-horizon immutability and long-requires-short properties check under TLC's bounded model. This would add a fourth data point and is ~30 min of work.
 - Repeat the experiment for a genuinely multi-aggregate temporal property (e.g., "long-horizon digest must come *temporally* after its corresponding short-horizon digest" across multiple items) to probe where the trajectory-reformulation trick runs out. This is the natural next stretch.

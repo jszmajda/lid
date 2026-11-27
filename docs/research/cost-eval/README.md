@@ -59,6 +59,7 @@ Read this section first when you pick the work up in a new session. Update it at
 | [log.md](log.md) | A dated journal: what was done, what was decided, and who decided it. Older entries are in [log-archive/](log-archive/) |
 | [decisions.md](decisions.md) | Every decision that still stands, with its date and who made it |
 | [report-1-draft.md](report-1-draft.md) | Where the first report lives now: on the LID site, from `site/src/research/first-results/` |
+| Published records | Aggregates behind the reports on [intent recovery](https://linked-intent.dev/research/intent-recovery/) and [mapping an existing codebase](https://linked-intent.dev/research/mapping-an-existing-codebase/), kept in [lid-research-records](https://github.com/jszmajda/lid-research-records/tree/main/cost-eval) so this repository stays small to clone |
 | [observations.md](observations.md) | Leads noticed along the way about LID, about measuring it, and about running a study like this with agents |
 | [harness/](harness/README.md) | The harness code, with its tests |
 | [plumbing/](plumbing/README.md) | Throwaway scripts from the plumbing test: the executor image, the clock check, the grading tool, and a draft extraction template |

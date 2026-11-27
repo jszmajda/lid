@@ -4,7 +4,7 @@
 **Status**: VERIFIED (property holds on production tree; adversarial controls all pass)
 **Artifact**: `LONG-REQUIRES-SHORT.codeql` (executable as `LONG-REQUIRES-SHORT.ql` via symlink)
 **Manifest**: `LONG-REQUIRES-SHORT.overlay.yaml`
-**DB location**: `/tmp/codeql-b6-db` (copy of `/tmp/codeql-thr-det-018/db`; independent cache lock)
+**DB location**: `<scratch>/codeql-b6-db` (copy of `<scratch>/codeql-thr-det-018/db`; independent cache lock)
 
 ---
 
@@ -12,22 +12,21 @@
 
 **CodeQL reaches.** This experiment pushed past Wave 1's "convenient
 structural pattern" into a genuinely dataflow-sensitive invariant and came
-back with a working taint-tracking query. The EARS is:
+back with a working taint-tracking query. The EARS is a requirement that
+long-horizon digests be generated from short-horizon digests, never from an
+item's original text, so that long-horizon compression builds on the
+editorial judgment already made at the short-horizon level (the same way the
+product's longer summaries compress shorter ones rather than raw entries).
 
-> Long-horizon digests are generated from short-horizon digests, not from the original
-> normalizedText. This mirrors the temporal pipeline (seasonal summaries
-> compress monthly summaries, not raw entries) and ensures long-horizon compression
-> builds on the editorial judgment already made at the short-horizon level.
-
-As a structural property: **`item.normalizedText` must NOT reach the long-horizon
-digest prompt-construction**. Only `item.groupDigests[groupId].shd.digest`
+As a structural property: **the item's raw-text field must NOT reach the long-horizon
+digest prompt-construction**. Only the item's short-horizon digest for the group
 is allowed. This is not shape-matching — it is taint.
 
 The final query `LONG-REQUIRES-SHORT.codeql` confirms the property on the real
 the case-study tree (0 violations) while firing correctly on 10 adversarial
 fixtures covering 8 dimensions. It took 6 query iterations and about 75
 minutes wall-clock. One residual boundary was identified (pure dynamic access
-in a file that doesn't also contain the string literal "normalizedText"), and
+in a file that doesn't also contain the raw-text field's name as a string literal), and
 the trade-off was an explicit, documented heuristic rather than a spurious
 false positive.
 
@@ -35,8 +34,8 @@ false positive.
 
 Not "CodeQL returned zero hits and we shipped." I ran the same query against
 a case-study-shaped regression fixture that models the plausible future
-mistake — a developer writes `item.groupDigests?.[gid]?.shd ?? { digest:
-item.normalizedText, tags: [] }`. The query fires on both violation
+mistake — a developer falls back to a stand-in digest built from the item's
+raw text when the short-horizon digest is missing. The query fires on both violation
 rows, and the safe path in the same file does not. That's the maintenance
 signal: if the real code drifts tomorrow, the query catches it.
 
@@ -48,13 +47,13 @@ signal: if the real code drifts tomorrow, the query catches it.
 
 **Yes, CodeQL's dataflow reaches this taint-shaped property on a real
 codebase.** The specific library construct is
-`TaintTracking::Global<ClarifiedToLPConfig>`, parameterized over:
+`TaintTracking::Global`, instantiated with a configuration module that defines:
 
-- `isSource`: PropReads with property name `normalizedText`.
+- `isSource`: PropReads of the item's raw-text property.
 - `isSink`: arguments to, and parameters of, functions whose name matches
-  `(?i).*(longdigest|generatelong|compresslong|buildlong).*`.
+  a case-insensitive regex for the long-horizon digest builders' naming pattern.
 - `isBarrier`: `.digest()` method-call return values (crypto sanitizer) and
-  `.groupDigests` property reads (legitimate alternative provenance).
+  reads of the item's per-group digest map (legitimate alternative provenance).
 - `isAdditionalFlowStep`: field-store promotion —
   `pw.getRhs() -> pw.getBase()`.
 
@@ -64,19 +63,19 @@ negatives or false positives on at least one fixture. Specifically:
 - Without taint (strict flow only): missed string transforms, array+join,
   template-string interpolation, Map/get roundtrips.
 - Without field-store flow step: missed object wrapping
-  (`{ text: entry.normalizedText }`), property renaming, JSON
+  (the raw text placed in an object literal), property renaming, JSON
   stringify/parse roundtrips.
 - Without the `digest` barrier: flagged one-way hashes as violations.
-- Without the `groupDigests` barrier: false-positive fixture was expected
+- Without the digest-map barrier: false-positive fixture was expected
   to be clean but the field-store step caused spurious taint promotion
   through the whole `item` object into the short-horizon digest read.
 
 Where the expressiveness gets thin:
 
 - **Pure dynamic access in isolation.** `entry[k]` where `k = someVarFromAnotherFile`
-  and the string "normalizedText" never appears in the same file is not
+  and the raw-text field's name never appears as a string in the same file is not
   caught. The heuristic (co-occurrence of empty-name PropRead with a
-  StringLiteral "normalizedText" in the same file) is a weak proxy for the
+  StringLiteral naming the raw-text field in the same file) is a weak proxy for the
   true property, and it would miss a sufficiently distributed obfuscation.
   In practice this is a very low-probability attack shape and would typically
   be caught on code review anyway.
@@ -92,10 +91,10 @@ Where the expressiveness gets thin:
 Much more creative-judgment than Wave 1's structural query. The translation
 steps:
 
-1. **Identifying the right source and sink.** The EARS says "normalizedText
-   must not flow into long-horizon digest generation." The sink is not a single
-   function — it's a family of functions (`generateLongDigest`,
-   `buildLongDigestPrompt`, `buildLongDigestSystemPrompt`, and any future long-horizon-prefixed
+1. **Identifying the right source and sink.** The EARS says the raw text
+   must not flow into long-horizon digest generation. The sink is not a single
+   function — it's a family of functions (the long-horizon generator, its
+   prompt builder, its system-prompt builder, and any future long-horizon-prefixed
    helpers). I used a regex-on-name sink to cover the family. That encodes an
    *editorial judgment* that naming convention is load-bearing: rename the
    function to `tier3Compress` and the query loses its target. This is
@@ -103,9 +102,9 @@ steps:
    cost to re-author is minutes.
 
 2. **Picking taint over strict flow.** The EARS doesn't literally say "no
-   content derived from normalizedText"; it says "long-horizon input is the short-horizon digest,
-   not normalizedText." A strict interpretation would admit "normalizedText
-   sliced to 200 chars" as technically-not-normalizedText. But the spirit of
+   content derived from the raw text"; it says long-horizon input is the short-horizon digest,
+   not the raw text. A strict interpretation would admit "the raw text
+   sliced to 200 chars" as technically-not-the-raw-text. But the spirit of
    the EARS — hierarchical compression from already-edited material — is
    violated by passing *any* content derived from the raw text. Taint
    captures that spirit better than strict flow.
@@ -113,18 +112,19 @@ steps:
 3. **Deciding where to barrier.** The cryptographic hash is the clean case:
    a one-way function genuinely cannot carry the original content. I added
    `digest` as a barrier. A harder question: would a summarization model's
-   output of normalizedText count as sanitized? Semantically yes —
+   output of the raw text count as sanitized? Semantically yes —
    the output is derived text, not the text. But the query currently doesn't
-   model that, and arguably shouldn't, because a developer using
-   `llmClient.generateText({ prompt: item.normalizedText })` and then feeding
+   model that, and arguably shouldn't, because a developer prompting an LLM
+   client with the item's raw text and then feeding
    the result into long-horizon generation would ALSO violate the EARS (just more indirectly).
    Leaving this unsanitized is the right conservative choice.
 
 4. **Fighting the field-store flow step.** Adding the flow step caused a
    self-inflicted wound: by promoting "x.a tainted → x tainted", the query
-   began reporting paths like `item.normalizedText → item → item.groupDigests.shd`.
+   began reporting paths from the raw text, to the item, to the item's
+   short-horizon digest.
    This is unsound in the abstract but tolerable if you then barrier
-   `groupDigests` reads — which is what I did. That's a creative judgment:
+   digest-map reads — which is what I did. That's a creative judgment:
    "this read is a different source of truth, not a derivation."
 
 Iteration count: 6 query versions (v1 exploratory → v2 naive DataFlow → v3
@@ -139,7 +139,7 @@ the processor service (the long-horizon digest file) or the primary LLD
 (the EARS source). The existing `git status` changes on that repo are
 from other work streams and predate this experiment.
 
-The CodeQL DB reused Wave 1's build; I copied it to `/tmp/codeql-b6-db` to
+The CodeQL DB reused Wave 1's build; I copied it to `<scratch>/codeql-b6-db` to
 avoid contending with a sibling experiment's cache lock. No source tree
 writes occurred.
 
@@ -159,7 +159,7 @@ intent:
 | dynamic        | entry[k], Object.entries loop, destruct  | 4 flagged (D1-D4)                | 4 rows + 4 param-rows |
 | renamed        | {body: tainted}.body, JSON roundtrip     | 3 flagged                        | 3 rows + 3 param-rows |
 | crossfile      | tainted read in helper file              | 1 flagged                        | 1 row + 1 param-row |
-| false-positive | safe short-horizon digest flow with normalizedText   | 0 flagged (NOISE CHECK)          | 0 rows |
+| false-positive | safe short-horizon digest flow with raw text present | 0 flagged (NOISE CHECK)          | 0 rows |
 | regression     | the case-study-shaped wrong-turn           | 2 flagged, safe path NOT flagged | 4 violation rows on 2 violations |
 
 The five dimensions named in the experiment prompt (aliasing, object
@@ -244,26 +244,19 @@ authoring and RESULTS.md.
 The regression fixture is the direct answer. It models two plausible wrong
 turns:
 
-**(a) "Fall back to normalizedText when no short-horizon digest."** This is a
-well-meaning bug a future developer might introduce:
+**(a) "Fall back to the raw text when no short-horizon digest."** This is a
+well-meaning bug a future developer might introduce: look up the short-horizon
+digest, and when it is missing, substitute a stand-in digest built from the
+item's raw text before calling the long-horizon prompt builder (three lines in
+the fixture).
 
-```ts
-const shortDigest = item.groupDigests?.[groupId]?.shd;
-const effectiveShort = shortDigest ?? { digest: item.normalizedText, tags: [] };
-const prompt = this.buildLongDigestPrompt(effectiveShort, group);
-```
-
-The query fires. Two rows, pointing at lines 42 (the `?? { digest: item.normalizedText`)
-and 18 (the parameter of `buildLongDigestPrompt`, reached via taint).
+The query fires. Two rows, pointing at line 42 (the fallback that reads the raw text)
+and line 18 (the long-horizon prompt builder's parameter, reached via taint).
 
 **(b) "New helper path that shortcuts the short-horizon lookup."** A developer writes
-a helper that compresses an item directly:
-
-```ts
-async retrigger_long(input: { item: Item; group: Group }) {
-  return this.buildLongDigestPrompt({ digest: item.normalizedText, tags: [] }, group);
-}
-```
+a helper that compresses an item directly, passing a stand-in digest built
+from the raw text straight to the long-horizon prompt builder (a three-line
+method in the fixture).
 
 The query fires. Both rows.
 
@@ -273,7 +266,7 @@ the signal that LID is after: new-path changes get flagged without
 pre-existing-path false positives.
 
 If the case-study moves the long-horizon path to a different naming convention (say,
-renames `generateLongDigest` to `tier3Compress`), the regex in the sink
+renames the long-horizon generator to `tier3Compress`), the regex in the sink
 predicate needs updating. This is a cheap config change (one regex line in
 the query plus the function-name predicate) but it IS a coupling. The
 manifest documents the coupling in the `targets` section.
@@ -309,8 +302,8 @@ Three walls, one soft, two hard:
    the sink somehow.
 
 2. **Hard: truly distributed dynamic access.** `entry[k]` where `k` is a
-   variable whose value came from a file that never contains the string
-   "normalizedText" is outside the heuristic. A sound version would require
+   variable whose value came from a file that never contains the raw-text
+   field's name as a string is outside the heuristic. A sound version would require
    value-tracking of `k` back to a literal — possible in principle with
    additional CodeQL dataflow on the key expression, but gets into
    diminishing returns fast.
@@ -336,8 +329,8 @@ Candidates:
   expressive. Semgrep's OSS version cannot do interprocedural taint without
   Pro. If the coherence stack wanted a lower-friction "oss-friendly" option,
   Semgrep Pro would be the bridge, but CodeQL is a superset.
-- **TypeScript branded types** (`Branded<string, 'GEDigest'>` vs.
-  `Branded<string, 'NormalizedText'>`). This is a *compile-time* guarantee
+- **TypeScript branded types** (distinct branded string types for a
+  short-horizon digest and for raw text). This is a *compile-time* guarantee
   and is strictly better in some senses (it enforces at the edit-time
   feedback loop, not just at overlay-CI time) and strictly worse in others
   (requires invasive source modifications — violates source-untouched; and
@@ -362,31 +355,31 @@ is a reasonable fallback if CodeQL becomes unavailable.
 # 1. Ensure CodeQL is installed (reused from Wave 1)
 brew install --cask codeql
 
-# 2. Install pack deps (one-time, at experiment root)
-cd /Users/jess/src/lid/docs/research/experiments/b6-codeql-lp-requires-ge
+# 2. Install pack deps (one-time, at experiment root, from the repo root)
+cd docs/research/experiments/b6-codeql-lp-requires-ge
 codeql pack install
 
 # 3. Build or copy the case-study DB
 #    (option A — reuse Wave 1)
-cp -R /tmp/codeql-thr-det-018/db /tmp/codeql-b6-db
-rm -f /tmp/codeql-b6-db/db-javascript/default/cache/.lock
+cp -R <scratch>/codeql-thr-det-018/db <scratch>/codeql-b6-db
+rm -f <scratch>/codeql-b6-db/db-javascript/default/cache/.lock
 
 #    (option B — rebuild from source)
-codeql database create /tmp/codeql-b6-db \
+codeql database create <scratch>/codeql-b6-db \
   --language=javascript-typescript \
   --source-root=/path/to/case-study \
   --overwrite
 
 # 4. Run the invariant check
-codeql query run --database=/tmp/codeql-b6-db LONG-REQUIRES-SHORT.ql
+codeql query run --database=<scratch>/codeql-b6-db LONG-REQUIRES-SHORT.ql
 
 # 5. Run all adversarial fixtures
 for d in negative aliasing object-wrap collection sanitizer async dynamic renamed crossfile falsepos regression; do
-  # (you'd copy fixtures/$d/src to /tmp/b6-$d/src first; see fixtures/)
-  codeql database create /tmp/b6-$d/db \
-    --language=javascript-typescript --source-root=/tmp/b6-$d --overwrite
+  # (you'd copy fixtures/$d/src to <scratch>/b6-$d/src first; see fixtures/)
+  codeql database create <scratch>/b6-$d/db \
+    --language=javascript-typescript --source-root=<scratch>/b6-$d --overwrite
   echo "=== $d ==="
-  codeql query run --database=/tmp/b6-$d/db LONG-REQUIRES-SHORT.ql
+  codeql query run --database=<scratch>/b6-$d/db LONG-REQUIRES-SHORT.ql
 done
 ```
 
@@ -401,9 +394,9 @@ Expected outputs:
 - Regression: 4 rows (2 violations × 2 sinks each).
 
 If the case-study ever yields a non-zero result, investigate: either the long-horizon
-path has grown a new helper that reads normalizedText (check the source
+path has grown a new helper that reads the raw text (check the source
 location in the output), or the query's barrier set has gone stale and is
-over-tainting (check the `groupDigests` barrier is still matching).
+over-tainting (check the digest-map barrier is still matching).
 
 ---
 
@@ -417,7 +410,7 @@ over-tainting (check the `groupDigests` barrier is still matching).
 | `qlpack.yml` | CodeQL pack metadata |
 | `codeql-pack.lock.yml` | Pinned library pack versions (same as Wave 1) |
 | `RESULTS.md` | This file |
-| `v1-locate-generateLP.ql` | Intermediate — CodeQL saw the function |
+| `v1-locate-*.ql` | Intermediate — CodeQL saw the long-horizon generator |
 | `v2-naive-dataflow.ql` | Intermediate — `DataFlow::Global`, caught direct and aliasing only |
 | `v3-taint-tracking.ql` | Intermediate — `TaintTracking::Global`, caught string transforms |
 | `v4-lpmethods-plus-wrap.ql` | Intermediate — added parameter-sinks + field-store flow step |
@@ -433,10 +426,10 @@ over-tainting (check the `groupDigests` barrier is still matching).
 | `fixtures/dynamic/` | Adversarial — computed property access |
 | `fixtures/renamed/` | Adversarial — field renaming, JSON stringify/parse |
 | `fixtures/crossfile/` | Adversarial — flow through a helper in a different file |
-| `fixtures/falsepos/` | Control — ge-digest only flow; must NOT flag |
+| `fixtures/falsepos/` | Control — short-horizon-digest-only flow; must NOT flag |
 | `fixtures/regression/` | Control — the case-study-shaped wrong-turn; MUST flag; safe path MUST NOT |
 
-CodeQL DBs (`/tmp/codeql-b6-db`, `/tmp/b6-*/db`) are deliberately NOT in
+CodeQL DBs (`<scratch>/codeql-b6-db`, `<scratch>/b6-*/db`) are deliberately NOT in
 this directory — rebuild from sources per the run instructions above.
 
 ---

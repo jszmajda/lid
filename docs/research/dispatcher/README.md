@@ -18,8 +18,8 @@ Example (runs against the B4 experiment's 10-spec sample):
 
 ```sh
 python3 dispatcher.py \
-  /Users/jess/src/lid/docs/research/experiments/b4-scale-10-ears/ \
-  --codeql-db=/tmp/codeql-thr-det-018/db \
+  ../experiments/b4-scale-10-ears/ \
+  --codeql-db=<scratch>/codeql-thr-det-018/db \
   --write-status --verbose
 ```
 
@@ -65,7 +65,7 @@ Exit code: `0` if every gate engine produced a terminal-positive status
 
 ## Limitations / known issues
 
-- **Workspace-package imports** (e.g. a monorepo's `@pkg/types`) in overlay TS files
+- **Workspace-package imports** (e.g. a monorepo's shared types package) in overlay TS files
   aren't resolved — overlay artifacts should be self-contained. Real
   solution: dispatcher honors a `project_root:` field for tsc resolution.
 - **CodeQL pack setup** is manual: each overlay dir using CodeQL needs

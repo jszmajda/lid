@@ -4,6 +4,8 @@
 **Status**: FINAL — the pre-registered Fable↔Sol agreement trigger fired (83.6% < 0.85) and the mandated human pass is complete: all 22 disagreements ruled by Jess on 2026-08-03 (`answer-key/human-adjudication.md`; rulings sided Fable 12 / Sol 10). Numbers below are the adjudicated finals (`scoring-final.json`; pre-human baseline in `scoring.json`).
 **Design**: DESIGN.md in this directory (original + 2026-08-02 pre-registration amendment + pilot-gated adjustments). Pilot shakeout in PILOT.md.
 **Critique**: CRITIQUE.md in this directory (2026-08-07) — an external adversarial review of the design and interpretation. It does not dispute the data below; it constrains what the data may be said to mean. Read the Summary and Verdict with it: there is no comparative arm against human reading (A1), the result is better read as a calibration pilot on a saturated exam (A3), and 23/24 carries a Wilson interval of roughly [0.80, 0.99] rather than a stable 96% (B2).
+**Raw records**: the audit outputs that were kept (the 24 T2 control units from each of the two T2 executions, the Opus and Haiku arms, and the pilot adjudication files), with local paths scrubbed: https://github.com/jszmajda/lid-research-records/tree/main/b10-differential-catch-rate.
+**Correction (2026-11-27)**: figures that predated the human pass now match `scoring-final.json` and ruling #22: Haiku sensitivity view 6/7 → 5/7, U-PUB-002 detected by every arm → every arm except Haiku (Finding 1), Haiku top-finding 6/6 → 5/5 (Finding 4), T2 REAL control verdicts 53 → 54 (Finding 5); and Finding 5's CROSSREF range 30–55% → 40–61%.
 
 ## Summary
 
@@ -42,13 +44,13 @@ In one sentence: **the differential catches what it can see almost perfectly, an
 
 Every arm's miss in the U column includes the same seed (U-MARK-004, Finding 1). Haiku additionally missed H-MARK-008, and — by human adjudication of the run's single detection dispute — U-PUB-002: it surfaced the exact seeded chunking mechanism but framed it as harmless surplus, missing the half-written-window violation. Ruling principle: detection that reassures isn't detection.
 
-Sensitivity view (post-hoc, not pre-registered): excluding the slice-invisible seed, every arm scores 100% except Haiku (6/7).
+Sensitivity view (post-hoc, not pre-registered): excluding the slice-invisible seed, every arm scores 100% except Haiku (5/7).
 
 ## Key findings
 
 ### 1. The one universal miss is a scoping blindness, and it reframes the result
 
-U-MARK-004's seed (a last-known-good quote-date carry-forward) was planted in `crates/runtime/src/adapters.rs` with **no spec-ID mention in that file**; the audit slice — built from spec-ID citations — contained only the sheets-view files. No auditor at any tier ever saw the seeded code; even the T1 seeder's self-audit honestly reported it "would not have surfaced the seeded gap" under the audit's scoping. The natural control: U-PUB-002 sits in the **same file**, but SHEET-PUB-002's baseline citations already reached the runtime crate, so its slice included adapters.rs — and it was detected by every arm. Same drift locus; annotated vs unannotated; detected vs invisible. **Detection power is conditional on the arrow's annotation reach — drift that escapes `@spec` placement escapes the audit entirely.** This is the strongest empirical argument yet recorded for arrow-maintenance as a load-bearing (not cosmetic) practice: the differential guards only the annotated surface.
+U-MARK-004's seed (a last-known-good quote-date carry-forward) was planted in `crates/runtime/src/adapters.rs` with **no spec-ID mention in that file**; the audit slice — built from spec-ID citations — contained only the sheets-view files. No auditor at any tier ever saw the seeded code; even the T1 seeder's self-audit honestly reported it "would not have surfaced the seeded gap" under the audit's scoping. The natural control: U-PUB-002 sits in the **same file**, but SHEET-PUB-002's baseline citations already reached the runtime crate, so its slice included adapters.rs — and it was detected by every arm except Haiku (human ruling #22). Same drift locus; annotated vs unannotated; detected vs invisible. **Detection power is conditional on the arrow's annotation reach — drift that escapes `@spec` placement escapes the audit entirely.** This is the strongest empirical argument yet recorded for arrow-maintenance as a load-bearing (not cosmetic) practice: the differential guards only the annotated surface.
 
 ### 2. Hollow tests were the easiest class here, not the hardest
 
@@ -60,11 +62,11 @@ T1 = T2 = Opus = Terra = Luna = 7/8 on subset seeds. Cross-provider independence
 
 ### 4. Prominence is excellent — the matched finding is almost always finding #0
 
-Top-finding rates: T3, Luna 7/7; Haiku 6/6; Opus 6/7; T2 17/23 (mean rank 0.48). When the instrument catches a seeded gap, it leads with it. Combined with the false-alarm rates below, the "recall could be noise-buried" worry from the pilot did not materialize.
+Top-finding rates: T3, Luna 7/7; Haiku 5/5; Opus 6/7; T2 17/23 (mean rank 0.48). When the instrument catches a seeded gap, it leads with it. Combined with the false-alarm rates below, the "recall could be noise-buried" worry from the pilot did not materialize.
 
 ### 5. False-alarm rates are low; the dominant "noise" is cross-reference structure, and the REAL surplus is genuine discovery
 
-Control-finding verdicts (blind realness adjudication, human-final): T2 9/120 FALSE-ALARM (7.5%), Opus 2/77 (2.6%), Terra 0/42, Luna 1/43 (2.3%), Haiku 1/18 (5.6%). CROSSREF (behavior stated by an uncited sibling spec — B9's decomposition-gap pattern) is 30–55% everywhere. The REAL verdicts on *untouched* specs (53 at T2 alone, pre-dedup across arms/sets) are incidental discoveries; distinct headline items include: **the production Sheets adapter never truncates the residual tail that SHEET-PUB-002 requires (only the test fakes do — a genuine enforcement gap in portfolio-tracker)**; the 13-column Positions schema and its formula algebra are pinned by tests but stated by no spec; `DATA_START_ROW=2`/header-row-1 are unstated constants; the Unrealized % zero-basis guard is unstated; the own-row no-leak property is test-checked for only 1 of 7 formula columns; the Tax bands' exact column schemas are likewise unstated (added by human ruling #7); and an empty effective-rate cell silently zeroes the post-tax `=G×H` columns.
+Control-finding verdicts (blind realness adjudication, human-final): T2 9/120 FALSE-ALARM (7.5%), Opus 2/77 (2.6%), Terra 0/42, Luna 1/43 (2.3%), Haiku 1/18 (5.6%). CROSSREF (behavior stated by an uncited sibling spec — B9's decomposition-gap pattern) is 40–61% everywhere. The REAL verdicts on *untouched* specs (54 at T2 alone, pre-dedup across arms/sets) are incidental discoveries; distinct headline items include: **the production Sheets adapter never truncates the residual tail that SHEET-PUB-002 requires (only the test fakes do — a genuine enforcement gap in portfolio-tracker)**; the 13-column Positions schema and its formula algebra are pinned by tests but stated by no spec; `DATA_START_ROW=2`/header-row-1 are unstated constants; the Unrealized % zero-basis guard is unstated; the own-row no-leak property is test-checked for only 1 of 7 formula columns; the Tax bands' exact column schemas are likewise unstated (added by human ruling #7); and an empty effective-rate cell silently zeroes the post-tax `=G×H` columns.
 
 ### 6. The adjudication cross-check tripped its own wire — and the human pass settled it
 

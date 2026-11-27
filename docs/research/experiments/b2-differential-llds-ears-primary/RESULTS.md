@@ -109,23 +109,23 @@ The comparison documents (`comparison/detection.md`, `comparison/lifecycle.md`, 
 
 ### 4.1 Detection (5 gaps)
 
-1. **ShortText/normalizedText fallback unpinned** (medium-high). Both A-runs extracted this LLD commitment ("Daily classification falls back to `normalizedText` when `shortText` is missing") as an EARS. Real spec: silent. An implementer removing the fallback has no EARS to fail against.
-2. **Model config fidelity partial** (medium). LLD commits to model name, extended-thinking, prompt caching, in addition to maxTokens + thinkingEffort. Real FEAT-DET-022 only pins the latter two.
-3. **No unwanted-condition guard against historical misconfiguration** (medium). LLD tells the cautionary story of "high effort + 32K silently broke detection for a week." EARS has only a positive assertion of correct configuration, not an If-EARS (unwanted-condition) that would act as regression guard.
+1. **Short-text fallback unpinned** (medium-high). Both A-runs extracted this LLD commitment (daily classification falls back to an entry's full normalized text when its short text is missing) as an EARS. Real spec: silent. An implementer removing the fallback has no EARS to fail against.
+2. **Model config fidelity partial** (medium). LLD commits to model name, extended-thinking, prompt caching, in addition to the token limit and thinking effort. Real FEAT-DET-022 only pins the latter two.
+3. **No unwanted-condition guard against historical misconfiguration** (medium). LLD tells the cautionary story of a high-effort, 32K-token configuration that silently broke detection for a week. EARS has only a positive assertion of correct configuration, not an If-EARS (unwanted-condition) that would act as regression guard.
 4. **Prompt-content principles scattered** (low). LLD lists ~6 principles (tags-as-hints, name disambiguation, conservative structure, etc.). EARS captures ~2 (FEAT-DET-009, FEAT-DET-016). Remainder is LLD-only.
 5. **FEAT-DET-019 / FEAT-DET-020 are conjunctive bundles** (informational). Each bundles four sub-commitments (content + fact-sheet + prompt-instructions + output-shape). For gate-4 verification, MC/DC coverage needs these decomposed. Same decomposition-drift pattern as the FEAT-DET-021 three-conjunct finding from Wave 1.
 
 ### 4.2 Lifecycle (4 gaps)
 
 1. **Narrative-maintenance-while-quiet unpinned** (medium). LLD positively asserts it; real EARS only has the archived-suppression negative (FEAT-LIFE-005). Symmetric positive EARS missing.
-2. **Threshold tunability unpinned** (low-medium). LLD says thresholds "should be tunable"; EARS silent. Either LLD over-commits or EARS under-specifies.
-3. **UX vs. lifecycle scoping** (low). LLD mixes presentational concerns ("Prominent in the list," "Visually deprioritized," "Hidden from the default view") into the Lifecycle section. Real EARS correctly routes these to FEAT-UI-* but the LLD lacks cross-references — so A-runs re-invent them as FEAT-LIFE-* EARS.
+2. **Threshold tunability unpinned** (low-medium). LLD says thresholds should be tunable; EARS silent. Either LLD over-commits or EARS under-specifies.
+3. **UX vs. lifecycle scoping** (low). LLD mixes presentational concerns (how prominently each state shows in the list, and which states are hidden from the default view) into the Lifecycle section. Real EARS correctly routes these to FEAT-UI-* but the LLD lacks cross-references — so A-runs re-invent them as FEAT-LIFE-* EARS.
 4. **Partition invariant unpinned** (informational). "Every grouping is in exactly one state" is implicit in the mutually-exclusive while-conditions but not explicit. For a formal-verification overlay, making this explicit matters.
 
 ### 4.3 Retention-tiers (6 gaps including one meta)
 
 1. **No explicit "no significance-based tier promotion" EARS** (medium-high). LLD has it as a named principle; EARS silent. A developer could reasonably add significance-based promotion; only LLD prose would call it wrong.
-2. **"Group-only extraction" gap** (medium). LLD: "Ignore everything not related to this grouping." EARS FEAT-TIER-050 asserts group-specificity but not group-exclusivity.
+2. **"Group-only extraction" gap** (medium). LLD tells extraction to ignore everything unrelated to the grouping. EARS FEAT-TIER-050 asserts group-specificity but not group-exclusivity.
 3. **No short-horizon-before-long-horizon ordering guard** (medium). FEAT-TIER-013 says long-horizon digest derives from short-horizon digest. What if no short-horizon digest exists? Sequencing implicit, not asserted.
 4. **No prompt-caching EARS** (medium). Cost commitment in LLD; EARS silent.
 5. **Lean-compression-for-routine-entries EARS** (low-medium). Positive case (rich for significant) pinned; symmetric negative (lean for routine) not.
@@ -133,7 +133,7 @@ The comparison documents (`comparison/detection.md`, `comparison/lifecycle.md`, 
 
 ### 4.4 Bonus: EARS conveying information the LLD doesn't
 
-Both B-runs for **detection** independently extracted that `daySpan` is recalculated (not incremented) and noted this "eliminates a class of drift bugs." The real LLD does not discuss daySpan mechanics. B rediscovers the rationale from the EARS wording alone.
+Both B-runs for **detection** independently extracted that the day span is recalculated (not incremented) and noted this "eliminates a class of drift bugs." The real LLD does not discuss day-span mechanics. B rediscovers the rationale from the EARS wording alone.
 
 This is **the inverse of gate-3 leakage** — a case where the EARS is more informative than the LLD. It suggests LLDs themselves have gaps (information available in EARS that LLDs omit), which in turn suggests gate-3 is bidirectional and both directions matter.
 
@@ -150,7 +150,7 @@ The hypothesis therefore needs refinement: retention-tiers is not a "sparse EARS
 ### Q2. Are there EARS without LLD motivation?
 
 **Minimal, but yes, in two forms.**
-- **Form 1 (prescriptive choices)**: specific field names (`digest` vs `text`, `spices` vs `cues`, `generatedAt`) that FEAT-TIER-022 fixes without LLD justification. B-run-1 called these out.
+- **Form 1 (prescriptive choices)**: specific field names for the digest record that FEAT-TIER-022 fixes without LLD justification. B-run-1 called these out.
 - **Form 2 (specific numbers without derivation)**: 5-12 grouping target (FEAT-DET-007), 14-day and 12-week tier boundaries (FEAT-TIER-001..003), 3-item minimum (FEAT-DET-012). All are numbers the LLD asserts as given; B-runs cannot recover why these specific numbers (vs. 4-10 or 15-day or 2-entry) without empirical grounding or citation.
 
 **Neither form suggests orphan EARS in the strong sense** (EARS with no LLD motivation at all). Every EARS in this experiment's scope has a home in the LLD. The question B-runs surface is about *strength* of motivation, not existence.
@@ -183,7 +183,7 @@ These are the same *kinds* of gap a careful human review would surface — but a
 
 ### 6.3 Source-untouched discipline
 
-Verified. Git diff on `<case-study>/docs/{llds,specs}/FEAT*.md` shows zero changes. Sub-agent calls were context-free (no tool access) via `claude -p`. Input slices were copies with citation.
+Verified. Git diff on the case study's LLD and spec files shows zero changes. Sub-agent calls were context-free (no tool access) via `claude -p`. Input slices were copies with citation.
 
 ### 6.4 Variance / reproducibility
 
@@ -199,7 +199,7 @@ For detection (largest scope): A-run-1 and A-run-2 diverge on decomposition gran
 
 **Validates the "differential scales up" thesis from §4 of the formal-verification exploration.** At gate 3, with narrative-rich LLDs and structured-but-prose EARS, LLM-based differential produces actionable signal where formal overlays would struggle (LLD is too prose-heavy for CodeQL-style structural extraction). This is consistent with the framing that different gates want different engines and LLM-based differential is the right fit for gate 3.
 
-**Complementarity with formal overlay**: several of the gaps this experiment surfaces (e.g. the "no-significance-promotion" invariant in retention-tiers; the "shortText fallback" in detection; the unwanted-condition for detection model config) are once added to EARS, *formally testable* at gate 4. Pattern 1 of the exploration (bootstrap: differential first, formal second) is exactly this workflow.
+**Complementarity with formal overlay**: several of the gaps this experiment surfaces (e.g. the "no-significance-promotion" invariant in retention-tiers; the short-text fallback in detection; the unwanted-condition for detection model config) are once added to EARS, *formally testable* at gate 4. Pattern 1 of the exploration (bootstrap: differential first, formal second) is exactly this workflow.
 
 ### 6.6 Cost
 

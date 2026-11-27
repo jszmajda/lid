@@ -1,7 +1,7 @@
 """Build the executor image for a Rust seed: the pinned executor image plus Rust, with the seed's locked crates
 fetched into the image's cargo home.
 
-    python3.12 images/build_rust_image.py --repo /Users/jess/src/clowder --commit 86db995
+    python3.12 images/build_rust_image.py --repo /path/to/clowder --commit 86db995
     python3.12 images/build_rust_image.py --check            # versions, and a build of the fetch set with no network
 
 The build context holds only the seed's workspace manifests and Cargo.lock, with empty stand-ins for the targets

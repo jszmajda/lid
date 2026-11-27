@@ -7,7 +7,7 @@
 
 ## Background (context for first-time readers)
 
-This experiment lives inside a larger research program exploring a **formal verification overlay for Linked-Intent Development (LID)** — a methodology where EARS requirements (`{FEATURE}-{TYPE}-{NNN}` IDed, with four canonical patterns — ubiquitous, event-driven, state-driven, unwanted) are kept coherent with implementation via an arrow chain `HLD → LLDs → EARS → Tests → Code`. The full research doc is at `/Users/jess/src/lid/docs/research/formal-verification-exploration.md`.
+This experiment lives inside a larger research program exploring a **formal verification overlay for Linked-Intent Development (LID)** — a methodology where EARS requirements (`{FEATURE}-{TYPE}-{NNN}` IDed, with four canonical patterns — ubiquitous, event-driven, state-driven, unwanted) are kept coherent with implementation via an arrow chain `HLD → LLDs → EARS → Tests → Code`. The full research doc is at `docs/research/formal-verification-exploration.md`.
 
 **Bidirectional differential** as tested here is a coherence-audit pattern:
 - **A direction**: an agent given ONLY the EARS text produces naive implementation code. Compare to the real code. Differences surface EARS under-specification or code's implementation-specific details.
@@ -31,11 +31,11 @@ Earlier experiments in the program (`docs/research/experiments/b1-*` through `b8
 
 | Tier | EARS | Classification | One-line finding |
 |---|---|---|---|
-| Simple | FLT-UE-003 (cap at 20) | BD-DRIFT | EARS doesn't say which 20 survive; code keeps oldest-by-`createdAt`. A-runs diverge (2× input-order, 1× newest). B-runs elevate "oldest first" + flag possible latent bug. |
-| Simple | FLT-UE-004 (prefer `normalizedText`) | BD-DRIFT | EARS silent on empty string and both-missing. Code uses `\|\|` (empty falls through) + drops item if both missing. A-runs diverge on operator; none drop. B-runs split the rule into two EARS. |
+| Simple | FLT-UE-003 (cap at 20) | BD-DRIFT | EARS doesn't say which 20 survive; code keeps the oldest by creation time. A-runs diverge (2× input-order, 1× newest). B-runs elevate "oldest first" + flag possible latent bug. |
+| Simple | FLT-UE-004 (prefer the normalized text) | BD-DRIFT | EARS silent on empty string and both-missing. Code uses `\|\|` (empty falls through) + drops item if both missing. A-runs diverge on operator; none drop. B-runs split the rule into two EARS. |
 | Moderate | FLT-SCORE-003 (descending sort) | BD-DRIFT | Tie-handling silent in this EARS (FLT-WAVE-002 covers it separately, but no cross-ref). A-runs all produce stable sort; B-runs correctly split into descending-sort + tie-randomization + elevate non-mutation and a flagged-possible-bug transitive chaining. |
 | Moderate | FLT-CTX-001 (questions-only visibility) | BD-DRIFT | EARS says what's excluded; code and sibling EARS (CTX-002..005) add agent-name attribution, XML wrapping, dedup instruction. A-runs produce filter-only interpretations missing all of those. B-runs cleanly reconstruct the full CTX-001..005 cluster. |
-| Complex | FLT-UE-001 (four-conjunct incorporated + fallback) | BD-DRIFT | Central rule reconstructs cleanly both directions. The *operational halo* around it (error handling, pagination, configuration short-circuit, missing-processedAt default) is uniformly missing from A-runs and uniformly elevated by B-runs. |
+| Complex | FLT-UE-001 (four-conjunct incorporated + fallback) | BD-DRIFT | Central rule reconstructs cleanly both directions. The *operational halo* around it (error handling, pagination, configuration short-circuit, missing-processed-time default) is uniformly missing from A-runs and uniformly elevated by B-runs. |
 | Complex | FLT-SCORE-001 (four-case scoring matrix) | **BD-COHERENT** | Exhaustive 2×2 enumeration with bounded integer output. A-runs produce essentially the real function; B-runs reconstruct the matrix. One B-run offered an equivalent additive decomposition as a preference, correctly flagged as not drift. |
 
 ## Key findings
@@ -93,11 +93,11 @@ This is the canonical bidirectional pattern. B9 validates it on a fresh arrow an
 
 Concrete, not yet applied. Suitable for carrying to the case-study codebase as a proposal document — analog of an auxiliary recommendations artifact (not published) which consolidated earlier waves' findings:
 
-- **FLT-UE-003**: add "retaining the 20 items with the earliest `createdAt` timestamps when more than 20 are present" AND open a product question on oldest-vs-newest intent
+- **FLT-UE-003**: add "retaining the 20 items with the earliest creation timestamps when more than 20 are present" AND open a product question on oldest-vs-newest intent
 - **FLT-UE-004**: split into FLT-UE-004a (selection with "present and non-empty" qualifier) + FLT-UE-004b (unwanted-behavior: omit item if both fields empty)
 - **FLT-SCORE-003**: add explicit "See FLT-WAVE-002 for tie-handling" cross-reference; optionally add "non-mutating: the input collection is not modified"
 - **FLT-CTX-001..005**: add explicit cross-references between siblings so a single-EARS reader sees the cluster boundaries
-- **FLT-UE-001**: add companion unwanted-behavior EARS for (a) partial-failure/error-mid-load, (b) missing `processedAt` default, (c) unconfigured-store fallback
+- **FLT-UE-001**: add companion unwanted-behavior EARS for (a) partial-failure/error-mid-load, (b) missing processed-time default, (c) unconfigured-store fallback
 - **FLT-SCORE-001**: no edits needed — BD-COHERENT. Serves as a canonical "well-formed complex EARS" example.
 
 Plus `@spec` annotation backfills for the 5 unannotated implementations.

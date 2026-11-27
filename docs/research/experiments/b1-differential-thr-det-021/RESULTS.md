@@ -19,7 +19,7 @@
 
 ## What we ran
 
-Six `claude -p` sub-agent invocations from `/tmp/b1-sandbox` (an isolated directory with no repo context). The sub-agents were true context-free sessions — no prior conversation, no access to LID docs, no access to the case-study codebase. Each A-run received the EARS text verbatim plus instructions to write one Vitest test with explicit assumptions. Each B-run received the real four-test `describe` block (with `@spec` comment stripped to prevent spec-ID leakage) plus instructions to reconstruct an EARS statement.
+Six `claude -p` sub-agent invocations from `<scratch>/b1-sandbox` (an isolated directory with no repo context). The sub-agents were true context-free sessions — no prior conversation, no access to LID docs, no access to the case-study codebase. Each A-run received the EARS text verbatim plus instructions to write one Vitest test with explicit assumptions. Each B-run received the real four-test `describe` block (with `@spec` comment stripped to prevent spec-ID leakage) plus instructions to reconstruct an EARS statement.
 
 Inputs are in `A-inputs.md` and `B-inputs.md`. Outputs are in `A-runs/run-{1,2,3}.{raw.txt,md}` and `B-runs/run-{1,2,3}.{raw.txt,md}`. Ground truth (real EARS + real test) is in `ground-truth.md`. The structured diff is in `comparison.md`. The Appendix-E-shaped differential artifact is in `FEAT-DET-021.differential.md`.
 
@@ -34,8 +34,8 @@ Inputs are in `A-inputs.md` and `B-inputs.md`. Outputs are in `A-runs/run-{1,2,3
 The B-side captures *what the test carries beyond the EARS*. B recovers:
 
 - C1 as a conjunct (from N3's weekly-mode negation)
-- Log obligation (from the `expect(escalationLog).toBeDefined()` assertion)
-- Call-count exactness (from `toHaveBeenCalledTimes(2)` and the `Times(1)` in negations)
+- Log obligation (from the assertion that an escalation log line was written)
+- Call-count exactness (from the assertion that detection ran exactly twice, and exactly once in the negations)
 
 These are substantive properties of the implementation that the EARS does not state. The differential surfaces each one as a gap between real EARS and reconstructed EARS. This is translation drift, not ambiguity echo.
 
@@ -49,7 +49,7 @@ Table form:
 |---|---|---|---|
 | C1 — daily mode is a precondition | Implicit | **No** (implicit in entry-point) | **Yes** (explicit conjunct) |
 | C2 — zero assignments | Explicit | Yes | Yes |
-| C3 — ≥1 entry with no `groupIds` | Explicit | Yes | Yes |
+| C3 — ≥1 entry with no group assignment | Explicit | Yes | Yes |
 | Escalation = re-run in weekly mode | Explicit | Yes | Yes |
 | Log-line observability | Absent | **No** (invents return flag) | **Yes** (adds as obligation) |
 | Call-count exactness (2 on escalation, 1 otherwise) | Absent | N/A (positive-only) | **Yes** |
@@ -61,9 +61,9 @@ The fidelity claim for differential is therefore: **given a lossy EARS and a com
 
 ### 3. Source-untouched discipline
 
-**Confirmed.** No edits to the case-study codebase. The experiment only *read* the relevant EARS file, the LLD file, and a runner source + test file. Sub-agent sessions ran in `/tmp/b1-sandbox`, which is unrelated to both the LID repo and the case-study. `claude -p` inherits the harness but was given only prompt text — no file system calls were issued against either repo by the sub-agents.
+**Confirmed.** No edits to the case-study codebase. The experiment only *read* the relevant EARS file, the LLD file, and a runner source + test file. Sub-agent sessions ran in `<scratch>/b1-sandbox`, which is unrelated to both the LID repo and the case-study. `claude -p` inherits the harness but was given only prompt text — no file system calls were issued against either repo by the sub-agents.
 
-All artifacts produced by this experiment live in `/Users/jess/src/lid/docs/research/experiments/b1-differential-thr-det-021/`. No `node_modules/`, no build outputs. Pure text.
+All artifacts produced by this experiment live in `docs/research/experiments/b1-differential-thr-det-021/`. No `node_modules/`, no build outputs. Pure text.
 
 ### 4. `@spec` / `derives_from:` threading — did the experiment surface where new provenance would help?
 
@@ -80,24 +80,24 @@ conjuncts:
   C1:
     text: "in daily classification mode"
     derives_from:
-      - doc: <case-study>/src/runner.ts
-        section: "lines 169-171, outer guard"
+      - doc: <runner source file>
+        section: "<escalation guard lines>, daily-mode clause"
     witnessed_by:
-      - test: "daily-to-weekly escalation > should NOT escalate when already in weekly mode"
+      - test: "<escalation describe> > <weekly-mode negation test>"
   C2:
     text: "zero total assignments across all entries"
     derives_from:
-      - doc: <case-study>/src/runner.ts
-        section: "lines 169-171, assignments.length === 0 clause"
+      - doc: <runner source file>
+        section: "<escalation guard lines>, zero-assignments clause"
     witnessed_by:
-      - test: "daily-to-weekly escalation > should NOT escalate when daily assigns at least one entry"
+      - test: "<escalation describe> > <at-least-one-assignment negation test>"
   C3:
-    text: "at least one entry has no pre-existing groupIds"
+    text: "at least one entry has no existing group assignment"
     derives_from:
-      - doc: <case-study>/src/runner.ts
-        section: "lines 169-171, hasUnassignedEntries clause"
+      - doc: <runner source file>
+        section: "<escalation guard lines>, unassigned-entries clause"
     witnessed_by:
-      - test: "daily-to-weekly escalation > should NOT escalate when all entries already have groupIds"
+      - test: "<escalation describe> > <all-entries-assigned negation test>"
 ```
 
 With per-conjunct `derives_from:` + `witnessed_by:`, a coherence invariant becomes mechanical: **every enabling conjunct in the overlay has a derivation upstream and a witness downstream.** Orphan detection at the conjunct level is a trivial set-difference query on the overlay. Today it is not.
@@ -118,8 +118,8 @@ The stretch question — does differential scale *up* as well as it scales at ga
 
 **Wall time**: approximately 35 minutes. Breakdown:
 
-- ~5 min: read Wave 1 RESULTS.md, skim §1/§4/§5/§11.2 of the research doc, read the LLD escalation heuristic section, confirm source line 169-171 three-conjunct structure.
-- ~3 min: set up `/tmp/b1-sandbox`, write A-prompt, write B-prompt, extract the four-test block with `@spec` stripped.
+- ~5 min: read Wave 1 RESULTS.md, skim §1/§4/§5/§11.2 of the research doc, read the LLD escalation heuristic section, confirm the source guard's three-conjunct structure.
+- ~3 min: set up `<scratch>/b1-sandbox`, write A-prompt, write B-prompt, extract the four-test block with `@spec` stripped.
 - ~10 min: six `claude -p` invocations (three A, three B). Each run returned within ~60-90 seconds. Total agent wall-clock ~8-10 min, elapsed human-supervision wall time ~10 min.
 - ~15 min: write the per-run analysis files, the comparison, the differential artifact, and this RESULTS.md.
 
@@ -136,14 +136,14 @@ Two iteration cycles that I did *not* need but was prepared for:
 
 **Yes, in both directions**, and with different failure modes from the other engines.
 
-Scenario A — EARS edit only (no code change): someone updates FEAT-DET-021 to say "at least two entries" instead of "at least one." The existing code `.some(e => ...)` still checks for at least one. Running differential:
+Scenario A — EARS edit only (no code change): someone updates FEAT-DET-021 to say "at least two entries" instead of "at least one." The existing code still checks for at least one. Running differential:
 
-- A (new EARS → test): generates a test setup with ≥2 empty-groupIds entries. Diff vs. real test (1 empty entry) fails.
-- B (real test → EARS): still recovers "at least one entry lacks groupIds." Diff vs. updated real EARS fails — real EARS says "two," B says "one."
+- A (new EARS → test): generates a test setup with ≥2 entries that have no group. Diff vs. real test (1 empty entry) fails.
+- B (real test → EARS): still recovers "at least one entry lacks a group." Diff vs. updated real EARS fails — real EARS says "two," B says "one."
 
 Both sides catch the drift. **No other engine can.** CodeQL doesn't read the EARS text. Test-witness reads the EARS but only binds to pattern detectors the contract author pre-declared; a pre-existing contract tied to "one" would catch the drift indirectly by failing the new EARS-derived pattern check, but only if the contract is regenerated. Differential catches it immediately.
 
-Scenario B — code edit only (no EARS change): someone changes the guard to `(mode === 'daily') && (assignments.length < 3)`. EARS still says "zero." Test mocks still produce zero. Tests pass. Running differential:
+Scenario B — code edit only (no EARS change): someone changes the guard to fire in daily mode whenever fewer than three assignments come back. EARS still says "zero." Test mocks still produce zero. Tests pass. Running differential:
 
 - A (real EARS → test): still generates a zero-assignments test. Matches current test.
 - B (modified tests → EARS): would STILL recover "zero assignments" because the tests still mock zero. B *cannot* see the source-level change — it only reads tests.
@@ -166,7 +166,7 @@ Evidence:
 
 1. **A-direction (3/3 runs)**: The agent given only the EARS text produced a single positive-case test. No run wrote a negation for C1 (weekly does not self-escalate). No run wrote a negation for C2 (assignments ≥ 1 → no escalate). No run wrote a negation for C3 (all entries pre-assigned → no escalate). This is exactly Wave 1's claim: *you cannot author a conjunct-aware test from the EARS alone*. B1 reproduces it without manual inspection.
 
-2. **B-direction (3/3 runs)**: The agent given only the four-test block (with `@spec` stripped) produced an EARS with all three conjuncts explicit. All three runs named "detectionMode is 'daily'" as its own enabling condition (C1), not as a narrative frame. All three added log-line observability. All three added call-count exactness obligations.
+2. **B-direction (3/3 runs)**: The agent given only the four-test block (with `@spec` stripped) produced an EARS with all three conjuncts explicit. All three runs named "the detection mode is daily" as its own enabling condition (C1), not as a narrative frame. All three added log-line observability. All three added call-count exactness obligations.
 
 3. **The asymmetry is precisely the drift**: A's output matches the real EARS's flat shape (which is what A was given). B's output *exceeds* the real EARS (which reveals what the tests preserve and the EARS lost). The differential is the gap between A's "correctly-read-from-EARS but tested-incompletely" and B's "correctly-read-from-tests with explicit conjunction."
 
@@ -183,8 +183,8 @@ The thesis holds. Differential scales **up** (§4) in the predicted way: narrati
 1. **Single EARS, single arrow.** B1 shows differential works for FEAT-DET-021. B4 (scale to 10 EARS) is the honest test of whether this generalizes. B1 is a prerequisite, not a proof-of-generality.
 2. **One model family, one version.** All six sub-agent calls used the same Claude Code CLI with its default model. We did not try Sonnet vs. Opus, nor other providers. Model-variance is unmeasured.
 3. **Prompts are authored, not synthesized.** The A-prompt explicitly asks for a single test; if it asked for "a comprehensive test suite," A might voluntarily write negations defensively, shrinking the gap. That would not refute the finding (the EARS would still not *require* those negations from its text), but it would make the differential fuzzier as a diff-generator. Prompt discipline matters.
-4. **The `@spec` comment was stripped from B's input but the describe title `'daily-to-weekly escalation'` was not.** The title leaks the "daily-to-weekly" phrasing, which the model could arguably use to write "daily" in C1 without reading the negation test. To be conservative, I consider C1's recovery to rest on both the title and the N3 test's existence. Stripping the title would be the stricter experimental variant, left for future work if variance ever rises.
-5. **Scope "for that user" is weakly witnessed both in code and in tests.** Real test uses `userIds: ['test-user']` (single user), which doesn't *test* per-user scope — it only doesn't contradict it. Differential inherits this limitation. B mentions per-user scope; A assumes it; neither truly asserts it. That gap is real and is a candidate for a separate EARS (FEAT-DET-XXX "scope is per-user") or an additional test with two users.
+4. **The `@spec` comment was stripped from B's input but the describe block's title, which names the daily-to-weekly escalation, was not.** The title leaks the "daily-to-weekly" phrasing, which the model could arguably use to write "daily" in C1 without reading the negation test. To be conservative, I consider C1's recovery to rest on both the title and the N3 test's existence. Stripping the title would be the stricter experimental variant, left for future work if variance ever rises.
+5. **Scope "for that user" is weakly witnessed both in code and in tests.** Real test uses a single test user, which doesn't *test* per-user scope — it only doesn't contradict it. Differential inherits this limitation. B mentions per-user scope; A assumes it; neither truly asserts it. That gap is real and is a candidate for a separate EARS (FEAT-DET-XXX "scope is per-user") or an additional test with two users.
 
 ---
 

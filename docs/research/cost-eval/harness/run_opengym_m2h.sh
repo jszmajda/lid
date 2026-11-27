@@ -25,7 +25,7 @@
 # Run from harness/ with the token set: ../plumbing/with-token.sh sh run_opengym_m2h.sh main
 # DRY=1 prints what would run instead of running it. Before each job, pace.sh waits while the subscription's weekly
 # usage is at or above USAGE_PAUSE (90%) until it falls below USAGE_RESUME (50%).
-PY=${PY:-$(command -v python3.12 || echo /Users/jess/.local/share/uv/python/cpython-3.12-macos-aarch64-none/bin/python3.12)}  # a fresh shell may lack python3.12 on PATH
+PY=${PY:-$(command -v python3.12 || echo $HOME/.local/share/uv/python/cpython-3.12-macos-aarch64-none/bin/python3.12)}  # a fresh shell may lack python3.12 on PATH
 RUNS=${RUNS:-../runs}
 MAIN=${MAIN:-/Users/jess/src/lid-cost-eval/docs/research/cost-eval}  # git-ignored seed material lives here
 SEED=${SEED:-$MAIN/seeds/opengym}
